@@ -70,7 +70,7 @@
     :show-icon="false"
     :auto-focus="false"
     :on-after-enter="onAfterEnter"
-    style="width:1280px;height:768px;"
+    style="width:1550px;height:768px;"
   >
     <template #header-extra>
       绑定点位

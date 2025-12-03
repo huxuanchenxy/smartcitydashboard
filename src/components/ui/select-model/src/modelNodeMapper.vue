@@ -1,7 +1,7 @@
 <template>
   <n-spin :show="modelLoading">
-    <n-grid x-gap="12" :cols="12">
-      <n-gi span="3">
+    <n-grid x-gap="12" :cols="13">
+      <n-gi span="2">
         <n-tabs type="line" default-value="animation" animated>
           <n-tab-pane name="mesh" tab="网格">
             <div style="overflow: auto;height: 700px;width: 100%;">
@@ -39,14 +39,36 @@
               </n-list-item>
             </n-list>
           </n-tab-pane>
+          <n-tab-pane name="bone" tab="骨骼">
+            <div style="overflow:auto;height:700px;">
+              <!-- 骨架树 -->
+                <n-tree
+                  ref="boneTreeRef"
+                  block-line
+                  :data="boneTreeData"
+                  key-field="uuid"
+                  label-field="name"
+                  :children-field="'children'"
+                  selectable
+                  :node-props="boneNodeProps"
+                  :selected-keys="selectedBoneKeys"
+                  :expanded-keys="expandedBoneKeys"          
+                  @update:expanded-keys="(keys) => (expandedBoneKeys = keys)" 
+                  :expand-on-click="false"                  
+                />
+              <n-divider />
+            </div>
+          </n-tab-pane>             
         </n-tabs>
       </n-gi>
       <n-gi span="7">
         <div ref="containerRef" style="width: 100%;height: 700px;" @click="modelTap"></div>
       </n-gi>
-      <n-gi span="2">
+      <n-gi span="4">
         点位
+
         <n-form ref="mappingFormRef" :model="currentModelNodeMapping" :rules="mappingRules">
+        <div class="mapping-box">
           <n-form-item path="nodeCode" label="点位">
             <n-input
               v-model:value="currentModelNodeMapping.nodeCode"
@@ -78,6 +100,18 @@
           <n-form-item path="loop" label="循环">
             <n-switch v-model:value="currentModelNodeMapping.loop" />
           </n-form-item>
+
+
+
+                        <n-data-table
+                    :data="currentModelNodeMapping.boneData"
+                    :columns="columns"
+                    :max-height="400"
+                    :scroll-x="0"
+                    size="small"
+                  />
+          </div>
+
           <n-form-item>
             <n-space>
               <n-button type="success" @click="saveCurrentModelNodeMapping()">
@@ -89,13 +123,14 @@
             </n-space>
           </n-form-item>
         </n-form>
+        
       </n-gi>
     </n-grid>
   </n-spin>
   <IcList :visible="icListVisibile" />
 </template>
 <script lang='ts'>
-import { computed, defineComponent, onMounted, provide, ref, toRef } from 'vue'
+import { computed, defineComponent, onMounted, provide, ref, toRef,nextTick } from 'vue'
 import { IconPlay } from '@/icons'
 import { getFile, getModel } from '@/api/threed'
 import * as THREE from 'three'
@@ -110,12 +145,20 @@ import { cloneDeep } from 'lodash-es'
 import { useMessage } from 'naive-ui'
 import { IcModule } from '@/store/modules/icstate'
 import { NodeDataType, convertNodeTypeToDataType, getOperatorListByDataType } from '@/utils/threed-node'
+import { h } from 'vue'
+import { NSelect, NSwitch } from 'naive-ui'
+import {CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 
 interface animationListItem {
   clip: THREE.AnimationClip
   selected: boolean
 }
 
+interface BoneRow {
+  name: string
+  rotate: 'x' | 'y' | 'z'   // 新增
+  enable: boolean            // 新增
+}
 export default defineComponent({
   name: 'ModelNodeMapper',
   components: {
@@ -160,18 +203,158 @@ export default defineComponent({
     const icListVisibile = ref(false)
 
     const getEmptyModelNodeMapping = (clipName: string | null) => {
-      return { deviceCode: null, nodeCode: null, modelKey: clipName, nodeType: null, operator1: null, value1: null, operator2: null, value2: null, pt: null, loop: false }
+      return { deviceCode: null, nodeCode: null, modelKey: clipName, nodeType: null, operator1: null, value1: null, operator2: null, value2: null, pt: null, loop: false,boneData: [], }
     }
 
     const currentModelNodeMapping = ref<modelNodeMapping>(getEmptyModelNodeMapping(null))
 
     const nMessage = useMessage()
 
+    const boneData = ref<{ name: string }[]>([])
+    // 列配置
+ const columns = [
+  { title: '骨骼名称', key: 'name' },
+  {
+    title: '旋转轴',
+    key: 'rotate',
+    render(row: BoneRow, index: number) {
+      return h(NSelect, {
+        value: row.rotate,
+        options: [
+          { label: 'X', value: 'x' },
+          { label: 'Y', value: 'y' },
+          { label: 'Z', value: 'z' }
+        ],
+        onUpdateValue(v: 'x' | 'y' | 'z') {
+          currentModelNodeMapping.value.boneData[index].rotate = v
+        }
+      })
+    }
+  },
+  {
+    title: '是否启用',
+    key: 'enable',
+    render(row: BoneRow, index: number) {
+      return h(NSwitch, {
+        value: row.enable,
+        onUpdateValue(v: boolean) {
+          currentModelNodeMapping.value.boneData[index].enable = v
+        }
+      })
+    }
+  }
+]
+    const boneMap: Record<string, THREE.Bone> = {}   // 骨骼名字 -> Bone 对象
 
+        /* 1. 新增响应式变量 */
+    const boneTreeRef        = ref(null)
+    const boneTreeData       = ref<TreeOption[]>([])
+    const selectedBoneKeys   = ref<string[]>([])
+    const expandedBoneKeys   = ref<string[]>([])
+    let skeletonHelper     : THREE.SkeletonHelper | null = null
+
+    /** 递归收集 uuid */
+function getAllUuids(nodes: TreeOption[]): string[] {
+  const keys: string[] = []
+    const walk = (list: any[]) => {
+    list.forEach(n => {
+      keys.push(n.uuid)          // n 现在是 TreeOption，uuid 是 string ✅
+      if (n.children?.length) walk(n.children)
+    })
+  }
+  walk(nodes)
+  return keys
+}
+
+let renderStarted = false
     const read3dModel = (threeModel: THREE.Object3D, animations: THREE.AnimationClip[]) => {
 
-      addModelToScene(threeModel)
+// 先把模型加到 scene（不在 addModelToScene 里直接触发 render()）
+addModelToScene(threeModel)
+
+// 把 renderer.domElement 插入容器（如果尚未插入）
+if (containerRef.value && containerRef.value.children.length === 0) {
+  containerRef.value.appendChild(renderer.domElement)
+  // 确保 labelRenderer 在渲染循环前被创建
+  // initLabelRenderer()
+}
+
+// 然后再启动渲染循环（renderStarted 控制只启动一次）
+if (!renderStarted) {
+  renderStarted = true
+  render()
+}
       treeData.value = [threeModel]
+              // ========= 新增：缓存骨骼 =========
+        const currentModel = threeModel
+
+
+
+        currentModel.traverse(obj => {
+          if ((obj as any).isBone) {
+            const bone = obj as THREE.Bone
+            boneMap[bone.name] = bone
+          }
+        })
+        // boneData.value = Object.keys(boneMap).map(name => ({ name }))
+        // currentModelNodeMapping.value.boneData = boneData.value
+        
+        boneData.value = Object.keys(boneMap).map(name => ({
+          name,
+          rotate: 'x',
+          enable: false
+        }))
+        currentModelNodeMapping.value.boneData = cloneDeep(boneData.value)
+
+        // ===================================
+
+          /* ---- 骨架缓存 ---- */
+          // const boneMap:Record<string,THREE.Bone> = {}
+          const boneArr:THREE.Bone[] = []
+          threeModel.traverse((obj:any) => {
+            if (obj.isBone) {
+              boneMap[obj.name] = obj
+              boneArr.push(obj)
+              // console.log('bone name =', obj.name, 'parent =', obj.parent?.name ?? 'null')
+            }
+
+              if (obj.isBone) {
+                  const div = document.createElement('div')
+                  div.className = 'boneLabel'
+                  div.style.color = '#00ff00'
+                  div.style.fontSize = '24px'
+                  div.textContent = obj.name
+                  const label = new CSS2DObject(div)
+                  // 把标签放在骨头原点（也可换成 worldPosition）
+                  label.position.set(0, 0, 0)
+                  obj.add(label)
+              }
+          })
+          console.log('一共找到', boneArr.length, '根骨头')
+          /* ---- 画骨架 ---- */
+          // skeletonHelper = new THREE.SkeletonHelper(threeModel);
+          // // skeletonHelper.material.linewidth = 3
+          // (skeletonHelper.material as THREE.LineBasicMaterial).linewidth = 30
+          // scene.add(skeletonHelper)
+
+          
+          /* ---- 生成树结构 ---- */
+          const tree = buildBoneTree(boneArr)
+          console.log('即将赋值 boneTreeData', JSON.parse(JSON.stringify(tree)))
+          boneTreeData.value = null          // 先强制清空
+          nextTick(() => {
+            boneTreeData.value = tree        // 再一次性给新引用
+          })
+          // boneTreeData.value = tree        // 整个换掉，保证响应式
+          /* ---- 初始化右侧表格数据 ---- */
+          boneData.value = boneArr.map(b => ({
+            name   : b.name,
+            rotate : 'x' as const,
+            enable : false
+          }))
+          currentModelNodeMapping.value.boneData = cloneDeep(boneData.value)
+
+
       scene.animations = animations
       animationList.value = animations.map(clip => {
         return {
@@ -191,7 +374,102 @@ export default defineComponent({
       if (containerRef.value && containerRef.value.children.length === 0) {
         containerRef.value.appendChild(renderer.domElement) //body元素中插入canvas对象
       }
+
+        /* 3. 最后启动/继续渲染循环 */
+        if (!renderStarted) {          // 加一个标志位，只启动一次
+          renderStarted = true
+          render()
+        }
     }
+
+
+/* 3. 把扁平 bone 数组变成树 */
+function buildBoneTree(bones: THREE.Bone[]): TreeOption[] {
+  const map = new Map<string, TreeOption>()
+  const root: TreeOption[] = []
+
+  // 1. 先生成所有节点，children 留空数组
+  bones.forEach(b =>
+    map.set(b.uuid, { uuid: b.uuid, name: b.name, children: [] })
+  )
+
+  // 2. 挂父子：用“展开运算符”生成新 children 引用
+  bones.forEach(b => {
+    const node = map.get(b.uuid)!
+    const parentBone = b.parent && (b.parent as any).isBone ? b.parent as THREE.Bone : null
+
+    if (parentBone && map.has(parentBone.uuid)) {
+      const pNode = map.get(parentBone.uuid)!
+      pNode.children = [...pNode.children, node] // 新引用
+    } else {
+      root.push(node)
+    }
+  })
+
+  // 3. 再深拷贝一次，确保整棵树都是新对象
+  return JSON.parse(JSON.stringify(root))
+}
+
+/* 4. 树节点点击事件 */
+const boneNodeProps = ({ option }:{option:TreeOption}) => ({
+  onClick() {
+    // selectedBoneKeys.value = [option.uuid]
+    selectedBoneKeys.value = [option.uuid as string]
+    console.log('bone node clicked', option.name)
+    /* 高亮 helper 对应骨头 */
+    const bone = boneMap[option.name as string]
+    if (bone && skeletonHelper) {
+      /* SkeletonHelper 的 bone 顺序同 SkinnedMesh */
+      const idx = (skeletonHelper.bones as THREE.Bone[]).findIndex(b => b.uuid === bone.uuid)
+      if (idx !== -1) {
+        /* 把 helper 颜色改成黄色，其余恢复青色 */
+        const colors = (skeletonHelper.geometry.attributes.color as THREE.BufferAttribute)
+        const arr = colors.array as Uint8Array
+        const step = 6  // 每根骨头 2 个点，每个点 RGB 占 3 字节
+        for (let i = 0; i < arr.length; i += 3) {
+          arr[i]   = 0   // R
+          arr[i+1] = 255 // G
+          arr[i+2] = 255 // B
+        }
+        /* 把当前骨染成黄 */
+        for (let i = idx * step; i < (idx + 1) * step; i += 3) {
+          arr[i]   = 255
+          arr[i+1] = 255
+          arr[i+2] = 0
+        }
+        colors.needsUpdate = true
+      }
+    }
+  }
+})
+
+/* 5. 把树里选中的 bone 追加到右侧表格（去重） */
+const addSelectedBonesToTable = () => {
+  const exist = new Set(currentModelNodeMapping.value.boneData.map(r => r.name))
+  selectedBoneKeys.value.forEach(uuid => {
+    const name = boneTreeData.value.find(n => n.uuid === uuid)?.name
+    if (name && !exist.has(name)) {
+      currentModelNodeMapping.value.boneData.push({
+        name,
+        rotate: 'x',
+        enable: true
+      })
+    }
+  })
+}
+
+/* 6. 清空选择 */
+const clearBoneSelection = () => {
+  selectedBoneKeys.value = []
+  if (skeletonHelper) {
+    /* 恢复青色 */
+    const arr = (skeletonHelper.geometry.attributes.color.array as Uint8Array)
+    for (let i = 0; i < arr.length; i += 3) {
+      arr[i] = 0; arr[i+1] = 255; arr[i+2] = 255
+    }
+    (skeletonHelper.geometry.attributes.color as THREE.BufferAttribute).needsUpdate = true
+  }
+}
 
 
 
@@ -334,22 +612,42 @@ export default defineComponent({
       }
     }
 
-    //渲染场景
-    const render = () => {
-      const time = animationClock.getDelta()
-      if (mixer) {
-        mixer.update(time)
-      }
+    let labelRenderer: CSS2DRenderer
 
-      // 定义threejs输出画布的尺寸(单位:像素px)
-      renderer.setSize(600, 600) //设置three.js渲染区域的尺寸(像素px)
-      renderer.render(scene, currentCamera) //执行渲染操作
-      renderer.setRenderTarget(null)
-      requestAnimationFrame(render)
-    }
+    //渲染场景
+// 渲染场景
+const render = () => {
+  const time = animationClock.getDelta()
+  if (mixer) {
+    mixer.update(time)
+  }
+
+  // 保证 renderer 与 camera 已经初始化
+  if (!renderer || !currentCamera) {
+    requestAnimationFrame(render)
+    return
+  }
+
+  // 使用容器真实尺寸（退回到 600x600 作为兜底）
+  const w = containerRef.value?.clientWidth ?? 600
+  const h = containerRef.value?.clientHeight ?? 600
+  renderer.setSize(w, h)
+  renderer.render(scene, currentCamera)
+  renderer.setRenderTarget(null)
+
+  // 只有在 labelRenderer 已初始化时才渲染它
+  if (labelRenderer) {
+    labelRenderer.setSize(w, h)
+    labelRenderer.render(scene, currentCamera)
+  }
+
+  requestAnimationFrame(render)
+}
+
 
     initScene()
     initRenderer()
+    // initLabelRenderer()
     initCamera()
     initCameraLight()
     initCameraControl()
@@ -358,11 +656,12 @@ export default defineComponent({
       group = new THREE.Group()
       scene.add(group)
       group.add(threedModel)
-      render()
+      // render()
     }
 
     onMounted(() => {
-      render()
+      // initLabelRenderer()
+      // render()
     })
 
     const nodeProps = ({ option }: { option: TreeOption; }) => {
@@ -459,12 +758,18 @@ export default defineComponent({
       })
       item.selected = true
 
+      // console.log('selectAnimation item', item)
       let modelNodeMapping = props.modelValue.modelNodeMappings.find(r => r.modelKey == item.clip.name)
       if (modelNodeMapping) {
+        // console.log('boneData.value', boneData.value)
+        // currentModelNodeMapping.value.boneData = boneData.value
         currentModelNodeMapping.value = cloneDeep(modelNodeMapping)
+        console.log('selectAnimation modelNodeMapping 1111', modelNodeMapping)
       }
       else {
         currentModelNodeMapping.value = getEmptyModelNodeMapping(item.clip.name)
+        currentModelNodeMapping.value.boneData = boneData.value
+        console.log('selectAnimation modelNodeMapping 2222', modelNodeMapping)
       }
       mappingFormRef.value.restoreValidation()
     }
@@ -474,7 +779,9 @@ export default defineComponent({
     }
     provide('closeIcList', () => { icListVisibile.value = false })
 
+    //选好点位的时候会进来
     provide('addPt', (item: PtModel) => {
+      console.log('addPt', item)
       currentModelNodeMapping.value.deviceCode = item.extension.device
       currentModelNodeMapping.value.nodeCode = item.extension.name
       currentModelNodeMapping.value.nodeType = item.nodeType
@@ -510,6 +817,7 @@ export default defineComponent({
       //console.log('icHandles', props.icHandles['nodeValueChange'].fields)
 
       let icHandles = props.icCom.ichandles as Record<string, IcHandleItemConfig>
+      console.log('icHandles', icHandles)
       let nodeValueChange = icHandles['nodeValueChange']
       //console.log('icHandles', icHandles['nodeValueChange'])
       //console.log('icHandles', toRef(props.icCom,'ichandles'))
@@ -518,7 +826,7 @@ export default defineComponent({
         nMessage.error('请选择动画节点')
         return
       }
-
+      console.log('currentModelNodeMapping', currentModelNodeMapping.value)
       let modelNodeMappingIndex = props.modelValue.modelNodeMappings.findIndex(r => r.modelKey == currentModelNodeMapping.value.modelKey)
 
       if (modelNodeMappingIndex < 0) {
@@ -564,6 +872,8 @@ export default defineComponent({
     return {
       modelLoading,
       treeData,
+      boneData,
+      columns,
       icListVisibile,
       containerRef,
       modelTap,
@@ -588,6 +898,15 @@ export default defineComponent({
       getOperatorList,
       resetCurrentModelNodeMapping,
       saveCurrentModelNodeMapping,
+
+      /* 新增的骨骼相关 */
+  boneTreeData,
+  boneTreeRef,
+  boneNodeProps,
+  selectedBoneKeys,
+  expandedBoneKeys,
+  addSelectedBonesToTable,
+  clearBoneSelection,
     }
   },
 })
@@ -595,5 +914,15 @@ export default defineComponent({
 <style scoped>
 .animationItem:hover {
   background-color: #f0f0f0;
+}
+.mapping-box{
+  overflow: auto;
+  height: 550px;
+}
+
+.boneLabel {
+  font-family: Arial, sans-serif;
+  white-space: nowrap;
+  transform: translate(-50%, -100%); /* 居中+上浮 */
 }
 </style>

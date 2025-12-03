@@ -101,6 +101,7 @@ export interface modelNodeMapping {
   value2: string | null;
   pt: PtModel | null;
   loop: boolean | null;
+  boneData: any[];
 }
 
 export class LightConfig {

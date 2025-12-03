@@ -18,6 +18,7 @@ import {
   CSSProperties,
   ref,
   onMounted,
+  onUnmounted,
   watch,
   getCurrentInstance,
 } from 'vue'
@@ -125,18 +126,93 @@ export default defineComponent({
 
     const mapPointList = ref<mapPoint[]>([])
 
+    function parseNumberPair(
+      input: string | number | null | undefined
+    ): { code: number; angle: number;bonename:string } {
+      if (input == null) return { code: 0, angle: 20,bonename:'' }
+
+      const arr = String(input).split(',').slice(0, 3) // 只拿前两项
+      const n1 = Number(arr[0])
+      const n2 = Number(arr[1])
+      const n3 = arr[2]
+
+      return {
+        code: Number.isFinite(n1) ? n1 : 0,
+        angle: Number.isFinite(n2) ? n2 : 20,
+        bonename: n3
+      }
+    }
+
+    function findEnabledBone(boneName: string): Record<string, any> | null {
+        const models = props.com?.config?.models || [];
+        console.log('models', models)
+        for (const model of models) {
+          //TODO:id: "cd596f41-47b8-4cda-9852-65d715180307"这里的model还不知道是哪个，先默认只有一个
+          for (const mapping of model.modelNodeMappings || []) {
+            for (const bone of mapping.boneData || []) {
+              if (bone.name === boneName && bone.enable === true) {
+                return bone;
+              }
+            }
+          }
+        }
+
+        return null;
+    }
+
+    const boneMap: Record<string, THREE.Bone> = {}   // 骨骼名字 -> Bone 对象
+    let CurrentDeg = 0  
+    let DELTA_PER_CALL = -20        // 每次再转 2°
+    const ROT_DURATION   = 500      // 毫秒，越小越快
     //nodeValueChange
     mitter.on(props.com.id, (field: IcHandleItemField) => {
+      // console.log('field', field)//这个是外面操作时传来的值
+      // console.log('field.targetMethodName', field.targetMethodName)
       switch (field.targetMethodName) {
         case 'nodeValueChange':
-          console.log('onNodeValueChange', field.value, field)
+          // console.log('onNodeValueChange', field.value, field)
 
           const device = field.icDevice
           const node = field.icName
 
+          const { code, angle,bonename } = parseNumberPair(field.value)
+            /* ===== 新增：用 value 区分指令类型 ===== */
+            if (code == 3800) {
+              let findedbone = findEnabledBone(bonename)
+              console.log('[arm] 启动3800',findedbone)
+              if (!findedbone) {
+                console.warn('[arm] '+bonename+' 不存在或者没有配置')
+                return
+              }
+              const bone = boneMap[findedbone.name]
+
+              DELTA_PER_CALL = angle
+
+              
+              const newDeg = CurrentDeg + DELTA_PER_CALL
+              const axis = findedbone.rotate         // "x"|"y"|"z"
+              const startRad = bone.rotation[axis]       // 当前弧度
+              const endRad   = THREE.MathUtils.degToRad(newDeg)
+
+              // 创建平滑 tween
+              new TWEEN.Tween({ rad: startRad })
+                .to({ rad: endRad }, ROT_DURATION)
+                .onUpdate(obj => {
+                  // bone.rotation.x = obj.rad
+                  bone.rotation[axis] = obj.rad
+                  render()          // 每一帧都画一次
+                })
+                .start()
+
+              // 记下来，下次继续累加
+              CurrentDeg = newDeg
+              return
+            }
+
+            /* ====================================== */
+
           const stopList: THREE.AnimationAction[] = []
           const playList: THREE.AnimationAction[] = []
-
           props.com.config.models.forEach(r =>
             r.modelNodeMappings
               .filter(m => m.deviceCode == device && m.nodeCode == node)
@@ -156,7 +232,9 @@ export default defineComponent({
           )
 
           stopList.forEach(r => r.reset().fadeOut(0.2).stop())
+          // console.log('playList.forEach start')
           playList.forEach(r => r.reset().fadeIn(0.2).play())
+          // console.log('playList.forEach end')
           break
         case 'navigatorStart':
           cameraNavigatorStart()
@@ -216,7 +294,6 @@ export default defineComponent({
     //判断是否播放动画
     const judgePlayAnimation = (nodeMapping: modelNodeMapping, value: any) => {
       let result = false
-
       let dataType = convertNodeTypeToDataType(nodeMapping.nodeType)
 
       result = computeDataType(dataType, nodeMapping.operator1, nodeMapping.value1, value)
@@ -271,6 +348,16 @@ export default defineComponent({
         loadAnimations(currentModel, threedModel.animations)
 
         addMaterial(model)
+        // console.log('currentModel',currentModel)
+        // ========= 新增：缓存骨骼 =========
+        currentModel.traverse(obj => {
+          if ((obj as any).isBone) {
+            const bone = obj as THREE.Bone
+            boneMap[bone.name] = bone
+            // console.log('[arm] cached bone ->', bone.name)
+          }
+        })
+        // ===================================
       }
 
       render()
@@ -405,7 +492,7 @@ export default defineComponent({
         }
       }
 
-      scene.add(objControl)
+      // scene.add(objControl)
     }
 
     const addLight = (config: LightConfig) => {
@@ -652,16 +739,35 @@ export default defineComponent({
       render()
     }, 200)
 
+    // onMounted(() => {
+    //   reloadModel()
+    //   if (containerRef.value) {
+    //     containerRef.value.appendChild(renderer.domElement) //body元素中插入canvas对象
+    //   }
+    //   if (config.value.autoPlay && !EditorModule.editMode) {
+    //     cameraNavigatorStart()
+    //   }
+    //   initMapPoint()
+    // })
+
     onMounted(() => {
       reloadModel()
       if (containerRef.value) {
-        containerRef.value.appendChild(renderer.domElement) //body元素中插入canvas对象
+        containerRef.value.appendChild(renderer.domElement)
       }
+      // 启动持续动画循环
+      animate()
+
       if (config.value.autoPlay && !EditorModule.editMode) {
         cameraNavigatorStart()
       }
       initMapPoint()
     })
+
+    onUnmounted(() => {
+  cancelAnimationFrame(rafId)
+})
+
 
     const rotateCurrentModel = (group: THREE.Group, modelConfig: ThreedModelConfig) => {
       group.rotation.set(
@@ -971,10 +1077,19 @@ export default defineComponent({
       // })
     })
 
+    let rafId = 0
+    // const animate = () => {
+    //   requestAnimationFrame(animate)
+    //   TWEEN.update()
+    //   renderer.render(scene, currentCamera) //执行渲染操作
+    // }
+
     const animate = () => {
-      requestAnimationFrame(animate)
-      TWEEN.update()
-      renderer.render(scene, currentCamera) //执行渲染操作
+      const delta = animationClock.getDelta()   // 取间隔时间
+      mixers.forEach(mixer => mixer.update(delta)) // 推进全部 mixer
+      TWEEN.update()   // 关键：驱动所有 tween
+      renderer.render(scene, currentCamera)     // 真正画一帧
+      rafId = requestAnimationFrame(animate)    // 下一帧继续
     }
 
     const extendPoint = (A: THREE.Vector3, B: THREE.Vector3, distance: number): THREE.Vector3 => {
