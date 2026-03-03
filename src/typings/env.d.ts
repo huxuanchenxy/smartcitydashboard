@@ -18,4 +18,5 @@ interface ImportMetaEnv {
   VITE_App_AGENT_TOKEN: string;
   VITE_APP_APIMANAGE_GETTOKEN: string;
   VITE_APP_API_Host: string;
+  VITE_APP_API_Port: string;
 }

@@ -42,3 +42,26 @@ export function getIcApiUrl(urlPart:string)
 
   return `${fullUrl}/${urlPart}`
 }
+
+
+export function getApiUrl2(urlPart:string)
+{
+  let fullUrl = ''
+
+  if(import.meta.env.VITE_APP_API_Host)
+  {
+    fullUrl = `${import.meta.env.VITE_APP_API_Host}`
+  }
+  else
+  {
+    fullUrl = `${window.location.protocol}//${window.location.hostname}`
+  }
+
+
+  if(!import.meta.env.VITE_APP_API_Host && import.meta.env.VITE_APP_API_Port)
+  {
+    fullUrl += `:${import.meta.env.VITE_APP_API_Port}`
+  }
+
+  return `${fullUrl}/${urlPart}`
+}

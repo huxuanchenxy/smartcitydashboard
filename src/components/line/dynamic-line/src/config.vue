@@ -1421,6 +1421,7 @@ import IcList from '@/views/screen-editor/config-panel/icevent-panel/ic-list.vue
 import { IcHandleItemConfig, IcHandleItemField, PtModel } from '@/components/data-handle'
 import { ApiConfigMap, ApiDataConfigMap, ApiRequestMethod, ApiType, PostBodyType } from '@/components/data-source'
 import * as postBodyJsTemplate from '@/../public/templates/postBodyJsTemplate.json'
+import { getApiUrl2 } from '@/utils/apiUrl'
 
 export default defineComponent({
   name: 'VDynamicLineProp',
@@ -1469,7 +1470,9 @@ export default defineComponent({
           apisConfig.isAppendDataList = true
 
           apiDataConfig.config.apiMethod = ApiRequestMethod.POST
-          apiDataConfig.config.api = `${ import.meta.env.VITE_APP_API_Host }/device/deviceManagement/chart`
+          let url = getApiUrl2('device/deviceManagement/chart')
+          // apiDataConfig.config.api = `${ import.meta.env.VITE_APP_API_Host }/device/deviceManagement/chart`
+          apiDataConfig.config.api = url
           apiDataConfig.config.postBodyType = PostBodyType.function
           apiDataConfig.config.postBodyfunc = (postBodyJsTemplate.default as any).multi
 
