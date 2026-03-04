@@ -65,3 +65,26 @@ export function getApiUrl2(urlPart:string)
 
   return `${fullUrl}/${urlPart}`
 }
+
+
+export function getWsUrl(urlPart:string)
+{
+  let fullUrl = ''
+
+  if(import.meta.env.VITE_APP_WS_HOST)
+  {
+    fullUrl = `ws://${import.meta.env.VITE_APP_WS_HOST}`
+  }
+  else
+  {
+    fullUrl = `ws://${window.location.hostname}`
+  }
+
+
+  if(import.meta.env.VITE_APP_WS_PORT)
+  {
+    fullUrl += `:${import.meta.env.VITE_APP_WS_PORT}`
+  }
+  console.log(`fullwsUrl:${fullUrl}/${urlPart}`)
+  return `${fullUrl}/${urlPart}`
+}

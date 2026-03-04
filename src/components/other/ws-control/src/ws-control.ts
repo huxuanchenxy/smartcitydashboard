@@ -8,10 +8,11 @@ import {
 import { createField } from "@/components/data-field";
 import { DataEventConfig } from "@/components/data-event";
 import { getStaticData } from "@/api/data";
-
+import { getWsUrl } from "@/utils/apiUrl";
 export class WsControl extends DatavComponent {
   config = {
-    ws: "ws://" + import.meta.env.VITE_APP_WS_HOST + ":"+ import.meta.env.VITE_APP_WS_PORT + "/websocket",
+    // ws: "ws://" + import.meta.env.VITE_APP_WS_HOST + ":"+ import.meta.env.VITE_APP_WS_PORT + "/websocket",
+    ws: getWsUrl('websocket'),
     retryCounts: 3, //重试次数
     retryTimeSpan: 5000, //重试间隔
     mode: "dev",
