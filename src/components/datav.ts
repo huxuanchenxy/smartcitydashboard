@@ -104,6 +104,7 @@ export async function createComponent(name: string) {
     case "MainTitle":
     case "Marquee":
     case "NumberTitleFlop":
+    case "RangeNumberFlop":
     case "Paragraph":
     case "Timer":
     case "QuickText":

@@ -109,9 +109,11 @@ import VThreedViewer from './media/threed-viewer'
 import VCustomerComp from './customer/customer-comp'
 import VExcel from './office/excel'
 import VBasicForm from './form/basic-form'
+import VRangeNumberFlop from './text/range-number-flop'
 const components = [
   VCustomerComp,
   VExcel,
+  VRangeNumberFlop,
   VMainTitle,
   VNumberTitleFlop,
   VDatePicker,

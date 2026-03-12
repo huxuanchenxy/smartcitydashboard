@@ -449,6 +449,14 @@ export const title = {
       visible: true
     },
     {
+      name: "VRangeNumberFlop",
+      alias: "范围数字翻牌器",
+      img: `${imagePath}数字翻牌器.png`,
+      thum: `${thumPath}数字翻牌器.png`,
+      used: true,
+      visible: true
+    },
+    {
       name: "VParagraph",
       alias: "多行文本",
       img: `${imagePath}多行文本.png`,
