@@ -88,6 +88,12 @@
       <g-field :level="2" label="最大灰度值">
         <g-input-number v-model="config.file.maxValue" :min="1" :max="255" :step="1" />
       </g-field>
+      <g-field :level="2" label="文件操作">
+        <g-input v-model="config.file.url" placeholder="输入PGM文件URL" />
+        <button @click="handleFileUpload">加载</button>
+        <button @click="handleSaveFile">保存</button>
+        <button @click="handleClearCanvas">清空</button>
+      </g-field>
     </g-field-collapse>
     
     <!-- 鼠标指针 -->
@@ -104,6 +110,7 @@ import {
   cursorFamily
 } from '@/data/select-options'
 import { PgmEditor } from './pgm-editor'
+import { emitter } from '@/mitter'
 
 export default defineComponent({
   name: 'VPgmEditorProp',
@@ -113,8 +120,23 @@ export default defineComponent({
       required: true,
     },
   },
+
   setup(props) {
     const config = toRef(props.com, 'config')
+    
+    const handleFileUpload = () => {
+      if (config.value.file.url) {
+        emitter.emit('pgm-file-upload', config.value.file.url)
+      }
+    }
+    
+    const handleSaveFile = () => {
+      emitter.emit('pgm-save-file')
+    }
+    
+    const handleClearCanvas = () => {
+      emitter.emit('pgm-clear-canvas')
+    }
     
     const toolOptions = computed(() => [
       { id: 'brush', value: '画笔' },
@@ -138,7 +160,10 @@ export default defineComponent({
       cursorFamily,
       toolOptions,
       shapeOptions,
-      formatOptions
+      formatOptions,
+      handleFileUpload,
+      handleSaveFile,
+      handleClearCanvas
     }
   },
 })

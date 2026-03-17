@@ -1,7 +1,7 @@
 <template>
   <div class="datav-wrapper" :style="wrapperStyle">
     <!-- 工具栏 -->
-    <div class="toolbar">
+    <!-- <div class="toolbar">
       <div class="tool-group">
         <h3>编辑工具</h3>
         <button 
@@ -44,20 +44,13 @@
         </label>
       </div>
       
-      <div class="tool-group">
-        <h3>文件操作</h3>
-        <input type="file" accept=".pgm" @change="handleFileUpload" />
-        <button @click="saveFile">保存</button>
-        <button @click="clearCanvas">清空</button>
-      </div>
-      
       <div class="tool-group" v-if="config.ros.enabled">
         <h3>ROS2控制</h3>
         <button @click="connectRos">连接</button>
         <button @click="disconnectRos">断开</button>
         <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
       </div>
-    </div>
+    </div> -->
     
     <!-- 画布容器 -->
     <div class="canvas-container" ref="canvasContainer">
@@ -106,6 +99,7 @@ import { PgmEditor } from './pgm-editor'
 import { useEventCenter } from '@/mixins/event-center'
 import { parsePgmFile, encodePgmImage, createPgmFromCanvas, drawPgmToCanvas, PgmImage } from './pgm-parser'
 import { CanvasEditor } from './canvas-editor'
+import { emitter } from '@/mitter'
 
 export default defineComponent({
   name: 'VPgmEditor',
@@ -163,7 +157,17 @@ export default defineComponent({
         
         // 加载默认数据
         loadDefaultData()
+        
+        // 页面加载时自动加载PGM文件
+        if (config.value.file.url) {
+          handleFileUpload(config.value.file.url)
+        }
       }
+      
+      // 监听配置面板的文件操作事件
+      emitter.on('pgm-file-upload', handleFileUpload)
+      emitter.on('pgm-save-file', saveFile)
+      emitter.on('pgm-clear-canvas', clearCanvas)
     })
     
     // 加载默认数据
@@ -189,19 +193,18 @@ export default defineComponent({
     }
     
     // 处理文件上传
-    const handleFileUpload = async (e: Event) => {
-      const target = e.target as HTMLInputElement
-      if (target.files && target.files[0]) {
-        try {
-          const image = await parsePgmFile(target.files[0])
-          pgmImage.value = image
-          drawPgmToCanvas(image, canvas.value!)
-          
-          // 更新数据
-          updateComponentData(image)
-        } catch (error) {
-          console.error('Failed to parse PGM file:', error)
-        }
+    const handleFileUpload = async (url: string) => {
+      try {
+        const response = await fetch(url)
+        const blob = await response.blob()
+        const image = await parsePgmFile(blob)
+        pgmImage.value = image
+        drawPgmToCanvas(image, canvas.value!)
+        
+        // 更新数据
+        updateComponentData(image)
+      } catch (error) {
+        console.error('Failed to load PGM file from URL:', error)
       }
     }
     
@@ -370,6 +373,9 @@ export default defineComponent({
     
     onUnmounted(() => {
       // 清理资源
+      emitter.off('pgm-file-upload', handleFileUpload)
+      emitter.off('pgm-save-file', saveFile)
+      emitter.off('pgm-clear-canvas', clearCanvas)
     })
 
     return {

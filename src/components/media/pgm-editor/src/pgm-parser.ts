@@ -13,7 +13,7 @@ export interface PgmImage {
 /**
  * 解析PGM文件
  */
-export async function parsePgmFile(file: File): Promise<PgmImage> {
+export async function parsePgmFile(file: File | Blob): Promise<PgmImage> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     

@@ -47,6 +47,7 @@ interface PgmEditorConfig {
   file: {
     format: string;
     maxValue: number;
+    url: string;
   };
   cursor: string;
 }
@@ -86,7 +87,8 @@ export class PgmEditor extends DatavComponent {
     },
     file: {
       format: "P5", // P2, P5
-      maxValue: 255
+      maxValue: 255,
+      url: "http://tc120874o.hn-bkt.clouddn.com/rtabmap_lidar.pgm?e=1773724811&token=2XwIfVigbQscYSI2d4_e0hDzyLR07dizAq9me8tb:DZFHyZriLmlEx1cgQRynm5m3Si8="
     },
     cursor: "default"
   };
