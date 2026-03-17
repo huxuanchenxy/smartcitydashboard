@@ -1,0 +1,25 @@
+{
+  "width": 800,
+  "height": 600,
+  "maxValue": 255,
+  "imageData": [],
+  "robotPose": {
+    "x": 100,
+    "y": 100,
+    "theta": 0
+  },
+  "goalPoints": [
+    {
+      "id": "goal_1",
+      "name": "Goal 1",
+      "x": 200,
+      "y": 200
+    },
+    {
+      "id": "goal_2",
+      "name": "Goal 2",
+      "x": 400,
+      "y": 300
+    }
+  ]
+}

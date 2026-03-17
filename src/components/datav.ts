@@ -150,6 +150,10 @@ export async function createComponent(name: string) {
       const comModule = await import(`./media/${path}/src/${path}.ts`);
       return new comModule.default();
     }
+    case "PgmEditor": {
+      const comModule = await import(`./media/${path}/src/${path}.ts`);
+      return new comModule.default();
+    }
 
     // other
     case "DatePicker": {

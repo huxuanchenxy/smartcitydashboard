@@ -105,15 +105,16 @@ import VDynamicSingleBar from './bar/dynamic-single-bar'
 import VDynamicLine from './line/dynamic-line'
 
 import VThreedViewer from './media/threed-viewer'
-
-import VCustomerComp from './customer/customer-comp'
-import VExcel from './office/excel'
 import VBasicForm from './form/basic-form'
+import VExcel from './office/excel'
+import VCustomerComp from './customer/customer-comp'
 import VRangeNumberFlop from './text/range-number-flop'
+import VPgmEditor from './media/pgm-editor'
 const components = [
   VCustomerComp,
   VExcel,
   VRangeNumberFlop,
+  VPgmEditor,
   VMainTitle,
   VNumberTitleFlop,
   VDatePicker,

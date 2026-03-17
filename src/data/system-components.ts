@@ -687,6 +687,14 @@ export const material = {
       thum: `${thumPath}threedViewer.png`,
       used: true,
       visible: true
+    },
+    {
+      name: "VPgmEditor",
+      alias: "PGM编辑器",
+      img: `${imagePath}threedViewer.png`,
+      thum: `${thumPath}threedViewer.png`,
+      used: true,
+      visible: true
     }
   ]
 };
