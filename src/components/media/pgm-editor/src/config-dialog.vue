@@ -197,7 +197,48 @@ export default defineComponent({
         const blob = await response.blob()
         const image = await parsePgmFile(blob)
         pgmImage.value = image
-        drawPgmToCanvas(image, canvas.value!)
+        
+        // 调整canvas尺寸以匹配容器大小
+        if (canvas.value && canvasContainer.value) {
+          const containerWidth = canvasContainer.value.clientWidth;
+          const containerHeight = canvasContainer.value.clientHeight;
+          
+          // 设置canvas的实际尺寸
+          canvas.value.width = containerWidth;
+          canvas.value.height = containerHeight;
+          
+          // 绘制图像并进行适当的缩放
+          const ctx = canvas.value.getContext('2d');
+          if (ctx) {
+            // 清空画布
+            ctx.clearRect(0, 0, containerWidth, containerHeight);
+            
+            // 计算缩放比例
+            const scaleX = containerWidth / image.width;
+            const scaleY = containerHeight / image.height;
+            const scale = Math.min(scaleX, scaleY);
+            
+            // 计算偏移量，使图像居中
+            const offsetX = (containerWidth - image.width * scale) / 2;
+            const offsetY = (containerHeight - image.height * scale) / 2;
+            
+            // 绘制缩放后的图像
+            const imageData = ctx.createImageData(image.width, image.height);
+            imageData.data.set(image.data);
+            
+            // 创建临时canvas来绘制原始图像
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = image.width;
+            tempCanvas.height = image.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            if (tempCtx) {
+              tempCtx.putImageData(imageData, 0, 0);
+              
+              // 将临时canvas中的图像缩放到主canvas
+              ctx.drawImage(tempCanvas, offsetX, offsetY, image.width * scale, image.height * scale);
+            }
+          }
+        }
       } catch (error) {
         console.error('Failed to load PGM file from URL:', error)
       }
@@ -470,14 +511,13 @@ export default defineComponent({
   overflow: auto;
   border: 1px solid #e8e8e8;
   background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .canvas-container canvas {
   background: #ffffff;
   border: 1px solid #d9d9d9;
+  width: 100%;
+  height: 100%;
 }
 
 /* 状态栏 */

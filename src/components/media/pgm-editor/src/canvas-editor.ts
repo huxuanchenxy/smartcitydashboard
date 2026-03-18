@@ -21,11 +21,13 @@ export class CanvasEditor {
   private history: ImageData[] = [];
   private historyIndex: number = -1;
   private zoomLevel: number = 100;
+  private originalBrushColor: number;
   
   constructor(options: CanvasEditorOptions) {
     this.canvas = options.canvas;
     this.options = options;
     this.zoomLevel = options.zoomLevel || 100;
+    this.originalBrushColor = options.brushColor;
     
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
@@ -38,6 +40,11 @@ export class CanvasEditor {
   
   public setZoomLevel(zoom: number) {
     this.zoomLevel = zoom;
+  }
+  
+  public setBrushColor(color: number) {
+    this.options.brushColor = color;
+    this.originalBrushColor = color;
   }
   
   private setupEventListeners() {
@@ -97,10 +104,6 @@ export class CanvasEditor {
     this.options.brushSize = size;
   }
   
-  public setBrushColor(color: number) {
-    this.options.brushColor = color;
-  }
-  
   public setBrushShape(shape: 'circle' | 'square') {
     this.options.brushShape = shape;
   }
@@ -110,14 +113,13 @@ export class CanvasEditor {
   }
   
   public enableEraser() {
+    this.originalBrushColor = this.options.brushColor;
     this.options.brushColor = 255; // 白色
     this.options.brushSize = this.options.eraserSize;
   }
   
   public enableBrush() {
-    // 这里应该恢复画笔的颜色，但当前实现没有保存原始颜色
-    // 为了简化，我们假设默认颜色是0（黑色）
-    this.options.brushColor = 0;
+    this.options.brushColor = this.originalBrushColor;
     this.options.brushSize = this.options.brushSize;
   }
   
