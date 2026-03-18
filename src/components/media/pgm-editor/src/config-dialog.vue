@@ -43,6 +43,11 @@
         <button @click="disconnectRos">断开</button>
         <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
       </div>
+      
+      <div class="tool-group">
+        <h3>文件操作</h3>
+        <button @click="saveFile">保存到本地</button>
+      </div>
     </div>
     
     <!-- 画布容器 -->
@@ -187,10 +192,12 @@ export default defineComponent({
     
     // 保存文件
     const saveFile = () => {
-      if (!canvas.value || !pgmImage.value) return
+      if (!canvas.value) return
       
       try {
-        const image = createPgmFromCanvas(canvas.value, pgmImage.value.maxValue)
+        // 如果没有加载PGM文件，使用默认的maxValue
+        const maxValue = pgmImage.value ? pgmImage.value.maxValue : 255
+        const image = createPgmFromCanvas(canvas.value, maxValue)
         const blob = encodePgmImage(image)
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
