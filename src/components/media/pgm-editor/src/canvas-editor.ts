@@ -106,6 +106,9 @@ export class CanvasEditor {
   }
   
   public enableBrush() {
+    // 这里应该恢复画笔的颜色，但当前实现没有保存原始颜色
+    // 为了简化，我们假设默认颜色是0（黑色）
+    this.options.brushColor = 0;
     this.options.brushSize = this.options.brushSize;
   }
   

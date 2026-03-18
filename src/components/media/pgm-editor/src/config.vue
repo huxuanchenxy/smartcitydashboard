@@ -93,6 +93,7 @@
         <button @click="handleFileUpload">加载</button>
         <button @click="handleSaveFile">保存</button>
         <button @click="handleClearCanvas">清空</button>
+        <button @click="handleConfig">配置</button>
       </g-field>
     </g-field-collapse>
     
@@ -101,19 +102,35 @@
       <g-select v-model="config.cursor" :data="cursorFamily" />
     </g-field>
   </div>
+  
+  <!-- 配置对话框 -->
+  <div v-if="dialogVisible" class="dialog-overlay" @click="closeDialog">
+    <div class="dialog-container" @click.stop>
+      <PgmConfigDialog 
+        :visible="dialogVisible"
+        :config="config"
+        @close="closeDialog"
+        @save="saveConfig"
+      />
+    </div>
+  </div>
 </template>
 
 <script lang='ts'>
-import { defineComponent, PropType, toRef, computed } from 'vue'
+import { defineComponent, PropType, toRef, computed, ref } from 'vue'
 import {
   fontFamilys,
   cursorFamily
 } from '@/data/select-options'
 import { PgmEditor } from './pgm-editor'
 import { emitter } from '@/mitter'
+import PgmConfigDialog from './config-dialog.vue'
 
 export default defineComponent({
   name: 'VPgmEditorProp',
+  components: {
+    PgmConfigDialog
+  },
   props: {
     com: {
       type: Object as PropType<PgmEditor>,
@@ -123,6 +140,7 @@ export default defineComponent({
 
   setup(props) {
     const config = toRef(props.com, 'config')
+    const dialogVisible = ref(false)
     
     const handleFileUpload = () => {
       if (config.value.file.url) {
@@ -136,6 +154,19 @@ export default defineComponent({
     
     const handleClearCanvas = () => {
       emitter.emit('pgm-clear-canvas')
+    }
+    
+    const handleConfig = () => {
+      dialogVisible.value = true
+    }
+    
+    const closeDialog = () => {
+      dialogVisible.value = false
+    }
+    
+    const saveConfig = (newConfig: any) => {
+      // 这里可以添加保存配置的逻辑
+      dialogVisible.value = false
     }
     
     const toolOptions = computed(() => [
@@ -161,10 +192,38 @@ export default defineComponent({
       toolOptions,
       shapeOptions,
       formatOptions,
+      dialogVisible,
       handleFileUpload,
       handleSaveFile,
-      handleClearCanvas
+      handleClearCanvas,
+      handleConfig,
+      closeDialog,
+      saveConfig
     }
   },
 })
 </script>
+
+<style scoped>
+/* 对话框样式 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-container {
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+</style>

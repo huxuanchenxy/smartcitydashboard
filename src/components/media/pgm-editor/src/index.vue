@@ -1,48 +1,11 @@
 <template>
   <div class="datav-wrapper" :style="wrapperStyle">
     <!-- 工具栏 -->
-    <!-- <div class="toolbar">
-      <div class="tool-group">
-        <h3>编辑工具</h3>
-        <button 
-          :class="{ active: currentTool === 'brush' }" 
-          @click="currentTool = 'brush'"
-        >
-          画笔
-        </button>
-        <button 
-          :class="{ active: currentTool === 'eraser' }" 
-          @click="currentTool = 'eraser'"
-        >
-          橡皮擦
-        </button>
-        <button 
-          :class="{ active: currentTool === 'goal' }" 
-          @click="currentTool = 'goal'"
-        >
-          目标点
-        </button>
-      </div>
+    <div class="toolbar">
       
-      <div class="tool-group">
-        <h3>缩放控制</h3>
-        <button @click="zoomIn">放大</button>
-        <button @click="zoomOut">缩小</button>
-        <button @click="resetZoom">重置</button>
-        <span>{{ zoomLevel }}%</span>
-      </div>
       
-      <div class="tool-group">
-        <h3>画笔设置</h3>
-        <label>大小: <input type="range" v-model.number="config.editor.brushSize" min="1" max="20" /></label>
-        <label>灰度: <input type="range" v-model.number="config.editor.brushColor" min="0" max="255" /></label>
-        <label>形状: 
-          <select v-model="config.editor.brushShape">
-            <option value="circle">圆形</option>
-            <option value="square">方形</option>
-          </select>
-        </label>
-      </div>
+
+      
       
       <div class="tool-group" v-if="config.ros.enabled">
         <h3>ROS2控制</h3>
@@ -50,7 +13,7 @@
         <button @click="disconnectRos">断开</button>
         <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
       </div>
-    </div> -->
+    </div>
     
     <!-- 画布容器 -->
     <div class="canvas-container" ref="canvasContainer">
@@ -97,7 +60,7 @@ import { useDataCenter, getFieldMap } from '@/mixins/data-center'
 import { ApiModule } from '@/store/modules/api'
 import { PgmEditor } from './pgm-editor'
 import { useEventCenter } from '@/mixins/event-center'
-import { parsePgmFile, encodePgmImage, createPgmFromCanvas, drawPgmToCanvas, PgmImage } from './pgm-parser'
+import { parsePgmFile, drawPgmToCanvas, createPgmFromCanvas, encodePgmImage, PgmImage } from './pgm-parser'
 import { CanvasEditor } from './canvas-editor'
 import { emitter } from '@/mitter'
 
