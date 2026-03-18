@@ -146,7 +146,8 @@ export default defineComponent({
           brushSize: config.value.editor.brushSize,
           brushColor: config.value.editor.brushColor,
           brushShape: config.value.editor.brushShape as 'circle' | 'square',
-          eraserSize: config.value.editor.eraserSize
+          eraserSize: config.value.editor.eraserSize,
+          zoomLevel: zoomLevel.value
         })
         
         // 加载默认数据
@@ -156,6 +157,13 @@ export default defineComponent({
         if (config.value.file.url) {
           handleFileUpload(config.value.file.url)
         }
+      }
+    })
+    
+    // 监听缩放变化
+    watch(zoomLevel, (newZoom) => {
+      if (canvasEditor.value) {
+        canvasEditor.value.setZoomLevel(newZoom)
       }
     })
     

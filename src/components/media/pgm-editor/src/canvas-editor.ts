@@ -8,6 +8,7 @@ export interface CanvasEditorOptions {
   brushColor: number; // 0-255
   brushShape: 'circle' | 'square';
   eraserSize: number;
+  zoomLevel?: number;
 }
 
 export class CanvasEditor {
@@ -19,10 +20,12 @@ export class CanvasEditor {
   private options: CanvasEditorOptions;
   private history: ImageData[] = [];
   private historyIndex: number = -1;
+  private zoomLevel: number = 100;
   
   constructor(options: CanvasEditorOptions) {
     this.canvas = options.canvas;
     this.options = options;
+    this.zoomLevel = options.zoomLevel || 100;
     
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
@@ -31,6 +34,10 @@ export class CanvasEditor {
     this.ctx = ctx;
     
     this.setupEventListeners();
+  }
+  
+  public setZoomLevel(zoom: number) {
+    this.zoomLevel = zoom;
   }
   
   private setupEventListeners() {
@@ -43,8 +50,9 @@ export class CanvasEditor {
   private startDrawing(e: MouseEvent) {
     this.isDrawing = true;
     const rect = this.canvas.getBoundingClientRect();
-    this.lastX = e.clientX - rect.left;
-    this.lastY = e.clientY - rect.top;
+    const scale = this.zoomLevel / 100;
+    this.lastX = (e.clientX - rect.left) / scale;
+    this.lastY = (e.clientY - rect.top) / scale;
     this.saveState();
   }
   
@@ -52,8 +60,9 @@ export class CanvasEditor {
     if (!this.isDrawing) return;
     
     const rect = this.canvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
+    const scale = this.zoomLevel / 100;
+    const currentX = (e.clientX - rect.left) / scale;
+    const currentY = (e.clientY - rect.top) / scale;
     
     this.ctx.beginPath();
     this.ctx.moveTo(this.lastX, this.lastY);
