@@ -91,8 +91,8 @@ export default defineComponent({
       }
       
       // 计算画布的缩放比例，使画布能够适应组件的大小
-      const containerWidth = attr.value.w - 20; // 减去边距
-      const containerHeight = attr.value.h - 60; // 减去工具栏和状态栏的高度
+      const containerWidth = attr.value.w; // 减去边距
+      const containerHeight = attr.value.h; // 减去工具栏和状态栏的高度
       
       const imageWidth = pgmImage.value.width;
       const imageHeight = pgmImage.value.height;
