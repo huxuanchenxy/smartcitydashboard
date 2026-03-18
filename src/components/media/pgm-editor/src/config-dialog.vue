@@ -5,84 +5,89 @@
       <button @click="closeDialog" class="close-btn">×</button>
     </div>
     
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="tool-group">
-        <h3>编辑工具</h3>
-        <button 
-          :class="{ active: currentTool === 'brush' }" 
-          @click="currentTool = 'brush'"
-        >
-          画笔
-        </button>
-        <button 
-          :class="{ active: currentTool === 'eraser' }" 
-          @click="currentTool = 'eraser'"
-        >
-          橡皮擦
-        </button>
-        <button 
-          :class="{ active: currentTool === 'goal' }" 
-          @click="currentTool = 'goal'"
-        >
-          目标点
-        </button>
+    <div class="main-content">
+      <!-- 左侧工具栏 -->
+      <div class="sidebar">
+        <div class="tool-group">
+          <h3>编辑工具</h3>
+          <button 
+            :class="{ active: currentTool === 'brush' }" 
+            @click="currentTool = 'brush'"
+          >
+            画笔
+          </button>
+          <button 
+            :class="{ active: currentTool === 'eraser' }" 
+            @click="currentTool = 'eraser'"
+          >
+            橡皮擦
+          </button>
+          <button 
+            :class="{ active: currentTool === 'goal' }" 
+            @click="currentTool = 'goal'"
+          >
+            目标点
+          </button>
+        </div>
+        
+        <div class="tool-group">
+          <h3>缩放控制</h3>
+          <button @click="zoomIn">放大</button>
+          <button @click="zoomOut">缩小</button>
+          <button @click="resetZoom">重置</button>
+          <span>{{ zoomLevel }}%</span>
+        </div>
+        
+        <div class="tool-group" v-if="config.ros.enabled">
+          <h3>ROS2控制</h3>
+          <button @click="connectRos">连接</button>
+          <button @click="disconnectRos">断开</button>
+          <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
+        </div>
+        
+        <div class="tool-group">
+          <h3>文件操作</h3>
+          <button @click="saveFile">保存到本地</button>
+        </div>
       </div>
       
-      <div class="tool-group">
-        <h3>缩放控制</h3>
-        <button @click="zoomIn">放大</button>
-        <button @click="zoomOut">缩小</button>
-        <button @click="resetZoom">重置</button>
-        <span>{{ zoomLevel }}%</span>
-      </div>
-      
-      <div class="tool-group" v-if="config.ros.enabled">
-        <h3>ROS2控制</h3>
-        <button @click="connectRos">连接</button>
-        <button @click="disconnectRos">断开</button>
-        <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
-      </div>
-      
-      <div class="tool-group">
-        <h3>文件操作</h3>
-        <button @click="saveFile">保存到本地</button>
-      </div>
-    </div>
-    
-    <!-- 画布容器 -->
-    <div class="canvas-container" ref="canvasContainer">
-      <canvas 
-        ref="canvas" 
-        :width="config.global.canvasWidth" 
-        :height="config.global.canvasHeight"
-        :style="canvasStyle"
-        @click="handleCanvasClick"
-        @wheel="handleWheel"
-      ></canvas>
-    </div>
-    
-    <!-- 状态栏 -->
-    <div class="status-bar">
-      <div>机器人状态: {{ robotStatus }}</div>
-      <div>ROS连接: {{ rosConnected ? '已连接' : '未连接' }}</div>
-      <div>目标点位: {{ goalPoints.length }}</div>
-    </div>
-    
-    <!-- 目标点位管理 -->
-    <div class="goal-management" v-if="currentTool === 'goal'">
-      <h3>目标点位管理</h3>
-      <div class="goal-list">
-        <div 
-          v-for="(point, index) in goalPoints" 
-          :key="point.id"
-          class="goal-item"
-        >
-          <span>{{ point.name }}</span>
-          <span>({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }})</span>
-          <button @click="editGoal(index)">编辑</button>
-          <button @click="deleteGoal(index)">删除</button>
-          <button @click="sendGoal(point)">发送</button>
+      <!-- 右侧画布和状态栏 -->
+      <div class="content">
+        <!-- 画布容器 -->
+        <div class="canvas-container" ref="canvasContainer">
+          <canvas 
+            ref="canvas" 
+            :width="config.global.canvasWidth" 
+            :height="config.global.canvasHeight"
+            :style="canvasStyle"
+            @click="handleCanvasClick"
+            @wheel="handleWheel"
+          ></canvas>
+        </div>
+        
+        <!-- 状态栏 -->
+        <div class="status-bar">
+          <div>机器人状态: {{ robotStatus }}</div>
+          <div>ROS连接: {{ rosConnected ? '已连接' : '未连接' }}</div>
+          <div>目标点位: {{ goalPoints.length }}</div>
+        </div>
+        
+        <!-- 目标点位管理 -->
+        <div class="goal-management" v-if="currentTool === 'goal'">
+          <h3>目标点位管理</h3>
+          <div class="goal-list">
+            <div 
+              v-for="(point, index) in goalPoints" 
+              :key="point.id"
+              class="goal-item"
+            >
+              <span>{{ point.name }}</span>
+              <span>({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }})</span>
+              <button @click="editGoal(index)">编辑</button>
+              <button @click="deleteGoal(index)">删除</button>
+              <button @click="sendGoal(point)">发送</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -338,7 +343,7 @@ export default defineComponent({
 <style scoped>
 .pgm-config-dialog {
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
   background: #fff;
@@ -373,36 +378,51 @@ export default defineComponent({
   justify-content: center;
 }
 
-/* 工具栏 */
-.toolbar {
+/* 主内容区域 */
+.main-content {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  border-bottom: 1px solid #e8e8e8;
-  background: #f9f9f9;
+  width: 100%;
+  height: 600px;
 }
 
-.tool-group {
+/* 左侧工具栏 */
+.sidebar {
+  width: 180px;
+  padding: 12px;
+  border-right: 1px solid #e8e8e8;
+  background: #f9f9f9;
+  overflow-y: auto;
+}
+
+/* 右侧内容区域 */
+.content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+}
+
+/* 工具组 */
+.tool-group {
+  margin-bottom: 16px;
 }
 
 .tool-group h3 {
-  margin: 0;
-  font-size: 14px;
+  margin: 0 0 8px 0;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .tool-group button {
-  padding: 6px 12px;
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
   border: 1px solid #d9d9d9;
   background: #fff;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
-  margin-right: 8px;
+  font-size: 12px;
+  margin-bottom: 4px;
+  text-align: left;
 }
 
 .tool-group button.active {
@@ -412,31 +432,33 @@ export default defineComponent({
 }
 
 .tool-group label {
-  font-size: 12px;
-  margin-right: 12px;
+  font-size: 11px;
+  margin-right: 8px;
 }
 
 .tool-group input[type="range"] {
-  width: 100px;
+  width: 100%;
 }
 
 .tool-group select {
-  padding: 2px 6px;
+  width: 100%;
+  padding: 2px 4px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .tool-group span {
-  font-size: 12px;
-  margin-left: 8px;
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
 }
 
 /* 画布容器 */
 .canvas-container {
   position: relative;
   width: 100%;
-  height: 400px;
+  flex: 1;
   overflow: auto;
   border: 1px solid #e8e8e8;
   background: #f5f5f5;
@@ -455,7 +477,7 @@ export default defineComponent({
   display: flex;
   gap: 24px;
   padding: 12px 16px;
-  border-bottom: 1px solid #e8e8e8;
+  border-top: 1px solid #e8e8e8;
   background: #f9f9f9;
   font-size: 12px;
   color: #666;
@@ -465,6 +487,7 @@ export default defineComponent({
 .goal-management {
   padding: 16px;
   border-top: 1px solid #e8e8e8;
+  background: #f9f9f9;
 }
 
 .goal-management h3 {
