@@ -1,19 +1,6 @@
 <template>
   <div class="datav-wrapper" :style="wrapperStyle">
     <!-- 工具栏 -->
-    <div class="toolbar">
-      
-      
-
-      
-      
-      <div class="tool-group" v-if="config.ros.enabled">
-        <h3>ROS2控制</h3>
-        <button @click="connectRos">连接</button>
-        <button @click="disconnectRos">断开</button>
-        <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
-      </div>
-    </div>
     
     <!-- 画布容器 -->
     <div class="canvas-container" ref="canvasContainer">
@@ -27,12 +14,7 @@
       ></canvas>
     </div>
     
-    <!-- 状态栏 -->
-    <div class="status-bar">
-      <div>机器人状态: {{ robotStatus }}</div>
-      <div>ROS连接: {{ rosConnected ? '已连接' : '未连接' }}</div>
-      <div>目标点位: {{ goalPoints.length }}</div>
-    </div>
+
     
     <!-- 目标点位管理 -->
     <div class="goal-management" v-if="currentTool === 'goal'">
@@ -100,8 +82,28 @@ export default defineComponent({
     })
     
     const canvasStyle = computed(() => {
+      if (!pgmImage.value || !canvas.value) {
+        return {
+          transform: `scale(${zoomLevel.value / 100})`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.2s ease'
+        }
+      }
+      
+      // 计算画布的缩放比例，使画布能够适应组件的大小
+      const containerWidth = attr.value.w - 20; // 减去边距
+      const containerHeight = attr.value.h - 60; // 减去工具栏和状态栏的高度
+      
+      const imageWidth = pgmImage.value.width;
+      const imageHeight = pgmImage.value.height;
+      
+      // 计算缩放比例
+      const scaleX = containerWidth / imageWidth;
+      const scaleY = containerHeight / imageHeight;
+      const scale = Math.min(scaleX, scaleY); // 允许放大到组件大小
+      
       return {
-        transform: `scale(${zoomLevel.value / 100})`,
+        transform: `scale(${scale * zoomLevel.value / 100})`,
         transformOrigin: 'center center',
         transition: 'transform 0.2s ease'
       }
