@@ -67,6 +67,11 @@ export default defineComponent({
     const robotStatus = ref('idle')
     const goalPoints = ref<Array<{id: string, name: string, x: number, y: number, theta?: number}>>([])
     const zoomLevel = ref(100)
+    const robotPosition = ref<{x: number, y: number, theta: number}>({
+      x: 200, // 初始假数据
+      y: 100, // 初始假数据
+      theta: 45 // 初始假数据
+    })
     
     const config = toRef(props.com, 'config')
     const attr = toRef(props.com, 'attr')
@@ -157,6 +162,49 @@ export default defineComponent({
       }
     }
     
+    // 绘制机器人
+    const drawRobot = () => {
+      if (!canvas.value || !pgmImage.value) return
+      
+      const ctx = canvas.value.getContext('2d')
+      if (!ctx) return
+      
+      const { x, y, theta } = robotPosition.value
+      const iconSize = config.value.robot.iconSize
+      const iconColor = config.value.robot.iconColor
+      
+      // 保存当前状态
+      ctx.save()
+      
+      // 移动到机器人位置
+      ctx.translate(x, y)
+      
+      // 旋转机器人方向
+      if (config.value.robot.showDirection) {
+        ctx.rotate(theta)
+      }
+      
+      // 绘制机器人图标
+      ctx.fillStyle = iconColor
+      ctx.beginPath()
+      ctx.arc(0, 0, iconSize / 2, 0, Math.PI * 2)
+      ctx.fill()
+      
+      // 绘制方向指示器
+      if (config.value.robot.showDirection) {
+        ctx.fillStyle = '#fff'
+        ctx.beginPath()
+        ctx.moveTo(iconSize / 2, 0)
+        ctx.lineTo(-iconSize / 4, -iconSize / 4)
+        ctx.lineTo(-iconSize / 4, iconSize / 4)
+        ctx.closePath()
+        ctx.fill()
+      }
+      
+      // 恢复状态
+      ctx.restore()
+    }
+    
     // 处理文件上传
     const handleFileUpload = async (url: string) => {
       try {
@@ -165,6 +213,7 @@ export default defineComponent({
         const image = await parsePgmFile(blob)
         pgmImage.value = image
         drawPgmToCanvas(image, canvas.value!)
+        drawRobot() // 绘制机器人
         
         // 更新数据
         updateComponentData(image)
@@ -239,8 +288,42 @@ export default defineComponent({
       
       // 模拟机器人移动
       setTimeout(() => {
+        // 更新机器人位置到目标点
+        if (goal.x && goal.y) {
+          robotPosition.value = {
+            x: goal.x,
+            y: goal.y,
+            theta: goal.theta || 0
+          }
+          // 重新绘制机器人
+          if (canvas.value && pgmImage.value) {
+            drawPgmToCanvas(pgmImage.value, canvas.value!)
+            drawRobot()
+          }
+        }
         robotStatus.value = 'idle'
       }, 2000)
+    }
+    
+    // 手动修改机器人坐标
+    const updateRobotPosition = (x: number, y: number, theta: number = 0) => {
+      robotPosition.value = { x, y, theta }
+      // 重新绘制机器人
+      if (canvas.value && pgmImage.value) {
+        drawPgmToCanvas(pgmImage.value, canvas.value!)
+        drawRobot()
+      }
+    }
+    
+    // 预留ROS2数据获取接口
+    const updateRobotPositionFromRos = (position: {x: number, y: number, theta: number}) => {
+      // 这里将来会从ROS2获取数据
+      robotPosition.value = position
+      // 重新绘制机器人
+      if (canvas.value && pgmImage.value) {
+        drawPgmToCanvas(pgmImage.value, canvas.value!)
+        drawRobot()
+      }
     }
     
     // 连接ROS2
@@ -355,6 +438,7 @@ export default defineComponent({
       rosConnected,
       robotStatus,
       goalPoints,
+      robotPosition,
       handleFileUpload,
       saveFile,
       clearCanvas,
@@ -367,7 +451,9 @@ export default defineComponent({
       zoomIn,
       zoomOut,
       resetZoom,
-      handleWheel
+      handleWheel,
+      updateRobotPosition,
+      updateRobotPositionFromRos
     }
   },
 })
