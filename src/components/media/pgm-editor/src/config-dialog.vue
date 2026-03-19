@@ -9,26 +9,66 @@
       <!-- 左侧工具栏 -->
       <div class="sidebar">
         <div class="tool-group">
-          <h3>编辑工具</h3>
-          <button 
-            :class="{ active: currentTool === 'brush' }" 
-            @click="currentTool = 'brush'"
-          >
-            画笔
-          </button>
-          <button 
-            :class="{ active: currentTool === 'eraser' }" 
-            @click="currentTool = 'eraser'"
-          >
-            橡皮擦
-          </button>
-          <button 
-            :class="{ active: currentTool === 'goal' }" 
-            @click="currentTool = 'goal'"
-          >
-            目标点
-          </button>
-        </div>
+        <h3>编辑工具</h3>
+        <button 
+          :class="{ active: currentTool === 'brush' }" 
+          @click="currentTool = 'brush'"
+        >
+          画笔
+        </button>
+        <button 
+          :class="{ active: currentTool === 'eraser' }" 
+          @click="currentTool = 'eraser'"
+        >
+          橡皮擦
+        </button>
+        <button 
+          :class="{ active: currentTool === 'goal' }" 
+          @click="currentTool = 'goal'"
+        >
+          目标点
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <h3>画笔设置</h3>
+        <label>大小: {{ config.editor.brushSize }}</label>
+        <input 
+          type="range" 
+          min="1" 
+          max="50" 
+          step="1" 
+          v-model.number="config.editor.brushSize"
+          @input="updateBrushSize"
+        />
+        <label>灰度: {{ config.editor.brushColor }}</label>
+        <input 
+          type="range" 
+          min="0" 
+          max="255" 
+          step="1" 
+          v-model.number="config.editor.brushColor"
+          @input="updateBrushColor"
+        />
+        <label>形状:</label>
+        <select v-model="config.editor.brushShape" @change="updateBrushShape">
+          <option value="circle">圆形</option>
+          <option value="square">方形</option>
+        </select>
+      </div>
+      
+      <div class="tool-group">
+        <h3>橡皮擦设置</h3>
+        <label>大小: {{ config.editor.eraserSize }}</label>
+        <input 
+          type="range" 
+          min="1" 
+          max="50" 
+          step="1" 
+          v-model.number="config.editor.eraserSize"
+          @input="updateEraserSize"
+        />
+      </div>
         
         <div class="tool-group">
           <h3>缩放控制</h3>
@@ -359,6 +399,34 @@ export default defineComponent({
       emit('save', config.value)
     }
     
+    // 更新画笔大小
+    const updateBrushSize = () => {
+      if (canvasEditor.value) {
+        canvasEditor.value.setBrushSize(config.value.editor.brushSize)
+      }
+    }
+    
+    // 更新画笔颜色
+    const updateBrushColor = () => {
+      if (canvasEditor.value) {
+        canvasEditor.value.setBrushColor(config.value.editor.brushColor)
+      }
+    }
+    
+    // 更新画笔形状
+    const updateBrushShape = () => {
+      if (canvasEditor.value) {
+        canvasEditor.value.setBrushShape(config.value.editor.brushShape as 'circle' | 'square')
+      }
+    }
+    
+    // 更新橡皮擦大小
+    const updateEraserSize = () => {
+      if (canvasEditor.value) {
+        canvasEditor.value.setEraserSize(config.value.editor.eraserSize)
+      }
+    }
+    
     return {
       config,
       canvas,
@@ -377,6 +445,10 @@ export default defineComponent({
       zoomOut,
       resetZoom,
       handleWheel,
+      updateBrushSize,
+      updateBrushColor,
+      updateBrushShape,
+      updateEraserSize,
       connectRos,
       disconnectRos,
       editGoal,
@@ -392,8 +464,8 @@ export default defineComponent({
 <style scoped>
 .pgm-config-dialog {
   width: 100%;
-  max-width: 1000px;
-  max-height: 90vh;
+  max-width: 1500px;
+  max-height: 95vh;
   overflow-y: auto;
   background: #fff;
   border-radius: 8px;
@@ -431,7 +503,7 @@ export default defineComponent({
 .main-content {
   display: flex;
   width: 100%;
-  height: 600px;
+  height: 620px;
 }
 
 /* 左侧工具栏 */

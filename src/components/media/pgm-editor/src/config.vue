@@ -19,25 +19,6 @@
       </g-field>
     </g-field-collapse>
     
-    <!-- 编辑器配置 -->
-    <g-field-collapse label="编辑器">
-      <g-field :level="2" label="默认工具">
-        <g-select v-model="config.editor.tool" :data="toolOptions" />
-      </g-field>
-      <g-field :level="2" label="画笔大小">
-        <g-input-number v-model="config.editor.brushSize" :min="1" :max="50" :step="1" />
-      </g-field>
-      <g-field :level="2" label="画笔灰度">
-        <g-slider v-model="config.editor.brushColor" :min="0" :max="255" :step="1" />
-      </g-field>
-      <g-field :level="2" label="画笔形状">
-        <g-select v-model="config.editor.brushShape" :data="shapeOptions" />
-      </g-field>
-      <g-field :level="2" label="橡皮擦大小">
-        <g-input-number v-model="config.editor.eraserSize" :min="1" :max="50" :step="1" />
-      </g-field>
-    </g-field-collapse>
-    
     <!-- ROS2配置 -->
     <g-field-collapse label="ROS2">
       <g-field :level="2" label="启用ROS2">
@@ -222,7 +203,7 @@ export default defineComponent({
 .dialog-container {
   position: relative;
   width: 90%;
-  max-width: 800px;
+  max-width: 1100px;
   max-height: 90vh;
   overflow-y: auto;
 }
