@@ -62,7 +62,7 @@
     </g-field-collapse>
     
     <!-- 文件配置 -->
-    <g-field-collapse label="文件">
+    <g-field-collapse label="PGM地图">
       <g-field :level="2" label="PGM格式">
         <g-select v-model="config.file.format" :data="formatOptions" />
       </g-field>
