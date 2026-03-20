@@ -69,6 +69,31 @@
           @input="updateEraserSize"
         />
       </div>
+      
+      <div class="tool-group">
+        <h3>标记点设置</h3>
+        <label>大小: {{ config.goals.pointSize }}</label>
+        <input 
+          type="range" 
+          min="2" 
+          max="20" 
+          step="1" 
+          v-model.number="config.goals.pointSize"
+          @input="updateGoalPointSize"
+        />
+        <label>颜色: {{ config.goals.pointColor }}</label>
+        <input 
+          type="color" 
+          v-model="config.goals.pointColor"
+          @input="updateGoalPointColor"
+        />
+        <label>显示目标点:</label>
+        <input 
+          type="checkbox" 
+          v-model="showGoalPoints"
+          @change="toggleGoalPoints"
+        />
+      </div>
         
         <div class="tool-group">
           <h3>缩放控制</h3>
@@ -102,6 +127,13 @@
             :style="canvasStyle"
             @click="handleCanvasClick"
             @wheel="handleWheel"
+          ></canvas>
+          <!-- 目标点叠加层 -->
+          <canvas 
+            ref="goalCanvas" 
+            :width="config.global.canvasWidth" 
+            :height="config.global.canvasHeight"
+            :style="{ ...canvasStyle, ...goalCanvasStyle }"
           ></canvas>
         </div>
         
@@ -161,6 +193,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const config = toRef(props, 'config')
     const canvas = ref<HTMLCanvasElement | null>(null)
+    const goalCanvas = ref<HTMLCanvasElement | null>(null)
     const canvasContainer = ref<HTMLElement | null>(null)
     const canvasEditor = ref<CanvasEditor | null>(null)
     const currentTool = ref<'brush' | 'eraser' | 'goal'>('brush')
@@ -169,12 +202,24 @@ export default defineComponent({
     const robotStatus = ref('idle')
     const goalPoints = ref<Array<{id: string, name: string, x: number, y: number, theta?: number}>>([])
     const zoomLevel = ref(100)
+    const showGoalPoints = ref(true)
     
     const canvasStyle = computed(() => {
       return {
         transform: `scale(${zoomLevel.value / 100})`,
         transformOrigin: 'center center',
         transition: 'transform 0.2s ease'
+      }
+    })
+    
+    const goalCanvasStyle = computed(() => {
+      return {
+        position: 'absolute' as const,
+        top: '0',
+        left: '0',
+        pointerEvents: 'none' as const,
+        opacity: showGoalPoints.value ? '1' : '0',
+        background: 'transparent' as const
       }
     })
     
@@ -213,10 +258,28 @@ export default defineComponent({
       if (canvasEditor.value) {
         if (newTool === 'eraser') {
           console.log('Enabling eraser')
+          canvasEditor.value.enableDrawing()
           canvasEditor.value.enableEraser()
+          // 启用Canvas的鼠标事件
+          if (canvas.value) {
+            canvas.value.style.pointerEvents = 'auto'
+          }
         } else if (newTool === 'brush') {
           console.log('Enabling brush')
+          canvasEditor.value.enableDrawing()
           canvasEditor.value.enableBrush()
+          // 启用Canvas的鼠标事件
+          if (canvas.value) {
+            canvas.value.style.pointerEvents = 'auto'
+          }
+        } else if (newTool === 'goal') {
+          console.log('Enabling goal tool')
+          // 禁用CanvasEditor的绘制功能
+          canvasEditor.value.disableDrawing()
+          // 启用Canvas的鼠标事件以捕获点击
+          if (canvas.value) {
+            canvas.value.style.pointerEvents = 'auto'
+          }
         }
       }
     })
@@ -230,6 +293,36 @@ export default defineComponent({
       }
     }
     
+    // 绘制目标点
+    const drawGoalPoints = () => {
+      if (!goalCanvas.value || !showGoalPoints.value) return
+      
+      const ctx = goalCanvas.value.getContext('2d')
+      if (!ctx) return
+      
+      // 清空目标点画布
+      ctx.clearRect(0, 0, goalCanvas.value.width, goalCanvas.value.height)
+      
+      // 绘制目标点
+      goalPoints.value.forEach(point => {
+        ctx.save()
+        ctx.fillStyle = config.value.goals.pointColor
+        ctx.beginPath()
+        ctx.arc(point.x, point.y, config.value.goals.pointSize / 2, 0, Math.PI * 2)
+        ctx.fill()
+        
+        // 绘制目标点名称
+        if (config.value.goals.showNames) {
+          ctx.fillStyle = '#000'
+          ctx.font = '12px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'bottom'
+          ctx.fillText(point.name, point.x, point.y - config.value.goals.pointSize / 2 - 2)
+        }
+        ctx.restore()
+      })
+    }
+    
     // 处理文件上传
     const handleFileUpload = async (url: string) => {
       try {
@@ -239,13 +332,15 @@ export default defineComponent({
         pgmImage.value = image
         
         // 调整canvas尺寸以匹配容器大小
-        if (canvas.value && canvasContainer.value) {
+        if (canvas.value && goalCanvas.value && canvasContainer.value) {
           const containerWidth = canvasContainer.value.clientWidth;
           const containerHeight = canvasContainer.value.clientHeight;
           
           // 设置canvas的实际尺寸
           canvas.value.width = containerWidth;
           canvas.value.height = containerHeight;
+          goalCanvas.value.width = containerWidth;
+          goalCanvas.value.height = containerHeight;
           
           // 绘制图像并进行适当的缩放
           const ctx = canvas.value.getContext('2d');
@@ -278,6 +373,9 @@ export default defineComponent({
               ctx.drawImage(tempCanvas, offsetX, offsetY, image.width * scale, image.height * scale);
             }
           }
+          
+          // 绘制目标点
+          drawGoalPoints()
         }
       } catch (error) {
         console.error('Failed to load PGM file from URL:', error)
@@ -331,6 +429,9 @@ export default defineComponent({
           x: x / (zoomLevel.value / 100),
           y: y / (zoomLevel.value / 100)
         })
+        
+        // 重新绘制目标点
+        drawGoalPoints()
       }
     }
     
@@ -384,6 +485,23 @@ export default defineComponent({
     // 删除目标点
     const deleteGoal = (index: number) => {
       goalPoints.value.splice(index, 1)
+      // 重新绘制目标点
+      drawGoalPoints()
+    }
+    
+    // 更新目标点大小
+    const updateGoalPointSize = () => {
+      drawGoalPoints()
+    }
+    
+    // 更新目标点颜色
+    const updateGoalPointColor = () => {
+      drawGoalPoints()
+    }
+    
+    // 切换目标点显示/隐藏
+    const toggleGoalPoints = () => {
+      drawGoalPoints()
     }
     
     // 发送目标点
@@ -430,13 +548,16 @@ export default defineComponent({
     return {
       config,
       canvas,
+      goalCanvas,
       canvasContainer,
       currentTool,
       rosConnected,
       robotStatus,
       goalPoints,
       zoomLevel,
+      showGoalPoints,
       canvasStyle,
+      goalCanvasStyle,
       handleFileUpload,
       saveFile,
       clearCanvas,
@@ -449,6 +570,9 @@ export default defineComponent({
       updateBrushColor,
       updateBrushShape,
       updateEraserSize,
+      updateGoalPointSize,
+      updateGoalPointColor,
+      toggleGoalPoints,
       connectRos,
       disconnectRos,
       editGoal,

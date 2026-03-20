@@ -15,6 +15,7 @@ export class CanvasEditor {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private isDrawing: boolean = false;
+  private isDrawingEnabled: boolean = true;
   private lastX: number = 0;
   private lastY: number = 0;
   private options: CanvasEditorOptions;
@@ -55,6 +56,7 @@ export class CanvasEditor {
   }
   
   private startDrawing(e: MouseEvent) {
+    if (!this.isDrawingEnabled) return;
     this.isDrawing = true;
     const rect = this.canvas.getBoundingClientRect();
     const scale = this.zoomLevel / 100;
@@ -64,7 +66,7 @@ export class CanvasEditor {
   }
   
   private draw(e: MouseEvent) {
-    if (!this.isDrawing) return;
+    if (!this.isDrawingEnabled || !this.isDrawing) return;
     
     const rect = this.canvas.getBoundingClientRect();
     const scale = this.zoomLevel / 100;
@@ -121,6 +123,14 @@ export class CanvasEditor {
   public enableBrush() {
     this.options.brushColor = this.originalBrushColor;
     this.options.brushSize = this.options.brushSize;
+  }
+  
+  public disableDrawing() {
+    this.isDrawingEnabled = false;
+  }
+  
+  public enableDrawing() {
+    this.isDrawingEnabled = true;
   }
   
   public clear() {
