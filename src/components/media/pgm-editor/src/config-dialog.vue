@@ -112,7 +112,8 @@
         
         <div class="tool-group">
           <h3>文件操作</h3>
-          <button @click="saveFile">保存到本地</button>
+          <button @click="saveFile">保存PGM文件</button>
+          <button @click="saveGoalPointsImage">保存目标点图像</button>
         </div>
       </div>
       
@@ -504,6 +505,59 @@ export default defineComponent({
       drawGoalPoints()
     }
     
+    // 保存目标点图像
+    const saveGoalPointsImage = () => {
+      if (!goalCanvas.value) return
+      
+      try {
+        // 创建一个新的Canvas，只包含目标点
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = goalCanvas.value.width
+        tempCanvas.height = goalCanvas.value.height
+        const tempCtx = tempCanvas.getContext('2d')
+        
+        if (tempCtx) {
+          // 清空临时Canvas
+          tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height)
+          
+          // 绘制目标点
+          goalPoints.value.forEach(point => {
+            tempCtx.save()
+            tempCtx.fillStyle = config.value.goals.pointColor
+            tempCtx.beginPath()
+            tempCtx.arc(point.x, point.y, config.value.goals.pointSize / 2, 0, Math.PI * 2)
+            tempCtx.fill()
+            
+            // 绘制目标点名称
+            if (config.value.goals.showNames) {
+              tempCtx.fillStyle = '#000'
+              tempCtx.font = '12px Arial'
+              tempCtx.textAlign = 'center'
+              tempCtx.textBaseline = 'bottom'
+              tempCtx.fillText(point.name, point.x, point.y - config.value.goals.pointSize / 2 - 2)
+            }
+            tempCtx.restore()
+          })
+          
+          // 将Canvas转换为图像并下载
+          tempCanvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = 'goal-points.png'
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Failed to save goal points image:', error)
+      }
+    }
+    
     // 发送目标点
     const sendGoal = (point: {id: string, name: string, x: number, y: number, theta?: number}) => {
       // 这里可以添加发送目标点的逻辑
@@ -560,6 +614,7 @@ export default defineComponent({
       goalCanvasStyle,
       handleFileUpload,
       saveFile,
+      saveGoalPointsImage,
       clearCanvas,
       handleCanvasClick,
       zoomIn,
