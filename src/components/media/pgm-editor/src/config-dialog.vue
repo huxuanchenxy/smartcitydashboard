@@ -8,92 +8,98 @@
     <div class="main-content">
       <!-- 左侧工具栏 -->
       <div class="sidebar">
-        <div class="tool-group">
-        <h3>编辑工具</h3>
-        <button 
-          :class="{ active: currentTool === 'brush' }" 
-          @click="currentTool = 'brush'"
-        >
-          画笔
-        </button>
-        <button 
-          :class="{ active: currentTool === 'eraser' }" 
-          @click="currentTool = 'eraser'"
-        >
-          橡皮擦
-        </button>
-        <button 
-          :class="{ active: currentTool === 'goal' }" 
-          @click="currentTool = 'goal'"
-        >
-          目标点
-        </button>
-      </div>
-      
-      <div class="tool-group">
-        <h3>画笔设置</h3>
-        <label>大小: {{ config.editor.brushSize }}</label>
-        <input 
-          type="range" 
-          min="1" 
-          max="50" 
-          step="1" 
-          v-model.number="config.editor.brushSize"
-          @input="updateBrushSize"
-        />
-        <label>灰度: {{ config.editor.brushColor }}</label>
-        <input 
-          type="range" 
-          min="0" 
-          max="255" 
-          step="1" 
-          v-model.number="config.editor.brushColor"
-          @input="updateBrushColor"
-        />
-        <label>形状:</label>
-        <select v-model="config.editor.brushShape" @change="updateBrushShape">
-          <option value="circle">圆形</option>
-          <option value="square">方形</option>
-        </select>
-      </div>
-      
-      <div class="tool-group">
-        <h3>橡皮擦设置</h3>
-        <label>大小: {{ config.editor.eraserSize }}</label>
-        <input 
-          type="range" 
-          min="1" 
-          max="50" 
-          step="1" 
-          v-model.number="config.editor.eraserSize"
-          @input="updateEraserSize"
-        />
-      </div>
-      
-      <div class="tool-group">
-        <h3>标记点设置</h3>
-        <label>大小: {{ config.goals.pointSize }}</label>
-        <input 
-          type="range" 
-          min="2" 
-          max="20" 
-          step="1" 
-          v-model.number="config.goals.pointSize"
-          @input="updateGoalPointSize"
-        />
-        <label>颜色: {{ config.goals.pointColor }}</label>
-        <input 
-          type="color" 
-          v-model="config.goals.pointColor"
-          @input="updateGoalPointColor"
-        />
-        <label>显示目标点:</label>
-        <input 
-          type="checkbox" 
-          v-model="showGoalPoints"
-          @change="toggleGoalPoints"
-        />
-      </div>
+        <!-- Tab菜单 -->
+        <div class="tab-menu">
+          <div 
+            class="tab-item" 
+            :class="{ active: currentTool === 'brush' }" 
+            @click="currentTool = 'brush'"
+          >
+            画笔
+          </div>
+          <div 
+            class="tab-item" 
+            :class="{ active: currentTool === 'eraser' }" 
+            @click="currentTool = 'eraser'"
+          >
+            橡皮擦
+          </div>
+          <div 
+            class="tab-item" 
+            :class="{ active: currentTool === 'goal' }" 
+            @click="currentTool = 'goal'"
+          >
+            标记点
+          </div>
+        </div>
+        
+        <!-- 画笔设置 -->
+        <div class="tool-group" v-show="currentTool === 'brush'">
+          <h3>画笔设置</h3>
+          <label>大小: {{ config.editor.brushSize }}</label>
+          <input 
+            type="range" 
+            min="1" 
+            max="50" 
+            step="1" 
+            v-model.number="config.editor.brushSize"
+            @input="updateBrushSize"
+          />
+          <label>灰度: {{ config.editor.brushColor }}</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="255" 
+            step="1" 
+            v-model.number="config.editor.brushColor"
+            @input="updateBrushColor"
+          />
+          <label>形状:</label>
+          <select v-model="config.editor.brushShape" @change="updateBrushShape">
+            <option value="circle">圆形</option>
+            <option value="square">方形</option>
+          </select>
+        </div>
+        
+        <!-- 橡皮擦设置 -->
+        <div class="tool-group" v-show="currentTool === 'eraser'">
+          <h3>橡皮擦设置</h3>
+          <label>大小: {{ config.editor.eraserSize }}</label>
+          <input 
+            type="range" 
+            min="1" 
+            max="50" 
+            step="1" 
+            v-model.number="config.editor.eraserSize"
+            @input="updateEraserSize"
+          />
+        </div>
+        
+        <!-- 标记点设置 -->
+        <div class="tool-group" v-show="currentTool === 'goal'">
+          <h3>标记点设置</h3>
+          <label>大小: {{ config.goals.pointSize }}</label>
+          <input 
+            type="range" 
+            min="2" 
+            max="20" 
+            step="1" 
+            v-model.number="config.goals.pointSize"
+            @input="updateGoalPointSize"
+          />
+          <label>颜色: {{ config.goals.pointColor }}</label>
+          <input 
+            type="color" 
+            v-model="config.goals.pointColor"
+            @input="updateGoalPointColor"
+          />
+          <label>显示目标点:</label>
+          <input 
+            type="checkbox" 
+            v-model="showGoalPoints"
+            @change="toggleGoalPoints"
+          />
+        </div>
         
         <div class="tool-group">
           <h3>缩放控制</h3>
@@ -113,7 +119,7 @@
         <div class="tool-group">
           <h3>文件操作</h3>
           <button @click="saveFile">保存PGM文件</button>
-          <button @click="saveGoalPointsImage">保存目标点图像</button>
+          <button @click="saveGoalPointsImage" v-show="currentTool === 'goal'">保存目标点图像</button>
         </div>
       </div>
       
@@ -643,7 +649,7 @@ export default defineComponent({
 <style scoped>
 .pgm-config-dialog {
   width: 100%;
-  max-width: 1500px;
+  max-width: 1800px;
   max-height: 95vh;
   overflow-y: auto;
   background: #fff;
@@ -687,7 +693,7 @@ export default defineComponent({
 
 /* 左侧工具栏 */
 .sidebar {
-  width: 180px;
+  width: 220px;
   padding: 12px;
   border-right: 1px solid #e8e8e8;
   background: #f9f9f9;
@@ -729,6 +735,33 @@ export default defineComponent({
   background: #1890ff;
   color: #fff;
   border-color: #1890ff;
+}
+
+/* Tab菜单样式 */
+.tab-menu {
+  display: flex;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.tab-item {
+  flex: 1;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-item:hover {
+  color: #1890ff;
+}
+
+.tab-item.active {
+  color: #1890ff;
+  border-bottom-color: #1890ff;
+  font-weight: 600;
 }
 
 .tool-group label {

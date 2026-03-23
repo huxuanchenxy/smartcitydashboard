@@ -203,7 +203,7 @@ export default defineComponent({
 .dialog-container {
   position: relative;
   width: 90%;
-  max-width: 1100px;
+  max-width: 1160px;
   max-height: 90vh;
   overflow-y: auto;
 }
