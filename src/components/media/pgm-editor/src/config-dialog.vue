@@ -45,15 +45,6 @@
             v-model.number="config.editor.brushSize"
             @input="updateBrushSize"
           />
-          <label>灰度: {{ config.editor.brushColor }}</label>
-          <input 
-            type="range" 
-            min="0" 
-            max="255" 
-            step="1" 
-            v-model.number="config.editor.brushColor"
-            @input="updateBrushColor"
-          />
           <label>形状:</label>
           <select v-model="config.editor.brushShape" @change="updateBrushShape">
             <option value="circle">圆形</option>
@@ -101,6 +92,28 @@
           />
         </div>
         
+        <!-- 目标点位管理 -->
+        <div class="tool-group goal-management" v-show="currentTool === 'goal'">
+          <h3>目标点位管理</h3>
+          <div class="goal-list">
+            <div 
+              v-for="(point, index) in goalPoints" 
+              :key="point.id"
+              class="goal-item"
+            >
+              <div class="goal-info">
+                <span>{{ point.name }}</span>
+                <span class="goal-coords">({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }})</span>
+              </div>
+              <div class="goal-buttons">
+                <button @click="editGoal(index)">编辑</button>
+                <button @click="deleteGoal(index)">删除</button>
+                <button @click="sendGoal(point)">发送</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
 
         
         <div class="tool-group" v-if="config.ros.enabled">
@@ -110,11 +123,6 @@
           <span :class="{ connected: rosConnected }">{{ rosConnected ? '已连接' : '未连接' }}</span>
         </div>
         
-        <div class="tool-group">
-          <h3>文件操作</h3>
-          <button @click="saveFile">保存PGM文件</button>
-          <button @click="saveGoalPointsImage" v-show="currentTool === 'goal'">保存目标点图像</button>
-        </div>
       </div>
       
       <!-- 右侧画布和状态栏 -->
@@ -147,33 +155,22 @@
             <button @click="zoomIn" class="zoom-btn">+</button>
             <span>{{ zoomLevel }}%</span>
             <button @click="zoomOut" class="zoom-btn">-</button>
-            <button @click="resetZoom" class="zoom-btn">重置</button>
           </div>
         </div>
         
-        <!-- 目标点位管理 -->
-        <div class="goal-management" v-if="currentTool === 'goal'">
-          <h3>目标点位管理</h3>
-          <div class="goal-list">
-            <div 
-              v-for="(point, index) in goalPoints" 
-              :key="point.id"
-              class="goal-item"
-            >
-              <span>{{ point.name }}</span>
-              <span>({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }})</span>
-              <button @click="editGoal(index)">编辑</button>
-              <button @click="deleteGoal(index)">删除</button>
-              <button @click="sendGoal(point)">发送</button>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
     
     <div class="dialog-footer">
-      <button @click="closeDialog" class="cancel-btn">取消</button>
-      <button @click="saveConfig" class="save-btn">保存</button>
+      <div class="footer-left">
+        <button @click="saveFile" class="save-pgm-btn">保存PGM文件</button>
+        <button @click="saveGoalPointsImage" v-show="currentTool === 'goal'" class="save-goal-btn">保存目标点图像</button>
+      </div>
+      <div class="footer-right">
+        <button @click="closeDialog" class="cancel-btn">取消</button>
+        <button @click="saveConfig" class="save-btn">保存</button>
+      </div>
     </div>
   </div>
 </template>
@@ -842,6 +839,74 @@ export default defineComponent({
   color: #1890ff;
 }
 
+/* 左侧目标点位管理 */
+.tool-group.goal-management {
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.tool-group.goal-management h3 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.goal-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid #e8e8e8;
+}
+
+.goal-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.goal-coords {
+  font-size: 10px;
+  color: #666;
+}
+
+.goal-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.goal-buttons button {
+  padding: 2px 4px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  flex: 1;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.goal-buttons button:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
 /* 目标点位管理 */
 .goal-management {
   padding: 16px;
@@ -887,14 +952,26 @@ export default defineComponent({
 
 .dialog-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
   padding: 16px;
   border-top: 1px solid #e8e8e8;
 }
 
+.footer-left {
+  display: flex;
+  gap: 8px;
+}
+
+.footer-right {
+  display: flex;
+  gap: 8px;
+}
+
 .cancel-btn,
-.save-btn {
+.save-btn,
+.save-pgm-btn,
+.save-goal-btn {
   padding: 6px 16px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
@@ -911,5 +988,17 @@ export default defineComponent({
   background: #1890ff;
   color: #fff;
   border-color: #1890ff;
+}
+
+.save-pgm-btn,
+.save-goal-btn {
+  background: #fff;
+  color: #333;
+}
+
+.save-pgm-btn:hover,
+.save-goal-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
 }
 </style>
