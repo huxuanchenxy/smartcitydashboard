@@ -654,10 +654,13 @@ export default defineComponent({
   width: 100%;
   max-width: 1800px;
   max-height: 95vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 10001;
 }
 
 .dialog-header {
@@ -666,6 +669,7 @@ export default defineComponent({
   align-items: center;
   padding: 16px;
   border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
 }
 
 .dialog-header h3 {
@@ -691,7 +695,8 @@ export default defineComponent({
 .main-content {
   display: flex;
   width: 100%;
-  height: 620px;
+  flex: 0.8;
+  overflow: hidden;
 }
 
 /* 左侧工具栏 */
@@ -961,6 +966,7 @@ export default defineComponent({
   align-items: center;
   padding: 16px;
   border-top: 1px solid #e8e8e8;
+  flex-shrink: 0;
 }
 
 .footer-left {

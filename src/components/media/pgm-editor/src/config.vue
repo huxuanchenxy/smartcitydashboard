@@ -178,7 +178,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .dialog-container {
@@ -186,7 +186,7 @@ export default defineComponent({
   width: 90%;
   max-width: 1160px;
   max-height: 90vh;
-  overflow-y: auto;
+  z-index: 10000;
 }
   /* 文件操作区域样式 */
   .file-operations {
