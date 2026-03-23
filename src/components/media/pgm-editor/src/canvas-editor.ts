@@ -113,6 +113,10 @@ export class CanvasEditor {
   
   public setEraserSize(size: number) {
     this.options.eraserSize = size;
+    // 如果当前是橡皮擦模式，同时更新画笔大小
+    if (this.options.brushColor === 255) {
+      this.options.brushSize = size;
+    }
   }
   
   public enableEraser() {
