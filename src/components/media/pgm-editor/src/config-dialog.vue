@@ -856,8 +856,8 @@ export default defineComponent({
 .goal-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 200px;
+  gap: 8px;
+  max-height: 380px;
   overflow-y: auto;
 }
 
@@ -929,7 +929,6 @@ export default defineComponent({
 .goal-item {
   display: flex;
   align-items: center;
-  gap: 12px;
   padding: 8px;
   background: #f5f5f5;
   border-radius: 4px;
