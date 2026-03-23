@@ -170,7 +170,7 @@ export default defineComponent({
 /* 对话框样式 */
 .dialog-overlay {
   position: fixed;
-  top: 0;
+  top: 100px;
   left: 0;
   right: 0;
   bottom: 0;

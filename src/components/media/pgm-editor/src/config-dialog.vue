@@ -653,7 +653,7 @@ export default defineComponent({
 .pgm-config-dialog {
   width: 100%;
   max-width: 1800px;
-  max-height: 95vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   background: #fff;
