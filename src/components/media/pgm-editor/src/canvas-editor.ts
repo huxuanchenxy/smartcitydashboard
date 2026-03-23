@@ -23,12 +23,14 @@ export class CanvasEditor {
   private historyIndex: number = -1;
   private zoomLevel: number = 100;
   private originalBrushColor: number;
+  private originalBrushSize: number;
   
   constructor(options: CanvasEditorOptions) {
     this.canvas = options.canvas;
     this.options = options;
     this.zoomLevel = options.zoomLevel || 100;
     this.originalBrushColor = options.brushColor;
+    this.originalBrushSize = options.brushSize;
     
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
@@ -116,13 +118,14 @@ export class CanvasEditor {
   
   public enableEraser() {
     this.originalBrushColor = this.options.brushColor;
+    this.originalBrushSize = this.options.brushSize;
     this.options.brushColor = 255; // 白色
     this.options.brushSize = this.options.eraserSize;
   }
   
   public enableBrush() {
     this.options.brushColor = this.originalBrushColor;
-    this.options.brushSize = this.options.brushSize;
+    this.options.brushSize = this.originalBrushSize;
   }
   
   public disableDrawing() {

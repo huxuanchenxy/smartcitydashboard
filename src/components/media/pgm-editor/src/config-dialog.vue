@@ -101,13 +101,7 @@
           />
         </div>
         
-        <div class="tool-group">
-          <h3>缩放控制</h3>
-          <button @click="zoomIn">放大</button>
-          <button @click="zoomOut">缩小</button>
-          <button @click="resetZoom">重置</button>
-          <span>{{ zoomLevel }}%</span>
-        </div>
+
         
         <div class="tool-group" v-if="config.ros.enabled">
           <h3>ROS2控制</h3>
@@ -149,6 +143,12 @@
           <div>机器人状态: {{ robotStatus }}</div>
           <div>ROS连接: {{ rosConnected ? '已连接' : '未连接' }}</div>
           <div>目标点位: {{ goalPoints.length }}</div>
+          <div class="zoom-controls">
+            <button @click="zoomIn" class="zoom-btn">+</button>
+            <span>{{ zoomLevel }}%</span>
+            <button @click="zoomOut" class="zoom-btn">-</button>
+            <button @click="resetZoom" class="zoom-btn">重置</button>
+          </div>
         </div>
         
         <!-- 目标点位管理 -->
@@ -813,6 +813,33 @@ export default defineComponent({
   background: #f9f9f9;
   font-size: 12px;
   color: #666;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 缩放控制 */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
 }
 
 /* 目标点位管理 */
