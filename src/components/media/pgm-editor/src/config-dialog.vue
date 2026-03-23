@@ -24,13 +24,13 @@
           >
             橡皮擦
           </div>
-          <div 
+          <!-- <div 
             class="tab-item" 
             :class="{ active: currentTool === 'goal' }" 
             @click="currentTool = 'goal'"
           >
             标记点
-          </div>
+          </div> -->
         </div>
         
         <!-- 画笔设置 -->

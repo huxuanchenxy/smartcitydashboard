@@ -48,19 +48,6 @@
       </g-field>
     </g-field-collapse>
     
-    <!-- 目标点配置 -->
-    <g-field-collapse label="目标点位">
-      <g-field :level="2" label="显示名称">
-        <n-switch v-model:value="config.goals.showNames" />
-      </g-field>
-      <g-field :level="2" label="点位大小">
-        <g-input-number v-model="config.goals.pointSize" :min="2" :max="20" :step="1" suffix="px" />
-      </g-field>
-      <g-field :level="2" label="点位颜色">
-        <g-color-picker v-model="config.goals.pointColor" />
-      </g-field>
-    </g-field-collapse>
-    
     <!-- 文件配置 -->
     <g-field-collapse label="PGM地图">
       <g-field :level="2" label="PGM格式">
@@ -77,11 +64,6 @@
         <button @click="handleConfig">配置</button>
       </g-field>
     </g-field-collapse>
-    
-    <!-- 鼠标指针 -->
-    <g-field label="鼠标指针">
-      <g-select v-model="config.cursor" :data="cursorFamily" />
-    </g-field>
   </div>
   
   <!-- 配置对话框 -->
