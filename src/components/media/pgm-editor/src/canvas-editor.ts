@@ -61,9 +61,9 @@ export class CanvasEditor {
     if (!this.isDrawingEnabled) return;
     this.isDrawing = true;
     const rect = this.canvas.getBoundingClientRect();
-    const scale = this.zoomLevel / 100;
-    this.lastX = (e.clientX - rect.left) / scale;
-    this.lastY = (e.clientY - rect.top) / scale;
+    const scale = (this.zoomLevel / 100) * (this.canvas.width / rect.width);
+    this.lastX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+    this.lastY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
     this.saveState();
   }
   
@@ -71,9 +71,8 @@ export class CanvasEditor {
     if (!this.isDrawingEnabled || !this.isDrawing) return;
     
     const rect = this.canvas.getBoundingClientRect();
-    const scale = this.zoomLevel / 100;
-    const currentX = (e.clientX - rect.left) / scale;
-    const currentY = (e.clientY - rect.top) / scale;
+    const currentX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+    const currentY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
     
     this.ctx.beginPath();
     this.ctx.moveTo(this.lastX, this.lastY);

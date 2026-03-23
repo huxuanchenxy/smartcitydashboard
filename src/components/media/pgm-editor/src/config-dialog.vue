@@ -427,11 +427,17 @@ export default defineComponent({
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
         
+        // 考虑canvas元素的实际大小和缩放比例
+        const canvasWidth = canvas.value!.width
+        const canvasHeight = canvas.value!.height
+        const scaleX = canvasWidth / rect.width
+        const scaleY = canvasHeight / rect.height
+        
         goalPoints.value.push({
           id: Date.now().toString(),
           name: `目标点 ${goalPoints.value.length + 1}`,
-          x: x / (zoomLevel.value / 100),
-          y: y / (zoomLevel.value / 100)
+          x: x * scaleX / (zoomLevel.value / 100),
+          y: y * scaleY / (zoomLevel.value / 100)
         })
         
         // 重新绘制目标点

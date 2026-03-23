@@ -125,6 +125,9 @@ export default defineComponent({
           eraserSize: config.value.editor.eraserSize
         })
         
+        // 禁用绘制功能，只在config-dialog中允许绘制
+        canvasEditor.value.disableDrawing()
+        
         // 加载默认数据
         loadDefaultData()
         
