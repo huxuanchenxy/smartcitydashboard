@@ -57,11 +57,10 @@
         <g-input-number v-model="config.file.maxValue" :min="1" :max="255" :step="1" />
       </g-field>
       <g-field :level="2" label="文件操作">
-        <g-input v-model="config.file.url" placeholder="输入PGM文件URL" />
-        <button @click="handleFileUpload">加载</button>
-        <button @click="handleSaveFile">保存</button>
-        <button @click="handleClearCanvas">清空</button>
-        <button @click="handleConfig">配置</button>
+        <div class="file-operations">
+          <g-input v-model="config.file.url" placeholder="输入PGM文件URL" />
+          <button class="config-btn" @click="handleConfig">配置</button>
+        </div>
       </g-field>
     </g-field-collapse>
   </div>
@@ -189,4 +188,33 @@ export default defineComponent({
   max-height: 90vh;
   overflow-y: auto;
 }
+  /* 文件操作区域样式 */
+  .file-operations {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .file-operations :deep(.g-input) {
+    flex: 1;
+  }
+  
+  .config-btn {
+    padding: 6px 16px;
+    background: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .config-btn:hover {
+    background: #40a9ff;
+  }
+  
+  .config-btn:active {
+    background: #096dd9;
+  }
 </style>
