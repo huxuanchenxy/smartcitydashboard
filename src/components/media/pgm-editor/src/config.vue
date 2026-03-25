@@ -75,7 +75,7 @@
       <g-field :level="2" label="最大灰度值">
         <g-input-number v-model="config.file.maxValue" :min="1" :max="255" :step="1" />
       </g-field>
-      <g-field :level="2" label="文件操作">
+      <g-field :level="2" label="PGM文件URL">
         <div class="file-operations">
           <g-input v-model="config.file.url" placeholder="输入PGM文件URL" />
           <button class="config-btn" @click="handleConfig">配置</button>

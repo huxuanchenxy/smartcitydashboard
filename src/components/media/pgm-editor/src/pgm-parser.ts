@@ -246,10 +246,35 @@ export function drawPgmToCanvas(image: PgmImage, canvas: HTMLCanvasElement): voi
     throw new Error('Cannot get canvas context');
   }
   
-  canvas.width = image.width;
-  canvas.height = image.height;
+  // 保持canvas的大小不变，不覆盖之前设置的大小
+  const canvasWidth = canvas.width;
+  const canvasHeight = canvas.height;
   
+  // 计算缩放比例，保持图像的宽高比
+  const scaleX = canvasWidth / image.width;
+  const scaleY = canvasHeight / image.height;
+  const scale = Math.min(scaleX, scaleY);
+  
+  // 计算图像在canvas中的位置（居中显示）
+  const x = (canvasWidth - image.width * scale) / 2;
+  const y = (canvasHeight - image.height * scale) / 2;
+  
+  // 清空画布
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  
+  // 创建ImageData并绘制图像
   const imageData = ctx.createImageData(image.width, image.height);
   imageData.data.set(image.data);
-  ctx.putImageData(imageData, 0, 0);
+  
+  // 创建临时canvas来绘制原始图像
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = image.width;
+  tempCanvas.height = image.height;
+  const tempCtx = tempCanvas.getContext('2d');
+  if (tempCtx) {
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // 将临时canvas中的图像缩放绘制到目标canvas
+    ctx.drawImage(tempCanvas, x, y, image.width * scale, image.height * scale);
+  }
 }

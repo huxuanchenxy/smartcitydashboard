@@ -155,50 +155,46 @@ export default defineComponent({
       // 监听组件大小变化（使用防抖避免频繁触发）
       let resizeTimeout: number | null = null
       const resizeObserver = new ResizeObserver((entries) => {
-        // 确保canvas和goalCanvas存在
-        if (!canvas.value || !goalCanvas.value) return
-        
-        // 获取新的尺寸
-        const entry = entries[0]
-        const { width, height } = entry.contentRect
-        
-        // 验证尺寸有效性（避免为0或过小）
-        if (width < 10 || height < 10) return
-        
         // 防抖处理
         if (resizeTimeout) {
           clearTimeout(resizeTimeout)
         }
         
         resizeTimeout = window.setTimeout(() => {
+          // 确保canvas和goalCanvas存在
           if (!canvas.value || !goalCanvas.value) return
-
+          
+          // 获取新的尺寸
+          const entry = entries[0]
+          const { width, height } = entry.contentRect
+          
+          // 验证尺寸有效性（避免为0或过小）
+          if (width < 10 || height < 10) return
+          
           // ⭐ 避免重复 resize
           if (
             canvas.value.width === width &&
             canvas.value.height === height
           ) return
-
+          
           canvas.value.width = width
           canvas.value.height = height
           goalCanvas.value.width = width
           goalCanvas.value.height = height
-
+          
           // ✅ 用缓存重绘（关键！！）
           if (pgmImage.value) {
             drawPgmToCanvas(pgmImage.value, canvas.value)
             drawRobot()
           }
-
+          
           drawGoalPoints()
-
+          
           if (config.value.goals.goalUrlEnabled && config.value.goals.goalUrl) {
             loadGoalUrlImage(config.value.goals.goalUrl)
           }
-
+          
         }, 100)
-
-
       })
       
       if (canvasContainer.value) {
@@ -429,6 +425,13 @@ export default defineComponent({
         } else if (newTool === 'brush') {
           canvasEditor.value.enableBrush()
         }
+      }
+    })
+    
+    // 监听config.file.url变化，重新加载PGM文件
+    watch(() => config.value.file.url, (newUrl) => {
+      if (newUrl) {
+        handleFileUpload(newUrl)
       }
     })
     

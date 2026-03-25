@@ -608,6 +608,13 @@ export default defineComponent({
       }
     }
     
+    // 监听config.file.url变化，重新加载PGM文件
+    watch(() => config.value.file.url, (newUrl) => {
+      if (newUrl) {
+        handleFileUpload(newUrl)
+      }
+    })
+    
     return {
       config,
       canvas,
