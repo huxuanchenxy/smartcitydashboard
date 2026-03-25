@@ -12,7 +12,6 @@
           ref="canvas" 
           :width="config.global.canvasWidth" 
           :height="config.global.canvasHeight"
-          @click="handleCanvasClick"
         ></canvas>
 
         <canvas 
@@ -167,8 +166,6 @@ export default defineComponent({
           if (config.value.goals.goalUrlEnabled && config.value.goals.goalUrl) {
             loadGoalUrlImage(config.value.goals.goalUrl)
           }
-          // 重新绘制目标点
-          drawGoals()
         }, 100)
       })
       
@@ -287,104 +284,7 @@ export default defineComponent({
       canvasEditor.value?.clear()
     }
     
-    
-    // 编辑目标点
-    const editGoal = (index: number) => {
-      const goal = goalPoints.value[index]
-      const newName = prompt('Enter new name:', goal.name)
-      if (newName) {
-        goal.name = newName
-        updateGoalPoints()
-      }
-    }
-    
-    // 删除目标点
-    const deleteGoal = (index: number) => {
-      goalPoints.value.splice(index, 1)
-      updateGoalPoints()
-    }
-    
-    // 发送目标点
-    const sendGoal = (goal: {x: number, y: number, theta?: number}) => {
-      // 这里应该调用ROS2服务发送目标
-      console.log('Sending goal:', goal)
-      robotStatus.value = 'moving'
-      
-      // 模拟机器人移动
-      setTimeout(() => {
-        // 更新机器人位置到目标点
-        if (goal.x && goal.y) {
-          robotPosition.value = {
-            x: goal.x,
-            y: goal.y,
-            theta: goal.theta || 0
-          }
-          // 重新绘制机器人
-          if (canvas.value && pgmImage.value) {
-            drawPgmToCanvas(pgmImage.value, canvas.value!)
-            drawRobot()
-          }
-        }
-        robotStatus.value = 'idle'
-      }, 2000)
-    }
-    
-    // 手动修改机器人坐标
-    const updateRobotPosition = (x: number, y: number, theta: number = 0) => {
-      robotPosition.value = { x, y, theta }
-      // 重新绘制机器人
-      if (canvas.value && pgmImage.value) {
-        drawPgmToCanvas(pgmImage.value, canvas.value!)
-        drawRobot()
-      }
-    }
-    
-    // 预留ROS2数据获取接口
-    const updateRobotPositionFromRos = (position: {x: number, y: number, theta: number}) => {
-      // 这里将来会从ROS2获取数据
-      robotPosition.value = position
-      // 重新绘制机器人
-      if (canvas.value && pgmImage.value) {
-        drawPgmToCanvas(pgmImage.value, canvas.value!)
-        drawRobot()
-      }
-    }
-    
-    // 连接ROS2
-    const connectRos = () => {
-      // 这里应该建立ROS2连接
-      console.log('Connecting to ROS2...')
-      rosConnected.value = true
-    }
-    
-    // 断开ROS2
-    const disconnectRos = () => {
-      // 这里应该断开ROS2连接
-      console.log('Disconnecting from ROS2...')
-      rosConnected.value = false
-    }
-    
-    // 放大
-    const zoomIn = () => {
-      if (zoomLevel.value < 500) {
-        zoomLevel.value += 10
-      }
-    }
-    
-    // 缩小
-    const zoomOut = () => {
-      if (zoomLevel.value > 10) {
-        zoomLevel.value -= 10
-      }
-    }
-    
-    // 重置缩放
-    const resetZoom = () => {
-      zoomLevel.value = 100
-    }
-    
     // 处理鼠标滚轮
-    // ====== 滚轮缩放（鼠标为中心） ======
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
 
@@ -403,63 +303,7 @@ export default defineComponent({
 
       scale.value = newScale
     }
-
-    // ====== 拖拽 ======
-    const isDragging = ref(false)
-    const lastMouse = ref({ x: 0, y: 0 })
-
-    const handleMouseDown = (e: MouseEvent) => {
-      isDragging.value = true
-      lastMouse.value = { x: e.clientX, y: e.clientY }
-    }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.value) return
-
-      const dx = e.clientX - lastMouse.value.x
-      const dy = e.clientY - lastMouse.value.y
-
-      offset.value.x += dx
-      offset.value.y += dy
-
-      lastMouse.value = { x: e.clientX, y: e.clientY }
-    }
-
-    const handleMouseUp = () => {
-      isDragging.value = false
-    }
-
-    // ====== 点击（修正坐标） ======
-    const handleCanvasClick = (e: MouseEvent) => {
-      const rect = canvasContainer.value!.getBoundingClientRect()
-
-      const x = (e.clientX - rect.left - offset.value.x) / scale.value
-      const y = (e.clientY - rect.top - offset.value.y) / scale.value
-
-      goalPoints.value.push({
-        id: Date.now().toString(),
-        name: `点${goalPoints.value.length + 1}`,
-        x,
-        y
-      })
-
-      drawGoals()
-    }
-
-    // ====== 绘制 ======
-    const drawGoals = () => {
-      if (!goalCanvas.value) return
-      const ctx = goalCanvas.value.getContext('2d')!
-
-      ctx.clearRect(0, 0, goalCanvas.value.width, goalCanvas.value.height)
-
-      goalPoints.value.forEach(p => {
-        ctx.fillStyle = 'green'
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
-        ctx.fill()
-      })
-    }
+    
     // 更新组件数据
     const updateComponentData = (image: PgmImage) => {
       const data = {
@@ -599,7 +443,6 @@ export default defineComponent({
       canvas,
       goalCanvas,
       canvasContainer,
-      currentTool,
       config,
       attr,
       wrapperStyle,
@@ -616,18 +459,7 @@ export default defineComponent({
       saveFile,
       clearCanvas,
       drawGoalPoints,
-      handleCanvasClick,
-      editGoal,
-      deleteGoal,
-      sendGoal,
-      connectRos,
-      disconnectRos,
-      zoomIn,
-      zoomOut,
-      resetZoom,
-      handleWheel,
-      updateRobotPosition,
-      updateRobotPositionFromRos
+      handleWheel
     }
   },
 })
@@ -655,14 +487,6 @@ export default defineComponent({
   pointer-events: none;
 }
 
-.goal-management {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background: #fff;
-  padding: 10px;
-  border: 1px solid #ccc;
-}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -719,21 +543,11 @@ canvas {
   border: 1px solid #eee;
 }
 
-.goal-toggle {
-  margin-bottom: 10px;
-  font-size: 12px;
-}
 
-.goal-toggle label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-}
 
-.goal-toggle input[type="checkbox"] {
-  cursor: pointer;
-}
+
+
+
 
 .status-bar {
   display: flex;
@@ -744,43 +558,12 @@ canvas {
   font-size: 12px;
 }
 
-.goal-management {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 200px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
 
-.goal-management h3 {
-  margin: 0 0 10px 0;
-  font-size: 12px;
-  font-weight: bold;
-}
 
-.goal-list {
-  max-height: 200px;
-  overflow-y: auto;
-}
 
-.goal-item {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 5px;
-  border-bottom: 1px solid #eee;
-  font-size: 12px;
-}
 
-.goal-item button {
-  padding: 2px 5px;
-  font-size: 10px;
-  margin-right: 5px;
-}
+
+
 
 .connected {
   color: #28a745;
