@@ -135,12 +135,23 @@ function parseP5(buffer: ArrayBuffer): PgmImage {
   
   // 读取像素数据
   const data = new Uint8ClampedArray(width * height * 4);
-  for (let i = 0; i < width * height; i++) {
+  // 计算可用的像素数据长度
+  const availablePixels = Math.min(width * height, buffer.byteLength - offset);
+  for (let i = 0; i < availablePixels; i++) {
     const gray = view.getUint8(offset + i);
     const dataIndex = i * 4;
     data[dataIndex] = gray;
     data[dataIndex + 1] = gray;
     data[dataIndex + 2] = gray;
+    data[dataIndex + 3] = 255;
+  }
+  
+  // 填充剩余的像素为黑色
+  for (let i = availablePixels; i < width * height; i++) {
+    const dataIndex = i * 4;
+    data[dataIndex] = 0;
+    data[dataIndex + 1] = 0;
+    data[dataIndex + 2] = 0;
     data[dataIndex + 3] = 255;
   }
   

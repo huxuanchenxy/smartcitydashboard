@@ -391,18 +391,59 @@ export default defineComponent({
       if (!canvas.value) return
       
       try {
-        // 如果没有加载PGM文件，使用默认的maxValue
-        const maxValue = pgmImage.value ? pgmImage.value.maxValue : 255
-        const image = createPgmFromCanvas(canvas.value, maxValue)
-        const blob = encodePgmImage(image)
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'map.pgm'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        // 如果有加载的PGM图像，使用原始图像的大小和maxValue
+        if (pgmImage.value) {
+          const maxValue = pgmImage.value.maxValue
+          
+          // 创建一个与原始图像大小相同的临时canvas
+          const tempCanvas = document.createElement('canvas')
+          tempCanvas.width = pgmImage.value.width
+          tempCanvas.height = pgmImage.value.height
+          const tempCtx = tempCanvas.getContext('2d')
+          
+          if (tempCtx) {
+            // 清空临时canvas
+            tempCtx.fillStyle = '#ffffff'
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height)
+            
+            // 计算缩放比例，将当前canvas的内容缩放到临时canvas
+            const scaleX = tempCanvas.width / canvas.value.width
+            const scaleY = tempCanvas.height / canvas.value.height
+            const scale = Math.min(scaleX, scaleY)
+            
+            // 计算偏移量，使内容居中
+            const offsetX = (tempCanvas.width - canvas.value.width * scale) / 2
+            const offsetY = (tempCanvas.height - canvas.value.height * scale) / 2
+            
+            // 将当前canvas的内容绘制到临时canvas
+            tempCtx.drawImage(canvas.value, offsetX, offsetY, canvas.value.width * scale, canvas.value.height * scale)
+            
+            // 从临时canvas创建PGM图像
+            const image = createPgmFromCanvas(tempCanvas, maxValue)
+            const blob = encodePgmImage(image)
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'map.pgm'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          }
+        } else {
+          // 如果没有加载PGM文件，使用默认的maxValue和canvas的大小
+          const maxValue = 255
+          const image = createPgmFromCanvas(canvas.value, maxValue)
+          const blob = encodePgmImage(image)
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = 'map.pgm'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        }
       } catch (error) {
         console.error('Failed to save PGM file:', error)
       }
