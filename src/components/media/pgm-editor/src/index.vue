@@ -138,6 +138,48 @@ export default defineComponent({
       emitter.on('pgm-file-upload', handleFileUpload)
       emitter.on('pgm-save-file', saveFile)
       emitter.on('pgm-clear-canvas', clearCanvas)
+      
+      // 监听组件大小变化（使用防抖避免频繁触发）
+      let resizeTimeout: number | null = null
+      const resizeObserver = new ResizeObserver((entries) => {
+        // 确保canvas和goalCanvas存在
+        if (!canvas.value || !goalCanvas.value) return
+        
+        // 获取新的尺寸
+        const entry = entries[0]
+        const { width, height } = entry.contentRect
+        
+        // 验证尺寸有效性（避免为0或过小）
+        if (width < 10 || height < 10) return
+        
+        // 防抖处理
+        if (resizeTimeout) {
+          clearTimeout(resizeTimeout)
+        }
+        
+        resizeTimeout = window.setTimeout(() => {
+          // 只重新加载内容，不修改canvas大小（避免清空画布）
+          // 重新加载PGM文件
+          if (config.value.file.url) {
+            handleFileUpload(config.value.file.url)
+          }
+          // 重新加载goalUrl图像
+          if (config.value.goals.goalUrlEnabled && config.value.goals.goalUrl) {
+            loadGoalUrlImage(config.value.goals.goalUrl)
+          }
+          // 重新绘制目标点
+          drawGoals()
+        }, 100)
+      })
+      
+      if (canvasContainer.value) {
+        resizeObserver.observe(canvasContainer.value)
+      }
+      
+      // 清理
+      onUnmounted(() => {
+        resizeObserver.disconnect()
+      })
     })
     
     // 加载默认数据
