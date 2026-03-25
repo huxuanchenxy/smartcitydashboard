@@ -1,52 +1,29 @@
 <template>
   <div class="datav-wrapper" :style="wrapperStyle">
-    <!-- 工具栏 -->
-    
-    <!-- 画布容器 -->
-    <div class="canvas-container" ref="canvasContainer">
-      <!-- 目标点叠加层 -->
-      <canvas 
-        ref="goalCanvas" 
-        :width="config.global.canvasWidth" 
-        :height="config.global.canvasHeight"
-        :style="goalCanvasStyle"
-      ></canvas>
-      <canvas 
-        ref="canvas" 
-        :width="config.global.canvasWidth" 
-        :height="config.global.canvasHeight"
-        :style="canvasStyle"
-        @click="handleCanvasClick"
-        @wheel="handleWheel"
-      ></canvas> 
+        <!-- 画布容器 -->
+    <div 
+      class="canvas-container" 
+      ref="canvasContainer"
+      @wheel="handleWheel"
+    >
+      <!-- ⭐ 统一变换层 -->
+      <div class="transform-layer" :style="transformStyle">
+        <canvas 
+          ref="canvas" 
+          :width="config.global.canvasWidth" 
+          :height="config.global.canvasHeight"
+          @click="handleCanvasClick"
+        ></canvas>
 
-    </div>
-    
-
-    
-    <!-- 目标点位管理 -->
-    <div class="goal-management" v-if="currentTool === 'goal'">
-      <h3>目标点位管理</h3>
-      <div class="goal-toggle">
-        <label>
-          <input type="checkbox" v-model="showGoalPoints" @change="drawGoalPoints" />
-          显示目标点
-        </label>
-      </div>
-      <div class="goal-list">
-        <div 
-          v-for="(point, index) in goalPoints" 
-          :key="point.id"
-          class="goal-item"
-        >
-          <span>{{ point.name }}</span>
-          <span>({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }})</span>
-          <button @click="editGoal(index)">编辑</button>
-          <button @click="deleteGoal(index)">删除</button>
-          <button @click="sendGoal(point)">发送</button>
-        </div>
+        <canvas 
+          ref="goalCanvas" 
+          :width="config.global.canvasWidth" 
+          :height="config.global.canvasHeight"
+          class="goal-canvas"
+        ></canvas>
       </div>
     </div>
+    
   </div>
 </template>
 
@@ -102,72 +79,29 @@ export default defineComponent({
       }
     })
     
+    // ====== ⭐ 核心：缩放 + 平移 ======
+    const scale = ref(1)
+    const offset = ref({ x: 0, y: 0 })
+
+    const transformStyle = computed(() => ({
+      transform: `translate(${offset.value.x}px, ${offset.value.y}px) scale(${scale.value})`
+    }))
     const canvasStyle = computed(() => {
-      if (!pgmImage.value || !canvas.value) {
-        return {
-          transform: `scale(${zoomLevel.value / 100})`,
-          transformOrigin: 'center center',
-          transition: 'transform 0.2s ease'
-        }
-      }
-      
-      // 计算画布的缩放比例，使画布能够适应组件的大小
-      const containerWidth = attr.value.w; // 减去边距
-      const containerHeight = attr.value.h; // 减去工具栏和状态栏的高度
-      
-      const imageWidth = pgmImage.value.width;
-      const imageHeight = pgmImage.value.height;
-      
-      // 计算缩放比例
-      const scaleX = containerWidth / imageWidth;
-      const scaleY = containerHeight / imageHeight;
-      const scale = Math.min(scaleX, scaleY); // 允许放大到组件大小
-      
       return {
-        transform: `scale(${scale * zoomLevel.value / 100})`,
+        transform: `scale(${zoomLevel.value / 100})`,
         transformOrigin: 'center center',
         transition: 'transform 0.2s ease'
       }
     })
     
     const goalCanvasStyle = computed(() => {
-      if (!pgmImage.value || !canvas.value) {
-        return {
-          position: 'absolute' as const,
-          top: '50%',
-          left: '50%',
-          transform: `translate(-50%, -50%) scale(${zoomLevel.value / 100})`,
-          transformOrigin: 'center center',
-          pointerEvents: 'none' as const,
-          opacity: showGoalPoints.value ? '1' : '0',
-          background: 'transparent' as const,
-          transition: 'transform 0.2s ease, opacity 0.2s ease',
-          zIndex: 10
-        }
-      }
-      
-      // 计算画布的缩放比例，使画布能够适应组件的大小
-      const containerWidth = attr.value.w; // 减去边距
-      const containerHeight = attr.value.h; // 减去工具栏和状态栏的高度
-      
-      const imageWidth = pgmImage.value.width;
-      const imageHeight = pgmImage.value.height;
-      
-      // 计算缩放比例
-      const scaleX = containerWidth / imageWidth;
-      const scaleY = containerHeight / imageHeight;
-      const scale = Math.min(scaleX, scaleY); // 允许放大到组件大小
-      
       return {
         position: 'absolute' as const,
-        top: '50%',
-        left: '50%',
-        transform: `translate(-50%, -50%) scale(${scale * zoomLevel.value / 100})`,
-        transformOrigin: 'center center',
+        top: '0',
+        left: '0',
         pointerEvents: 'none' as const,
         opacity: showGoalPoints.value ? '1' : '0',
         background: 'transparent' as const,
-        transition: 'transform 0.2s ease, opacity 0.2s ease',
         zIndex: 10
       }
     })
@@ -311,24 +245,6 @@ export default defineComponent({
       canvasEditor.value?.clear()
     }
     
-    // 处理画布点击
-    const handleCanvasClick = (e: MouseEvent) => {
-      if (currentTool.value === 'goal') {
-        const rect = canvas.value!.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-        
-        const newGoal = {
-          id: `goal_${Date.now()}`,
-          name: `Goal ${goalPoints.value.length + 1}`,
-          x,
-          y
-        }
-        
-        goalPoints.value.push(newGoal)
-        updateGoalPoints()
-      }
-    }
     
     // 编辑目标点
     const editGoal = (index: number) => {
@@ -426,14 +342,82 @@ export default defineComponent({
     }
     
     // 处理鼠标滚轮
+    // ====== 滚轮缩放（鼠标为中心） ======
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      const delta = e.deltaY > 0 ? -10 : 10
-      if ((zoomLevel.value > 10 || delta > 0) && (zoomLevel.value < 500 || delta < 0)) {
-        zoomLevel.value += delta
-      }
+
+      const rect = canvasContainer.value!.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
+      const newScale = Math.min(5, Math.max(0.2, scale.value * zoomFactor))
+
+      offset.value.x =
+        mouseX - (mouseX - offset.value.x) * (newScale / scale.value)
+
+      offset.value.y =
+        mouseY - (mouseY - offset.value.y) * (newScale / scale.value)
+
+      scale.value = newScale
     }
-    
+
+    // ====== 拖拽 ======
+    const isDragging = ref(false)
+    const lastMouse = ref({ x: 0, y: 0 })
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging.value = true
+      lastMouse.value = { x: e.clientX, y: e.clientY }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.value) return
+
+      const dx = e.clientX - lastMouse.value.x
+      const dy = e.clientY - lastMouse.value.y
+
+      offset.value.x += dx
+      offset.value.y += dy
+
+      lastMouse.value = { x: e.clientX, y: e.clientY }
+    }
+
+    const handleMouseUp = () => {
+      isDragging.value = false
+    }
+
+    // ====== 点击（修正坐标） ======
+    const handleCanvasClick = (e: MouseEvent) => {
+      const rect = canvasContainer.value!.getBoundingClientRect()
+
+      const x = (e.clientX - rect.left - offset.value.x) / scale.value
+      const y = (e.clientY - rect.top - offset.value.y) / scale.value
+
+      goalPoints.value.push({
+        id: Date.now().toString(),
+        name: `点${goalPoints.value.length + 1}`,
+        x,
+        y
+      })
+
+      drawGoals()
+    }
+
+    // ====== 绘制 ======
+    const drawGoals = () => {
+      if (!goalCanvas.value) return
+      const ctx = goalCanvas.value.getContext('2d')!
+
+      ctx.clearRect(0, 0, goalCanvas.value.width, goalCanvas.value.height)
+
+      goalPoints.value.forEach(p => {
+        ctx.fillStyle = 'green'
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
+        ctx.fill()
+      })
+    }
     // 更新组件数据
     const updateComponentData = (image: PgmImage) => {
       const data = {
@@ -579,6 +563,7 @@ export default defineComponent({
       wrapperStyle,
       canvasStyle,
       goalCanvasStyle,
+      transformStyle,
       zoomLevel,
       rosConnected,
       robotStatus,
@@ -608,10 +593,34 @@ export default defineComponent({
 
 <style scoped>
 .datav-wrapper {
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+/* ⭐ 核心层 */
+.transform-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+/* ⭐ 两canvas重叠 */
+.transform-layer canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.goal-canvas {
+  pointer-events: none;
 }
 
+.goal-management {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -653,23 +662,14 @@ button.active {
 }
 
 .canvas-container {
-  flex: 1;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
   position: relative;
+  overflow: hidden;
   background: #fff;
-  border: 1px solid #ddd;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
 }
 
-.canvas-container canvas {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
+/* 移除全局的canvas transform设置，让样式对象中的transform生效 */
 
 canvas {
   display: block;
