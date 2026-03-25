@@ -43,6 +43,8 @@ interface PgmEditorConfig {
     showNames: boolean;
     pointSize: number;
     pointColor: string;
+    goalUrlEnabled: boolean;
+    goalUrl: string;
   };
   file: {
     format: string;
@@ -80,11 +82,13 @@ export class PgmEditor extends DatavComponent {
       showDirection: true
     },
     goals: {
-      points: [],
-      showNames: true,
-      pointSize: 10,
-      pointColor: "#00ff00"
-    },
+    points: [],
+    showNames: true,
+    pointSize: 10,
+    pointColor: "#00ff00",
+    goalUrlEnabled: false,
+    goalUrl: ""
+  },
     file: {
       format: "P5", // P2, P5
       maxValue: 255,

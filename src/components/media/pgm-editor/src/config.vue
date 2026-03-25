@@ -48,6 +48,25 @@
       </g-field>
     </g-field-collapse>
     
+    <!-- 目标点配置 -->
+    <g-field-collapse label="目标点">
+      <g-field :level="2" label="显示目标点">
+        <n-switch v-model:value="config.goals.goalUrlEnabled" />
+      </g-field>
+      <g-field :level="2" label="目标点URL" v-if="config.goals.goalUrlEnabled">
+        <g-input v-model="config.goals.goalUrl" placeholder="输入目标点URL" />
+      </g-field>
+      <g-field :level="2" label="显示目标点名称">
+        <n-switch v-model:value="config.goals.showNames" />
+      </g-field>
+      <g-field :level="2" label="目标点大小">
+        <g-input-number v-model="config.goals.pointSize" :min="2" :max="20" :step="1" suffix="px" />
+      </g-field>
+      <g-field :level="2" label="目标点颜色">
+        <g-color-picker v-model="config.goals.pointColor" />
+      </g-field>
+    </g-field-collapse>
+    
     <!-- 文件配置 -->
     <g-field-collapse label="PGM地图">
       <g-field :level="2" label="PGM格式">

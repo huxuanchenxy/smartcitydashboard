@@ -4,6 +4,13 @@
     
     <!-- 画布容器 -->
     <div class="canvas-container" ref="canvasContainer">
+      <!-- 目标点叠加层 -->
+      <canvas 
+        ref="goalCanvas" 
+        :width="config.global.canvasWidth" 
+        :height="config.global.canvasHeight"
+        :style="goalCanvasStyle"
+      ></canvas>
       <canvas 
         ref="canvas" 
         :width="config.global.canvasWidth" 
@@ -11,7 +18,8 @@
         :style="canvasStyle"
         @click="handleCanvasClick"
         @wheel="handleWheel"
-      ></canvas>
+      ></canvas> 
+
     </div>
     
 
@@ -19,6 +27,12 @@
     <!-- 目标点位管理 -->
     <div class="goal-management" v-if="currentTool === 'goal'">
       <h3>目标点位管理</h3>
+      <div class="goal-toggle">
+        <label>
+          <input type="checkbox" v-model="showGoalPoints" @change="drawGoalPoints" />
+          显示目标点
+        </label>
+      </div>
       <div class="goal-list">
         <div 
           v-for="(point, index) in goalPoints" 
@@ -59,6 +73,7 @@ export default defineComponent({
     useEventCenter(props.com)
 
     const canvas = ref<HTMLCanvasElement | null>(null)
+    const goalCanvas = ref<HTMLCanvasElement | null>(null)
     const canvasContainer = ref<HTMLElement | null>(null)
     const canvasEditor = ref<CanvasEditor | null>(null)
     const currentTool = ref<'brush' | 'eraser' | 'goal'>('brush')
@@ -67,6 +82,7 @@ export default defineComponent({
     const robotStatus = ref('idle')
     const goalPoints = ref<Array<{id: string, name: string, x: number, y: number, theta?: number}>>([])
     const zoomLevel = ref(100)
+    const showGoalPoints = ref(true)
     const robotPosition = ref<{x: number, y: number, theta: number}>({
       x: 200, // 初始假数据
       y: 100, // 初始假数据
@@ -114,6 +130,48 @@ export default defineComponent({
       }
     })
     
+    const goalCanvasStyle = computed(() => {
+      if (!pgmImage.value || !canvas.value) {
+        return {
+          position: 'absolute' as const,
+          top: '50%',
+          left: '50%',
+          transform: `translate(-50%, -50%) scale(${zoomLevel.value / 100})`,
+          transformOrigin: 'center center',
+          pointerEvents: 'none' as const,
+          opacity: showGoalPoints.value ? '1' : '0',
+          background: 'transparent' as const,
+          transition: 'transform 0.2s ease, opacity 0.2s ease',
+          zIndex: 10
+        }
+      }
+      
+      // 计算画布的缩放比例，使画布能够适应组件的大小
+      const containerWidth = attr.value.w; // 减去边距
+      const containerHeight = attr.value.h; // 减去工具栏和状态栏的高度
+      
+      const imageWidth = pgmImage.value.width;
+      const imageHeight = pgmImage.value.height;
+      
+      // 计算缩放比例
+      const scaleX = containerWidth / imageWidth;
+      const scaleY = containerHeight / imageHeight;
+      const scale = Math.min(scaleX, scaleY); // 允许放大到组件大小
+      
+      return {
+        position: 'absolute' as const,
+        top: '50%',
+        left: '50%',
+        transform: `translate(-50%, -50%) scale(${scale * zoomLevel.value / 100})`,
+        transformOrigin: 'center center',
+        pointerEvents: 'none' as const,
+        opacity: showGoalPoints.value ? '1' : '0',
+        background: 'transparent' as const,
+        transition: 'transform 0.2s ease, opacity 0.2s ease',
+        zIndex: 10
+      }
+    })
+    
     // 初始化Canvas编辑器
     onMounted(() => {
       if (canvas.value) {
@@ -134,6 +192,11 @@ export default defineComponent({
         // 页面加载时自动加载PGM文件
         if (config.value.file.url) {
           handleFileUpload(config.value.file.url)
+        }
+        
+        // 页面加载时自动加载goalUrl图像
+        if (config.value.goals.goalUrlEnabled && config.value.goals.goalUrl) {
+          loadGoalUrlImage(config.value.goals.goalUrl)
         }
       }
       
@@ -387,6 +450,41 @@ export default defineComponent({
       })
     }
     
+    // 绘制目标点
+    const drawGoalPoints = () => {
+      if (!goalCanvas.value || !showGoalPoints.value) return
+      
+      const ctx = goalCanvas.value.getContext('2d')
+      if (!ctx) return
+      
+      // 重新加载goalUrl图像（如果启用）
+      if (config.value.goals.goalUrlEnabled && config.value.goals.goalUrl) {
+        loadGoalUrlImage(config.value.goals.goalUrl)
+      } else {
+        // 清空目标点画布
+        ctx.clearRect(0, 0, goalCanvas.value.width, goalCanvas.value.height)
+      }
+      
+      // 绘制目标点
+      goalPoints.value.forEach(point => {
+        ctx.save()
+        ctx.fillStyle = config.value.goals.pointColor
+        ctx.beginPath()
+        ctx.arc(point.x, point.y, config.value.goals.pointSize / 2, 0, Math.PI * 2)
+        ctx.fill()
+        
+        // 绘制目标点名称
+        if (config.value.goals.showNames) {
+          ctx.fillStyle = '#000'
+          ctx.font = '12px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'bottom'
+          ctx.fillText(point.name, point.x, point.y - config.value.goals.pointSize / 2 - 2)
+        }
+        ctx.restore()
+      })
+    }
+    
     // 更新目标点位
     const updateGoalPoints = () => {
       const dv_data = ApiModule.dataMap[props.com.id]?.source ?? {}
@@ -399,6 +497,9 @@ export default defineComponent({
         comId: props.com.id, 
         data: { source: data } 
       })
+      
+      // 绘制目标点
+      drawGoalPoints()
     }
     
     // 监听配置变化
@@ -422,6 +523,45 @@ export default defineComponent({
       }
     })
     
+    // 监听goalUrl变化，加载目标点图像
+    watch(() => [config.value.goals.goalUrlEnabled, config.value.goals.goalUrl], ([enabled, url]) => {
+      if (!!enabled && url) {
+        loadGoalUrlImage(url)
+      } else {
+        clearGoalCanvas()
+      }
+    }, { deep: true })
+    
+    // 加载goalUrl图像
+    const loadGoalUrlImage = (url: string | boolean) => {
+      if (!goalCanvas.value || typeof url !== 'string') return
+      
+      const img = new Image()
+      img.onload = () => {
+        const ctx = goalCanvas.value?.getContext('2d')
+        if (ctx) {
+          // 清空画布
+          ctx.clearRect(0, 0, goalCanvas.value.width, goalCanvas.value.height)
+          // 绘制图像
+          ctx.drawImage(img, 0, 0, goalCanvas.value.width, goalCanvas.value.height)
+        }
+      }
+      img.onerror = () => {
+        console.error('Failed to load goalUrl image')
+      }
+      img.src = url
+    }
+    
+    // 清空目标点画布
+    const clearGoalCanvas = () => {
+      if (!goalCanvas.value) return
+      
+      const ctx = goalCanvas.value.getContext('2d')
+      if (ctx) {
+        ctx.clearRect(0, 0, goalCanvas.value.width, goalCanvas.value.height)
+      }
+    }
+    
     onUnmounted(() => {
       // 清理资源
       emitter.off('pgm-file-upload', handleFileUpload)
@@ -431,20 +571,24 @@ export default defineComponent({
 
     return {
       canvas,
+      goalCanvas,
       canvasContainer,
       currentTool,
       config,
       attr,
       wrapperStyle,
       canvasStyle,
+      goalCanvasStyle,
       zoomLevel,
       rosConnected,
       robotStatus,
       goalPoints,
+      showGoalPoints,
       robotPosition,
       handleFileUpload,
       saveFile,
       clearCanvas,
+      drawGoalPoints,
       handleCanvasClick,
       editGoal,
       deleteGoal,
@@ -520,10 +664,33 @@ button.active {
   min-height: 200px;
 }
 
+.canvas-container canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 canvas {
   display: block;
   margin: 0 auto;
   border: 1px solid #eee;
+}
+
+.goal-toggle {
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.goal-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.goal-toggle input[type="checkbox"] {
+  cursor: pointer;
 }
 
 .status-bar {
