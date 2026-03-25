@@ -5,19 +5,23 @@
       class="canvas-container" 
       ref="canvasContainer"
       @wheel="handleWheel"
+      @mousedown="handleMouseDown"
+      @mousemove="handleMouseMove"
+      @mouseup="handleMouseUp"
+      @mouseleave="handleMouseUp"
     >
       <!-- ⭐ 统一变换层 -->
       <div class="transform-layer" :style="transformStyle">
         <canvas 
           ref="canvas" 
-          :width="config.global.canvasWidth" 
-          :height="config.global.canvasHeight"
+          :width="canvasSize.width" 
+          :height="canvasSize.height"
         ></canvas>
 
         <canvas 
           ref="goalCanvas" 
-          :width="config.global.canvasWidth" 
-          :height="config.global.canvasHeight"
+          :width="canvasSize.width" 
+          :height="canvasSize.height"
           class="goal-canvas"
         ></canvas>
       </div>
@@ -81,9 +85,12 @@ export default defineComponent({
     // ====== ⭐ 核心：缩放 + 平移 ======
     const scale = ref(1)
     const offset = ref({ x: 0, y: 0 })
+    const isDragging = ref(false)
+    const lastMouse = ref({ x: 0, y: 0 })
 
     const transformStyle = computed(() => ({
-      transform: `translate(${offset.value.x}px, ${offset.value.y}px) scale(${scale.value})`
+      transform: `translate(${offset.value.x}px, ${offset.value.y}px) scale(${scale.value})`,
+      transformOrigin: '0 0'
     }))
     const canvasStyle = computed(() => {
       return {
@@ -103,6 +110,13 @@ export default defineComponent({
         background: 'transparent' as const,
         zIndex: 10
       }
+    })
+    
+    // 计算canvas的大小
+    const canvasSize = computed(() => {
+      const width = canvasContainer.value?.clientWidth || config.value.global.canvasWidth
+      const height = canvasContainer.value?.clientHeight || config.value.global.canvasHeight
+      return { width, height }
     })
     
     // 初始化Canvas编辑器
@@ -157,16 +171,34 @@ export default defineComponent({
         }
         
         resizeTimeout = window.setTimeout(() => {
-          // 只重新加载内容，不修改canvas大小（避免清空画布）
-          // 重新加载PGM文件
-          if (config.value.file.url) {
-            handleFileUpload(config.value.file.url)
+          if (!canvas.value || !goalCanvas.value) return
+
+          // ⭐ 避免重复 resize
+          if (
+            canvas.value.width === width &&
+            canvas.value.height === height
+          ) return
+
+          canvas.value.width = width
+          canvas.value.height = height
+          goalCanvas.value.width = width
+          goalCanvas.value.height = height
+
+          // ✅ 用缓存重绘（关键！！）
+          if (pgmImage.value) {
+            drawPgmToCanvas(pgmImage.value, canvas.value)
+            drawRobot()
           }
-          // 重新加载goalUrl图像
+
+          drawGoalPoints()
+
           if (config.value.goals.goalUrlEnabled && config.value.goals.goalUrl) {
             loadGoalUrlImage(config.value.goals.goalUrl)
           }
+
         }, 100)
+
+
       })
       
       if (canvasContainer.value) {
@@ -295,6 +327,7 @@ export default defineComponent({
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
       const newScale = Math.min(5, Math.max(0.2, scale.value * zoomFactor))
 
+      // ⭐ 核心：以鼠标为中心缩放
       offset.value.x =
         mouseX - (mouseX - offset.value.x) * (newScale / scale.value)
 
@@ -302,6 +335,27 @@ export default defineComponent({
         mouseY - (mouseY - offset.value.y) * (newScale / scale.value)
 
       scale.value = newScale
+    }
+
+    const handleMouseDown = (e: MouseEvent) => {
+  isDragging.value = true
+  lastMouse.value = { x: e.clientX, y: e.clientY }
+}
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.value) return
+
+      const dx = e.clientX - lastMouse.value.x
+      const dy = e.clientY - lastMouse.value.y
+
+      offset.value.x += dx
+      offset.value.y += dy
+
+      lastMouse.value = { x: e.clientX, y: e.clientY }
+    }
+
+    const handleMouseUp = () => {
+      isDragging.value = false
     }
     
     // 更新组件数据
@@ -355,22 +409,7 @@ export default defineComponent({
       })
     }
     
-    // 更新目标点位
-    const updateGoalPoints = () => {
-      const dv_data = ApiModule.dataMap[props.com.id]?.source ?? {}
-      const data = {
-        ...dv_data,
-        goalPoints: goalPoints.value
-      }
-      
-      ApiModule.setData({ 
-        comId: props.com.id, 
-        data: { source: data } 
-      })
-      
-      // 绘制目标点
-      drawGoalPoints()
-    }
+
     
     // 监听配置变化
     watch(() => config.value.editor, (newConfig) => {
@@ -449,6 +488,7 @@ export default defineComponent({
       canvasStyle,
       goalCanvasStyle,
       transformStyle,
+      canvasSize,
       zoomLevel,
       rosConnected,
       robotStatus,
@@ -459,7 +499,10 @@ export default defineComponent({
       saveFile,
       clearCanvas,
       drawGoalPoints,
-      handleWheel
+      handleWheel,
+      handleMouseDown,
+      handleMouseMove,
+      handleMouseUp
     }
   },
 })
@@ -470,18 +513,31 @@ export default defineComponent({
   width: 100%;
   height: 100%;
 }
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
 /* ⭐ 核心层 */
 .transform-layer {
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
   transform-origin: 0 0;
+  z-index: 9999;
 }
 /* ⭐ 两canvas重叠 */
 .transform-layer canvas {
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
 }
 .goal-canvas {
   pointer-events: none;
@@ -527,14 +583,17 @@ button.active {
   border-color: #007bff;
 }
 
-.canvas-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-  background: #fff;
-}
+/* .canvas-container {
+  user-select: none;
+  cursor: grab;
+} */
 
+.canvas-container {
+  position: relative;
+}
+.canvas-container:active {
+  cursor: grabbing;
+}
 /* 移除全局的canvas transform设置，让样式对象中的transform生效 */
 
 canvas {
