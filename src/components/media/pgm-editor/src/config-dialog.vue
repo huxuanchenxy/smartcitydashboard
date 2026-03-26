@@ -78,18 +78,22 @@
             v-model.number="config.goals.pointSize"
             @input="updateGoalPointSize"
           />
-          <label>颜色: {{ config.goals.pointColor }}</label>
-          <input 
-            type="color" 
-            v-model="config.goals.pointColor"
-            @input="updateGoalPointColor"
-          />
-          <label>显示目标点:</label>
-          <input 
-            type="checkbox" 
-            v-model="showGoalPoints"
-            @change="toggleGoalPoints"
-          />
+          <div class="form-item">
+            <label>颜色: {{ config.goals.pointColor }}</label>
+            <input 
+              type="color" 
+              v-model="config.goals.pointColor"
+              @input="updateGoalPointColor"
+            />
+          </div>
+          <div class="form-item">
+            <label>显示目标点:</label>
+            <input 
+              type="checkbox" 
+              v-model="showGoalPoints"
+              @change="toggleGoalPoints"
+            />
+          </div>
         </div>
         
         <!-- 目标点位管理 -->
@@ -835,6 +839,17 @@ export default defineComponent({
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   font-size: 11px;
+}
+
+.tool-group .form-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.tool-group .form-item label {
+  margin-right: 8px;
+  white-space: nowrap;
 }
 
 .tool-group span {
