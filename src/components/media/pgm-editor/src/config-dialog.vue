@@ -758,6 +758,8 @@ export default defineComponent({
   border-right: 1px solid #e8e8e8;
   background: #f9f9f9;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 右侧内容区域 */
@@ -919,6 +921,9 @@ export default defineComponent({
   background: #f5f5f5;
   border-radius: 4px;
   margin-top: 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .tool-group.goal-management h3 {
@@ -931,8 +936,9 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 380px;
+  max-height: 400px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .goal-item {
