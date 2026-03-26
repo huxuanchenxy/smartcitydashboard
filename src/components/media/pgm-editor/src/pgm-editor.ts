@@ -37,6 +37,7 @@ interface PgmEditorConfig {
     iconSize: number;
     iconColor: string;
     showDirection: boolean;
+    showRobot: boolean;
   };
   goals: {
     points: Array<any>;
@@ -77,6 +78,7 @@ export class PgmEditor extends DatavComponent {
       goalService: "/robot/set_goal"
     },
     robot: {
+      showRobot: true,
       iconSize: 20,
       iconColor: "#ff0000",
       showDirection: true

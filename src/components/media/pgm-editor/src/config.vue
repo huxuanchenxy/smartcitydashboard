@@ -37,6 +37,9 @@
     
     <!-- 机器人配置 -->
     <g-field-collapse label="机器人">
+      <g-field :level="2" label="显示机器人">
+        <n-switch v-model:value="config.robot.showRobot" />
+      </g-field>
       <g-field :level="2" label="图标大小">
         <g-input-number v-model="config.robot.iconSize" :min="5" :max="50" :step="1" suffix="px" />
       </g-field>

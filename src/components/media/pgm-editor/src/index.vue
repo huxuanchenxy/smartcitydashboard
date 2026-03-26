@@ -231,6 +231,9 @@ export default defineComponent({
     
     // 绘制机器人
     const drawRobot = () => {
+      // 如果配置为不显示机器人，直接返回
+      if (!config.value.robot.showRobot) return
+      
       if (!canvas.value || !pgmImage.value) return
       
       const ctx = canvas.value.getContext('2d')
@@ -432,6 +435,14 @@ export default defineComponent({
     watch(() => config.value.file.url, (newUrl) => {
       if (newUrl) {
         handleFileUpload(newUrl)
+      }
+    })
+    
+    // 监听config.robot.showRobot变化，重新绘制机器人
+    watch(() => config.value.robot.showRobot, () => {
+      if (pgmImage.value) {
+        drawPgmToCanvas(pgmImage.value, canvas.value!)
+        drawRobot()
       }
     })
     
