@@ -45,11 +45,11 @@
             v-model.number="config.editor.brushSize"
             @input="updateBrushSize"
           />
-          <label>形状:</label>
+          <!-- <label>形状:</label>
           <select v-model="config.editor.brushShape" @change="updateBrushShape">
             <option value="circle">圆形</option>
             <option value="square">方形</option>
-          </select>
+          </select> -->
         </div>
         
         <!-- 橡皮擦设置 -->
@@ -107,7 +107,7 @@
             >
               <div class="goal-info">
                 <span>{{ point.name }}</span>
-                <span class="goal-coords">({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }})</span>
+                <span class="goal-coords">({{ point.x.toFixed(1) }}, {{ point.y.toFixed(1) }}, {{ point.theta !== undefined ? (point.theta * 180 / Math.PI).toFixed(1) + '°' : '0°' }})</span>
               </div>
               <div class="goal-buttons">
                 <button @click="editGoal(index)">编辑</button>
