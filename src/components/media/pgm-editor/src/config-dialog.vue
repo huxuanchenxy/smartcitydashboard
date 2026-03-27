@@ -727,6 +727,35 @@ export default defineComponent({
             tempCtx.arc(point.x, point.y, config.value.goals.pointSize / 2, 0, Math.PI * 2)
             tempCtx.fill()
             
+            // 绘制目标点方向箭头
+            if (point.theta !== undefined) {
+              const arrowLength = config.value.goals.pointSize * 2
+              const arrowX = point.x + Math.cos(point.theta) * arrowLength
+              const arrowY = point.y + Math.sin(point.theta) * arrowLength
+              
+              tempCtx.strokeStyle = config.value.goals.pointColor
+              tempCtx.lineWidth = 2
+              tempCtx.beginPath()
+              tempCtx.moveTo(point.x, point.y)
+              tempCtx.lineTo(arrowX, arrowY)
+              tempCtx.stroke()
+              
+              // 绘制箭头头部
+              const arrowHeadSize = 8
+              tempCtx.beginPath()
+              tempCtx.moveTo(arrowX, arrowY)
+              tempCtx.lineTo(
+                arrowX - arrowHeadSize * Math.cos(point.theta - Math.PI / 6),
+                arrowY - arrowHeadSize * Math.sin(point.theta - Math.PI / 6)
+              )
+              tempCtx.lineTo(
+                arrowX - arrowHeadSize * Math.cos(point.theta + Math.PI / 6),
+                arrowY - arrowHeadSize * Math.sin(point.theta + Math.PI / 6)
+              )
+              tempCtx.closePath()
+              tempCtx.fill()
+            }
+            
             // 绘制目标点名称
             if (config.value.goals.showNames) {
               tempCtx.fillStyle = '#000'
