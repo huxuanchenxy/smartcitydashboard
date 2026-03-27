@@ -112,8 +112,39 @@
               <div class="goal-buttons">
                 <button @click="editGoal(index)">编辑</button>
                 <button @click="deleteGoal(index)">删除</button>
-                <button @click="sendGoal(point)">发送</button>
               </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 编辑对话框 -->
+        <div v-if="dialogVisible" class="edit-dialog-overlay" @click="cancelGoalEdit">
+          <div class="edit-dialog-container" @click.stop>
+            <div class="edit-dialog-header">
+              <h4>编辑目标点</h4>
+              <button @click="cancelGoalEdit" class="edit-dialog-close">×</button>
+            </div>
+            <div class="edit-dialog-content" v-if="editingGoal">
+              <div class="form-item">
+                <label>名称:</label>
+                <input type="text" v-model="editingGoal.name" />
+              </div>
+              <div class="form-item">
+                <label>X坐标:</label>
+                <input type="number" v-model.number="editingGoal.x" step="0.001" />
+              </div>
+              <div class="form-item">
+                <label>Y坐标:</label>
+                <input type="number" v-model.number="editingGoal.y" step="0.001" />
+              </div>
+              <div class="form-item">
+                <label>角度(度):</label>
+                <input type="number" v-model.number="editingGoal.theta" step="0.001" />
+              </div>
+            </div>
+            <div class="edit-dialog-footer">
+              <button @click="cancelGoalEdit" class="cancel-btn">取消</button>
+              <button @click="saveGoalEdit" class="save-btn" :disabled="!editingGoal">保存</button>
             </div>
           </div>
         </div>
@@ -212,6 +243,8 @@ export default defineComponent({
     const zoomLevel = ref(100)
     const showGoalPoints = ref(true)
     const settingGoalDirection = ref<{id: string, x: number, y: number} | null>(null)
+    const editingGoal = ref<{index: number, name: string, x: number, y: number, theta: number} | null>(null)
+    const dialogVisible = ref(false)
     
     const canvasStyle = computed(() => {
       return {
@@ -588,14 +621,56 @@ export default defineComponent({
     
     // 编辑目标点
     const editGoal = (index: number) => {
-      // 这里可以添加编辑目标点的逻辑
+      const point = goalPoints.value[index]
+      editingGoal.value = {
+        index,
+        name: point.name,
+        x: point.x,
+        y: point.y,
+        theta: point.theta !== undefined ? (point.theta * 180 / Math.PI) : 0
+      }
+      dialogVisible.value = true
+    }
+    
+    const saveGoalEdit = () => {
+      if (editingGoal.value) {
+        const { index, name, x, y, theta } = editingGoal.value
+        goalPoints.value[index] = {
+          ...goalPoints.value[index],
+          name,
+          x,
+          y,
+          theta: theta * Math.PI / 180
+        }
+        editingGoal.value = null
+        dialogVisible.value = false
+        drawGoalPoints()
+      }
+    }
+    
+    const cancelGoalEdit = () => {
+      editingGoal.value = null
+      dialogVisible.value = false
+    }
+    
+    const testDialog = () => {
+      dialogVisible.value = true
+      editingGoal.value = {
+        index: 0,
+        name: '测试目标点',
+        x: 100,
+        y: 100,
+        theta: 0
+      }
     }
     
     // 删除目标点
     const deleteGoal = (index: number) => {
-      goalPoints.value.splice(index, 1)
-      // 重新绘制目标点
-      drawGoalPoints()
+      if (confirm('确定要删除这个目标点吗？')) {
+        goalPoints.value.splice(index, 1)
+        // 重新绘制目标点
+        drawGoalPoints()
+      }
     }
     
     // 更新目标点大小
@@ -725,6 +800,9 @@ export default defineComponent({
       goalPoints,
       zoomLevel,
       showGoalPoints,
+      settingGoalDirection,
+      editingGoal,
+      dialogVisible,
       canvasStyle,
       goalCanvasStyle,
       handleFileUpload,
@@ -746,6 +824,9 @@ export default defineComponent({
       connectRos,
       disconnectRos,
       editGoal,
+      saveGoalEdit,
+      cancelGoalEdit,
+      testDialog,
       deleteGoal,
       sendGoal,
       closeDialog,
@@ -998,12 +1079,146 @@ export default defineComponent({
 .goal-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px;
+  padding: 8px;
   background: #fff;
   border-radius: 4px;
-  font-size: 11px;
   border: 1px solid #e8e8e8;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.edit-form .form-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-form .form-item label {
+  min-width: 80px;
+  font-size: 13px;
+  color: #333;
+}
+
+.edit-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+}
+
+.edit-dialog-container {
+  position: relative;
+  width: 400px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20001;
+}
+
+.edit-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.edit-dialog-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.edit-dialog-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-dialog-content {
+  padding: 24px;
+}
+
+.edit-dialog-content .form-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.edit-dialog-content .form-item label {
+  min-width: 80px;
+  font-size: 13px;
+  color: #333;
+}
+
+.edit-dialog-content .form-item input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.edit-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.edit-dialog-footer .cancel-btn {
+  padding: 8px 16px;
+  background: #fff;
+  color: #666;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.edit-dialog-footer .cancel-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.edit-dialog-footer .save-btn {
+  padding: 8px 16px;
+  background: #1890ff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.edit-dialog-footer .save-btn:hover {
+  background: #40a9ff;
+}
+
+.edit-dialog-footer .save-btn:disabled {
+  background: #f5f5f5;
+  color: #d9d9d9;
+  cursor: not-allowed;
 }
 
 .goal-info {

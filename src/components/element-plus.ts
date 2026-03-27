@@ -3,11 +3,19 @@ import type { App } from 'vue'
 import {
   ElTabPane,
   ElTabs,
+  ElDialog,
+  ElInput,
+  ElInputNumber,
+  ElButton
 } from 'element-plus'
 
 const components = [
   ElTabPane,
   ElTabs,
+  ElDialog,
+  ElInput,
+  ElInputNumber,
+  ElButton
 ]
 
 const install = (app: App): void => {
