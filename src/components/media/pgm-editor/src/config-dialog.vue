@@ -169,7 +169,10 @@
             :width="config.global.canvasWidth" 
             :height="config.global.canvasHeight"
             :style="canvasStyle"
-            @click="handleCanvasClick"
+            @mousedown="handleCanvasMouseDown"
+            @mousemove="handleCanvasMouseMove"
+            @mouseup="handleCanvasMouseUp"
+            @mouseleave="handleCanvasMouseUp"
             @wheel="handleWheel"
           ></canvas>
           <!-- 目标点叠加层 -->
@@ -242,7 +245,6 @@ export default defineComponent({
     const goalPoints = ref<Array<{id: string, name: string, x: number, y: number, theta?: number}>>([])
     const zoomLevel = ref(100)
     const showGoalPoints = ref(true)
-    const settingGoalDirection = ref<{id: string, x: number, y: number} | null>(null)
     const editingGoal = ref<{index: number, name: string, x: number, y: number, theta: number} | null>(null)
     const dialogVisible = ref(false)
     
@@ -514,9 +516,13 @@ export default defineComponent({
     }
     
     // 处理画布点击
-    const handleCanvasClick = (e: MouseEvent) => {
+    const isDraggingGoal = ref(false)
+    const dragStartPoint = ref<{x: number, y: number} | null>(null)
+    const dragGoalId = ref<string | null>(null)
+    
+    const handleCanvasMouseDown = (e: MouseEvent) => {
       if (currentTool.value === 'goal') {
-        // 添加目标点
+        // 开始拖动设置目标点方向
         const rect = canvas.value!.getBoundingClientRect()
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
@@ -531,50 +537,69 @@ export default defineComponent({
         const actualX = x * scaleX / (zoomLevel.value / 100)
         const actualY = y * scaleY / (zoomLevel.value / 100)
         
-        // 检查是否正在设置方向
-        if (settingGoalDirection.value) {
-          // 计算方向（弧度）
-          const dx = actualX - settingGoalDirection.value.x
-          const dy = actualY - settingGoalDirection.value.y
-          const theta = Math.atan2(dy, dx)
-          
-          // 更新目标点的方向
-          const goalIndex = goalPoints.value.findIndex(p => p.id === settingGoalDirection.value.id)
-          if (goalIndex !== -1) {
-            goalPoints.value[goalIndex].theta = theta
-          }
-          
-          // 重置设置方向状态
-          settingGoalDirection.value = null
-          
-          // 重新绘制目标点
-          drawGoalPoints()
-        } else {
-          // 添加新目标点
-          const newGoal = {
-            id: Date.now().toString(),
-            name: `目标点 ${goalPoints.value.length + 1}`,
-            x: actualX,
-            y: actualY,
-            theta: 0 // 默认方向为0
-          }
-          
-          goalPoints.value.push(newGoal)
-          
-          // 提示用户点击第二点设置方向
-          alert('请点击第二点来设置目标点的方向')
-          
-          // 设置状态，准备接收方向点
-          settingGoalDirection.value = {
-            id: newGoal.id,
-            x: actualX,
-            y: actualY
-          }
-          
-          // 重新绘制目标点
-          drawGoalPoints()
+        // 添加新目标点
+        const newGoal = {
+          id: Date.now().toString(),
+          name: `目标点 ${goalPoints.value.length + 1}`,
+          x: actualX,
+          y: actualY,
+          theta: 0 // 默认方向为0
         }
+        
+        goalPoints.value.push(newGoal)
+        
+        // 开始拖动状态
+        isDraggingGoal.value = true
+        dragStartPoint.value = { x: actualX, y: actualY }
+        dragGoalId.value = newGoal.id
+        
+        // 重新绘制目标点
+        drawGoalPoints()
       }
+    }
+    
+    const handleCanvasMouseMove = (e: MouseEvent) => {
+      if (isDraggingGoal.value && dragStartPoint.value && dragGoalId.value) {
+        // 更新目标点方向
+        const rect = canvas.value!.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+        
+        // 考虑canvas元素的实际大小和缩放比例
+        const canvasWidth = canvas.value!.width
+        const canvasHeight = canvas.value!.height
+        const scaleX = canvasWidth / rect.width
+        const scaleY = canvasHeight / rect.height
+        
+        // 计算实际坐标（考虑缩放）
+        const actualX = x * scaleX / (zoomLevel.value / 100)
+        const actualY = y * scaleY / (zoomLevel.value / 100)
+        
+        // 计算方向（弧度）
+        const dx = actualX - dragStartPoint.value.x
+        const dy = actualY - dragStartPoint.value.y
+        const theta = Math.atan2(dy, dx)
+        
+        // 更新目标点的方向
+        const goalIndex = goalPoints.value.findIndex(p => p.id === dragGoalId.value!)
+        if (goalIndex !== -1) {
+          goalPoints.value[goalIndex].theta = theta
+        }
+        
+        // 重新绘制目标点
+        drawGoalPoints()
+      }
+    }
+    
+    const handleCanvasMouseUp = () => {
+      // 结束拖动状态
+      isDraggingGoal.value = false
+      dragStartPoint.value = null
+      dragGoalId.value = null
+    }
+    
+    const handleCanvasClick = (e: MouseEvent) => {
+      // 点击事件已经被mousedown/mousemove/mouseup处理，这里可以留空
     }
     
     // 处理鼠标滚轮
@@ -791,7 +816,6 @@ export default defineComponent({
       goalPoints,
       zoomLevel,
       showGoalPoints,
-      settingGoalDirection,
       editingGoal,
       dialogVisible,
       canvasStyle,
@@ -801,6 +825,9 @@ export default defineComponent({
       saveGoalPointsImage,
       clearCanvas,
       handleCanvasClick,
+      handleCanvasMouseDown,
+      handleCanvasMouseMove,
+      handleCanvasMouseUp,
       zoomIn,
       zoomOut,
       resetZoom,
