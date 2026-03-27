@@ -164,24 +164,25 @@
       <div class="content">
         <!-- 画布容器 -->
         <div class="canvas-container" ref="canvasContainer">
-          <canvas 
-            ref="canvas" 
-            :width="config.global.canvasWidth" 
-            :height="config.global.canvasHeight"
-            :style="canvasStyle"
-            @mousedown="handleCanvasMouseDown"
-            @mousemove="handleCanvasMouseMove"
-            @mouseup="handleCanvasMouseUp"
-            @mouseleave="handleCanvasMouseUp"
-            @wheel="handleWheel"
-          ></canvas>
-          <!-- 目标点叠加层 -->
-          <canvas 
-            ref="goalCanvas" 
-            :width="config.global.canvasWidth" 
-            :height="config.global.canvasHeight"
-            :style="{ ...canvasStyle, ...goalCanvasStyle }"
-          ></canvas>
+          <div class="transform-layer" :style="canvasStyle">
+            <canvas 
+              ref="canvas" 
+              :width="config.global.canvasWidth" 
+              :height="config.global.canvasHeight"
+              @mousedown="handleCanvasMouseDown"
+              @mousemove="handleCanvasMouseMove"
+              @mouseup="handleCanvasMouseUp"
+              @mouseleave="handleCanvasMouseUp"
+              @wheel="handleWheel"
+            ></canvas>
+            <!-- 目标点叠加层 -->
+            <canvas 
+              ref="goalCanvas" 
+              :width="config.global.canvasWidth" 
+              :height="config.global.canvasHeight"
+              :style="goalCanvasStyle"
+            ></canvas>
+          </div>
         </div>
         
         <!-- 状态栏 -->
@@ -527,15 +528,15 @@ export default defineComponent({
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
         
-        // 考虑canvas元素的实际大小和缩放比例
+        // 考虑canvas元素的实际大小
         const canvasWidth = canvas.value!.width
         const canvasHeight = canvas.value!.height
         const scaleX = canvasWidth / rect.width
         const scaleY = canvasHeight / rect.height
         
-        // 计算实际坐标（考虑缩放）
-        const actualX = x * scaleX / (zoomLevel.value / 100)
-        const actualY = y * scaleY / (zoomLevel.value / 100)
+        // 计算实际坐标
+        const actualX = x * scaleX
+        const actualY = y * scaleY
         
         // 添加新目标点
         const newGoal = {
@@ -565,15 +566,15 @@ export default defineComponent({
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
         
-        // 考虑canvas元素的实际大小和缩放比例
+        // 考虑canvas元素的实际大小
         const canvasWidth = canvas.value!.width
         const canvasHeight = canvas.value!.height
         const scaleX = canvasWidth / rect.width
         const scaleY = canvasHeight / rect.height
         
-        // 计算实际坐标（考虑缩放）
-        const actualX = x * scaleX / (zoomLevel.value / 100)
-        const actualY = y * scaleY / (zoomLevel.value / 100)
+        // 计算实际坐标
+        const actualX = x * scaleX
+        const actualY = y * scaleY
         
         // 计算方向（弧度）
         const dx = actualX - dragStartPoint.value.x
@@ -1039,6 +1040,11 @@ export default defineComponent({
   display: block;
   font-size: 11px;
   margin-top: 4px;
+}
+
+.transform-layer {
+  position: relative;
+  display: inline-block;
 }
 
 /* 画布容器 */
