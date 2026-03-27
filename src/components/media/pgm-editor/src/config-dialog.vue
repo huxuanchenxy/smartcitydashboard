@@ -653,16 +653,7 @@ export default defineComponent({
       dialogVisible.value = false
     }
     
-    const testDialog = () => {
-      dialogVisible.value = true
-      editingGoal.value = {
-        index: 0,
-        name: '测试目标点',
-        x: 100,
-        y: 100,
-        theta: 0
-      }
-    }
+    
     
     // 删除目标点
     const deleteGoal = (index: number) => {
@@ -826,7 +817,6 @@ export default defineComponent({
       editGoal,
       saveGoalEdit,
       cancelGoalEdit,
-      testDialog,
       deleteGoal,
       sendGoal,
       closeDialog,
