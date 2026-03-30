@@ -205,6 +205,7 @@
       <div class="footer-left">
         <button @click="saveFile" class="save-pgm-btn">保存PGM文件</button>
         <button @click="saveGoalPointsImage" v-show="currentTool === 'goal'" class="save-goal-btn">保存目标点图像</button>
+        <button @click="saveGoalData" v-show="currentTool === 'goal'" class="save-goal-data-btn">保存目标点数据</button>
       </div>
       <div class="footer-right">
         <button @click="closeDialog" class="cancel-btn">取消</button>
@@ -792,6 +793,24 @@ export default defineComponent({
       // 这里可以添加发送目标点的逻辑
     }
     
+    // 保存目标点数据到配置
+    const saveGoalData = () => {
+      try {
+        const dataToSave = goalPoints.value.map(point => ({
+          id: point.id,
+          name: point.name,
+          x: point.x,
+          y: point.y,
+          theta: point.theta
+        }))
+        config.value.goals.goalData = JSON.stringify(dataToSave, null, 2)
+        alert('目标点数据已保存到配置中')
+      } catch (error) {
+        console.error('保存目标点数据失败:', error)
+        alert('保存目标点数据失败')
+      }
+    }
+    
     const closeDialog = () => {
       emit('close')
     }
@@ -876,6 +895,7 @@ export default defineComponent({
       cancelGoalEdit,
       deleteGoal,
       sendGoal,
+      saveGoalData,
       closeDialog,
       saveConfig
     }

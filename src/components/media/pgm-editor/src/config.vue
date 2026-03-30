@@ -59,6 +59,9 @@
       <g-field :level="2" label="目标点URL" v-if="config.goals.goalUrlEnabled">
         <g-input v-model="config.goals.goalUrl" placeholder="输入目标点URL" />
       </g-field>
+      <g-field :level="2" label="目标点数据">
+        <g-input v-model="config.goals.goalData" type="textarea" placeholder="目标点JSON数据" :rows="3" />
+      </g-field>
       <g-field :level="2" label="显示目标点名称">
         <n-switch v-model:value="config.goals.showNames" />
       </g-field>
