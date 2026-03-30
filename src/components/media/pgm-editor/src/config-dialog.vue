@@ -205,7 +205,7 @@
       <div class="footer-left">
         <button @click="saveFile" class="save-pgm-btn">保存PGM文件</button>
         <button @click="saveGoalPointsImage" v-show="currentTool === 'goal'" class="save-goal-btn">保存目标点图像</button>
-        <button @click="saveGoalData" v-show="currentTool === 'goal'" class="save-goal-data-btn">保存目标点数据</button>
+        <button @click="saveGoalData" v-show="currentTool === 'goal'" class="save-goal-btn">保存目标点数据</button>
       </div>
       <div class="footer-right">
         <button @click="closeDialog" class="cancel-btn">取消</button>
@@ -333,7 +333,27 @@ export default defineComponent({
     // 加载默认数据
     const loadDefaultData = async () => {
       try {
-        // 这里可以添加加载默认数据的逻辑
+        // 加载目标点数据
+        if (config.value.goals.goalData) {
+          try {
+            const parsedData = JSON.parse(config.value.goals.goalData)
+            if (Array.isArray(parsedData)) {
+              goalPoints.value = parsedData.map(point => ({
+                id: point.id,
+                name: point.name,
+                x: point.x,
+                y: point.y,
+                theta: point.theta
+              }))
+              // 绘制目标点
+              setTimeout(() => {
+                drawGoalPoints()
+              }, 100)
+            }
+          } catch (error) {
+            console.error('Failed to parse goal data:', error)
+          }
+        }
       } catch (error) {
         console.error('Failed to load default data:', error)
       }
