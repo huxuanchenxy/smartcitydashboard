@@ -27,7 +27,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, watch, onMounted, onUnmounted, PropType } from 'vue';
-
+// app-bvB0IYwRflahot7Bog2n1G5o
 export default defineComponent({
   name: 'DifyChatbotDialog',
   props: {
