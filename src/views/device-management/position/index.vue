@@ -31,6 +31,11 @@
                 重置
               </span>
             </n-button>
+            <n-button class="Server-button" color="#1C64F2" @click="openDifyDialog">
+              <n-icon>
+                <IconServerSearch />
+              </n-icon>
+              <span>Dify 聊天机器人</span></n-button>
           </div>
         </div>
 
@@ -50,6 +55,15 @@
       </div>
     </div>
   </div>
+  
+  <!-- Dify 聊天机器人弹框 -->
+  <DifyChatbotDialog
+    v-model:visible="difyDialogVisible"
+    :data="difyData"
+    @close="handleDifyDialogClose"
+    @data-received="handleDifyDataReceived"
+    @data-sent="handleDifyDataSent"
+  />
 </template>
 
 
@@ -69,6 +83,7 @@ import {
   IconDeviceManagement,
   IconNodata
 } from '@/icons'
+import DifyChatbotDialog from '../../../components/dify-chatbot/DifyChatbotDialog.vue'
 export default defineComponent({
   name: 'MyScreen',
   components: {
@@ -79,13 +94,23 @@ export default defineComponent({
     serverConfigData,
     IcList,
     IconDeviceManagement,
-    IconNodata
+    IconNodata,
+    DifyChatbotDialog
   },
   setup() {
     const deviceAll = ref([])
     const columns = ref([]);
     const message = useMessage()
     const showPointLocation = ref(false);
+    
+    // Dify 聊天机器人相关状态
+    const difyDialogVisible = ref(false);
+    const difyData = ref({
+      deviceCode: '',
+      nodeCode: '',
+      nodeName: '',
+      nodeShowName: ''
+    });
     const deviceCode = ref('')
     const nodeCode = ref('');
     const nodeName = ref('');
@@ -234,6 +259,40 @@ export default defineComponent({
       nodeShowName.value = null;
       fetchProjects()
     }
+    
+    // 打开 Dify 聊天机器人弹框
+    const openDifyDialog = () => {
+      console.log('Opening Dify dialog...');
+      // 同步当前查询条件到 Dify 数据
+      difyData.value = {
+        deviceCode: deviceCode.value,
+        nodeCode: nodeCode.value,
+        nodeName: nodeName.value,
+        nodeShowName: nodeShowName.value
+      };
+      console.log('Dify data:', difyData.value);
+      difyDialogVisible.value = true;
+      console.log('Dify dialog visible set to true');
+    };
+    
+    // 处理 Dify 聊天机器人关闭事件
+    const handleDifyDialogClose = () => {
+      console.log('Dify dialog closed');
+    };
+    
+    // 处理从 Dify 聊天机器人接收数据
+    const handleDifyDataReceived = (data) => {
+      console.log('Data received from Dify:', data);
+      // 可以根据需要处理从 Dify 接收的数据
+      message.success('收到来自 Dify 的数据');
+    };
+    
+    // 处理向 Dify 聊天机器人发送数据
+    const handleDifyDataSent = (data) => {
+      console.log('Data sent to Dify:', data);
+      message.success('数据已发送到 Dify');
+    };
+    
     onMounted(() => {
       fetchProjects();
     })
@@ -250,7 +309,14 @@ export default defineComponent({
       handlePageChange,
       Eliminate,
       showPointLocation,
-      triggerSearch
+      triggerSearch,
+      // Dify 聊天机器人相关
+      difyDialogVisible,
+      difyData,
+      openDifyDialog,
+      handleDifyDialogClose,
+      handleDifyDataReceived,
+      handleDifyDataSent
     }
   }
 })
