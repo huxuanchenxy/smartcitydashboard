@@ -107,7 +107,9 @@ export default defineComponent({
       //dv_data api返回的json
       //?可选链，不为空则计算下一级别，返回不为空的最后一层
       //??或，类似与||
-      return ApiModule.dataMap[props.com.id]?.source ?? {}
+      const source = ApiModule.dataMap[props.com.id]?.source ?? {}
+      // 处理source是数组的情况
+      return Array.isArray(source) ? source[0] : source
     })
 
     const dv_field = computed(() => {
