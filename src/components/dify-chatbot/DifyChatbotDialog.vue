@@ -98,8 +98,10 @@ export default defineComponent({
     // 向 iframe 发送数据
     const sendDataToIframe = (data: any) => {
       if (iframeRef.value && iframeRef.value.contentWindow) {
-        iframeRef.value.contentWindow.postMessage(data, '*');
-        console.log('Data sent to iframe:', data);
+        // 转换 Proxy 对象为普通对象，避免 postMessage 克隆错误
+        const serializableData = JSON.parse(JSON.stringify(data));
+        iframeRef.value.contentWindow.postMessage(serializableData, '*');
+        console.log('Data sent to iframe:', serializableData);
       }
     };
 
@@ -172,10 +174,13 @@ export default defineComponent({
   width: 80% !important;
   max-width: 900px !important;
   max-height: 80vh !important;
+  background-color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
 }
 
 .el-dialog__wrapper {
-  z-index: 9999 !important;
+  z-index: 9998 !important;
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -185,5 +190,18 @@ export default defineComponent({
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  pointer-events: auto !important;
+}
+
+/* 确保 el-overlay 能够正确显示为遮罩层 */
+.el-overlay {
+  z-index: 9998 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  pointer-events: auto !important;
 }
 </style>
