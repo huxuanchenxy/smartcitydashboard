@@ -51,6 +51,7 @@ import VUeMap from './map/ue-map'
 
 import VBgIframe from './iframe/bg-iframe'
 import VIframe from './iframe/iframe'
+import VAiIframe from './iframe/ai-iframe'
 
 import VDropDownList from './select/drop-down-list'
 
@@ -143,6 +144,7 @@ const components = [
   VUeMap,
   VIframe,
   VBgIframe,
+  VAiIframe,
   VArcBar,
   VMArcBar,
   VDashboardPie,
