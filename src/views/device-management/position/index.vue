@@ -35,7 +35,12 @@
               <n-icon>
                 <IconServerSearch />
               </n-icon>
-              <span>Dify 聊天机器人</span></n-button>
+              <span>Dify 聊天机器人 (iframe)</span></n-button>
+            <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
+              <n-icon>
+                <IconServerSearch />
+              </n-icon>
+              <span>Dify 聊天机器人 (API)</span></n-button>
           </div>
         </div>
 
@@ -64,6 +69,15 @@
     @data-received="handleDifyDataReceived"
     @data-sent="handleDifyDataSent"
   />
+  
+  <!-- Dify API 聊天机器人弹框 -->
+  <DifyApiDialog
+    v-model:visible="difyApiDialogVisible"
+    :data="difyData"
+    @close="handleDifyApiDialogClose"
+    @message-received="handleDifyApiMessageReceived"
+    @message-sent="handleDifyApiMessageSent"
+  />
 </template>
 
 
@@ -84,6 +98,7 @@ import {
   IconNodata
 } from '@/icons'
 import DifyChatbotDialog from '../../../components/dify-chatbot/DifyChatbotDialog.vue'
+import DifyApiDialog from '../../../components/dify-chatbot/DifyApiDialog.vue'
 export default defineComponent({
   name: 'MyScreen',
   components: {
@@ -95,7 +110,8 @@ export default defineComponent({
     IcList,
     IconDeviceManagement,
     IconNodata,
-    DifyChatbotDialog
+    DifyChatbotDialog,
+    DifyApiDialog
   },
   setup() {
     const deviceAll = ref([])
@@ -111,6 +127,9 @@ export default defineComponent({
       nodeName: '',
       nodeShowName: ''
     });
+    
+    // Dify API 聊天机器人相关状态
+    const difyApiDialogVisible = ref(false);
     const deviceCode = ref('')
     const nodeCode = ref('');
     const nodeName = ref('');
@@ -293,6 +312,30 @@ export default defineComponent({
       message.success('数据已发送到 Dify');
     };
     
+    // 打开 Dify API 聊天机器人弹框
+    const openDifyApiDialog = () => {
+      console.log('Opening Dify API dialog...');
+      difyApiDialogVisible.value = true;
+      console.log('Dify API dialog visible set to true');
+    };
+    
+    // 处理 Dify API 聊天机器人关闭事件
+    const handleDifyApiDialogClose = () => {
+      console.log('Dify API dialog closed');
+    };
+    
+    // 处理从 Dify API 聊天机器人接收消息
+    const handleDifyApiMessageReceived = (data) => {
+      console.log('Message received from Dify API:', data);
+      message.success('收到来自 Dify API 的消息');
+    };
+    
+    // 处理向 Dify API 聊天机器人发送消息
+    const handleDifyApiMessageSent = (data) => {
+      console.log('Message sent to Dify API:', data);
+      message.success('消息已发送到 Dify API');
+    };
+    
     onMounted(() => {
       fetchProjects();
     })
@@ -316,7 +359,13 @@ export default defineComponent({
       openDifyDialog,
       handleDifyDialogClose,
       handleDifyDataReceived,
-      handleDifyDataSent
+      handleDifyDataSent,
+      // Dify API 聊天机器人相关
+      difyApiDialogVisible,
+      openDifyApiDialog,
+      handleDifyApiDialogClose,
+      handleDifyApiMessageReceived,
+      handleDifyApiMessageSent
     }
   }
 })

@@ -61,7 +61,7 @@ export default defineComponent({
     const dialogVisible = ref(props.visible);
     const iframeRef = ref<HTMLIFrameElement | null>(null);
     const iframeSrc = ref(`${props.baseUrl}/chatbot/${props.difyToken}`);
-
+      console.log("iframeSrc：", iframeSrc);
     // 监听 visible 属性变化
     watch(
       () => props.visible,
