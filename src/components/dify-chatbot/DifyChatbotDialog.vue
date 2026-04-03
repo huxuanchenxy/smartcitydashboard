@@ -149,10 +149,11 @@ export default defineComponent({
 <style scoped>
 .dify-chatbot-container {
   width: 100%;
-  height: 600px;
-  overflow: hidden;
+  height: 700px;
+  overflow: visible;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .dialog-footer {
@@ -177,6 +178,23 @@ export default defineComponent({
   background-color: white !important;
   border-radius: 8px !important;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
+  overflow: visible !important;
+}
+
+/* 确保弹框内容区域不会被遮挡 */
+.el-dialog__body {
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.el-dialog__header {
+  padding: 20px 20px 10px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+}
+
+.el-dialog__footer {
+  padding: 15px 20px !important;
+  border-top: 1px solid #ebeef5 !important;
 }
 
 .el-dialog__wrapper {
