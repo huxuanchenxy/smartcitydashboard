@@ -242,12 +242,8 @@ export default defineComponent({
           throw new Error('无法读取响应流');
         }
 
-        // 移除思考状态
-        const lastMsg = messages.value[messages.value.length - 1];
-        lastMsg.isThinking = false;
-        lastMsg.content = '';
-
         // 读取流式数据
+        let firstMessageReceived = false;
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -265,7 +261,15 @@ export default defineComponent({
                 switch (data.event) {
                   case 'message': // 增量消息内容
                     if (data.answer) {
+                      // 收到第一个消息块后移除思考状态
+                      if (!firstMessageReceived) {
+                        const lastMsg = messages.value[messages.value.length - 1];
+                        lastMsg.isThinking = false;
+                        lastMsg.content = '';
+                        firstMessageReceived = true;
+                      }
                       fullContent += data.answer;
+                      const lastMsg = messages.value[messages.value.length - 1];
                       lastMsg.content = fullContent;
                       await scrollToBottom();
                     }
