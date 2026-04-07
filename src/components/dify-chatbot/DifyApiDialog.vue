@@ -8,19 +8,11 @@
     append-to-body
   >
     <div class="dify-api-container">
-      <div class="input-section">
-        <el-input
-          v-model="userQuery"
-          type="textarea"
-          :rows="3"
-          placeholder="请输入您的问题..."
-          resize="none"
-        ></el-input>
-        <el-button type="primary" @click="sendMessage" class="send-button">发送</el-button>
-      </div>
-      <div class="message-section">
+      <!-- 消息区域 -->
+      <div class="message-section" ref="messageContainer">
         <div v-if="messages.length === 0" class="empty-message">
-          暂无消息，开始您的对话吧！
+          <div class="empty-icon">💬</div>
+          <div>暂无消息，开始您的对话吧！</div>
         </div>
         <div v-else class="message-list">
           <div
@@ -28,24 +20,79 @@
             :key="index"
             :class="['message-item', message.role === 'user' ? 'user-message' : 'assistant-message']"
           >
-            <div class="message-role">{{ message.role === 'user' ? '用户' : '助手' }}</div>
-            <div class="message-content">{{ message.content }}</div>
+            <div class="message-header">
+              <div class="avatar" :class="message.role">
+                {{ message.role === 'user' ? '👤' : '🤖' }}
+              </div>
+              <div class="message-role">{{ message.role === 'user' ? '用户' : 'AI 助手' }}</div>
+            </div>
+            <div class="message-content">
+              <!-- 思考中状态 -->
+              <div v-if="message.isThinking" class="thinking-indicator">
+                <span class="thinking-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+                <span class="thinking-text">思考中</span>
+              </div>
+              <!-- 正常内容 -->
+              <div v-else class="content-text" v-html="formatContent(message.content)"></div>
+            </div>
+            <div class="message-time" v-if="!message.isThinking">
+              {{ formatTime(message.timestamp) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="input-section">
+        <div class="input-wrapper">
+          <el-input
+            v-model="userQuery"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入您的问题..."
+            resize="none"
+            :disabled="isLoading"
+            @keydown.enter.prevent="handleEnter"
+          ></el-input>
+          <div class="input-actions">
+            <span class="hint" v-if="isLoading">AI 正在思考中，请稍候...</span>
+            <el-button 
+              type="primary" 
+              @click="sendMessage" 
+              :loading="isLoading"
+              :disabled="!userQuery.trim() || isLoading"
+              class="send-button"
+            >
+              {{ isLoading ? '发送中' : '发送' }}
+            </el-button>
           </div>
         </div>
       </div>
     </div>
+
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="handleClose">关闭</el-button>
-        <el-button type="primary" @click="clearMessages">清空消息</el-button>
+        <el-button type="danger" plain @click="clearMessages">清空对话</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted, onUnmounted, PropType } from 'vue';
+import { defineComponent, ref, watch, nextTick, PropType } from 'vue';
 import { ElMessage } from 'element-plus';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  isThinking?: boolean;
+}
 
 export default defineComponent({
   name: 'DifyApiDialog',
@@ -56,11 +103,11 @@ export default defineComponent({
     },
     title: {
       type: String,
-      default: 'Dify 聊天机器人 (API)' 
+      default: 'AI 助手'
     },
     width: {
       type: String,
-      default: '80%'
+      default: '800px'
     },
     apiKey: {
       type: String,
@@ -79,7 +126,7 @@ export default defineComponent({
       default: ''
     },
     data: {
-      type: Object as PropType<any>,
+      type: Object as PropType<Record<string, any>>,
       default: () => ({})
     }
   },
@@ -87,176 +134,191 @@ export default defineComponent({
   setup(props, { emit }) {
     const dialogVisible = ref(props.visible);
     const userQuery = ref('');
-    const messages = ref<any[]>([]);
-    // 优先使用从父组件传递的 conversationId，其次使用 localStorage 中的值，最后使用空字符串
-    const storedConversationId = localStorage.getItem('difyConversationId');
-    console.log('Stored conversationId in localStorage:', storedConversationId);
-    console.log('Prop conversationId:', props.conversationId);
-    const conversationId = ref(props.conversationId || storedConversationId || '');
+    const messages = ref<Message[]>([]);
+    const conversationId = ref(props.conversationId);
     const isLoading = ref(false);
-    
-    console.log('Initial conversationId:', conversationId.value);
+    const messageContainer = ref<HTMLElement>();
+    const abortController = ref<AbortController | null>(null);
 
-    // 监听 visible 属性变化
-    watch(
-      () => props.visible,
-      (newVal) => {
-        dialogVisible.value = newVal;
+    // 监听 visible 变化
+    watch(() => props.visible, (newVal) => {
+      dialogVisible.value = newVal;
+    });
+
+    watch(dialogVisible, (newVal) => {
+      emit('update:visible', newVal);
+    });
+
+    // 监听 conversationId 变化
+    watch(() => props.conversationId, (newVal) => {
+      if (newVal) conversationId.value = newVal;
+    });
+
+    // 滚动到底部
+    const scrollToBottom = async () => {
+      await nextTick();
+      if (messageContainer.value) {
+        messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
       }
-    );
-
-    // 监听 dialogVisible 变化，通知父组件
-    watch(
-      dialogVisible,
-      (newVal) => {
-        emit('update:visible', newVal);
-      }
-    );
-
-    // 监听 props.conversationId 的变化
-    watch(
-      () => props.conversationId,
-      (newVal) => {
-        console.log('Props conversationId changed:', newVal);
-        if (newVal) {
-          conversationId.value = newVal;
-          console.log('Updated conversationId.value:', conversationId.value);
-        }
-      }
-    );
-
-    // 处理关闭事件
-    const handleClose = () => {
-      dialogVisible.value = false;
-      // 清空会话 ID
-      conversationId.value = '';
-      localStorage.removeItem('difyConversationId');
-      console.log('Cleared conversationId');
-      emit('close');
     };
 
-    // 发送消息
-    const sendMessage = async () => {
-      if (!userQuery.value.trim()) {
-        ElMessage.warning('请输入您的问题');
-        return;
+    // 格式化内容（支持简单的换行）
+    const formatContent = (content: string) => {
+      return content.replace(/\n/g, '<br>');
+    };
+
+    // 格式化时间
+    const formatTime = (timestamp: number) => {
+      return new Date(timestamp).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    // 处理回车发送（Shift+Enter 换行）
+    const handleEnter = (e: KeyboardEvent) => {
+      if (!e.shiftKey) {
+        sendMessage();
       }
+    };
 
+    // 发送消息 - 使用流式响应
+    const sendMessage = async () => {
+      if (!userQuery.value.trim() || isLoading.value) return;
+
+      const query = userQuery.value.trim();
+      
+      // 添加用户消息
+      messages.value.push({
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      });
+
+      // 添加 AI 思考中的占位消息
+      const thinkingMsg: Message = {
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true
+      };
+      messages.value.push(thinkingMsg);
+      
+      await scrollToBottom();
+      
+      userQuery.value = '';
       isLoading.value = true;
-      try {
-        // 添加用户消息到列表
-        messages.value.push({
-          role: 'user',
-          content: userQuery.value
-        });
 
-        // 调用 API 创建会话或发送消息
-        console.log('Sending message with conversationId:', conversationId.value);
-        console.log('LocalStorage difyConversationId:', localStorage.getItem('difyConversationId'));
-        console.log('API URL:', `${props.baseUrl}/v1/chat-messages`);
-        console.log('API Key:', props.apiKey);
-        console.log('User ID:', props.userId);
-        console.log('Message query:', userQuery.value);
-        console.log('Message inputs:', props.data);
-        
-        const requestBody = {
-          inputs: props.data,
-          query: userQuery.value,
-          response_mode: 'blocking',
-          conversation_id: conversationId.value || localStorage.getItem('difyConversationId') || '',
-          user: props.userId
-        };
-        console.log('Request body:', requestBody);
-        
+      // 创建 AbortController 用于取消请求
+      abortController.value = new AbortController();
+
+      try {
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${props.apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify({
+            inputs: props.data,
+            query: query,
+            response_mode: 'streaming', // 使用流式模式
+            conversation_id: conversationId.value,
+            user: props.userId
+          }),
+          signal: abortController.value.signal
         });
-        
-        console.log('Message request response status:', response.status);
-        
+
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API error response:', errorText);
-          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // 尝试解析响应
-        // let data;
-        // const responseText = await response.text();
-        // console.log('Raw response text:', responseText);
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+        let newConversationId = '';
+
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        // 移除思考状态
+        const lastMsg = messages.value[messages.value.length - 1];
+        lastMsg.isThinking = false;
+        lastMsg.content = '';
+
+        // 读取流式数据
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                // 处理不同类型的事件
+                switch (data.event) {
+                  case 'message': // 增量消息内容
+                    if (data.answer) {
+                      fullContent += data.answer;
+                      lastMsg.content = fullContent;
+                      await scrollToBottom();
+                    }
+                    break;
+                    
+                  case 'message_end': // 消息结束
+                    newConversationId = data.conversation_id || '';
+                    break;
+                    
+                  case 'error': // 错误
+                    throw new Error(data.message || '流式响应错误');
+                }
+
+                // 获取会话 ID
+                if (data.conversation_id && !newConversationId) {
+                  newConversationId = data.conversation_id;
+                }
+
+              } catch (e) {
+                console.warn('解析流数据失败:', line, e);
+              }
+            }
+          }
+        }
+
+        // 更新会话 ID
+        if (newConversationId && !conversationId.value) {
+          conversationId.value = newConversationId;
+          emit('conversation-created', newConversationId);
+        }
+
+        emit('message-received', fullContent);
+
+      } catch (error: any) {
+        console.error('发送消息失败:', error);
         
-        // try {
-        //   data = JSON.parse(responseText);
-        //   console.log('Message response:', data);
-        // } catch (parseError) {
-        //   console.warn('Failed to parse response as JSON:', parseError);
-        //   console.warn('Response text:', responseText);
-        //   // 模拟一个响应，以便继续执行
-        //   data = {
-        //     answer: '正在处理您的请求...'
-        //   };
-        // }
-
-        // 每次发送消息后，都调用 conversations API 获取最新的会话 ID
-        console.log('Fetching conversations to get latest conversation ID');
-        const conversationsResponse = await fetch(`${props.baseUrl}/v1/conversations?user=${props.userId}&limit=1`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${props.apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!conversationsResponse.ok) {
-          const errorText = await conversationsResponse.text();
-          console.error('Conversations API error response:', errorText);
-          throw new Error(`HTTP error when fetching conversations: status: ${conversationsResponse.status}, message: ${errorText}`);
+        // 如果是用户取消，不显示错误
+        if (error.name === 'AbortError') {
+          messages.value.pop(); // 移除思考中的消息
+          return;
         }
 
-        const conversationsData = await conversationsResponse.json();
-        console.log('Conversations response:', conversationsData);
-
-        if (conversationsData.data && conversationsData.data.length > 0) {
-          const latestConversation = conversationsData.data[0];
-          const latestConvId = latestConversation.id || latestConversation.conversation_id;
-          console.log('Retrieved conversation ID from conversations API:', latestConvId);
-          
-          if (latestConvId) {
-            conversationId.value = latestConvId;
-            localStorage.setItem('difyConversationId', latestConvId);
-            console.log('Stored conversationId to localStorage:', latestConvId);
-            emit('conversation-created', latestConvId);
-          }
+        // 更新最后一条消息为错误提示
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.isThinking = false;
+          lastMsg.content = '抱歉，服务暂时不可用，请稍后重试。';
         }
 
-        // 添加助手回复到列表
-        // messages.value.push({
-        //   role: 'assistant',
-        //   content: data.answer || '抱歉，我无法回答这个问题。'
-        // });
-
-        // 清空输入框
-        userQuery.value = '';
-
-        // 通知父组件
-        // emit('message-sent', { query: userQuery.value, response: data });
-        // emit('message-received', data);
-
-      } catch (error) {
-        console.error('Error sending message:', error);
-        ElMessage.error('发送消息失败');
-
-        // 移除用户消息（因为发送失败）
-        if (messages.value.length > 0) {
-          messages.value.pop();
-        }
+        ElMessage.error('发送消息失败: ' + error.message);
       } finally {
         isLoading.value = false;
+        abortController.value = null;
       }
     };
 
@@ -264,9 +326,19 @@ export default defineComponent({
     const clearMessages = () => {
       messages.value = [];
       conversationId.value = '';
-      // 清空 localStorage 中的会话 ID
-      localStorage.removeItem('difyConversationId');
-      ElMessage.success('消息已清空');
+      ElMessage.success('对话已清空');
+    };
+
+    // 关闭对话框
+    const handleClose = () => {
+      // 如果有正在进行的请求，取消它
+      if (abortController.value) {
+        abortController.value.abort();
+      }
+      dialogVisible.value = false;
+      messages.value = [];
+      conversationId.value = '';
+      emit('close');
     };
 
     return {
@@ -274,9 +346,13 @@ export default defineComponent({
       userQuery,
       messages,
       isLoading,
+      messageContainer,
       handleClose,
       sendMessage,
-      clearMessages
+      clearMessages,
+      handleEnter,
+      formatContent,
+      formatTime
     };
   }
 });
@@ -285,140 +361,209 @@ export default defineComponent({
 <style scoped>
 .dify-api-container {
   width: 100%;
-  height: 700px;
+  height: 600px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  background-color: #f5f5f5;
   border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.input-section {
-  padding: 15px;
-  border-top: 1px solid #ebeef5;
-  background-color: #f9f9f9;
-}
-
-.send-button {
-  margin-top: 10px;
-  float: right;
-}
-
+/* 消息区域 */
 .message-section {
   flex: 1;
-  padding: 15px;
   overflow-y: auto;
-  background-color: #ffffff;
+  padding: 20px;
+  background-color: #f5f5f5;
 }
 
 .empty-message {
-  text-align: center;
-  color: #909399;
-  margin-top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 14px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
 }
 
 .message-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
 .message-item {
-  max-width: 80%;
-  padding: 10px 15px;
-  border-radius: 8px;
-  word-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .user-message {
   align-self: flex-end;
-  background-color: #e6f7ff;
-  border: 1px solid #91d5ff;
 }
 
 .assistant-message {
   align-self: flex-start;
-  background-color: #f0f0f0;
-  border: 1px solid #d9d9d9;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.avatar.user {
+  background-color: #409eff;
+}
+
+.avatar.assistant {
+  background-color: #67c23a;
 }
 
 .message-role {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 5px;
   color: #666;
 }
 
 .message-content {
+  padding: 12px 16px;
+  border-radius: 12px;
+  line-height: 1.6;
   font-size: 14px;
-  line-height: 1.5;
-  color: #333;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
-.dialog-footer {
+.user-message .message-content {
+  background-color: #409eff;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.assistant-message .message-content {
+  background-color: white;
+  color: #333;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.message-time {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+  align-self: flex-end;
+}
+
+/* 思考中动画 */
+.thinking-indicator {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  color: #999;
+  padding: 8px 0;
+}
+
+.thinking-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.thinking-dots span {
+  width: 8px;
+  height: 8px;
+  background-color: #409eff;
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite both;
+}
+
+.thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+.thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+.thinking-text {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 输入区域 */
+.input-section {
+  padding: 16px 20px;
+  background-color: white;
+  border-top: 1px solid #e4e7ed;
+}
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
-</style>
 
-<style>
-/* 确保弹框的 z-index 足够高，避免被其他元素遮挡 */
-.el-dialog {
-  z-index: 9999 !important;
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-  width: 80% !important;
-  max-width: 900px !important;
-  max-height: 80vh !important;
-  background-color: white !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
-  overflow: visible !important;
+:deep(.el-textarea__inner) {
+  border-radius: 8px;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* 确保弹框内容区域不会被遮挡 */
-.el-dialog__body {
-  padding: 0 !important;
-  overflow: visible !important;
+.input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.el-dialog__header {
-  padding: 20px 20px 10px !important;
-  border-bottom: 1px solid #ebeef5 !important;
+.hint {
+  font-size: 12px;
+  color: #909399;
 }
 
-.el-dialog__footer {
-  padding: 15px 20px !important;
-  border-top: 1px solid #ebeef5 !important;
+.send-button {
+  min-width: 80px;
 }
 
-.el-dialog__wrapper {
-  z-index: 9998 !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background-color: rgba(0, 0, 0, 0.5) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  pointer-events: auto !important;
+/* 对话框样式优化 */
+:deep(.el-dialog__body) {
+  padding: 0;
 }
 
-/* 确保 el-overlay 能够正确显示为遮罩层 */
-.el-overlay {
-  z-index: 9998 !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background-color: rgba(0, 0, 0, 0.5) !important;
-  pointer-events: auto !important;
+:deep(.el-dialog__header) {
+  border-bottom: 1px solid #e4e7ed;
+  margin-right: 0;
+  padding: 16px 20px;
+}
+
+:deep(.el-dialog__footer) {
+  border-top: 1px solid #e4e7ed;
+  padding: 12px 20px;
 }
 </style>
