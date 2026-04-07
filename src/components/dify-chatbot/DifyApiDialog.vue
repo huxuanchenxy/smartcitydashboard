@@ -74,18 +74,28 @@ export default defineComponent({
       type: String,
       default: 'huyz'
     },
+    conversationId: {
+      type: String,
+      default: ''
+    },
     data: {
       type: Object as PropType<any>,
       default: () => ({})
     }
   },
-  emits: ['update:visible', 'close', 'message-sent', 'message-received'],
+  emits: ['update:visible', 'close', 'message-sent', 'message-received', 'conversation-created'],
   setup(props, { emit }) {
     const dialogVisible = ref(props.visible);
     const userQuery = ref('');
     const messages = ref<any[]>([]);
-    const conversationId = ref('');
+    // 优先使用从父组件传递的 conversationId，其次使用 localStorage 中的值，最后使用空字符串
+    const storedConversationId = localStorage.getItem('difyConversationId');
+    console.log('Stored conversationId in localStorage:', storedConversationId);
+    console.log('Prop conversationId:', props.conversationId);
+    const conversationId = ref(props.conversationId || storedConversationId || '');
     const isLoading = ref(false);
+    
+    console.log('Initial conversationId:', conversationId.value);
 
     // 监听 visible 属性变化
     watch(
@@ -103,9 +113,25 @@ export default defineComponent({
       }
     );
 
+    // 监听 props.conversationId 的变化
+    watch(
+      () => props.conversationId,
+      (newVal) => {
+        console.log('Props conversationId changed:', newVal);
+        if (newVal) {
+          conversationId.value = newVal;
+          console.log('Updated conversationId.value:', conversationId.value);
+        }
+      }
+    );
+
     // 处理关闭事件
     const handleClose = () => {
       dialogVisible.value = false;
+      // 清空会话 ID
+      conversationId.value = '';
+      localStorage.removeItem('difyConversationId');
+      console.log('Cleared conversationId');
       emit('close');
     };
 
@@ -125,45 +151,101 @@ export default defineComponent({
         });
 
         // 调用 API 创建会话或发送消息
+        console.log('Sending message with conversationId:', conversationId.value);
+        console.log('LocalStorage difyConversationId:', localStorage.getItem('difyConversationId'));
+        console.log('API URL:', `${props.baseUrl}/v1/chat-messages`);
+        console.log('API Key:', props.apiKey);
+        console.log('User ID:', props.userId);
+        console.log('Message query:', userQuery.value);
+        console.log('Message inputs:', props.data);
+        
+        const requestBody = {
+          inputs: props.data,
+          query: userQuery.value,
+          response_mode: 'blocking',
+          conversation_id: conversationId.value || localStorage.getItem('difyConversationId') || '',
+          user: props.userId
+        };
+        console.log('Request body:', requestBody);
+        
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${props.apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data,
-            query: userQuery.value,
-            response_mode: 'blocking',
-            conversation_id: conversationId.value,
-            user: props.userId
-          })
+          body: JSON.stringify(requestBody)
         });
-
+        
+        console.log('Message request response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('API error response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
-        const data = await response.json();
-        console.log('Message response:', data);
+        // 尝试解析响应
+        // let data;
+        // const responseText = await response.text();
+        // console.log('Raw response text:', responseText);
+        
+        // try {
+        //   data = JSON.parse(responseText);
+        //   console.log('Message response:', data);
+        // } catch (parseError) {
+        //   console.warn('Failed to parse response as JSON:', parseError);
+        //   console.warn('Response text:', responseText);
+        //   // 模拟一个响应，以便继续执行
+        //   data = {
+        //     answer: '正在处理您的请求...'
+        //   };
+        // }
 
-        // 保存 conversation_id
-        if (data.conversation_id) {
-          conversationId.value = data.conversation_id;
+        // 每次发送消息后，都调用 conversations API 获取最新的会话 ID
+        console.log('Fetching conversations to get latest conversation ID');
+        const conversationsResponse = await fetch(`${props.baseUrl}/v1/conversations?user=${props.userId}&limit=1`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${props.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!conversationsResponse.ok) {
+          const errorText = await conversationsResponse.text();
+          console.error('Conversations API error response:', errorText);
+          throw new Error(`HTTP error when fetching conversations: status: ${conversationsResponse.status}, message: ${errorText}`);
+        }
+
+        const conversationsData = await conversationsResponse.json();
+        console.log('Conversations response:', conversationsData);
+
+        if (conversationsData.data && conversationsData.data.length > 0) {
+          const latestConversation = conversationsData.data[0];
+          const latestConvId = latestConversation.id || latestConversation.conversation_id;
+          console.log('Retrieved conversation ID from conversations API:', latestConvId);
+          
+          if (latestConvId) {
+            conversationId.value = latestConvId;
+            localStorage.setItem('difyConversationId', latestConvId);
+            console.log('Stored conversationId to localStorage:', latestConvId);
+            emit('conversation-created', latestConvId);
+          }
         }
 
         // 添加助手回复到列表
-        messages.value.push({
-          role: 'assistant',
-          content: data.answer || '抱歉，我无法回答这个问题。'
-        });
+        // messages.value.push({
+        //   role: 'assistant',
+        //   content: data.answer || '抱歉，我无法回答这个问题。'
+        // });
 
         // 清空输入框
         userQuery.value = '';
 
         // 通知父组件
-        emit('message-sent', { query: userQuery.value, response: data });
-        emit('message-received', data);
+        // emit('message-sent', { query: userQuery.value, response: data });
+        // emit('message-received', data);
 
       } catch (error) {
         console.error('Error sending message:', error);
@@ -182,6 +264,8 @@ export default defineComponent({
     const clearMessages = () => {
       messages.value = [];
       conversationId.value = '';
+      // 清空 localStorage 中的会话 ID
+      localStorage.removeItem('difyConversationId');
       ElMessage.success('消息已清空');
     };
 
