@@ -77,7 +77,8 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="handleClose">关闭</el-button>
-        <el-button type="danger" plain @click="clearMessages">清空对话</el-button>
+        <el-button type="warning" @click="clearMessages">清空对话</el-button>
+        <el-button type="info" @click="outputJsonToConsole">输出 JSON 到控制台</el-button>
       </span>
     </template>
   </el-dialog>
@@ -333,6 +334,39 @@ export default defineComponent({
       ElMessage.success('对话已清空');
     };
 
+    // 将最后一条 AI 回答中的 JSON 输出到控制台
+    const outputJsonToConsole = () => {
+      // 查找最后一条 AI 助手的消息
+      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      if (aiMessages.length === 0) {
+        ElMessage.warning('暂无 AI 回答');
+        return;
+      }
+
+      const lastAiMessage = aiMessages[aiMessages.length - 1];
+      const content = lastAiMessage.content;
+
+      // 尝试从内容中提取 JSON
+      try {
+        // 查找 JSON 对象（以 { 开头，以 } 结尾）
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const jsonStr = jsonMatch[0];
+          const jsonObj = JSON.parse(jsonStr);
+          console.log('AI 回答中的 JSON 内容:', jsonObj);
+          ElMessage.success('JSON 已输出到控制台');
+        } else {
+          // 尝试直接解析整个内容
+          const jsonObj = JSON.parse(content);
+          console.log('AI 回答中的 JSON 内容:', jsonObj);
+          ElMessage.success('JSON 已输出到控制台');
+        }
+      } catch (error) {
+        console.error('无法解析 JSON:', error);
+        ElMessage.warning('回答内容不是有效的 JSON');
+      }
+    };
+
     // 关闭对话框
     const handleClose = () => {
       // 如果有正在进行的请求，取消它
@@ -354,6 +388,7 @@ export default defineComponent({
       handleClose,
       sendMessage,
       clearMessages,
+      outputJsonToConsole,
       handleEnter,
       formatContent,
       formatTime
