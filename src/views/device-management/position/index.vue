@@ -31,11 +31,11 @@
                 重置
               </span>
             </n-button>
-            <n-button class="Server-button" color="#1C64F2" @click="openDifyDialog">
+            <!-- <n-button class="Server-button" color="#1C64F2" @click="openDifyDialog">
               <n-icon>
                 <IconServerSearch />
               </n-icon>
-              <span>Dify 聊天机器人 (iframe)</span></n-button>
+              <span>Dify 聊天机器人 (iframe)</span></n-button> -->
             <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
               <n-icon>
                 <IconServerSearch />
