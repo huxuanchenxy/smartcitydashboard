@@ -352,18 +352,37 @@ export default defineComponent({
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const jsonStr = jsonMatch[0];
-          const jsonObj = JSON.parse(jsonStr);
-          console.log('AI 回答中的 JSON 内容:', jsonObj);
-          ElMessage.success('JSON 已输出到控制台');
-        } else {
-          // 尝试直接解析整个内容
-          const jsonObj = JSON.parse(content);
-          console.log('AI 回答中的 JSON 内容:', jsonObj);
-          ElMessage.success('JSON 已输出到控制台');
+          try {
+            const jsonObj = JSON.parse(jsonStr);
+            console.log('AI 回答中的 JSON 内容:', jsonObj);
+            ElMessage.success('JSON 已输出到控制台');
+            return;
+          } catch (parseError) {
+            console.warn('找到 JSON 格式但解析失败:', parseError);
+          }
         }
+
+        // 查找 JSON 数组（以 [ 开头，以 ] 结尾）
+        const jsonArrayMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonArrayMatch) {
+          const jsonStr = jsonArrayMatch[0];
+          try {
+            const jsonObj = JSON.parse(jsonStr);
+            console.log('AI 回答中的 JSON 内容:', jsonObj);
+            ElMessage.success('JSON 已输出到控制台');
+            return;
+          } catch (parseError) {
+            console.warn('找到 JSON 数组格式但解析失败:', parseError);
+          }
+        }
+
+        // 如果没有找到 JSON 格式，提示用户
+        ElMessage.warning('回答内容中未找到有效的 JSON 格式');
+        console.log('AI 回答内容（非 JSON）:', content);
+
       } catch (error) {
-        console.error('无法解析 JSON:', error);
-        ElMessage.warning('回答内容不是有效的 JSON');
+        console.error('处理 JSON 时发生错误:', error);
+        ElMessage.warning('处理 JSON 时发生错误');
       }
     };
 
