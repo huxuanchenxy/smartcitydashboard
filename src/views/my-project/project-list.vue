@@ -11,6 +11,12 @@
         <n-icon class="icon-search">
           <IconSearch />
         </n-icon>
+        <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
+          <n-icon>
+            <IconSearch />
+          </n-icon>
+          <span>AI机器人</span>
+        </n-button>
       </div>
     </div>
     <div class="main-screen">
@@ -26,6 +32,15 @@
     <publish-screen v-model="visiblePublish" :project-id="publishAppId" />
   </div>
   <addScreen :visible="addProject" />
+  
+  <!-- Dify API 聊天机器人弹框 -->
+  <DifyApiDialog
+    v-model:visible="difyApiDialogVisible"
+    :data="difyData"
+    @close="handleDifyApiDialogClose"
+    @message-received="handleDifyApiMessageReceived"
+    @message-sent="handleDifyApiMessageSent"
+  />
 </template>
 
 <script lang='ts'>
@@ -40,6 +55,8 @@ import MyScreen from './my-screen.vue'
 // import PublishScreen from './publish-screen.vue'
 import PublishScreen from './publish.vue'
 import addScreen from './add-screen.vue'
+import DifyApiDialog from '@/components/dify-chatbot/DifyApiDialog.vue'
+import { useMessage } from 'naive-ui'
 
 const cdn = import.meta.env.VITE_APP_CDN
 
@@ -50,6 +67,7 @@ export default defineComponent({
     PublishScreen,
     IconSearch,
     addScreen,
+    DifyApiDialog,
     //IconArrowDown,
   },
   props: {
@@ -57,6 +75,7 @@ export default defineComponent({
   },
   setup(props) {
     const addProject = ref(false)
+    const nMessage = useMessage()
 
     const searchText = ref('')
     const sort = ref('name')
@@ -68,6 +87,10 @@ export default defineComponent({
     const sortOpts = Object.entries(sorts).map(([key, label]) => ({ key, label }))
     const visiblePublish = ref(false)
     const publishAppId = ref(0)
+    
+    // Dify API 聊天机器人相关状态
+    const difyApiDialogVisible = ref(false)
+    const difyData = ref({})
 
     const group = toRef(props, 'group')
 
@@ -101,6 +124,30 @@ export default defineComponent({
     })
 
     provide('closeAddProject', () => { addProject.value = false })
+    
+    // 打开 Dify API 聊天机器人弹框
+    const openDifyApiDialog = () => {
+      console.log('Opening Dify API dialog...');
+      difyApiDialogVisible.value = true;
+      console.log('Dify API dialog visible set to true');
+    };
+    
+    // 处理 Dify API 聊天机器人关闭事件
+    const handleDifyApiDialogClose = () => {
+      console.log('Dify API dialog closed');
+    };
+    
+    // 处理从 Dify API 聊天机器人接收消息
+    const handleDifyApiMessageReceived = (data) => {
+      console.log('Message received from Dify API:', data);
+      nMessage.success('收到来自 Dify API 的消息');
+    };
+    
+    // 处理向 Dify API 聊天机器人发送消息
+    const handleDifyApiMessageSent = (data) => {
+      console.log('Message sent to Dify API:', data);
+      nMessage.success('消息已发送到 Dify API');
+    };
 
     return {
       cdn,
@@ -115,6 +162,13 @@ export default defineComponent({
       closePublish,
       addProject,
       openAddProjectView,
+      // Dify API 聊天机器人相关
+      difyApiDialogVisible,
+      difyData,
+      openDifyApiDialog,
+      handleDifyApiDialogClose,
+      handleDifyApiMessageReceived,
+      handleDifyApiMessageSent,
     }
   },
 })
@@ -539,9 +593,29 @@ export default defineComponent({
 
       img {
         width: 100px;
-        height: 100px
+        height: 100px;
       }
     }
   }
+}
+
+:deep(.el-dialog) {
+  margin: 0 auto !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.el-dialog__wrapper) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: auto;
 }
 </style>
