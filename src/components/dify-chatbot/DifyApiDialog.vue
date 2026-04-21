@@ -78,7 +78,7 @@
       <span class="dialog-footer">
         <el-button @click="handleClose">关闭</el-button>
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
-        <el-button type="info" @click="outputJsonToConsole">输出 JSON 到控制台</el-button>
+        <el-button type="info" @click="outputJsonToConsole">AI生成画布</el-button>
       </span>
     </template>
   </el-dialog>
@@ -348,12 +348,23 @@ export default defineComponent({
 
       // 尝试从内容中提取 JSON
       try {
+        // 从浏览器缓存中获取 DataS-Project 值
+        const dataSProject = localStorage.getItem('DataS-Project');
+        // console.log('DataS-Project:', dataSProject);
         // 查找 JSON 对象（以 { 开头，以 } 结尾）
         const jsonMatch = content.match(/\{[\s\S]*\}/);
+        
         if (jsonMatch) {
           const jsonStr = jsonMatch[0];
+          
           try {
             const jsonObj = JSON.parse(jsonStr);
+            
+            if (dataSProject) {
+              // 将值添加到 JSON 对象中，键名为 projectid
+              jsonObj.projectid = dataSProject;
+            }
+            
             console.log('AI 回答中的 JSON 内容:', jsonObj);
             ElMessage.success('JSON 已输出到控制台');
             return;
@@ -364,10 +375,23 @@ export default defineComponent({
 
         // 查找 JSON 数组（以 [ 开头，以 ] 结尾）
         const jsonArrayMatch = content.match(/\[[\s\S]*\]/);
+        
         if (jsonArrayMatch) {
           const jsonStr = jsonArrayMatch[0];
           try {
             const jsonObj = JSON.parse(jsonStr);
+            
+            if (dataSProject) {
+              // 将值添加到 JSON 数组的每个对象中，键名为 projectid
+              if (Array.isArray(jsonObj)) {
+                jsonObj.forEach(item => {
+                  if (typeof item === 'object' && item !== null) {
+                    item.projectid = dataSProject;
+                  }
+                });
+              }
+            }
+            
             console.log('AI 回答中的 JSON 内容:', jsonObj);
             ElMessage.success('JSON 已输出到控制台');
             return;
