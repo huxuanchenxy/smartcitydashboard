@@ -38,7 +38,7 @@
               <span>Dify 聊天机器人 (iframe)</span></n-button> -->
             <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
               <n-icon>
-                <IconServerSearch />
+                <IconAi />
               </n-icon>
               <span>Dify 聊天机器人 (API)</span></n-button>
           </div>
@@ -95,7 +95,8 @@ import {
   serverConfigBell,
   serverConfigData,
   IconDeviceManagement,
-  IconNodata
+  IconNodata,
+  IconAi
 } from '@/icons'
 import DifyChatbotDialog from '../../../components/dify-chatbot/DifyChatbotDialog.vue'
 import DifyApiDialog from '../../../components/dify-chatbot/DifyApiDialog.vue'
@@ -110,6 +111,7 @@ export default defineComponent({
     IcList,
     IconDeviceManagement,
     IconNodata,
+    IconAi,
     DifyChatbotDialog,
     DifyApiDialog
   },

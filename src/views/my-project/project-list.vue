@@ -13,9 +13,9 @@
         </n-icon>
         <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
           <n-icon>
-            <IconSearch />
+            <IconAi />
           </n-icon>
-          <span>AI机器人</span>
+          <span>AI助手</span>
         </n-button>
       </div>
     </div>
@@ -50,7 +50,7 @@ import {
 } from 'vue'
 import { sortBy } from 'lodash-es'
 import { ProjectGroup } from '@/domains/project'
-import { IconSearch } from '@/icons'
+import { IconSearch, IconAi } from '@/icons'
 import MyScreen from './my-screen.vue'
 // import PublishScreen from './publish-screen.vue'
 import PublishScreen from './publish.vue'
@@ -66,6 +66,7 @@ export default defineComponent({
     MyScreen,
     PublishScreen,
     IconSearch,
+    IconAi,
     addScreen,
     DifyApiDialog,
     //IconArrowDown,

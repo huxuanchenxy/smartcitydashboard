@@ -199,11 +199,11 @@
             <template #trigger>
               <div class="head-btn ml4" @click="openDifyApiDialog">
                 <n-icon class="head-btn-icon">
-                  <IconImport />
+                  <IconAi />
                 </n-icon>
               </div>
             </template>
-            AI机器人
+            AI助手
           </n-tooltip>
         </div>
         <div class="datav-toolbar-right">
@@ -282,7 +282,7 @@ import { PanelType, ToolbarModule } from '@/store/modules/toolbar'
 import { EditorModule } from '@/store/modules/editor'
 import {
   IconEditorCanvas, IconBox, IconRpanel, IconToolbox, IconFilter, IconWorkspace, IconSnapshot, IconLayer, IconRelease, IconPreview, IconSave, IconExport,
-  IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt
+  IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt, IconAi
 } from '@/icons'
 import HeadLoading from './head-loading.vue'
 import Snapshot from '../../my-project/Snapshot.vue'
@@ -314,7 +314,7 @@ export default defineComponent({
     Device,
     DifyApiDialog,
     IconEditorCanvas, IconBox, IconRpanel, IconToolbox, IconFilter, IconWorkspace, IconSnapshot, IconLayer, IconRelease, IconPreview,
-    IconSave, IconExport, IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt,
+    IconSave, IconExport, IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt, IconAi,
     ToolboxPanel: loadAsyncComponent(() => import('../toolbox-panel/index-new.vue')),
   },
   setup() {

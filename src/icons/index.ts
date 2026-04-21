@@ -161,6 +161,7 @@ import IconBottom from "./bottom.vue";
 import IconSbzt from "./ic/设备状态.vue";
 import IconDeploy from "./deploy.vue";
 import IconCustomer from "./customer.vue"
+import IconAi from "./ai.vue"
 export {
   IconUser,
   IconKey,
@@ -324,6 +325,7 @@ export {
   IconBottom,
   IconSbzt,
   IconDeploy,
-  IconCustomer
+  IconCustomer,
+  IconAi
   // -- prepend export placeholder --
 };
