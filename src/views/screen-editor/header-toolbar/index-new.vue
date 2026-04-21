@@ -183,6 +183,7 @@
             </template>
             导入
           </n-tooltip>
+          
           <n-tooltip :delay="500">
             <template #trigger>
               <div class="head-btn ml4" @click="exportScreen">
@@ -192,6 +193,17 @@
               </div>
             </template>
             导出
+          </n-tooltip>
+          <div class="divider"></div>
+          <n-tooltip :delay="500">
+            <template #trigger>
+              <div class="head-btn ml4" @click="openDifyApiDialog">
+                <n-icon class="head-btn-icon">
+                  <IconImport />
+                </n-icon>
+              </div>
+            </template>
+            AI机器人
           </n-tooltip>
         </div>
         <div class="datav-toolbar-right">
@@ -248,6 +260,15 @@
   <snapshot v-model="visibleSnapshot" :project-id="snapshotAppId" />
   <formula />
   <device/>
+  
+  <!-- Dify API 聊天机器人弹框 -->
+  <DifyApiDialog
+    v-model:visible="difyApiDialogVisible"
+    :data="difyData"
+    @close="handleDifyApiDialogClose"
+    @message-received="handleDifyApiMessageReceived"
+    @message-sent="handleDifyApiMessageSent"
+  />
 </template>
 
 <script lang="ts">
@@ -268,6 +289,7 @@ import Snapshot from '../../my-project/Snapshot.vue'
 import PublishScreen from '../../my-project/publish.vue'
 import Formula from '../../screen-editor/formula-panel/index.vue'
 import Device from '../../screen-editor/device-panel/index.vue'
+import DifyApiDialog from '@/components/dify-chatbot/DifyApiDialog.vue'
 import * as configImagePropJson from '@/../public/templates/configImageProp.json'
 import {
   configImagePropModel,
@@ -290,17 +312,23 @@ export default defineComponent({
     Snapshot,
     Formula,
     Device,
+    DifyApiDialog,
     IconEditorCanvas, IconBox, IconRpanel, IconToolbox, IconFilter, IconWorkspace, IconSnapshot, IconLayer, IconRelease, IconPreview,
     IconSave, IconExport, IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt,
     ToolboxPanel: loadAsyncComponent(() => import('../toolbox-panel/index-new.vue')),
   },
   setup() {
+    const nMessage = useMessage()
 
     const selectedComs = computed(() => EditorModule.selectedComs)
 
     const visibleSnapshot = ref(false)
     const visiblePublish = ref(false)
     const visibleFormula = ref(false);
+    
+    // Dify API 聊天机器人相关状态
+    const difyApiDialogVisible = ref(false)
+    const difyData = ref({})
     const closeFormula = () => {
       visibleFormula.value = false;
     };
@@ -540,6 +568,30 @@ export default defineComponent({
       }
     }
 
+    // 打开 Dify API 聊天机器人弹框
+    const openDifyApiDialog = () => {
+      console.log('Opening Dify API dialog...');
+      difyApiDialogVisible.value = true;
+      console.log('Dify API dialog visible set to true');
+    };
+    
+    // 处理 Dify API 聊天机器人关闭事件
+    const handleDifyApiDialogClose = () => {
+      console.log('Dify API dialog closed');
+    };
+    
+    // 处理从 Dify API 聊天机器人接收消息
+    const handleDifyApiMessageReceived = (data) => {
+      console.log('Message received from Dify API:', data);
+      nMessage.success('收到来自 Dify API 的消息');
+    };
+    
+    // 处理向 Dify API 聊天机器人发送消息
+    const handleDifyApiMessageSent = (data) => {
+      console.log('Message sent to Dify API:', data);
+      nMessage.success('消息已发送到 Dify API');
+    };
+
     return {
       visibleSnapshot,
       visiblePublish,
@@ -556,7 +608,15 @@ export default defineComponent({
       rightJustifying,
       topJustifying,
       middleJustifying,
-      bottomJustifying
+      bottomJustifying,
+      nMessage,
+      // Dify API 聊天机器人相关
+      difyApiDialogVisible,
+      difyData,
+      openDifyApiDialog,
+      handleDifyApiDialogClose,
+      handleDifyApiMessageReceived,
+      handleDifyApiMessageSent,
       // hideModal,
     }
   },
