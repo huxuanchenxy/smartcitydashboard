@@ -87,6 +87,7 @@
 <script lang="ts">
 import { defineComponent, ref, watch, nextTick, PropType } from 'vue';
 import { ElMessage } from 'element-plus';
+import { EditorModule } from '@/store/modules/editor';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -112,7 +113,7 @@ export default defineComponent({
     },
     apiKey: {
       type: String,
-      default: 'app-bvB0IYwRflahot7Bog2n1G5o'
+      default: 'app-NdxO5ORjXm7F3oBvldqJGwUF'
     },
     baseUrl: {
       type: String,
@@ -360,9 +361,22 @@ export default defineComponent({
           try {
             const jsonObj = JSON.parse(jsonStr);
             
-            if (dataSProject) {
-              // 将值添加到 JSON 对象中，键名为 projectid
-              jsonObj.projectid = dataSProject;
+            // if (dataSProject) {
+            //   // 将值添加到 JSON 对象中，键名为 projectid
+            //   jsonObj.projectid = dataSProject;
+            // }
+            // 添加 screen 数据（只包含id和name）
+            if(EditorModule.screen)
+            {
+              if(EditorModule.screen.id)
+              {
+                jsonObj.screen.id = EditorModule.screen.id
+              }
+              if(EditorModule.screen.name)
+              {
+                jsonObj.screen.name = EditorModule.screen.name
+              }
+              
             }
             
             console.log('AI 回答中的 JSON 内容:', jsonObj);
@@ -387,6 +401,11 @@ export default defineComponent({
                 jsonObj.forEach(item => {
                   if (typeof item === 'object' && item !== null) {
                     item.projectid = dataSProject;
+                    // 添加 screen 数据（只包含id和name）
+                    item.screen = {
+                      id: EditorModule.screen.id,
+                      name: EditorModule.screen.name
+                    };
                   }
                 });
               }
