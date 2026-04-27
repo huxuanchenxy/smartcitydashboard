@@ -120,11 +120,11 @@ export default defineComponent({
     },
     apiKey: {
       type: String,
-      default: 'app-NdxO5ORjXm7F3oBvldqJGwUF'
+      default: import.meta.env.VITE_APP_DIFY_API_KEY 
     },
     baseUrl: {
       type: String,
-      default: 'http://10.89.34.9'
+      default: import.meta.env.VITE_APP_DIFY_BASE_URL || 'http://10.89.34.9'
     },
     userId: {
       type: String,
