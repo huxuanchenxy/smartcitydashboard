@@ -1,0 +1,216 @@
+{
+    "screen": {
+        "id": 176,
+        "name": "测试demo1",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 4
+    },
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0)",
+        "grid": 8,
+        "screenshot": "",
+        "zoomMode": 1,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
+        },
+        "tokenSettings": []
+    },
+    "coms": [
+        {
+            "id": "VBasicPie_ad0cy9h1",
+            "name": "VBasicPie",
+            "type": "com",
+            "alias": "基本饼图",
+            "icon": "v-icon-chart-pie",
+            "img": "images/大图/基本饼图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 710,
+                "y": 390,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 330,
+            "handles": {
+                "clickChart": {
+                    "eventName": "clickChart",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 40,
+                        "bottom": 50,
+                        "left": 50,
+                        "right": 50
+                    },
+                    "innerPadding": 20,
+                    "outerPadding": 30,
+                    "background": {
+                        "show": true,
+                        "color": "rgba(255, 255, 255, 0.1)"
+                    }
+                },
+                "label": {
+                    "show": true,
+                    "position": "outside",
+                    "textStyle": {
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.6)",
+                        "fontWeight": "normal"
+                    },
+                    "offsetX": 0,
+                    "offsetY": 0
+                },
+                "tooltip": {
+                    "show": true,
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "background": {
+                        "padding": {
+                            "h": 5,
+                            "v": 5
+                        },
+                        "color": "rgba(0, 0, 0, 0.65)"
+                    }
+                },
+                "legend": {
+                    "show": true,
+                    "position": "top-center",
+                    "orient": "horizontal",
+                    "textStyle": {
+                        "fontSize": 12,
+                        "color": "#90a0ae",
+                        "fontWeight": "normal"
+                    },
+                    "symbol": {
+                        "show": true,
+                        "icon": "auto",
+                        "width": 25,
+                        "height": 14,
+                        "gap": 10
+                    }
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "name": "系列1",
+                        "radius": [
+                            "40%",
+                            "70%"
+                        ],
+                        "color": {
+                            "type": "solid",
+                            "value": "#00baff"
+                        },
+                        "id": "系列1_g2qvtz"
+                    }
+                ],
+                "animation": {
+                    "enabled": true,
+                    "duration": 1000,
+                    "easing": "cubicOut",
+                    "delay": 0
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "类目",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本饼图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "VBasicPie_ad0cy9h1",
+                    "id": "t_yf0g9h32",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"x\":\"类别A\",\"y\":30},{\"x\":\"类别B\",\"y\":25},{\"x\":\"类别C\",\"y\":45}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "类目",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        }
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
+}

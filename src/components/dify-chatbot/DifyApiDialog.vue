@@ -78,7 +78,8 @@
       <span class="dialog-footer">
         <el-button @click="handleClose">关闭</el-button>
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
-        <el-button type="info" @click="outputJsonToConsole">AI生成画布</el-button>
+        <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
+        <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
       </span>
     </template>
   </el-dialog>
@@ -88,6 +89,8 @@
 import { defineComponent, ref, watch, nextTick, PropType } from 'vue';
 import { ElMessage } from 'element-plus';
 import { EditorModule } from '@/store/modules/editor';
+import { saveScreen } from "@/api/screen";
+import payload from './payloadtitle.json';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -335,8 +338,21 @@ export default defineComponent({
       ElMessage.success('对话已清空');
     };
 
+    // 保存AI生成的屏幕数据
+    const saveScreenAI = async (jsonObj: any) => {
+      try {
+        await saveScreen(jsonObj);
+        EditorModule.screenJsonSnapshot = JSON.stringify(jsonObj);
+        ElMessage.success('AI生成的屏幕数据保存成功');
+      } catch (error) {
+        console.error('保存AI生成的屏幕数据失败:', error);
+        ElMessage.error('保存失败，请稍后重试');
+        throw error;
+      }
+    };
+
     // 将最后一条 AI 回答中的 JSON 输出到控制台
-    const outputJsonToConsole = () => {
+    const outputJsonToConsole = async () => {
       // 查找最后一条 AI 助手的消息
       const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
       if (aiMessages.length === 0) {
@@ -379,8 +395,9 @@ export default defineComponent({
               
             }
             
-            console.log('AI 回答中的 JSON 内容:', jsonObj);
-            ElMessage.success('JSON 已输出到控制台');
+            // 调用saveScreenAI方法保存AI生成的屏幕数据
+            await saveScreenAI(jsonObj);
+            console.log('AI 回答中的 JSON 内容saveScreenAI:', jsonObj);
             return;
           } catch (parseError) {
             console.warn('找到 JSON 格式但解析失败:', parseError);
@@ -441,6 +458,16 @@ export default defineComponent({
       emit('close');
     };
 
+    // 临时保存payload数据
+    const saveTempPayload = async () => {
+      try {
+        await saveScreenAI(payload);
+        console.log('写死的 JSON 内容saveScreenAI:', payload);
+      } catch (error) {
+        console.error('保存payload失败:', error);
+      }
+    };
+
     return {
       dialogVisible,
       userQuery,
@@ -451,6 +478,7 @@ export default defineComponent({
       sendMessage,
       clearMessages,
       outputJsonToConsole,
+      saveTempPayload,
       handleEnter,
       formatContent,
       formatTime

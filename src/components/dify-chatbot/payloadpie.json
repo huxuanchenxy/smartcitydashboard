@@ -1,0 +1,247 @@
+{
+    "screen": {
+        "id": 176,
+        "name": "测试demo1",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 4
+    },
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0)",
+        "grid": 8,
+        "screenshot": "",
+        "zoomMode": 1,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
+        },
+        "tokenSettings": []
+    },
+    "coms": [
+        {
+            "id": "BasicPie_h2LkATMh5",
+            "name": "VBasicPie",
+            "type": "com",
+            "alias": "基本饼图",
+            "icon": "v-icon-chart-pie",
+            "img": "images/缩略图/基本饼图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 346,
+                "y": 341,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 176,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "pieRadius": 50,
+                    "pieColor": "#c23531",
+                    "pieLine": {
+                        "type": "solid",
+                        "width": 0,
+                        "color": "#c23531"
+                    },
+                    "Nightingale": true,
+                    "colour": true,
+                    "colorList": [
+                        {
+                            "value": "#589799"
+                        },
+                        {
+                            "value": "#76C3D1"
+                        },
+                        {
+                            "value": "#537FA9"
+                        },
+                        {
+                            "value": "#8CF1EB"
+                        },
+                        {
+                            "value": "#82C5F9"
+                        },
+                        {
+                            "value": "#FFD977"
+                        },
+                        {
+                            "value": "#8277F6"
+                        },
+                        {
+                            "value": "#E6E6E6"
+                        },
+                        {
+                            "value": "#FFFFFF"
+                        }
+                    ]
+                },
+                "legend": {
+                    "show": false,
+                    "top": "top",
+                    "left": "left",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#fff"
+                    },
+                    "orient": "vertical",
+                    "align": "left",
+                    "showValue": false
+                },
+                "tooltip": {
+                    "triggerOn": "mousemove",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#333"
+                    },
+                    "padding": 5
+                },
+                "content": {
+                    "enabled": true,
+                    "padding": 5,
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.3)"
+                    }
+                },
+                "frameBackground": {
+                    "horizontal": 12,
+                    "vertical": 12,
+                    "backgroundColor": "#333",
+                    "borderStyle": {
+                        "type": "dashed",
+                        "width": 1,
+                        "color": "#f5dc69",
+                        "radius": 4
+                    }
+                },
+                "animation": {
+                    "enabled": false,
+                    "easing": "cubicOut",
+                    "duration": 1000
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_uS9UXKTN7B",
+                        "name": "系列1",
+                        "column": null,
+                        "color": {
+                            "type": "solid",
+                            "value": "#00baff",
+                            "from": "#fff",
+                            "to": "#000"
+                        }
+                    }
+                ]
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本饼图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicPie_h2LkATMh5",
+                    "id": "c3rHhoGeOs",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"type\":\"周一\",\"value\":150},{\"type\":\"周二\",\"value\":230},{\"type\":\"周三\",\"value\":224},{\"type\":\"周四\",\"value\":218},{\"type\":\"周五\",\"value\":135},{\"type\":\"周六\",\"value\":147},{\"type\":\"周日\",\"value\":260}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        }
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
+}
