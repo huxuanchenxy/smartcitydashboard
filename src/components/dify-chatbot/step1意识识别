@@ -1,0 +1,92 @@
+import json
+
+def main(user_input: str) -> dict:
+    input_lower = user_input.lower()
+    
+    # 提取图表类型
+    type_keywords = {
+        '柱状图': 'bar', '柱图': 'bar', '条形图': 'bar', 'bar': 'bar',
+        '饼图': 'pie', '饼状图': 'pie', '环形图': 'pie', '占比图': 'pie', 'pie': 'pie',
+        '折线图': 'line', '曲线图': 'line', '趋势图': 'line', 'line': 'line',
+        '面积图': 'area', '区域图': 'area', 'area': 'area',
+        '雷达图': 'radar', 'radar': 'radar',
+        '散点图': 'scatter', '气泡图': 'scatter', 'scatter': 'scatter',
+        '热力图': 'heatmap', 'heatmap': 'heatmap',
+        '漏斗图': 'funnel',
+        '词云': 'wordcloud',
+        '水位图': 'waterlevel',
+        '地图': 'map',
+        '标题': 'title', '文本': 'title', '跑马灯': 'title', '翻牌器': 'title',
+        '表格': 'table', '列表': 'table', '轮播表': 'table',
+        '按钮': 'button', '开关': 'button', '滑动': 'button',
+        '进度条': 'progress',
+        '视频': 'video',
+        '3d': 'threed', '3D': 'threed',
+        '背景块': 'bgbox', '边框': 'border', '装饰': 'decoration',
+    }
+    
+    sorted_keywords = sorted(type_keywords.items(), key=lambda x: len(x[0]), reverse=True)
+    
+    found = []
+    for keyword, chart_type in sorted_keywords:
+        if keyword in user_input or keyword in input_lower:
+            idx = input_lower.find(keyword.lower())
+            before = input_lower[max(0, idx-15):idx]
+            if any(w in before for w in ['不要', '不是', '别', '排除']):
+                continue
+            
+            if not any(f['chartType'] == chart_type for f in found):
+                found.append({
+                    'chartType': chart_type,
+                    'keyword': keyword,
+                    'position': 'auto',
+                    'detail': ''
+                })
+    
+    # 提取位置词
+    position_keywords = {
+        '左上方': 'left_top', '左上': 'left_top',
+        '左下方': 'left_bottom', '左下': 'left_bottom',
+        '右上方': 'right_top', '右上': 'right_top',
+        '右下方': 'right_bottom', '右下': 'right_bottom',
+        '左侧': 'left', '左': 'left', '左边': 'left',
+        '右侧': 'right', '右': 'right', '右边': 'right',
+        '上方': 'top', '上': 'top', '顶部': 'top',
+        '下方': 'bottom', '下': 'bottom', '底部': 'bottom',
+        '中间': 'center', '中': 'center', '居中': 'center',
+    }
+    
+    for i, item in enumerate(found):
+        for pk, pv in position_keywords.items():
+            idx = input_lower.find(item['keyword'].lower())
+            if idx >= 0:
+                nearby = input_lower[max(0, idx-20):idx+len(item['keyword'])+20]
+                if pk in nearby:
+                    found[i]['position'] = pv
+                    break
+    
+    # 提取细节（变体关键词）
+    variant_keywords = {
+        '分组': 'multi', '堆叠': 'stack', '动态': 'dynamic',
+        '钻取': 'drill', '极坐标': 'polar', '瀑布': 'waterfall',
+        '正负': 'negative', '仪表': 'dashboard', '指标占比': 'proportion',
+        '多维环': 'multiarc', '玉环': 'arc',
+    }
+    
+    for i, item in enumerate(found):
+        for vk, vv in variant_keywords.items():
+            if vk in user_input:
+                found[i]['detail'] = vv
+                break
+    
+    # 生成屏幕名称
+    screen_name = "大屏配置"
+    if found:
+        names = [item['keyword'] for item in found]
+        screen_name = "".join(names) + "监控"
+    
+    return {
+        'screen_name': screen_name,
+        'components': json.dumps(found, ensure_ascii=False),
+        'count': len(found)
+    }
