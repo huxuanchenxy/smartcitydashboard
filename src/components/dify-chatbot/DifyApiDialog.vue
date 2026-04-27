@@ -79,7 +79,7 @@
         <el-button @click="handleClose">关闭</el-button>
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
-        <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
+        <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
       </span>
     </template>
   </el-dialog>
@@ -89,6 +89,10 @@
 import { defineComponent, ref, watch, nextTick, PropType } from 'vue';
 import { ElMessage } from 'element-plus';
 import { EditorModule } from '@/store/modules/editor';
+import { FilterModule } from '@/store/modules/filter';
+import { UploadImagesModule } from '@/store/modules/images';
+import { ThreedModule } from '@/store/modules/threed';
+import { ToolbarModule } from '@/store/modules/toolbar';
 import { saveScreen } from "@/api/screen";
 import payload from './payloadtitle.json';
 
@@ -447,7 +451,7 @@ export default defineComponent({
     };
 
     // 关闭对话框
-    const handleClose = () => {
+    const handleClose = async () => {
       // 如果有正在进行的请求，取消它
       if (abortController.value) {
         abortController.value.abort();
@@ -456,6 +460,28 @@ export default defineComponent({
       messages.value = [];
       conversationId.value = '';
       emit('close');
+      
+      // 关闭弹窗后重新加载页面数据
+      try {
+        // 重新加载屏幕数据
+        const screenId = EditorModule.screen?.id;
+        if (screenId) {
+          await EditorModule.loadScreen(screenId);
+          FilterModule.loadFilters(screenId);
+          UploadImagesModule.loadUploadImages(screenId);
+          EditorModule.loadComs(screenId);
+          if (EditorModule.screen.groupId) {
+            ThreedModule.loadThreedModelList(EditorModule.screen.groupId);
+          }
+          // 重新计算画布缩放
+          EditorModule.autoCanvasScale(() => ({
+            offsetX: ToolbarModule.getPanelOffsetX,
+            offsetY: ToolbarModule.getPanelOffsetY,
+          }));
+        }
+      } catch (error) {
+        console.error('重新加载页面数据失败:', error);
+      }
     };
 
     // 临时保存payload数据
