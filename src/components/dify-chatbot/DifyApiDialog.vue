@@ -231,7 +231,7 @@ export default defineComponent({
           body: JSON.stringify({
             inputs: props.data,
             query: query,
-            response_mode: 'streaming', // 使用流式模式
+            response_mode: 'streaming', // 改回流式模式
             conversation_id: conversationId.value,
             user: props.userId
           }),
@@ -244,146 +244,76 @@ export default defineComponent({
 
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
-        let fullContent = '';
-        let newConversationId = '';
-
+        
         if (!reader) {
           throw new Error('无法读取响应流');
         }
 
-        // 读取流式数据
-        let firstMessageReceived = false;
-        let buffer = ''; // 用于缓存不完整的数据块
-        
+        // 收集所有流式数据
+        let allData = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+          allData += decoder.decode(value, { stream: true });
+        }
+        
+        console.log('收到完整流式响应，长度:', allData.length, 'chars');
+        
+        let fullContent = '';
+        let newConversationId = '';
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.trim() === '') continue;
-            if (line.startsWith('data: ')) {
-              try {
-                // 尝试解析当前行
-                const data = JSON.parse(line.slice(6));
-                
-                // 处理不同类型的事件
-                switch (data.event) {
-                  case 'message': // 增量消息内容
-                    if (data.answer) {
-                      // 收到第一个消息块后移除思考状态
-                      if (!firstMessageReceived) {
-                        const lastMsg = messages.value[messages.value.length - 1];
-                        lastMsg.isThinking = false;
-                        lastMsg.content = '';
-                        firstMessageReceived = true;
-                      }
-                      fullContent += data.answer;
-                      const lastMsg = messages.value[messages.value.length - 1];
-                      lastMsg.content = fullContent;
-                      await scrollToBottom();
-                    }
-                    break;
-                    
-                  case 'message_end': // 消息结束
-                    newConversationId = data.conversation_id || '';
-                    break;
-                    
-                  case 'workflow_finished': // 工作流结束（包含最终答案）
-                    if (data.data && data.data.outputs && data.data.outputs.answer) {
-                      // 如果之前没有收到消息，初始化消息状态
-                      if (!firstMessageReceived) {
-                        const lastMsg = messages.value[messages.value.length - 1];
-                        lastMsg.isThinking = false;
-                        lastMsg.content = '';
-                        firstMessageReceived = true;
-                      }
-                      fullContent = data.data.outputs.answer;
-                      const lastMsg = messages.value[messages.value.length - 1];
-                      lastMsg.content = fullContent;
-                      await scrollToBottom();
-                    }
-                    newConversationId = data.conversation_id || '';
-                    break;
-                    
-                  case 'error': // 错误
-                    throw new Error(data.message || '流式响应错误');
-                }
-
-                // 获取会话 ID
-                if (data.conversation_id && !newConversationId) {
-                  newConversationId = data.conversation_id;
-                }
-
-              } catch (e) {
-                console.warn('解析流数据失败，尝试缓存:', line.length, 'chars');
-                
-                // 将当前行添加到缓冲区
-                buffer += line.slice(6);
-                
-                console.log('当前缓冲区大小:', buffer.length, 'chars');
-                console.log('缓冲区包含 workflow_finished:', buffer.includes('workflow_finished'));
-                
-                // 检查是否可能包含完整的 workflow_finished 事件
-                if (buffer.includes('workflow_finished')) {
-                  // 尝试查找完整的事件结构
-                  const workflowStart = buffer.indexOf('{"event":"workflow_finished"');
-                  console.log('workflowStart 位置:', workflowStart);
-                  
-                  if (workflowStart !== -1) {
-                    // 尝试找到匹配的闭合大括号（正确处理转义字符）
-                    let depth = 0;
-                    let i = workflowStart;
-                    while (i < buffer.length) {
-                      // 跳过转义字符
-                      if (buffer[i] === '\\' && i + 1 < buffer.length) {
-                        i += 2;
-                        continue;
-                      }
-                      if (buffer[i] === '{') depth++;
-                      if (buffer[i] === '}') depth--;
-                      // 调试：每1000字符输出一次深度
-                      if (i % 1000 === 0) {
-                        console.log('深度检查 - 位置:', i, '深度:', depth);
-                      }
-                      if (depth === 0) {
-                        // 找到完整的事件
-                        const completeEvent = buffer.substring(workflowStart, i + 1);
-                        console.log('找到完整事件，长度:', completeEvent.length);
-                        try {
-                          const data = JSON.parse(completeEvent);
-                          console.log('成功解析事件，event类型:', data.event);
-                          if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
-                            console.log('找到 answer 字段，长度:', data.data.outputs.answer.length);
-                            if (!firstMessageReceived) {
-                              const lastMsg = messages.value[messages.value.length - 1];
-                              lastMsg.isThinking = false;
-                              lastMsg.content = '';
-                              firstMessageReceived = true;
-                            }
-                            fullContent = data.data.outputs.answer;
-                            const lastMsg = messages.value[messages.value.length - 1];
-                            lastMsg.content = fullContent;
-                            await scrollToBottom();
-                          }
-                          if (data.conversation_id && !newConversationId) {
-                            newConversationId = data.conversation_id;
-                          }
-                        } catch (e2) {
-                          console.warn('解析缓存的完整事件失败:', e2);
-                        }
-                        // 清理缓冲区中已处理的部分
-                        buffer = buffer.substring(i + 1);
-                        console.log('缓冲区清理后大小:', buffer.length);
-                        break;
-                      }
-                      i++;
-                    }
-                  }
-                }
+        // 处理所有数据
+        const lines = allData.split('\n');
+        for (const line of lines) {
+          if (line.trim() === '' || !line.startsWith('data: ')) continue;
+          
+          try {
+            const data = JSON.parse(line.slice(6));
+            
+            // 处理 workflow_finished 事件
+            if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+              console.log('找到 workflow_finished 事件');
+              fullContent = data.data.outputs.answer;
+              const lastMsg = messages.value[messages.value.length - 1];
+              lastMsg.isThinking = false;
+              lastMsg.content = fullContent;
+              await scrollToBottom();
+            } else if (data.event === 'message' && data.answer) {
+              // 处理普通消息
+              fullContent += data.answer;
+              const lastMsg = messages.value[messages.value.length - 1];
+              lastMsg.isThinking = false;
+              lastMsg.content = fullContent;
+              await scrollToBottom();
+            }
+            
+            if (data.conversation_id) {
+              newConversationId = data.conversation_id;
+            }
+          } catch (e) {
+            console.warn('解析单行数据失败:', e);
+          }
+        }
+        
+        // 如果没有找到 workflow_finished 事件，尝试从原始数据中提取 answer
+        if (!fullContent && allData.includes('workflow_finished')) {
+          console.log('尝试从原始数据中提取 answer');
+          const answerMatch = allData.match(/"answer":"([^"]+)"/);
+          if (answerMatch && answerMatch[1]) {
+            let unescapedAnswer = answerMatch[1]
+              .replace(/\\\\/g, '\\')
+              .replace(/\\"/g, '"');
+            try {
+              const answerData = JSON.parse(unescapedAnswer);
+              if (answerData.screen) {
+                fullContent = unescapedAnswer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
               }
+            } catch (e) {
+              console.warn('提取 answer 失败:', e);
             }
           }
         }
