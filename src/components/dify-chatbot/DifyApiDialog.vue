@@ -316,6 +316,38 @@ export default defineComponent({
 
               } catch (e) {
                 console.warn('解析流数据失败:', line, e);
+                
+                // 尝试处理可能被截断的 workflow_finished 事件
+                if (line.includes('workflow_finished')) {
+                  try {
+                    // 尝试提取 answer 字段内容
+                    const answerMatch = line.match(/"answer":"([^"]+)"/);
+                    if (answerMatch && answerMatch[1]) {
+                      // 对提取的 answer 内容进行转义处理
+                      let escapedAnswer = answerMatch[1]
+                        .replace(/\\\\/g, '\\')
+                        .replace(/\\"/g, '"');
+                      
+                      // 尝试解析 answer 内容
+                      const answerData = JSON.parse(escapedAnswer);
+                      if (answerData.screen) {
+                        // 更新消息内容
+                        if (!firstMessageReceived) {
+                          const lastMsg = messages.value[messages.value.length - 1];
+                          lastMsg.isThinking = false;
+                          lastMsg.content = '';
+                          firstMessageReceived = true;
+                        }
+                        fullContent = answerMatch[1];
+                        const lastMsg = messages.value[messages.value.length - 1];
+                        lastMsg.content = answerMatch[1];
+                        await scrollToBottom();
+                      }
+                    }
+                  } catch (e2) {
+                    console.warn('尝试提取 answer 失败:', e2);
+                  }
+                }
               }
             }
           }

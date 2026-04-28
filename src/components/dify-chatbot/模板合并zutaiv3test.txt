@@ -367,7 +367,7 @@ COMPONENT_TEMPLATES = {
                 }
             },
             "actions": {}
-        },
+    },
     "VBasicLine": {
         "alias": "基本折线图",
         "icon": "v-icon-chart-line",
