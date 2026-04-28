@@ -79,7 +79,7 @@
         <el-button @click="handleClose">关闭</el-button>
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
-        <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
+        <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
       </span>
     </template>
   </el-dialog>
@@ -94,7 +94,7 @@ import { UploadImagesModule } from '@/store/modules/images';
 import { ThreedModule } from '@/store/modules/threed';
 import { ToolbarModule } from '@/store/modules/toolbar';
 import { saveScreen } from "@/api/screen";
-import payload from './payloadtitle.json';
+import payload from './payloadpie.json';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -391,6 +391,14 @@ export default defineComponent({
               if(EditorModule.screen.id)
               {
                 jsonObj.screen.id = EditorModule.screen.id
+                
+                // 设置所有组件的 projectId 为当前屏幕 ID
+                if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
+                  jsonObj.coms.forEach(component => {
+                    component.projectId = EditorModule.screen.id
+                  })
+                }
+                
               }
               if(EditorModule.screen.name)
               {

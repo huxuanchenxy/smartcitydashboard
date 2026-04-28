@@ -1,7 +1,7 @@
 {
     "screen": {
-        "id": 176,
-        "name": "测试demo1",
+        "id": 188,
+        "name": "饼图监控",
         "share": "",
         "thumbnail": null,
         "groupId": 4
@@ -27,7 +27,7 @@
     },
     "coms": [
         {
-            "id": "VBasicPie_ad0cy9h1",
+            "id": "VBasicPie_yqszkzee",
             "name": "VBasicPie",
             "type": "com",
             "alias": "基本饼图",
@@ -50,7 +50,7 @@
                 "filpV": false,
                 "filpH": false
             },
-            "projectId": 330,
+            "projectId": 188,
             "handles": {
                 "clickChart": {
                     "eventName": "clickChart",
@@ -140,7 +140,7 @@
                             "type": "solid",
                             "value": "#00baff"
                         },
-                        "id": "系列1_g2qvtz"
+                        "id": "系列1_kjwmjc"
                     }
                 ],
                 "animation": {
@@ -174,8 +174,8 @@
             },
             "apiData": {
                 "source": {
-                    "comId": "VBasicPie_ad0cy9h1",
-                    "id": "t_yf0g9h32",
+                    "comId": "VBasicPie_yqszkzee",
+                    "id": "t_ad4yoj1h",
                     "type": "static",
                     "pageFilters": [],
                     "config": {

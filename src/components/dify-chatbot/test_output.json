@@ -1,6 +1,6 @@
 {
   "screen": {
-    "id": 970,
+    "id": 894,
     "name": "测试demo1",
     "share": "",
     "thumbnail": null,
@@ -27,7 +27,7 @@
   },
   "coms": [
     {
-      "id": "VBasicPie_96nnvlsg",
+      "id": "VBasicPie_2260ph57",
       "name": "VBasicPie",
       "type": "com",
       "alias": "基本饼图",
@@ -50,7 +50,7 @@
         "filpV": false,
         "filpH": false
       },
-      "projectId": 970,
+      "projectId": 894,
       "handles": {
         "click": {
           "eventName": "click",
@@ -176,25 +176,13 @@
               "from": "#fff",
               "to": "#000"
             },
-            "id": "系列1_g8n1wk"
+            "id": "系列1_srzo6y"
           }
         ]
       },
       "apis": {
         "source": {
           "fields": {
-            "x": {
-              "type": "string",
-              "map": "type",
-              "description": "分类",
-              "optional": false
-            },
-            "y": {
-              "type": "string",
-              "map": "value",
-              "description": "值",
-              "optional": false
-            },
             "type": {
               "type": "string",
               "map": "",
@@ -216,13 +204,13 @@
       },
       "apiData": {
         "source": {
-          "comId": "VBasicPie_96nnvlsg",
-          "id": "t_nfywlkzj",
+          "comId": "VBasicPie_2260ph57",
+          "id": "t_gnni0ro3",
           "type": "static",
           "pageFilters": [],
           "config": {
             "useFilter": false,
-            "data": "[{\"x\":\"周一\",\"y\":150,\"type\":\"周一\",\"value\":150},{\"x\":\"周二\",\"y\":230,\"type\":\"周二\",\"value\":230},{\"x\":\"周三\",\"y\":224,\"type\":\"周三\",\"value\":224},{\"x\":\"周四\",\"y\":218,\"type\":\"周四\",\"value\":218},{\"x\":\"周五\",\"y\":135,\"type\":\"周五\",\"value\":135},{\"x\":\"周六\",\"y\":147,\"type\":\"周六\",\"value\":147},{\"x\":\"周日\",\"y\":260,\"type\":\"周日\",\"value\":260}]",
+            "data": "[{\"type\":\"周一\",\"value\":150},{\"type\":\"周二\",\"value\":230},{\"type\":\"周三\",\"value\":224},{\"type\":\"周四\",\"value\":218},{\"type\":\"周五\",\"value\":135},{\"type\":\"周六\",\"value\":147},{\"type\":\"周日\",\"value\":260}]",
             "postBodyType": "static"
           }
         }
@@ -231,18 +219,6 @@
         "click": {
           "description": "当点击数据项时",
           "fields": {
-            "x": {
-              "type": "string",
-              "map": "type",
-              "description": "分类",
-              "optional": false
-            },
-            "y": {
-              "type": "string",
-              "map": "value",
-              "description": "值",
-              "optional": false
-            },
             "type": {
               "type": "string",
               "map": "",

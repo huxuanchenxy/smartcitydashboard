@@ -3,7 +3,7 @@ import sys
 import os
 
 # 读取模板合并脚本内容
-with open('f:/project/smartcity/dashboard2/dashboard/src/components/dify-chatbot/模板合并.python', 'r', encoding='utf-8') as f:
+with open('f:/project/smartcity/dashboard2/dashboard/src/components/dify-chatbot/模板合并zutaiv4.python', 'r', encoding='utf-8') as f:
     script_content = f.read()
 
 # 执行脚本内容

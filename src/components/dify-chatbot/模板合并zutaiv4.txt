@@ -1,0 +1,915 @@
+import json
+import random
+import string
+import copy
+
+# 组件模板库（已修正 VMainTitle 等组件）
+COMPONENT_TEMPLATES = {
+    "VMainTitle": {
+        "alias": "通用标题",
+        "icon": "v-icon-title",
+        "img": "images/缩略图/通用标题.png",
+        "config": {
+            "title": "我是标题数据",
+            "textStyle": {
+                "fontFamily": "Microsoft Yahei",
+                "fontSize": 24,
+                "color": "#fff",
+                "fontWeight": "normal"
+            },
+            "textAlign": "center",
+            "writingMode": "horizontal-tb",
+            "letterSpacing": 0,
+            "backgroundStyle": {
+                "show": False,
+                "bgColor": "#008bff",
+                "borderRadius": 15,
+                "borderColor": "#fff",
+                "borderStyle": "solid",
+                "borderWidth": 1
+            },
+            "ellipsis": False,
+            "urlConfig": {
+                "url": "",
+                "isBlank": False
+            },
+            "animation": {
+                "enable": False,
+                "name": "Updown",
+                "duration": 1000,
+                "timing": "linear",
+                "delay": 0,
+                "iteration": "infinite",
+                "direction": "alternate"
+            },
+            "cursor": "default"
+        },
+        "handles": {
+            "click": {"eventName": "click", "description": "点击", "fields": []},
+            "refreshData": {"eventName": "refreshData", "description": "更新数据", "fields": []},
+            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
+            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
+        },
+        "ichandles": {
+            "property": {
+                "eventName": "property",
+                "description": "属性-点位",
+                "fields": [],
+                "properties": [
+                    {"name": "标题内容", "type": "string", "path": "config.title"},
+                    {"name": "字体颜色", "type": "color", "path": "config.textStyle.color"},
+                    {"name": "背景颜色", "type": "color", "path": "config.backgroundStyle.bgColor"}
+                ],
+                "events": None
+            },
+            "event": {
+                "eventName": "event",
+                "description": "事件-点位",
+                "fields": [],
+                "properties": None,
+                "events": []
+            }
+        },
+        "apis": {
+            "source": {
+                "fields": {
+                    "title": {"type": "string", "map": "", "description": "标题值", "optional": True},
+                    "url": {"type": "string", "map": "", "description": "超链接", "optional": True}
+                },
+                "render": "render",
+                "description": "",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "{}"  # 标题组件用对象
+    },
+    "VBasicBar": {
+        "alias": "柱状图",
+        "icon": "v-icon-chart-bar",
+        "img": "images/缩略图/柱状图.png",
+        "config": {
+            "global": {
+                "fontFamily": "Microsoft Yahei",
+                "margin": {"top": 40, "bottom": 50, "left": 50, "right": 10},
+                "innerPadding": 20,
+                "outerPadding": 30,
+                "barWidth": "auto",
+                "background": {"show": True, "color": "rgba(255, 255, 255, 0.1)"}
+            },
+            "label": {
+                "show": False,
+                "position": "top",
+                "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"},
+                "offsetX": 0,
+                "offsetY": 0
+            },
+            "xAxis": {
+                "show": True,
+                "type": "category",
+                "title": {"show": False, "name": "X轴", "location": "center", "display": {"rotate": 0, "offset": 20}, "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}},
+                "axisLine": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisTick": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisLabel": {"show": True, "timeFormat": "MM/DD", "boundaryGap": True, "interval": "auto", "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}},
+                "grid": {"show": True, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "yAxis": {
+                "show": True,
+                "extent": {"min": "auto", "max": "auto"},
+                "splitNumber": 0,
+                "title": {"show": False, "name": "Y轴", "location": "center", "display": {"rotate": 90, "offset": 20}, "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}},
+                "axisLine": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisTick": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisLabel": {"show": True, "valueFormat": "auto", "boundaryGap": 0, "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}},
+                "grid": {"show": True, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "tooltip": {
+                "show": True,
+                "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"},
+                "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)"},
+                "pointer": {"show": True, "line": {"type": "dashed", "width": 1, "color": "#f5dc69", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "legend": {
+                "show": True,
+                "position": "top-center",
+                "orient": "horizontal",
+                "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"},
+                "symbol": {"show": True, "icon": "auto", "width": 25, "height": 14, "gap": 10},
+                "page": {"enabled": False, "size": {"width": 100, "height": 100}, "button": {"size": 15, "color": "#000", "inactiveColor": "#000"}, "pageNumColor": "#90a0ae"}
+            },
+            "series": [{"type": "bar", "name": "系列1", "color": {"type": "solid", "value": "#00baff", "from": "#fff", "to": "#000"}}],
+            "animation": {"enabled": True, "duration": 1000, "easing": "cubicOut", "delay": 0}
+        },
+        "handles": {
+            "clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []},
+            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
+            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
+        },
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "x": {"type": "string", "map": "", "description": "类目", "optional": False},
+                    "y": {"type": "string", "map": "", "description": "值", "optional": False}
+                },
+                "render": "render",
+                "description": "基本柱状图接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[{\"x\":\"上海\",\"y\":23},{\"x\":\"深圳\",\"y\":13},{\"x\":\"合肥\",\"y\":2},{\"x\":\"成都\",\"y\":9}]"
+    },
+    "VBasicPie": {
+            "id": "BasicPie_RMfbxy1ZO",
+            "name": "VBasicPie",
+            "type": "com",
+            "alias": "基本饼图",
+            "icon": "v-icon-chart-pie",
+            "img": "images/缩略图/基本饼图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 407,
+                "y": 289,
+                "w": 687,
+                "h": 489,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 186,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "pieRadius": 50,
+                    "pieColor": "#c23531",
+                    "pieLine": {
+                        "type": "solid",
+                        "width": 0,
+                        "color": "#c23531"
+                    },
+                    "Nightingale": true,
+                    "colour": true,
+                    "colorList": [
+                        {
+                            "value": "#589799"
+                        },
+                        {
+                            "value": "#76C3D1"
+                        },
+                        {
+                            "value": "#537FA9"
+                        },
+                        {
+                            "value": "#8CF1EB"
+                        },
+                        {
+                            "value": "#82C5F9"
+                        },
+                        {
+                            "value": "#FFD977"
+                        },
+                        {
+                            "value": "#8277F6"
+                        },
+                        {
+                            "value": "#E6E6E6"
+                        },
+                        {
+                            "value": "#FFFFFF"
+                        }
+                    ]
+                },
+                "legend": {
+                    "show": false,
+                    "top": "top",
+                    "left": "left",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#fff"
+                    },
+                    "orient": "vertical",
+                    "align": "left",
+                    "showValue": false
+                },
+                "tooltip": {
+                    "triggerOn": "mousemove",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#333"
+                    },
+                    "padding": 5
+                },
+                "content": {
+                    "enabled": true,
+                    "padding": 5,
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.3)"
+                    }
+                },
+                "frameBackground": {
+                    "horizontal": 12,
+                    "vertical": 12,
+                    "backgroundColor": "#333",
+                    "borderStyle": {
+                        "type": "dashed",
+                        "width": 1,
+                        "color": "#f5dc69",
+                        "radius": 4
+                    }
+                },
+                "animation": {
+                    "enabled": false,
+                    "easing": "cubicOut",
+                    "duration": 1000
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_34uwWkWF0q",
+                        "name": "系列1",
+                        "column": null,
+                        "color": {
+                            "type": "solid",
+                            "value": "#00baff",
+                            "from": "#fff",
+                            "to": "#000"
+                        }
+                    }
+                ]
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本饼图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicPie_RMfbxy1ZO",
+                    "id": "FbdlAj1aW-",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"type\":\"周一\",\"value\":150},{\"type\":\"周二\",\"value\":230},{\"type\":\"周三\",\"value\":224},{\"type\":\"周四\",\"value\":218},{\"type\":\"周五\",\"value\":135},{\"type\":\"周六\",\"value\":147},{\"type\":\"周日\",\"value\":260}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+    "VBasicLine": {
+        "alias": "基本折线图",
+        "icon": "v-icon-chart-line",
+        "img": "images/缩略图/基本折线图.png",
+        "config": {
+            "global": {
+                "fontFamily": "Microsoft Yahei",
+                "margin": {"top": 40, "bottom": 50, "left": 50, "right": 10},
+                "innerPadding": 20,
+                "outerPadding": 30,
+                "background": {"show": True, "color": "rgba(255, 255, 255, 0.1)"}
+            },
+            "label": {
+                "show": False,
+                "position": "top",
+                "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}
+            },
+            "xAxis": {
+                "show": True,
+                "type": "category",
+                "axisLine": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisTick": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisLabel": {"show": True, "timeFormat": "MM/DD", "boundaryGap": True, "interval": "auto", "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}},
+                "grid": {"show": True, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "yAxis": {
+                "show": True,
+                "extent": {"min": "auto", "max": "auto"},
+                "axisLine": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisTick": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisLabel": {"show": True, "valueFormat": "auto", "boundaryGap": 0, "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}},
+                "grid": {"show": True, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "tooltip": {
+                "show": True,
+                "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"},
+                "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)"},
+                "pointer": {"show": True, "line": {"type": "dashed", "width": 1, "color": "#f5dc69", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "legend": {
+                "show": True,
+                "position": "top-center",
+                "orient": "horizontal",
+                "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"},
+                "symbol": {"show": True, "icon": "auto", "width": 25, "height": 14, "gap": 10}
+            },
+            "series": [{"type": "line", "name": "系列1", "color": {"type": "solid", "value": "#00baff"}, "smooth": False}],
+            "animation": {"enabled": True, "duration": 1000, "easing": "cubicOut", "delay": 0}
+        },
+        "handles": {
+            "clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []},
+            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
+            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
+        },
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "x": {"type": "string", "map": "", "description": "类目", "optional": False},
+                    "y": {"type": "string", "map": "", "description": "值", "optional": False}
+                },
+                "render": "render",
+                "description": "基本折线图接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[{\"x\":\"1月\",\"y\":10},{\"x\":\"2月\",\"y\":20},{\"x\":\"3月\",\"y\":15},{\"x\":\"4月\",\"y\":30}]"
+    },
+    "VBasicArea": {
+        "alias": "区域图",
+        "icon": "v-icon-chart-line",
+        "img": "images/缩略图/区域图.png",
+        "config": {
+            "global": {
+                "fontFamily": "Microsoft Yahei",
+                "margin": {"top": 40, "bottom": 50, "left": 50, "right": 10},
+                "innerPadding": 20,
+                "outerPadding": 30,
+                "background": {"show": True, "color": "rgba(255, 255, 255, 0.1)"}
+            },
+            "label": {
+                "show": False,
+                "position": "top",
+                "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}
+            },
+            "xAxis": {
+                "show": True,
+                "type": "category",
+                "axisLine": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisTick": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisLabel": {"show": True, "timeFormat": "MM/DD", "boundaryGap": True, "interval": "auto", "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}},
+                "grid": {"show": True, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "yAxis": {
+                "show": True,
+                "extent": {"min": "auto", "max": "auto"},
+                "axisLine": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisTick": {"show": True, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"},
+                "axisLabel": {"show": True, "valueFormat": "auto", "boundaryGap": 0, "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}},
+                "grid": {"show": True, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "tooltip": {
+                "show": True,
+                "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"},
+                "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)"},
+                "pointer": {"show": True, "line": {"type": "dashed", "width": 1, "color": "#f5dc69", "dashedLength": 4, "dashedSpace": 4}}
+            },
+            "legend": {
+                "show": True,
+                "position": "top-center",
+                "orient": "horizontal",
+                "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"},
+                "symbol": {"show": True, "icon": "auto", "width": 25, "height": 14, "gap": 10}
+            },
+            "series": [{"type": "line", "name": "系列1", "color": {"type": "solid", "value": "#00baff"}, "smooth": False, "areaStyle": {"show": True, "color": {"type": "solid", "value": "rgba(0, 186, 255, 0.3)"}}}],
+            "animation": {"enabled": True, "duration": 1000, "easing": "cubicOut", "delay": 0}
+        },
+        "handles": {
+            "clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []},
+            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
+            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
+        },
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "x": {"type": "string", "map": "", "description": "类目", "optional": False},
+                    "y": {"type": "string", "map": "", "description": "值", "optional": False}
+                },
+                "render": "render",
+                "description": "区域图接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[{\"x\":\"1月\",\"y\":10},{\"x\":\"2月\",\"y\":20},{\"x\":\"3月\",\"y\":15},{\"x\":\"4月\",\"y\":30}]"
+    },
+    "VBasicRadar": {
+        "alias": "雷达图",
+        "icon": "v-icon-chart-radar",
+        "img": "images/缩略图/雷达图.png",
+        "config": {
+            "global": {
+                "fontFamily": "Microsoft Yahei",
+                "margin": {"top": 40, "bottom": 50, "left": 50, "right": 50},
+                "background": {"show": True, "color": "rgba(255, 255, 255, 0.1)"}
+            },
+            "label": {
+                "show": True,
+                "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}
+            },
+            "tooltip": {
+                "show": True,
+                "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"},
+                "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)"}
+            },
+            "legend": {
+                "show": True,
+                "position": "top-center",
+                "orient": "horizontal",
+                "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}
+            },
+            "series": [{"type": "radar", "name": "系列1", "color": {"type": "solid", "value": "#00baff"}}],
+            "animation": {"enabled": True, "duration": 1000, "easing": "cubicOut", "delay": 0}
+        },
+        "handles": {
+            "clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []},
+            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
+            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
+        },
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "x": {"type": "string", "map": "", "description": "维度", "optional": False},
+                    "y": {"type": "string", "map": "", "description": "值", "optional": False}
+                },
+                "render": "render",
+                "description": "雷达图接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[{\"x\":\"维度A\",\"y\":80},{\"x\":\"维度B\",\"y\":60},{\"x\":\"维度C\",\"y\":90},{\"x\":\"维度D\",\"y\":70},{\"x\":\"维度E\",\"y\":85}]"
+    },
+    "VBasicCarousel": {
+        "alias": "滚动表格",
+        "icon": "v-icon-other",
+        "img": "images/缩略图/滚动表格.png",
+        "config": {
+            "global": {
+                "fontFamily": "Microsoft Yahei",
+                "background": {"show": True, "color": "rgba(255, 255, 255, 0.05)"},
+                "header": {"show": True, "height": 40, "textStyle": {"fontSize": 12, "color": "#90a0ae"}},
+                "row": {"height": 36, "textStyle": {"fontSize": 12, "color": "rgba(255,255,255,0.6)"}}
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "col1": {"type": "string", "map": "", "description": "列1", "optional": False},
+                    "col2": {"type": "string", "map": "", "description": "列2", "optional": False}
+                },
+                "render": "render",
+                "description": "表格接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[{\"col1\":\"数据1\",\"col2\":\"值1\"},{\"col1\":\"数据2\",\"col2\":\"值2\"},{\"col1\":\"数据3\",\"col2\":\"值3\"}]"
+    },
+    "VButton": {
+        "alias": "按钮",
+        "icon": "v-icon-interact",
+        "img": "images/缩略图/按钮.png",
+        "config": {
+            "global": {
+                "text": "按钮",
+                "textStyle": {"fontSize": 14, "color": "#fff"},
+                "background": {"color": "#00baff", "borderRadius": 4}
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {},
+                "render": "render",
+                "description": "按钮接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[]"
+    },
+    "VProgress": {
+        "alias": "进度条",
+        "icon": "v-icon-interact",
+        "img": "images/缩略图/进度条.png",
+        "config": {
+            "global": {
+                "trackColor": "rgba(255,255,255,0.1)",
+                "barColor": "#00baff",
+                "textStyle": {"fontSize": 12, "color": "#fff"}
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "value": {"type": "number", "map": "", "description": "当前值", "optional": False},
+                    "max": {"type": "number", "map": "", "description": "最大值", "optional": False}
+                },
+                "render": "render",
+                "description": "进度条接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "{\"value\":65,\"max\":100}"
+    },
+    "VVideo": {
+        "alias": "视频播放",
+        "icon": "v-icon-media",
+        "img": "images/缩略图/视频播放.png",
+        "config": {
+            "global": {
+                "src": "",
+                "autoplay": False,
+                "loop": False,
+                "controls": True
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "src": {"type": "string", "map": "", "description": "视频地址", "optional": False}
+                },
+                "render": "render",
+                "description": "视频接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "{\"src\":\"\"}"
+    },
+    "VThreedViewer": {
+        "alias": "3D视图",
+        "icon": "v-icon-media",
+        "img": "images/缩略图/threedViewer.png",
+        "config": {
+            "global": {
+                "src": "",
+                "autoRotate": True,
+                "background": "transparent"
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {
+                    "src": {"type": "string", "map": "", "description": "3D模型地址", "optional": False}
+                },
+                "render": "render",
+                "description": "3D视图接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "{\"src\":\"\"}"
+    },
+    "VBgBox": {
+        "alias": "自定义背景块",
+        "icon": "v-icon-media",
+        "img": "images/缩略图/自定义背景块.png",
+        "config": {
+            "global": {
+                "background": {"color": "rgba(0,0,0,0.3)", "borderRadius": 0},
+                "border": {"show": False, "width": 1, "color": "rgba(255,255,255,0.1)"}
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {},
+                "render": "render",
+                "description": "背景块接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[]"
+    },
+    "VBorderBox": {
+        "alias": "边框",
+        "icon": "v-icon-media",
+        "img": "images/缩略图/边框.png",
+        "config": {
+            "global": {
+                "borderColor": "rgba(0, 186, 255, 0.5)",
+                "borderWidth": 1,
+                "background": "transparent"
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {},
+                "render": "render",
+                "description": "边框接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[]"
+    },
+    "VDecoration": {
+        "alias": "装饰",
+        "icon": "v-icon-media",
+        "img": "images/缩略图/装饰.png",
+        "config": {
+            "global": {
+                "type": "line",
+                "color": "#00baff",
+                "opacity": 1
+            }
+        },
+        "handles": {},
+        "ichandles": {},
+        "apis": {
+            "source": {
+                "fields": {},
+                "render": "render",
+                "description": "装饰接口",
+                "useAutoUpdate": False,
+                "autoUpdate": 1
+            }
+        },
+        "default_data": "[]"
+    }
+}
+
+def generate_id(prefix: str = "") -> str:
+    """生成随机ID后缀"""
+    suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    if prefix:
+        return f"{prefix}_{suffix}"
+    return suffix
+
+def main(screen_name: str, components: str) -> dict:
+    # 解析输入
+    if isinstance(components, str):
+        comp_list = json.loads(components)
+    else:
+        comp_list = components
+    
+    # 生成 screen ID
+    screen_id = random.randint(100, 999)
+    
+    result_coms = []
+    
+    for comp in comp_list:
+        name = comp['name']
+        template = COMPONENT_TEMPLATES.get(name, {})
+        
+        # 生成组件唯一ID
+        comp_id = generate_id(name)
+        
+        # 获取LLM生成的值（如果存在），否则用模板默认值
+        alias = comp.get('alias', template.get('alias', name))
+        icon = comp.get('icon', template.get('icon', ''))
+        img = comp.get('img', template.get('img', ''))
+        attr = comp.get('attr', {})
+        
+        # 深度复制模板配置，避免修改原始模板
+        config = copy.deepcopy(template.get('config', {}))
+        handles = copy.deepcopy(template.get('handles', {}))
+        ichandles = copy.deepcopy(template.get('ichandles', {}))
+        apis = copy.deepcopy(template.get('apis', {}))
+        
+        # 修正 config.series 的ID
+        if 'series' in config:
+            for i, series in enumerate(config['series']):
+                series['id'] = f"系列{i+1}_{generate_id()[:6]}"
+        
+        # 构建 apiData
+        api_data = comp.get('apiData', {})
+        data_str = template.get('default_data', '[]')
+        
+        # 如果LLM提供了数据，使用LLM的数据；否则用模板默认数据
+        if api_data and 'source' in api_data and 'config' in api_data['source']:
+            llm_data = api_data['source']['config'].get('data', '')
+            if llm_data and llm_data != '[]' and llm_data != '{}':
+                data_str = llm_data
+        
+        merged_api_data = {
+            "source": {
+                "comId": comp_id,
+                "id": generate_id("t"),
+                "type": "static",
+                "pageFilters": [],
+                "config": {
+                    "useFilter": False,
+                    "data": data_str,
+                    "postBodyType": "static"
+                }
+            }
+        }
+        
+        # 构建 events（标题组件为空，图表组件有click）
+        apis_fields = {}
+        if apis and 'source' in apis:
+            apis_fields = apis['source'].get('fields', {})
+        
+        # 根据组件类型决定是否生成 events
+        if name in ['VMainTitle', 'VButton', 'VProgress', 'VVideo', 'VThreedViewer', 'VBgBox', 'VBorderBox', 'VDecoration']:
+            events = {}
+        else:
+            events = {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": apis_fields
+                }
+            }
+        
+        # 组装完整组件
+        merged_comp = {
+            "id": comp_id,
+            "name": name,
+            "type": "com",
+            "alias": alias,
+            "icon": icon,
+            "img": img,
+            "locked": False,
+            "hided": False,
+            "eventhub": False,
+            "selected": False,
+            "hovered": False,
+            "renameing": False,
+            "special": "",
+            "attr": attr,
+            "projectId": screen_id,  # 修正：与 screen.id 一致
+            "handles": handles,
+            "ichandles": ichandles,
+            "config": config,
+            "apis": apis,
+            "apiData": merged_api_data,
+            "events": events,
+            "actions": {}
+        }
+        
+        result_coms.append(merged_comp)
+    
+    # 组装最终JSON
+    result = {
+        "screen": {
+            "id": screen_id,
+            "name": screen_name,
+            "share": "",
+            "thumbnail": None,
+            "groupId": 4
+        },
+        "config": {
+            "width": 1920,
+            "height": 1080,
+            "bgimage": "data/originPic/bj.png",
+            "bgcolor": "rgba(13,42,67,0)",
+            "grid": 8,
+            "screenshot": "",
+            "zoomMode": 1,
+            "useWatermark": False,
+            "styleFilterParams": {
+                "enable": False,
+                "hue": 0,
+                "saturate": 100,
+                "brightness": 100,
+                "contrast": 100,
+                "opacity": 100
+            },
+            "tokenSettings": []
+        },
+        "coms": result_coms,
+        "variables": {
+            "componentsView": {},
+            "publishersView": {},
+            "subscribersView": {}
+        },
+        "dataFilters": []
+    }
+    
+    return {
+        'json': json.dumps(result, ensure_ascii=False)
+    }
