@@ -1,7 +1,7 @@
 {
     "screen": {
-        "id": 189,
-        "name": "测试饼图2",
+        "id": 194,
+        "name": "zutaiv3test",
         "share": "",
         "thumbnail": null,
         "groupId": 4
@@ -27,7 +27,7 @@
     },
     "coms": [
         {
-            "id": "BasicPie_fcn_tOqtB",
+            "id": "BasicPie_juCTq8tJM",
             "name": "VBasicPie",
             "type": "com",
             "alias": "基本饼图",
@@ -41,8 +41,8 @@
             "renameing": false,
             "special": "",
             "attr": {
-                "x": 336,
-                "y": 267,
+                "x": 564,
+                "y": 294,
                 "w": 500,
                 "h": 300,
                 "deg": 0,
@@ -50,7 +50,7 @@
                 "filpV": false,
                 "filpH": false
             },
-            "projectId": 189,
+            "projectId": 194,
             "handles": {
                 "click": {
                     "eventName": "click",
@@ -169,7 +169,7 @@
                 "series": [
                     {
                         "type": "pie",
-                        "id": "系列1_ZWyUler_su",
+                        "id": "系列1_TJteSMKlX1",
                         "name": "系列1",
                         "column": null,
                         "color": {
@@ -205,8 +205,8 @@
             },
             "apiData": {
                 "source": {
-                    "comId": "BasicPie_fcn_tOqtB",
-                    "id": "eSDYi7zJfC",
+                    "comId": "BasicPie_juCTq8tJM",
+                    "id": "YnRtN_AHI7",
                     "type": "static",
                     "pageFilters": [],
                     "config": {

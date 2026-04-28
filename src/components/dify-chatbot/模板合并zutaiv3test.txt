@@ -161,59 +161,213 @@ COMPONENT_TEMPLATES = {
         "default_data": "[{\"x\":\"上海\",\"y\":23},{\"x\":\"深圳\",\"y\":13},{\"x\":\"合肥\",\"y\":2},{\"x\":\"成都\",\"y\":9}]"
     },
     "VBasicPie": {
-        "alias": "基本饼图",
-        "icon": "v-icon-chart-pie",
-        "img": "images/缩略图/基本饼图.png",
-        "config": {
-            "global": {
-                "fontFamily": "Microsoft Yahei",
-                "margin": {"top": 40, "bottom": 50, "left": 50, "right": 50},
-                "innerPadding": 20,
-                "outerPadding": 30,
-                "background": {"show": True, "color": "rgba(255, 255, 255, 0.1)"}
+            "alias": "基本饼图",
+            "icon": "v-icon-chart-pie",
+            "img": "images/缩略图/基本饼图.png",
+            "locked": False,
+            "hided": False,
+            "eventhub": False,
+            "selected": True,
+            "hovered": False,
+            "renameing": False,
+            "special": "",
+            "attr": {
+                "x": 459,
+                "y": 305,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": False,
+                "filpH": False
             },
-            "label": {
-                "show": True,
-                "position": "outside",
-                "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"},
-                "offsetX": 0,
-                "offsetY": 0
-            },
-            "tooltip": {
-                "show": True,
-                "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"},
-                "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)"}
-            },
-            "legend": {
-                "show": True,
-                "position": "top-center",
-                "orient": "horizontal",
-                "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"},
-                "symbol": {"show": True, "icon": "auto", "width": 25, "height": 14, "gap": 10}
-            },
-            "series": [{"type": "pie", "name": "系列1", "radius": ["40%", "70%"], "color": {"type": "solid", "value": "#00baff"}}],
-            "animation": {"enabled": True, "duration": 1000, "easing": "cubicOut", "delay": 0}
-        },
-        "handles": {
-            "clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []},
-            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
-            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
-        },
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {
-                    "x": {"type": "string", "map": "", "description": "类目", "optional": False},
-                    "y": {"type": "string", "map": "", "description": "值", "optional": False}
+            "projectId": 194,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
                 },
-                "render": "render",
-                "description": "基本饼图接口",
-                "useAutoUpdate": False,
-                "autoUpdate": 1
-            }
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "pieRadius": 50,
+                    "pieColor": "#c23531",
+                    "pieLine": {
+                        "type": "solid",
+                        "width": 0,
+                        "color": "#c23531"
+                    },
+                    "Nightingale": True,
+                    "colour": True,
+                    "colorList": [
+                        {
+                            "value": "#589799"
+                        },
+                        {
+                            "value": "#76C3D1"
+                        },
+                        {
+                            "value": "#537FA9"
+                        },
+                        {
+                            "value": "#8CF1EB"
+                        },
+                        {
+                            "value": "#82C5F9"
+                        },
+                        {
+                            "value": "#FFD977"
+                        },
+                        {
+                            "value": "#8277F6"
+                        },
+                        {
+                            "value": "#E6E6E6"
+                        },
+                        {
+                            "value": "#FFFFFF"
+                        }
+                    ]
+                },
+                "legend": {
+                    "show": False,
+                    "top": "top",
+                    "left": "left",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#fff"
+                    },
+                    "orient": "vertical",
+                    "align": "left",
+                    "showValue": False
+                },
+                "tooltip": {
+                    "triggerOn": "mousemove",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#333"
+                    },
+                    "padding": 5
+                },
+                "content": {
+                    "enabled": True,
+                    "padding": 5,
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.3)"
+                    }
+                },
+                "frameBackground": {
+                    "horizontal": 12,
+                    "vertical": 12,
+                    "backgroundColor": "#333",
+                    "borderStyle": {
+                        "type": "dashed",
+                        "width": 1,
+                        "color": "#f5dc69",
+                        "radius": 4
+                    }
+                },
+                "animation": {
+                    "enabled": False,
+                    "easing": "cubicOut",
+                    "duration": 1000
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_UBLsxCEEyE",
+                        "name": "系列1",
+                        "column": None,
+                        "color": {
+                            "type": "solid",
+                            "value": "#00baff",
+                            "from": "#fff",
+                            "to": "#000"
+                        }
+                    }
+                ]
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": False
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": False
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本饼图接口",
+                    "useAutoUpdate": False,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicPie_ehRsrScs_",
+                    "id": "1ow97G-VpZ",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": False,
+                        "data": "[{\"type\":\"周一\",\"value\":150},{\"type\":\"周二\",\"value\":230},{\"type\":\"周三\",\"value\":224},{\"type\":\"周四\",\"value\":218},{\"type\":\"周五\",\"value\":135},{\"type\":\"周六\",\"value\":147},{\"type\":\"周日\",\"value\":260}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": False
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": False
+                        }
+                    }
+                }
+            },
+            "actions": {}
         },
-        "default_data": "[{\"x\":\"类别A\",\"y\":30},{\"x\":\"类别B\",\"y\":25},{\"x\":\"类别C\",\"y\":45}]"
-    },
     "VBasicLine": {
         "alias": "基本折线图",
         "icon": "v-icon-chart-line",
