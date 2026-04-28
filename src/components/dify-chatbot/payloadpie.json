@@ -1,7 +1,7 @@
 {
   "screen": {
     "id": 194,
-    "name": "柱状图监控",
+    "name": "柱状图标题监控",
     "share": "",
     "thumbnail": null,
     "groupId": 4
@@ -27,7 +27,7 @@
   },
   "coms": [
     {
-      "id": "VBasicBar_p8h4jzox",
+      "id": "VBasicBar_aax7jb4f",
       "name": "VBasicBar",
       "type": "com",
       "alias": "柱状图",
@@ -41,10 +41,10 @@
       "renameing": false,
       "special": "",
       "attr": {
-        "x": 710,
-        "y": 390,
-        "w": 500,
-        "h": 300,
+        "x": 100,
+        "y": 200,
+        "w": 800,
+        "h": 400,
         "deg": 0,
         "opacity": 1,
         "filpV": false,
@@ -277,7 +277,7 @@
               "from": "#fff",
               "to": "#000"
             },
-            "id": "系列1_lejgla"
+            "id": "系列1_1tcsvw"
           }
         ],
         "animation": {
@@ -311,8 +311,8 @@
       },
       "apiData": {
         "source": {
-          "comId": "VBasicBar_p8h4jzox",
-          "id": "t_zvuahs43",
+          "comId": "VBasicBar_aax7jb4f",
+          "id": "t_wmm7cgvv",
           "type": "static",
           "pageFilters": [],
           "config": {
@@ -341,6 +341,158 @@
           }
         }
       },
+      "actions": {}
+    },
+    {
+      "id": "VMainTitle_5kvxcimr",
+      "name": "VMainTitle",
+      "type": "com",
+      "alias": "通用标题",
+      "icon": "v-icon-title",
+      "img": "images/大图/通用标题.png",
+      "locked": false,
+      "hided": false,
+      "eventhub": false,
+      "selected": false,
+      "hovered": false,
+      "renameing": false,
+      "special": "",
+      "attr": {
+        "x": 1020,
+        "y": 200,
+        "w": 800,
+        "h": 400,
+        "deg": 0,
+        "opacity": 1,
+        "filpV": false,
+        "filpH": false
+      },
+      "projectId": 194,
+      "handles": {
+        "click": {
+          "eventName": "click",
+          "description": "点击",
+          "fields": []
+        },
+        "refreshData": {
+          "eventName": "refreshData",
+          "description": "更新数据",
+          "fields": []
+        },
+        "mouseEnter": {
+          "eventName": "mouseEnter",
+          "description": "鼠标移入",
+          "fields": []
+        },
+        "mouseLeave": {
+          "eventName": "mouseLeave",
+          "description": "鼠标移出",
+          "fields": []
+        }
+      },
+      "ichandles": {
+        "property": {
+          "eventName": "property",
+          "description": "属性-点位",
+          "fields": [],
+          "properties": [
+            {
+              "name": "标题内容",
+              "type": "string",
+              "path": "config.title"
+            },
+            {
+              "name": "字体颜色",
+              "type": "color",
+              "path": "config.textStyle.color"
+            },
+            {
+              "name": "背景颜色",
+              "type": "color",
+              "path": "config.backgroundStyle.bgColor"
+            }
+          ],
+          "events": null
+        },
+        "event": {
+          "eventName": "event",
+          "description": "事件-点位",
+          "fields": [],
+          "properties": null,
+          "events": []
+        }
+      },
+      "config": {
+        "title": "我是标题数据",
+        "textStyle": {
+          "fontFamily": "Microsoft Yahei",
+          "fontSize": 24,
+          "color": "#fff",
+          "fontWeight": "normal"
+        },
+        "textAlign": "center",
+        "writingMode": "horizontal-tb",
+        "letterSpacing": 0,
+        "backgroundStyle": {
+          "show": false,
+          "bgColor": "#008bff",
+          "borderRadius": 15,
+          "borderColor": "#fff",
+          "borderStyle": "solid",
+          "borderWidth": 1
+        },
+        "ellipsis": false,
+        "urlConfig": {
+          "url": "",
+          "isBlank": false
+        },
+        "animation": {
+          "enable": false,
+          "name": "Updown",
+          "duration": 1000,
+          "timing": "linear",
+          "delay": 0,
+          "iteration": "infinite",
+          "direction": "alternate"
+        },
+        "cursor": "default"
+      },
+      "apis": {
+        "source": {
+          "fields": {
+            "title": {
+              "type": "string",
+              "map": "",
+              "description": "标题值",
+              "optional": true
+            },
+            "url": {
+              "type": "string",
+              "map": "",
+              "description": "超链接",
+              "optional": true
+            }
+          },
+          "render": "render",
+          "description": "",
+          "useAutoUpdate": false,
+          "autoUpdate": 1
+        }
+      },
+      "apiData": {
+        "source": {
+          "comId": "VMainTitle_5kvxcimr",
+          "id": "t_gofkeipl",
+          "type": "static",
+          "pageFilters": [],
+          "config": {
+            "useFilter": false,
+            "data": "{}",
+            "postBodyType": "static"
+          }
+        }
+      },
+      "events": {},
       "actions": {}
     }
   ],
