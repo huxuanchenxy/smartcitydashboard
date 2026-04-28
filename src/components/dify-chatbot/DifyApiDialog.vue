@@ -288,6 +288,23 @@ export default defineComponent({
                     newConversationId = data.conversation_id || '';
                     break;
                     
+                  case 'workflow_finished': // 工作流结束（包含最终答案）
+                    if (data.data && data.data.outputs && data.data.outputs.answer) {
+                      // 如果之前没有收到消息，初始化消息状态
+                      if (!firstMessageReceived) {
+                        const lastMsg = messages.value[messages.value.length - 1];
+                        lastMsg.isThinking = false;
+                        lastMsg.content = '';
+                        firstMessageReceived = true;
+                      }
+                      fullContent = data.data.outputs.answer;
+                      const lastMsg = messages.value[messages.value.length - 1];
+                      lastMsg.content = fullContent;
+                      await scrollToBottom();
+                    }
+                    newConversationId = data.conversation_id || '';
+                    break;
+                    
                   case 'error': // 错误
                     throw new Error(data.message || '流式响应错误');
                 }
