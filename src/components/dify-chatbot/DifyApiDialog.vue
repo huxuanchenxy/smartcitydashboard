@@ -80,6 +80,7 @@
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
         <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
+        <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button>
       </span>
     </template>
   </el-dialog>
@@ -369,6 +370,44 @@ export default defineComponent({
       }
     };
 
+    // 从URL读取JSON并保存屏幕数据
+    const fetchAndSaveScreenAI = async () => {
+      try {
+        ElMessage.info('正在读取JSON数据...');
+        const response = await fetch('http://10.89.33.97:5000/data.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const jsonObj = await response.json();
+
+        if(EditorModule.screen)
+        {
+          if(EditorModule.screen.id)
+          {
+            jsonObj.screen.id = EditorModule.screen.id
+            
+            // 设置所有组件的 projectId 为当前屏幕 ID
+            if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
+              jsonObj.coms.forEach(component => {
+                component.projectId = EditorModule.screen.id
+              })
+            }
+          }
+          if(EditorModule.screen.name)
+          {
+            jsonObj.screen.name = EditorModule.screen.name
+          }
+          
+        }
+
+        await saveScreenAI(jsonObj);
+        console.log('从URL读取的 JSON 内容saveScreenAI:', jsonObj);
+      } catch (error) {
+        console.error('从URL读取JSON失败:', error);
+        ElMessage.error('读取JSON失败，请检查网络或URL是否正确');
+      }
+    };
+
     // 将最后一条 AI 回答中的 JSON 输出到控制台
     const outputJsonToConsole = async () => {
       // 查找最后一条 AI 助手的消息
@@ -527,6 +566,7 @@ export default defineComponent({
       clearMessages,
       outputJsonToConsole,
       saveTempPayload,
+      fetchAndSaveScreenAI,
       handleEnter,
       formatContent,
       formatTime
