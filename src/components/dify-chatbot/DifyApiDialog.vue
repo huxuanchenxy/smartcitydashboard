@@ -95,7 +95,7 @@ import { UploadImagesModule } from '@/store/modules/images';
 import { ThreedModule } from '@/store/modules/threed';
 import { ToolbarModule } from '@/store/modules/toolbar';
 import { saveScreen } from "@/api/screen";
-import payload from './payloadpie.json';
+import * as payloadJson from './payloadpie.json';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -548,8 +548,29 @@ export default defineComponent({
     // 临时保存payload数据
     const saveTempPayload = async () => {
       try {
-        await saveScreenAI(payload);
-        console.log('写死的 JSON 内容saveScreenAI:', payload);
+        let jsonObj = payloadJson.default as unknown as { screen: { id: number; name: string }, coms: any[] };
+        if(EditorModule.screen)
+        {
+          if(EditorModule.screen.id)
+          {
+            jsonObj.screen.id = EditorModule.screen.id
+            
+            // 设置所有组件的 projectId 为当前屏幕 ID
+            if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
+              jsonObj.coms.forEach(component => {
+                component.projectId = EditorModule.screen.id
+              })
+            }
+            
+          }
+          if(EditorModule.screen.name)
+          {
+            jsonObj.screen.name = EditorModule.screen.name
+          }
+          
+        }
+        await saveScreenAI(jsonObj);
+        console.log('写死的 JSON 内容saveScreenAI:', jsonObj);
       } catch (error) {
         console.error('保存payload失败:', error);
       }

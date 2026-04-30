@@ -1,0 +1,104 @@
+{
+    "screen": {
+        "id": 196,
+        "name": "zutaiv5区域图",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 4
+    },
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0)",
+        "grid": 8,
+        "screenshot": "",
+        "zoomMode": 1,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
+        },
+        "tokenSettings": []
+    },
+    "coms": [
+        {
+            "id": "VBasicArea_t0l6qnmr",
+            "name": "VBasicArea",
+            "type": "com",
+            "alias": "区域图",
+            "icon": "v-icon-chart-line",
+            "img": "images/大图/区域图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 710,
+                "y": 390,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 196,
+            "handles": {},
+            "ichandles": {},
+            "config": {
+                "width": 1920,
+                "height": 1080,
+                "bgimage": "data/originPic/bj.png",
+                "bgcolor": "rgba(13,42,67,0)",
+                "grid": 8,
+                "screenshot": "",
+                "zoomMode": 1,
+                "useWatermark": false,
+                "styleFilterParams": {
+                    "enable": false,
+                    "hue": 0,
+                    "saturate": 100,
+                    "brightness": 100,
+                    "contrast": 100,
+                    "opacity": 100
+                },
+                "tokenSettings": []
+            },
+            "apis": {},
+            "apiData": {
+                "source": {
+                    "comId": "VBasicArea_t0l6qnmr",
+                    "id": "t_lqvydi0e",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {}
+                }
+            },
+            "actions": {}
+        }
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
+}
