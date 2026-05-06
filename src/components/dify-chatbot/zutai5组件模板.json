@@ -2045,5 +2045,75 @@
             "apiData": {},
             "events": {},
             "actions": {}
+    },
+    "VTimer":{
+            "alias": "时间器",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/时间器.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 867,
+                "y": 412,
+                "w": 300,
+                "h": 56,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "iconStyle": {
+                    "show": true,
+                    "size": 1.2,
+                    "color": "rgba(93,245,244,1)",
+                    "marginRight": 6
+                },
+                "time": {
+                    "textStyle": {
+                        "fontFamily": "Microsoft Yahei",
+                        "fontSize": 18,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "format": "YYYY-MM-DD HH:mm:ss",
+                    "duration": 1000,
+                    "horizontal": "center",
+                    "vertical": "center",
+                    "show": true
+                },
+                "week": {
+                    "marginLeft": 6,
+                    "show": false
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     }
 }
