@@ -1748,31 +1748,95 @@
             "actions": {}
     },
     "VVideo": {
-        "alias": "视频播放",
-        "icon": "v-icon-media",
-        "img": "images/缩略图/视频播放.png",
-        "config": {
-            "global": {
-                "src": "",
-                "autoplay": false,
-                "loop": false,
-                "controls": true
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {
-                    "src": {"type": "string", "map": "", "description": "视频地址", "optional": false}
+            "id": "Video_Os8hT7bAq",
+            "name": "VVideo",
+            "type": "com",
+            "alias": "视频播放",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/视频播放.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 679,
+                "y": 408,
+                "w": 300,
+                "h": 180,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "videoCanplay": {
+                    "eventName": "videoCanplay",
+                    "description": "加载完成",
+                    "fields": []
                 },
-                "render": "render",
-                "description": "视频接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "{\"src\":\"\"}"
+                "videoPlayed": {
+                    "eventName": "videoPlayed",
+                    "description": "开始播放",
+                    "fields": []
+                },
+                "videoEnded": {
+                    "eventName": "videoEnded",
+                    "description": "播放结束",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "视频地址",
+                            "type": "string",
+                            "path": "config.src"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": [
+                        {
+                            "methodCode": "videoCanplay",
+                            "methodName": "加载完成"
+                        },
+                        {
+                            "methodCode": "videoPlayed",
+                            "methodName": "开始播放"
+                        },
+                        {
+                            "methodCode": "videoEnded",
+                            "methodName": "播放结束"
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "autoplay": true,
+                "controls": true,
+                "loop": true,
+                "muted": true,
+                "poster": "",
+                "preload": true,
+                "src": ""
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     },
     "VThreedViewer": {
         "alias": "3D视图",
