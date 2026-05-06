@@ -1371,104 +1371,287 @@
         "actions": {}
     },
     "VBasicRadar": {
-        "alias": "雷达图",
-        "icon": "v-icon-chart-radar",
-        "img": "images/缩略图/雷达图.png",
-        "config": {
-            "global": {
-                "fontFamily": "Microsoft Yahei",
-                "margin": {"top": 40, "bottom": 50, "left": 50, "right": 50},
-                "background": {"show": true, "color": "rgba(255, 255, 255, 0.1)"}
+            "alias": "雷达图",
+            "icon": "v-icon-chart-radar",
+            "img": "images/缩略图/雷达图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 690,
+                "y": 256,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
             },
-            "label": {
-                "show": true,
-                "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}
-            },
-            "tooltip": {
-                "show": true,
-                "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"},
-                "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)"}
-            },
-            "legend": {
-                "show": true,
-                "position": "top-center",
-                "orient": "horizontal",
-                "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}
-            },
-            "series": [{"type": "radar", "name": "系列1", "color": {"type": "solid", "value": "#00baff"}}],
-            "animation": {"enabled": true, "duration": 1000, "easing": "cubicOut", "delay": 0}
-        },
-        "handles": {
-            "clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []},
-            "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []},
-            "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}
-        },
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {
-                    "x": {"type": "string", "map": "", "description": "维度", "optional": false},
-                    "y": {"type": "string", "map": "", "description": "值", "optional": false}
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
                 },
-                "render": "render",
-                "description": "雷达图接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "[{\"x\":\"维度A\",\"y\":80},{\"x\":\"维度B\",\"y\":60},{\"x\":\"维度C\",\"y\":90},{\"x\":\"维度D\",\"y\":70},{\"x\":\"维度E\",\"y\":85}]"
-    },
-    "VBasicCarousel": {
-        "alias": "滚动表格",
-        "icon": "v-icon-other",
-        "img": "images/缩略图/滚动表格.png",
-        "config": {
-            "global": {
-                "fontFamily": "Microsoft Yahei",
-                "background": {"show": true, "color": "rgba(255, 255, 255, 0.05)"},
-                "header": {"show": true, "height": 40, "textStyle": {"fontSize": 12, "color": "#90a0ae"}},
-                "row": {"height": 36, "textStyle": {"fontSize": 12, "color": "rgba(255,255,255,0.6)"}}
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {
-                    "col1": {"type": "string", "map": "", "description": "列1", "optional": false},
-                    "col2": {"type": "string", "map": "", "description": "列2", "optional": false}
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
                 },
-                "render": "render",
-                "description": "表格接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "[{\"col1\":\"数据1\",\"col2\":\"值1\"},{\"col1\":\"数据2\",\"col2\":\"值2\"},{\"col1\":\"数据3\",\"col2\":\"值3\"}]"
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "color": "#fff",
+                "startAngle": 90,
+                "splitNumber": 4,
+                "shape": "polygon",
+                "splitAreaStyle": {
+                    "color": "#FFFFFF00",
+                    "shadowColor": "rgba(0, 0, 0, 0)",
+                    "shadowBlur": 0
+                },
+                "axisName": {
+                    "formatter": "{value}",
+                    "color": "#FFFFFFFF",
+                    "show": true,
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                    "fontFamily": "sans-serif",
+                    "fontSize": 14
+                },
+                "axisLine": {
+                    "show": true,
+                    "lineStyle": {
+                        "color": "rgb(123, 123, 123)",
+                        "width": 2,
+                        "type": "solid",
+                        "opacity": 0.6
+                    }
+                },
+                "splitLine": {
+                    "lineStyle": {
+                        "color": "rgba(123, 123, 123, 1)",
+                        "width": 2,
+                        "type": "solid"
+                    },
+                    "show": true
+                },
+                "dataArea": {
+                    "symbolSize": "10",
+                    "symbol": "circle",
+                    "areaStyle": {
+                        "color": "rgba(117,156,122,1)"
+                    },
+                    "lineStyle": {
+                        "color": "#fff",
+                        "width": 1,
+                        "type": "solid",
+                        "shadowColor": "rgba(0, 0, 0, 0.2)",
+                        "shadowBlur": 0
+                    }
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "name": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "max": {
+                            "type": "string",
+                            "map": "",
+                            "description": "最大值",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本雷达图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicRadar_KeyJV_6hm",
+                    "id": "oXocZvV51x",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"name\":\"销售\",\"max\":6500,\"value\":4200},{\"name\":\"管理\",\"max\":16000,\"value\":3000},{\"name\":\"研发\",\"max\":30000,\"value\":20000},{\"name\":\"采购\",\"max\":38000,\"value\":35000},{\"name\":\"售后\",\"max\":52000,\"value\":50000},{\"name\":\"市场\",\"max\":25000,\"value\":18000}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "name": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "max": {
+                            "type": "string",
+                            "map": "",
+                            "description": "最大值",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
     },
     "VButton": {
-        "alias": "按钮",
-        "icon": "v-icon-interact",
-        "img": "images/缩略图/按钮.png",
-        "config": {
-            "global": {
-                "text": "按钮",
-                "textStyle": {"fontSize": 14, "color": "#fff"},
-                "background": {"color": "#00baff", "borderRadius": 4}
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {},
-                "render": "render",
-                "description": "按钮接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "[]"
+            "alias": "按钮",
+            "icon": "v-icon-interact",
+            "img": "images/缩略图/按钮.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 788,
+                "y": 414,
+                "w": 120,
+                "h": 60,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "按钮文字",
+                            "type": "string",
+                            "path": "config.content.buttonContent"
+                        },
+                        {
+                            "name": "文字颜色",
+                            "type": "color",
+                            "path": "config.fontStyle.fontColor"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "content": {
+                    "buttonContent": "按钮"
+                },
+                "borderStyle": {
+                    "borderWidth": 3,
+                    "borderColor": "rgba(255,255,255,0.8)",
+                    "borderRadius": 5,
+                    "borderStyle": "solid"
+                },
+                "fontStyle": {
+                    "fontSize": 30,
+                    "fontColor": "white",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                    "fontFamily": "Times New Roman",
+                    "textAlign": "center"
+                },
+                "background": {
+                    "backgroundColor": "rgba(1,21,239,0.1)",
+                    "backgroundImage": "",
+                    "backgroundSize": 100,
+                    "backgroundRepeat": false
+                },
+                "cursor": "pointer"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Button_Pl8QAKRt0",
+                    "id": "_w06_frHVp",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"buttonName\":\"按钮\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
     },
     "VProgress": {
         "alias": "进度条",
