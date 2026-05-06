@@ -1993,27 +1993,57 @@
             "actions": {}
     },
     "VDecoration": {
-        "alias": "装饰",
-        "icon": "v-icon-media",
-        "img": "images/缩略图/装饰.png",
-        "config": {
-            "global": {
-                "type": "line",
-                "color": "#00baff",
-                "opacity": 1
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {},
-                "render": "render",
-                "description": "装饰接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "[]"
+            "id": "Decoration_-UxwU5NnR",
+            "name": "VDecoration",
+            "type": "com",
+            "alias": "装饰",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/装饰.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 635,
+                "y": 346,
+                "w": 200,
+                "h": 200,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "img": "gif1",
+                    "opacity": 1
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     }
 }
