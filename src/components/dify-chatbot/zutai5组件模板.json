@@ -1939,29 +1939,58 @@
             "events": {},
             "actions": {}
     },
-    "VBorderBox": {
-        "alias": "边框",
-        "icon": "v-icon-media",
-        "img": "images/缩略图/边框.png",
-        "config": {
-            "global": {
-                "borderColor": "rgba(0, 186, 255, 0.5)",
-                "borderWidth": 1,
-                "background": "transparent"
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {},
-                "render": "render",
-                "description": "边框接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "[]"
+    "VBorderBox":{
+            "id": "BorderBox__dXCb6T5Q",
+            "name": "VBorderBox",
+            "type": "com",
+            "alias": "边框",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/边框.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 1272,
+                "y": 207,
+                "w": 300,
+                "h": 180,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "boxStyle": {
+                    "style": "box15"
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     },
     "VDecoration": {
         "alias": "装饰",
