@@ -1654,31 +1654,98 @@
             "actions": {}
     },
     "VProgress": {
-        "alias": "进度条",
-        "icon": "v-icon-interact",
-        "img": "images/缩略图/进度条.png",
-        "config": {
-            "global": {
-                "trackColor": "rgba(255,255,255,0.1)",
-                "barColor": "#00baff",
-                "textStyle": {"fontSize": 12, "color": "#fff"}
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {
-                    "value": {"type": "number", "map": "", "description": "当前值", "optional": false},
-                    "max": {"type": "number", "map": "", "description": "最大值", "optional": false}
-                },
-                "render": "render",
-                "description": "进度条接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "{\"value\":65,\"max\":100}"
+            "alias": "进度条",
+            "icon": "v-icon-interact",
+            "img": "images/大图/进度条.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 758,
+                "y": 264,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {},
+            "ichandles": {},
+            "config": {
+                "barColor": "rgb(32,128,240)",
+                "railColor": "rgb(235,235,235)",
+                "radius": 0,
+                "indicator": {
+                    "show": false,
+                    "placement": "outside",
+                    "unit": "%",
+                    "fontFamily": "Microsoft YaHei",
+                    "fontWeight": "normal",
+                    "fontSize": 12,
+                    "color": "#fff"
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "进度条接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Progress_0e85rZT9e",
+                    "id": "Ri4LQrDXeg",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":70}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
     },
     "VVideo": {
         "alias": "视频播放",
