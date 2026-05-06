@@ -41,6 +41,9 @@ def main(**kwargs) -> dict:
             'polar': {'name': 'VPolarBar', 'alias': '极坐标柱状图', 'icon': 'v-icon-chart-bar', 'img': 'images/大图/极坐标柱状图.png'},
             'waterfall': {'name': 'VWaterfall', 'alias': '瀑布图', 'icon': 'v-icon-chart-bar', 'img': 'images/大图/瀑布图.png'},
         },
+        'horizontal': {
+            'default': {'name': 'VBasicHorizontal', 'alias': '基本条形图', 'icon': 'v-icon-chart-bar', 'img': 'images/缩略图/基本条形图.png'},
+        },
         'pie': {
             'default': {'name': 'VBasicPie', 'alias': '基本饼图', 'icon': 'v-icon-chart-pie', 'img': 'images/大图/基本饼图.png'},
             'dashboard': {'name': 'VDashboardPie', 'alias': '仪表饼图', 'icon': 'v-icon-chart-pie', 'img': 'images/大图/仪表饼图.png'},
