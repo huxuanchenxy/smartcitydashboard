@@ -1838,54 +1838,106 @@
             "events": {},
             "actions": {}
     },
-    "VThreedViewer": {
-        "alias": "3D视图",
-        "icon": "v-icon-media",
-        "img": "images/缩略图/threedViewer.png",
-        "config": {
-            "global": {
-                "src": "",
-                "autoRotate": true,
-                "background": "transparent"
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {
-                    "src": {"type": "string", "map": "", "description": "3D模型地址", "optional": false}
-                },
-                "render": "render",
-                "description": "3D视图接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "{\"src\":\"\"}"
-    },
     "VBgBox": {
-        "alias": "自定义背景块",
-        "icon": "v-icon-media",
-        "img": "images/缩略图/自定义背景块.png",
-        "config": {
-            "global": {
-                "background": {"color": "rgba(0,0,0,0.3)", "borderRadius": 0},
-                "border": {"show": false, "width": 1, "color": "rgba(255,255,255,0.1)"}
-            }
-        },
-        "handles": {},
-        "ichandles": {},
-        "apis": {
-            "source": {
-                "fields": {},
-                "render": "render",
-                "description": "背景块接口",
-                "useAutoUpdate": false,
-                "autoUpdate": 1
-            }
-        },
-        "default_data": "[]"
+            "id": "BgBox_-yuFsV-eD",
+            "name": "VBgBox",
+            "type": "com",
+            "alias": "自定义背景块",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/自定义背景块.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 875,
+                "y": 493,
+                "w": 300,
+                "h": 180,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "borderRadius": 0,
+                "fills": [
+                    {
+                        "fill": "#003a8c",
+                        "opacity": 10
+                    }
+                ],
+                "border": {
+                    "show": true,
+                    "type": "flat",
+                    "flat": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": "#008bff"
+                    },
+                    "linearGradient": {
+                        "width": 2,
+                        "color": {
+                            "angle": 135,
+                            "stops": [
+                                {
+                                    "offset": 0,
+                                    "color": "#00DEFF"
+                                },
+                                {
+                                    "offset": 100,
+                                    "color": "#008BFF"
+                                }
+                            ]
+                        }
+                    },
+                    "imageType": "preset",
+                    "presetImage": "box38",
+                    "customImage": {
+                        "source": "data/originPic/custom-bg-border.png",
+                        "slice": "32 37 fill",
+                        "width": "32px 37px",
+                        "outset": "0",
+                        "repeat": "no-repeat"
+                    }
+                },
+                "filter": {
+                    "blur": "0px"
+                },
+                "backdropFilter": {
+                    "blur": "0px"
+                },
+                "urlConfig": {
+                    "url": "",
+                    "ifBlank": false
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     },
     "VBorderBox": {
         "alias": "边框",
