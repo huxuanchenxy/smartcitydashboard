@@ -2115,5 +2115,115 @@
             "apiData": {},
             "events": {},
             "actions": {}
+    },
+    "VMainImg":{
+            "alias": "单张图片",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/单张图片.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 878,
+                "y": 392,
+                "w": 300,
+                "h": 180,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "图片地址",
+                            "type": "image",
+                            "path": "config.backgroundImage"
+                        },
+                        {
+                            "name": "动画开启",
+                            "type": "enableTypes",
+                            "path": "config.animation.enable"
+                        },
+                        {
+                            "name": "动画名称",
+                            "type": "animationTypes",
+                            "path": "config.animation.name"
+                        },
+                        {
+                            "name": "动画速率",
+                            "type": "number",
+                            "path": "config.animation.duration"
+                        },
+                        {
+                            "name": "动画状态",
+                            "type": "animationState",
+                            "path": "config.animation.state"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "show": true,
+                "imageType": "bitmap",
+                "backgroundImage": "data/originPic/main-img.png",
+                "vectorImage": "data/originPic/datav-vue-logo.svg",
+                "vectorFill": "#38ae70",
+                "repeat": "no-repeat",
+                "radius": 1,
+                "urlConfig": {
+                    "url": "",
+                    "ifBlank": false
+                },
+                "animation": {
+                    "enable": false,
+                    "name": "Updown",
+                    "duration": 1000,
+                    "timing": "linear",
+                    "delay": 0,
+                    "iteration": "infinite",
+                    "direction": "alternate",
+                    "state": "running"
+                },
+                "cursor": true
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     }
 }

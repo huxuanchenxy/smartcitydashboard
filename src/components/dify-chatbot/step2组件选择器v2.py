@@ -1,13 +1,60 @@
 import json
 
-def main(components: str) -> dict:
-    # 健壮性处理：确保是字符串
-    if isinstance(components, str):
-        comp_list = json.loads(components)
-    else:
-        comp_list = components
+# 修改点：使用 **kwargs 接收所有传入的变量，防止参数名不匹配报错
+def main(**kwargs) -> dict:
+    """
+    通用入口：自动获取 Dify 传入的第一个变量
+    """
+    # 1. 获取输入数据
+    # 尝试获取常见的变量名，或者直接取第一个值
+    input_data = kwargs.get('json_input') or kwargs.get('components') or kwargs.get('input') or list(kwargs.values())[0] if kwargs else None
+
+    if not input_data:
+        return {'components': '[]'}
+
+    comp_list = []
     
-    # 组件字典（从组件列表提取）
+    # 2. 解析逻辑
+    try:
+        # 如果输入是字符串，尝试解析
+        if isinstance(input_data, str):
+            parsed_data = json.loads(input_data)
+            # 处理嵌套情况：如果解析后是字典且包含 components 键
+            if isinstance(parsed_data, dict):
+                inner_comp = parsed_data.get('components')
+                # 如果 components 还是字符串（双重 JSON），再次解析
+                if isinstance(inner_comp, str):
+                    comp_list = json.loads(inner_comp)
+                elif isinstance(inner_comp, list):
+                    comp_list = inner_comp
+                else:
+                    comp_list = []
+            # 如果解析后直接是列表
+            elif isinstance(parsed_data, list):
+                comp_list = parsed_data
+            else:
+                comp_list = []
+        # 如果输入已经是列表（Dify 对象类型）
+        elif isinstance(input_data, list):
+            comp_list = input_data
+        # 如果输入是字典（直接就是对象）
+        elif isinstance(input_data, dict):
+             # 尝试直接取 components 字段
+            inner_comp = input_data.get('components')
+            if isinstance(inner_comp, list):
+                comp_list = inner_comp
+            elif isinstance(inner_comp, str):
+                 comp_list = json.loads(inner_comp)
+            else:
+                comp_list = []
+        else:
+            comp_list = []
+            
+    except Exception as e:
+        print(f"解析错误: {e}")
+        return {'components': '[]'}
+
+    # --- 组件配置字典 (保持不变) ---
     component_dict = {
         'bar': {
             'default': {'name': 'VBasicBar', 'alias': '柱状图', 'icon': 'v-icon-chart-bar', 'img': 'images/大图/柱状图.png'},
@@ -83,14 +130,22 @@ def main(components: str) -> dict:
         'timer': {
             'default': {'name': 'VTimer', 'alias': '时间器', 'icon': 'v-icon-title','img': 'images/缩略图/时间器.png'},
         },
+        'image': {
+            'default': {'name': 'VMainImg', 'alias': '单张图片', 'icon': 'v-icon-media','img': 'images/缩略图/单张图片.png'},
+        },
     }
+    
     result = []
     for comp in comp_list:
-        chart_type = comp['chartType']
+        if not isinstance(comp, dict):
+            continue
+            
+        chart_type = comp.get('chartType', '')
         detail = comp.get('detail', '')
         position = comp.get('position', 'auto')
         
         variants = component_dict.get(chart_type, {})
+        
         if detail and detail in variants:
             selected = variants[detail].copy()
         else:
