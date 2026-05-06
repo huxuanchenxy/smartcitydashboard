@@ -2225,5 +2225,93 @@
             "apiData": {},
             "events": {},
             "actions": {}
+    },
+    "VWaterLevel":{
+            "alias": "水位图",
+            "icon": "v-icon-other",
+            "img": "images/缩略图/水位图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 772,
+                "y": 356,
+                "w": 150,
+                "h": 150,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "itemClick": {
+                    "eventName": "itemClick",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "shape": "round",
+                    "waveNum": 3,
+                    "waveHeight": 20,
+                    "waveOpacity": 0.4,
+                    "formatter": "{value}%",
+                    "color1": "#00BAFF",
+                    "color2": "#3DE7C9"
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "WaterLevel_1HYJcFXb3",
+                    "id": "Ymt_MH8c2y",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":50}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
     }
 }
