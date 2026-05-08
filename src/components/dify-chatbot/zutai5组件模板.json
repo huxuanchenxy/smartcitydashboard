@@ -3879,6 +3879,182 @@
                 }
             },
             "actions": {}
+    },
+    "VDashboardPie":{
+            "alias": "仪表饼图",
+            "icon": "v-icon-chart-pie",
+            "img": "images/缩略图/仪表饼图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 484,
+                "y": 315,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "min": 0,
+                    "max": 240,
+                    "startAngle": 180,
+                    "endAngle": 0
+                },
+                "pointer": {
+                    "show": true,
+                    "length": 75,
+                    "width": 16,
+                    "horizontal": 0,
+                    "vertical": 5
+                },
+                "progress": {
+                    "show": false,
+                    "roundCap": false,
+                    "color": "#3dabff",
+                    "border": {
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#464646"
+                    }
+                },
+                "axisLine": {
+                    "width": 12,
+                    "color": "#55585b"
+                },
+                "splitLine": {
+                    "length": 12,
+                    "lineStyle": {
+                        "width": 3,
+                        "color": "#999"
+                    }
+                },
+                "axisTick": {
+                    "show": true,
+                    "splitNumber": 2,
+                    "lineStyle": {
+                        "width": 2,
+                        "color": "#999"
+                    }
+                },
+                "axisLabel": {
+                    "show": false,
+                    "distance": 20,
+                    "color": "#464646",
+                    "fontFamily": "Microsoft YaHei",
+                    "fontWeight": "normal",
+                    "fontSize": 20
+                },
+                "title": {
+                    "show": false,
+                    "horizontal": 0,
+                    "vertical": -30,
+                    "text": "",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 30,
+                        "color": "#fff"
+                    }
+                },
+                "content": {
+                    "show": false,
+                    "horizontal": 0,
+                    "vertical": 30,
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 30,
+                        "color": "rgba(255, 255, 255, 0.3)"
+                    }
+                },
+                "animation": {
+                    "enabled": false,
+                    "easing": "cubicOut",
+                    "duration": 1000
+                },
+                "series": []
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "仪表饼图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "DashboardPie_fkvplxgeo",
+                    "id": "j7QOyBwuXH",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":80}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
     }
 
 }

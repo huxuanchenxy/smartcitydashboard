@@ -49,7 +49,9 @@ def main(**kwargs) -> dict:
         },
         'pie': {
             'default': {'name': 'VBasicPie', 'alias': '基本饼图', 'icon': 'v-icon-chart-pie', 'img': 'images/大图/基本饼图.png'},
-            'dashboard': {'name': 'VDashboardPie', 'alias': '仪表饼图', 'icon': 'v-icon-chart-pie', 'img': 'images/大图/仪表饼图.png'},
+        },
+        'dashboardpie': {
+            'default': {'name': 'VDashboardPie', 'alias': '仪表饼图', 'icon': 'v-icon-chart-pie', 'img': 'images/缩略图/仪表饼图.png'},
         },
         'line': {
             'default': {'name': 'VBasicLine', 'alias': '基本折线图', 'icon': 'v-icon-chart-line', 'img': 'images/大图/基本折线图.png'},
