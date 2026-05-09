@@ -4055,6 +4055,171 @@
                 }
             },
             "actions": {}
+    },
+    "VGd3dMap":{
+            "alias": "高德3D地图",
+            "icon": "v-icon-map",
+            "img": "images/大图/高德地图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 406,
+                "y": 170,
+                "w": 800,
+                "h": 600,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 199,
+            "handles": {
+                "clickPoint": {
+                    "eventName": "clickPoint",
+                    "description": "点击散点",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "key": "",
+                "center": {
+                    "lng": 121.521699,
+                    "lat": 31.295163
+                },
+                "zooms": {
+                    "min": 2,
+                    "max": 20
+                },
+                "wallColor": "rgba(0, 211, 252,0.3)",
+                "roofColor": "rgba(0, 178, 213,0.2)",
+                "features": [
+                    "bg",
+                    "road",
+                    "building",
+                    "point"
+                ],
+                "showRoad": true,
+                "showPoint": true,
+                "showPark": false,
+                "polygonSetting": {
+                    "fillColor": "#ccebc5",
+                    "strokeOpacity": 1,
+                    "fillOpacity": 0.5,
+                    "strokeColor": "#2b8cbe",
+                    "strokeWeight": 1,
+                    "strokeStyle": "solid"
+                },
+                "zoom": 13.4,
+                "viewMode": "3D",
+                "rotateEnable": false,
+                "theme": "grey",
+                "trafficLayer": false,
+                "geoLayer": false,
+                "areaLayer": {
+                    "district": "杨浦区",
+                    "enable": false,
+                    "hideOther": {
+                        "enable": true,
+                        "color": "rgba(14,42,66,1)"
+                    },
+                    "border": {
+                        "show": true,
+                        "color": "rgba(0, 174, 255, 0.72)",
+                        "width": 3
+                    }
+                },
+                "pointConfigs": [
+                    {
+                        "name": "",
+                        "apiUrl": "",
+                        "iconUrl": "",
+                        "iconWidth": 0,
+                        "iconHeight": 0,
+                        "dataJson": ""
+                    }
+                ],
+                "polylineConfigs": [
+                    {
+                        "name": "",
+                        "apiUrl": "",
+                        "isOutline": true,
+                        "outlineColor": "#3366FF",
+                        "borderWeight": 1,
+                        "strokeColor": "#3366FF",
+                        "strokeOpacity": 1,
+                        "strokeWeight": 3,
+                        "strokeStyle": "solid",
+                        "dataJson": ""
+                    }
+                ],
+                "textConfigs": [
+                    {
+                        "text": "纯文本标记",
+                        "anchor": "center",
+                        "draggable": false,
+                        "cursor": "default",
+                        "angle": 0,
+                        "textStyle": {
+                            "width": "20px",
+                            "fontFamily": "Microsoft Yahei",
+                            "fontSize": 14,
+                            "color": "#fff",
+                            "fontWeight": "normal"
+                        },
+                        "position": {
+                            "lng": 121.521699,
+                            "lat": 31.295163
+                        }
+                    }
+                ]
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "url": {
+                            "type": "string",
+                            "map": "",
+                            "description": "地图地址",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "iframe接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Gd3dMap_lp3FA1JFS",
+                    "id": "VjIx19iHHY",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"url\":\"http://map.3dgis.gis/YPGisShare/page/mapB.html\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
     }
 
 }

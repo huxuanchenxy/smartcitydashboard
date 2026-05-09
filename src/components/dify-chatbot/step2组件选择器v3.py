@@ -53,6 +53,9 @@ def main(**kwargs) -> dict:
         'dashboardpie': {
             'default': {'name': 'VDashboardPie', 'alias': '仪表饼图', 'icon': 'v-icon-chart-pie', 'img': 'images/缩略图/仪表饼图.png'},
         },
+        'gd3dmap': {
+            'default': {'name': 'VGd3dMap', 'alias': '高德3D地图', 'icon': 'v-icon-map', 'img': 'images/大图/高德地图.png'},
+        },
         'line': {
             'default': {'name': 'VBasicLine', 'alias': '基本折线图', 'icon': 'v-icon-chart-line', 'img': 'images/大图/基本折线图.png'},
             'dynamic': {'name': 'VDynamicLine', 'alias': '动态折线图', 'icon': 'v-icon-chart-line', 'img': 'images/大图/基本折线图.png'},

@@ -1,1 +1,136 @@
-{"screen": {"id": 607, "name": "f2ea4b80-dd47-4ba3-b149-4c9df9dd46cb", "share": "", "thumbnail": null, "groupId": 4}, "config": {"width": 1920, "height": 1080, "bgimage": "data/originPic/bj.png", "bgcolor": "rgba(13,42,67,0)", "grid": 8, "screenshot": "", "zoomMode": 1, "useWatermark": false, "styleFilterParams": {"enable": false, "hue": 0, "saturate": 100, "brightness": 100, "contrast": 100, "opacity": 100}, "tokenSettings": []}, "coms": [{"id": "VBasicArea_pnkwjpw0", "name": "VBasicArea", "type": "com", "alias": "区域图", "icon": "v-icon-chart-line", "img": "images/大图/区域图.png", "locked": false, "hided": false, "eventhub": false, "selected": false, "hovered": false, "renameing": false, "special": "", "attr": {"x": 710, "y": 390, "w": 500, "h": 300, "deg": 0, "opacity": 1, "filpV": false, "filpH": false}, "projectId": 607, "handles": {"clickChart": {"eventName": "clickChart", "description": "点击项", "fields": []}, "mouseEnter": {"eventName": "mouseEnter", "description": "鼠标移入", "fields": []}, "mouseLeave": {"eventName": "mouseLeave", "description": "鼠标移出", "fields": []}}, "ichandles": {}, "config": {"global": {"fontFamily": "Microsoft Yahei", "margin": {"top": 40, "bottom": 50, "left": 60, "right": 30}, "connectNulls": false}, "xAxis": {"show": true, "type": "category", "extent": {"min": "auto", "max": "auto"}, "boundaryGap": true, "title": {"show": false, "name": "X轴", "location": "center", "display": {"rotate": 0, "offset": 20}, "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}}, "axisLine": {"show": true, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"}, "axisTick": {"show": true, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"}, "axisLabel": {"show": true, "valueFormat": "d", "timeFormat": "MM/DD", "interval": "auto", "display": {"rotate": 0, "margin": 10}, "align": "center", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}}, "grid": {"show": true, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}}, "yAxis": {"show": true, "type": "value", "extent": {"min": "auto", "max": "auto"}, "title": {"show": false, "name": "Y轴", "location": "center", "display": {"rotate": 90, "offset": 20}, "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}}, "axisLine": {"show": true, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"}, "axisTick": {"show": true, "type": "solid", "width": 1, "color": "rgba(255, 255, 255, 0.5)"}, "axisLabel": {"show": true, "valueFormat": "auto", "timeFormat": "MM/DD", "boundaryGap": 0, "display": {"rotate": 0, "margin": 8}, "align": "right", "textStyle": {"fontSize": 12, "color": "rgba(255, 255, 255, 0.6)", "fontWeight": "normal"}}, "grid": {"show": true, "line": {"type": "dashed", "width": 1, "color": "rgba(233, 228, 228, 0.1)", "dashedLength": 4, "dashedSpace": 4}}}, "tooltip": {"show": true, "triggerOn": "mousemove", "textStyle": {"fontSize": 14, "color": "#fff", "fontWeight": "normal"}, "background": {"padding": {"h": 5, "v": 5}, "color": "rgba(0, 0, 0, 0.65)", "borderColor": "rgba(0, 0, 0, 0.25)", "borderWidth": 1}, "pointer": {"show": true, "line": {"type": "dashed", "width": 1, "color": "#f5dc69", "dashedLength": 4, "dashedSpace": 4}}}, "legend": {"show": true, "position": "top-center", "orient": "horizontal", "textStyle": {"fontSize": 12, "color": "#90a0ae", "fontWeight": "normal"}, "symbol": {"show": true, "icon": "auto", "width": 25, "height": 14, "gap": 10}, "page": {"enabled": false, "size": {"width": 100, "height": 100}, "button": {"size": 15, "color": "#000", "inactiveColor": "#000"}, "pageNumColor": "#90a0ae"}}, "series": [{"type": "line", "id": "系列1_e4k6eb", "name": "", "line": {"color": "#34FFF5", "style": "solid", "width": 1, "opacity": 1}, "point": {"icon": "roundRect", "color": "#34FFF5", "borderColor": "rgba(0, 0, 0, 0.44)", "borderWidth": 1, "borderType": "solid", "opacity": 1}, "label": {"show": false, "field": "y", "valueFormat": "auto", "describe": {"prefix": "", "suffix": ""}, "offset": {"x": 0, "y": 0}, "rotate": 0, "textStyle": {"fontSize": 12, "color": "#ddd", "fontWeight": "normal"}, "stroke": {"color": "#000", "width": 0}}, "areaStyle": {"color": "#000", "origin": "auto", "shadowBlur": {"shadowColor": "rgba(0, 0, 0, 0.5)", "shadowBlur": 10}, "shadowColor": "#34FFF5", "shadowOffsetX": 0, "shadowOffsetY": 0, "opacity": 1}}, {"type": "line", "id": "系列2_8utlmn", "name": "", "line": {"color": "#30D9F1", "style": "solid", "width": 1, "opacity": 1}, "point": {"icon": "roundRect", "color": "#30D9F1", "borderColor": "rgba(0, 0, 0, 0.44)", "borderWidth": 1, "borderType": "solid", "opacity": 1}, "label": {"show": false, "field": "y", "valueFormat": "auto", "describe": {"prefix": "", "suffix": ""}, "offset": {"x": 0, "y": 0}, "rotate": 0, "textStyle": {"fontSize": 12, "color": "#ddd", "fontWeight": "normal"}, "stroke": {"color": "#000", "width": 0}}, "areaStyle": {"color": "#000", "origin": "auto", "shadowBlur": {"shadowColor": "rgba(0, 0, 0, 0.5)", "shadowBlur": 10}, "shadowColor": "#34FFF5", "shadowOffsetX": 0, "shadowOffsetY": 0, "opacity": 1}}, {"type": "line", "id": "系列3_ivbd3g", "name": "", "line": {"color": "#2CB4ED", "style": "solid", "width": 1, "opacity": 1}, "point": {"icon": "roundRect", "color": "#2CB4ED", "borderColor": "rgba(0, 0, 0, 0.44)", "borderWidth": 1, "borderType": "solid", "opacity": 1}, "label": {"show": false, "field": "y", "valueFormat": "auto", "describe": {"prefix": "", "suffix": ""}, "offset": {"x": 0, "y": 0}, "rotate": 0, "textStyle": {"fontSize": 12, "color": "#ddd", "fontWeight": "normal"}, "stroke": {"color": "#000", "width": 0}}, "areaStyle": {"color": "#000", "origin": "auto", "shadowBlur": {"shadowColor": "rgba(0, 0, 0, 0.5)", "shadowBlur": 10}, "shadowColor": "#34FFF5", "shadowOffsetX": 0, "shadowOffsetY": 0, "opacity": 1}}, {"type": "line", "id": "系列4_caepln", "name": "", "line": {"color": "#288EE8", "style": "solid", "width": 1, "opacity": 1}, "point": {"icon": "roundRect", "color": "#288EE8", "borderColor": "rgba(0, 0, 0, 0.44)", "borderWidth": 1, "borderType": "solid", "opacity": 1}, "label": {"show": false, "field": "y", "valueFormat": "auto", "describe": {"prefix": "", "suffix": ""}, "offset": {"x": 0, "y": 0}, "rotate": 0, "textStyle": {"fontSize": 12, "color": "#ddd", "fontWeight": "normal"}, "stroke": {"color": "#000", "width": 0}}, "areaStyle": {"color": "#000", "origin": "auto", "shadowBlur": {"shadowColor": "rgba(0, 0, 0, 0.5)", "shadowBlur": 10}, "shadowColor": "#34FFF5", "shadowOffsetX": 0, "shadowOffsetY": 0, "opacity": 1}}, {"type": "line", "id": "系列5_s08u74", "name": "", "line": {"color": "#2469E4", "style": "solid", "width": 1, "opacity": 1}, "point": {"icon": "roundRect", "color": "#2469E4", "borderColor": "rgba(0, 0, 0, 0.44)", "borderWidth": 1, "borderType": "solid", "opacity": 1}, "label": {"show": false, "field": "y", "valueFormat": "auto", "describe": {"prefix": "", "suffix": ""}, "offset": {"x": 0, "y": 0}, "rotate": 0, "textStyle": {"fontSize": 12, "color": "#ddd", "fontWeight": "normal"}, "stroke": {"color": "#000", "width": 0}}, "areaStyle": {"color": "#000", "origin": "auto", "shadowBlur": {"shadowColor": "rgba(0, 0, 0, 0.5)", "shadowBlur": 10}, "shadowColor": "#34FFF5", "shadowOffsetX": 0, "shadowOffsetY": 0, "opacity": 1}}], "animation": {"enabled": true, "duration": 1000, "easing": "cubicOut", "delay": 0}}, "apis": {"source": {"fields": {"x": {"type": "string", "map": "", "description": "类目", "optional": false}, "y": {"type": "string", "map": "", "description": "值", "optional": false}, "s": {"type": "string", "map": "", "description": "系列", "optional": false}}, "render": "render", "description": "基本区域图接口", "useAutoUpdate": false, "autoUpdate": 1}}, "apiData": {"source": {"comId": "VBasicArea_pnkwjpw0", "id": "t_04o4im9n", "type": "static", "pageFilters": [], "config": {"useFilter": false, "data": "[{\"x\":\"A\",\"y\":60,\"s\":\"类型A\"},{\"x\":\"B\",\"y\":50,\"s\":\"类型A\"},{\"x\":\"C\",\"y\":40,\"s\":\"类型A\"},{\"x\":\"D\",\"y\":40,\"s\":\"类型A\"},{\"x\":\"E\",\"y\":45,\"s\":\"类型A\"},{\"x\":\"F\",\"y\":49,\"s\":\"类型A\"},{\"x\":\"G\",\"y\":52,\"s\":\"类型A\"},{\"x\":\"H\",\"y\":42,\"s\":\"类型A\"}]", "postBodyType": "static"}}}, "events": {"click": {"description": "当点击数据项时", "fields": {"x": {"type": "string", "map": "", "description": "类目", "optional": false}, "y": {"type": "string", "map": "", "description": "值", "optional": false}, "s": {"type": "string", "map": "", "description": "系列", "optional": false}}}}, "actions": {}}], "variables": {"componentsView": {}, "publishersView": {}, "subscribersView": {}}, "dataFilters": []}
+{
+	"screen": {
+		"id": 2024,
+		"name": "智慧城市运营中心",
+		"groupId": 1
+	},
+	"config": {
+		"width": 1920,
+		"height": 1080,
+		"bgimage": "data/originPic/smart_city_bg.png",
+		"bgcolor": "rgba(0,18,38,1)",
+		"grid": 10,
+		"zoomMode": 1
+	},
+	"coms": [{
+		"id": "title1",
+		"name": "VMainTitle",
+		"alias": "智慧城市运营中心",
+		"type": "com",
+		"attr": {
+			"x": 600,
+			"y": 20,
+			"w": 800,
+			"h": 100
+		},
+		"config": {
+			"text": "智慧城市运营中心",
+			"fontSize": 36,
+			"fontColor": "#00FEFF",
+			"textAlign": "center"
+		}
+	}, {
+		"id": "btn1",
+		"name": "VButton",
+		"alias": "交通监控",
+		"type": "com",
+		"attr": {
+			"x": 50,
+			"y": 150,
+			"w": 120,
+			"h": 50
+		},
+		"config": {
+			"buttonContent": "交通监控",
+			"backgroundColor": "rgba(0,85,132,0.8)",
+			"borderColor": "#00FEFF",
+			"fontColor": "#fff"
+		},
+		"handles": {
+			"click": {
+				"targetComId": "group1",
+				"targetMethodName": "show"
+			}
+		}
+	}, {
+		"id": "dynamicBar1",
+		"name": "VDynamicBar",
+		"alias": "实时交通流量",
+		"type": "com",
+		"attr": {
+			"x": 300,
+			"y": 200,
+			"w": 600,
+			"h": 400
+		},
+		"config": {
+			"title": "实时交通流量监测",
+			"global": {
+				"fontFamily": "Arial",
+				"barWidth": "20"
+			}
+		},
+		"apis": {
+			"source": {
+				"type": "dynamic",
+				"autoUpdate": 60,
+				"useAutoUpdate": true
+			}
+		}
+	}, {
+		"id": "arcBar1",
+		"name": "VArcBar",
+		"alias": "资源利用率",
+		"type": "com",
+		"attr": {
+			"x": 1000,
+			"y": 200,
+			"w": 300,
+			"h": 300
+		},
+		"config": {
+			"pieRadiusIn": "40%",
+			"pieRadiusOut": "70%",
+			"content": {
+				"labelLine": {
+					"show": true,
+					"color": "#00FEFF",
+					"width": 2
+				}
+			}
+		},
+		"apis": {
+			"source": {
+				"type": "static",
+				"data": {"value ": 78}
+			}
+		}
+	}, {
+		"id": "group1",
+		"name": "VGroup",
+		"alias": "交通监控组",
+		"type": "layer",
+		"attr": {
+			"x": 0,
+			"y": 0,
+			"w": 1920,
+			"h": 1080
+		},
+		"subComs": [{
+			"id": "map1",
+			"name": "VMainImg",
+			"alias": "交通热力图",
+			"type": "com",
+			"attr": {
+				"x": 0,
+				"y": 0,
+				"w": 1920,
+				"h": 1080
+			},
+			"config": {
+				"backgroundImage": "data/originPic/traffic_heatmap.png",
+				"imageType": "bitmap"
+			}
+		}]
+	}]
+}
