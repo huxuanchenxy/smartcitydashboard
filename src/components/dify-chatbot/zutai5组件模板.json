@@ -4625,6 +4625,126 @@
             },
             "events": {},
             "actions": {}
+    },
+    "VGroup":{
+            "id": "Group_ESfJsCvGT",
+            "name": "VGroup",
+            "type": "layer",
+            "alias": "组",
+            "icon": "v-icon-other",
+            "img": "images/缩略图/成组.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 371,
+                "y": 309,
+                "w": 500,
+                "h": 419,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 200,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "subComs": [
+                "MainTitle_gYKPG9fxY",
+                "BasicBar_OrvtqLVgZ"
+            ],
+            "config": {
+                "borderStyle": {
+                    "borderWidth": 0,
+                    "borderColor": "rgba(255,255,255,0.8)",
+                    "borderRadius": 5,
+                    "borderStyle": "solid"
+                },
+                "header": {
+                    "show": false,
+                    "draggable": false,
+                    "closeButton": {
+                        "show": true,
+                        "color": "#fff",
+                        "size": 20,
+                        "top": 5,
+                        "bottom": 5,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "title": "",
+                    "height": 26,
+                    "color": "#11C2EE",
+                    "image": "",
+                    "fontStyle": {
+                        "fontSize": 30,
+                        "fontColor": "white",
+                        "fontStyle": "normal",
+                        "fontWeight": "normal",
+                        "fontFamily": "Times New Roman",
+                        "textAlign": "left"
+                    }
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {},
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Group_ESfJsCvGT",
+                    "id": "Gea1R2mtrz",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"label\":\"刘备\",\"value\":1,\"category\":\"蜀\"},{\"label\":\"关羽\",\"value\":2,\"category\":\"蜀\"},{\"label\":\"张飞\",\"value\":3,\"category\":\"蜀\"},{\"label\":\"孙权\",\"value\":4,\"category\":\"吴\"},{\"label\":\"周瑜\",\"value\":5,\"category\":\"吴\"},{\"label\":\"曹操\",\"value\":6,\"category\":\"魏\"},{\"label\":\"张郃\",\"value\":7,\"category\":\"魏\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
     }
 
 }
