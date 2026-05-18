@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "source": "Drawing2.dxf",
+    "original_unit": "inch",
+    "original_unit_code": 1,
+    "target_unit": "millimeter",
+    "unit_factor": 25.4,
+    "note": "所有坐标和尺寸已转换为毫米，area_sqm 为平方米"
+  },
+  "buildings": [],
+  "texts": [],
+  "layers": [
+    "0",
+    "Control_Point",
+    "Road_APP_P",
+    "Building_APP_L",
+    "Building_Text",
+    "Building",
+    "Device_Building",
+    "Device_Line",
+    "Land_Classification",
+    "Land_Line",
+    "Interior_Road",
+    "Basement_Entrance_A",
+    "Device_Land",
+    "Pool_FlatRoof",
+    "Pole_A",
+    "Level_Point_R",
+    "Pipe_APP_L",
+    "Road_Edge_Regular",
+    "Road_Text",
+    "Building_Shed",
+    "Building_Simple",
+    "Building_Suspended",
+    "Wall",
+    "Doorplate",
+    "40",
+    "41",
+    "AncientTree_Point",
+    "Device_Text",
+    "Land_Text",
+    "Relief_Polygon",
+    "_0",
+    "Defpoints"
+  ],
+  "screen_config": {
+    "screen_width": 1920,
+    "screen_height": 1080,
+    "scale": 1.0,
+    "padding": 50
+  },
+  "statistics": {
+    "total_buildings": 0,
+    "total_area_sqm": 0.0,
+    "average_area_sqm": 0.0,
+    "filtered_layers": [
+      "TEXT",
+      "DIM",
+      "AXIS",
+      "HATCH",
+      "PUB_DIM",
+      "LVDI",
+      "PUB_TITLE",
+      "GRID"
+    ]
+  }
+}

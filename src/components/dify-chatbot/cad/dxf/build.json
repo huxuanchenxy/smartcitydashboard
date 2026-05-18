@@ -3949,14 +3949,14 @@
     "total_area_sqm": 5869.55,
     "average_area_sqm": 266.7977,
     "filtered_layers": [
+      "HATCH",
+      "PUB_DIM",
+      "DIM",
       "GRID",
       "LVDI",
       "AXIS",
-      "DIM",
-      "PUB_DIM",
-      "TEXT",
       "PUB_TITLE",
-      "HATCH"
+      "TEXT"
     ]
   }
 }

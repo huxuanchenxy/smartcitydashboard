@@ -402,8 +402,11 @@ def main():
         print(f"   - 目标单位: {target_unit} (毫米)")
         print(f"   - 转换系数: {unit_factor}")
         print(f"\n🖥️  屏幕映射配置（1920×1080）:")
-        print(f"   - 缩放比例: {screen_info['scale']:.6f}")
-        print(f"   - 世界范围: [{screen_info['world_bbox']['min_x']:.1f}, {screen_info['world_bbox']['min_y']:.1f}] to [{screen_info['world_bbox']['max_x']:.1f}, {screen_info['world_bbox']['max_y']:.1f}]")
+        if screen_info:
+            print(f"   - 缩放比例: {screen_info['scale']:.6f}")
+            print(f"   - 世界范围: [{screen_info['world_bbox']['min_x']:.1f}, {screen_info['world_bbox']['min_y']:.1f}] to [{screen_info['world_bbox']['max_x']:.1f}, {screen_info['world_bbox']['max_y']:.1f}]")
+        else:
+            print(f"   - 无有效建筑实体，跳过屏幕映射")
         print(f"\n🔍 过滤的非建筑图层:")
         print(f"   {', '.join(FILTERED_LAYERS)}")
 

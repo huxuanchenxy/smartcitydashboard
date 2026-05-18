@@ -26,3 +26,4 @@ pnpm-debug.log*
 # local files
 website.zip
 /video/*.mp4
+/src/components/dify-chatbot/cad/dxf/*.lck
