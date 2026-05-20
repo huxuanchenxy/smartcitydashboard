@@ -9921,5 +9921,1301 @@
             },
             "events": {},
             "actions": {}
+    },
+    "VMarquee": {
+            "id": "Marquee_xc8HyWP8x",
+            "name": "VMarquee",
+            "type": "com",
+            "alias": "跑马灯",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/跑马灯.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 655,
+                "y": 447,
+                "w": 300,
+                "h": 56,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 18,
+                    "color": "#fff",
+                    "fontWeight": "normal"
+                },
+                "loop": true,
+                "ifSpeed": false,
+                "duration": 8000,
+                "speed": 1000,
+                "timeout": 1000
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "跑马灯接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Marquee_xc8HyWP8x",
+                    "id": "oNbfCKDg31",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":\"DataS可视化产品，创造属于您的数据大屏！\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    }, 
+    "VNumberTitleFlop":{
+            "id": "NumberTitleFlop_90P-pSQwo",
+            "name": "VNumberTitleFlop",
+            "type": "com",
+            "alias": "数字翻牌器",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/数字翻牌器.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 459,
+                "y": 334,
+                "w": 350,
+                "h": 64,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "显示数字",
+                            "type": "number",
+                            "path": "config.numbers.icValue"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "arrangement": "top",
+                    "distance": 0
+                },
+                "title": {
+                    "content": "Typesomething",
+                    "textStyle": {
+                        "fontSize": 18,
+                        "color": "#79daff",
+                        "fontWeight": "normal",
+                        "textAlign": "flex-start"
+                    }
+                },
+                "counter": {
+                    "fontFamily": "Microsoft Yahei",
+                    "justifyContent": "flex-start",
+                    "margin": {
+                        "preNum": 0,
+                        "numSuff": 0
+                    },
+                    "prefix": {
+                        "content": "￥",
+                        "textStyle": {
+                            "fontSize": 36,
+                            "color": "#0a73ff",
+                            "fontWeight": "bolder"
+                        }
+                    },
+                    "suffix": {
+                        "content": "",
+                        "textStyle": {
+                            "fontSize": 30,
+                            "color": "#fff",
+                            "fontWeight": "bolder"
+                        }
+                    }
+                },
+                "numbers": {
+                    "textStyle": {
+                        "fontSize": 36,
+                        "color": "#0a73ff",
+                        "fontWeight": "bolder"
+                    },
+                    "marginRight": 0,
+                    "bgColor": "rgba(51,51,51,0)",
+                    "bgRadius": 6,
+                    "bgSeparating": false,
+                    "digit": 0,
+                    "decimal": 0,
+                    "divisor": 0,
+                    "separatingChart": true,
+                    "textalign": "center",
+                    "separatingSymbol": ",",
+                    "decimalSymbol": ".",
+                    "fixedWidth": 0,
+                    "increment": true,
+                    "animation": true,
+                    "sameDataFlip": false,
+                    "duration": 1000,
+                    "icValue": null
+                },
+                "cursor": "default"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "title": {
+                            "type": "string",
+                            "map": "",
+                            "description": "标题",
+                            "optional": true
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "翻牌器数值",
+                            "optional": false
+                        },
+                        "prefix": {
+                            "type": "string",
+                            "map": "",
+                            "description": "翻牌器前缀",
+                            "optional": true
+                        },
+                        "suffix": {
+                            "type": "string",
+                            "map": "",
+                            "description": "翻牌器后缀",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "NumberTitleFlop_90P-pSQwo",
+                    "id": "ksfmbDO9K1",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"title\":\"\",\"value\":\"123456.7\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VParagraph": {
+            "id": "Paragraph_rFVYZRyXC",
+            "name": "VParagraph",
+            "type": "com",
+            "alias": "多行文本",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/多行文本.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 639,
+                "y": 334,
+                "w": 320,
+                "h": 197,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "content": "DataS 提供运营动态直播、数据综合展示、设备监控预警等多种场景模板，稍加修改就能够直接服务于您的可视化需求。通过拖拽即可实现灵活的可视化布局，在模板的基础上任何人都能够发挥创意，实现您自己的可视化应用。",
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 16,
+                    "color": "#fff",
+                    "fontWeight": "normal"
+                },
+                "scroll": {
+                    "duration": 5000,
+                    "overScroll": false
+                },
+                "lineHeight": 36,
+                "textAlign": "left",
+                "textIndent": 32
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "多行文本接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Paragraph_rFVYZRyXC",
+                    "id": "DfjVvg_--Z",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":\"\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VFlexTextBox": {
+            "id": "FlexTextBox_XLabVKeBe",
+            "name": "VFlexTextBox",
+            "type": "com",
+            "alias": "Flex文本容器",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/多行文本.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 568,
+                "y": 363,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "itemClick": {
+                    "eventName": "itemClick",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "flex": {
+                    "flexDirection": "row",
+                    "flexWrap": "wrap",
+                    "justifyContent": "flex-start",
+                    "alignItems": "flex-start",
+                    "alignContent": "flex-start"
+                },
+                "flexItem": {
+                    "width": 100,
+                    "height": 50,
+                    "padding": "5px",
+                    "margin": "0px"
+                },
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 24,
+                    "color": "#fff",
+                    "fontWeight": "normal",
+                    "textAlign": "center",
+                    "writingMode": "horizontal-tb",
+                    "letterSpacing": 0,
+                    "ellipsis": false
+                },
+                "itemBackgroundStyle": {
+                    "show": false,
+                    "bgColor": "#008bff",
+                    "borderRadius": 15,
+                    "borderColor": "#fff",
+                    "borderStyle": "solid",
+                    "borderWidth": 1
+                },
+                "selectedStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 24,
+                    "color": "#fff",
+                    "fontWeight": "normal",
+                    "textAlign": "center",
+                    "writingMode": "horizontal-tb",
+                    "letterSpacing": 0,
+                    "ellipsis": false,
+                    "show": false,
+                    "bgColor": "#008bff",
+                    "borderRadius": 15,
+                    "borderColor": "#fff",
+                    "borderStyle": "solid",
+                    "borderWidth": 1
+                },
+                "iconStyle": {
+                    "show": false,
+                    "width": 20,
+                    "height": 20,
+                    "repeat": "no-repeat"
+                },
+                "backgroundStyle": {
+                    "show": false,
+                    "bgColor": "#008bff",
+                    "borderRadius": 15,
+                    "borderColor": "#fff",
+                    "borderStyle": "solid",
+                    "borderWidth": 1
+                },
+                "urlConfig": {
+                    "show": false,
+                    "isLocationHref": false,
+                    "isBlank": false
+                },
+                "multiSelected": false,
+                "cursor": "pointer"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "icon": {
+                            "type": "string",
+                            "map": "",
+                            "description": "图标",
+                            "optional": true
+                        },
+                        "text": {
+                            "type": "string",
+                            "map": "",
+                            "description": "文字描述",
+                            "optional": true
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "数值",
+                            "optional": true
+                        },
+                        "url": {
+                            "type": "string",
+                            "map": "",
+                            "description": "超链接",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "FlexTextBox_XLabVKeBe",
+                    "id": "EuNTpyvmTz",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"icon\":\"\",\"text\":\"标题一\",\"value\":\"1111\",\"url\":\"\"},{\"icon\":\"\",\"text\":\"标题二\",\"value\":\"2222\",\"url\":\"\"},{\"icon\":\"\",\"text\":\"标题三\",\"value\":\"3333\",\"url\":\"\"},{\"icon\":\"\",\"text\":\"标题四\",\"value\":\"4444\",\"url\":\"\"},{\"icon\":\"\",\"text\":\"标题五\",\"value\":\"5555\",\"url\":\"\"},{\"icon\":\"\",\"text\":\"标题二\",\"value\":\"6666\",\"url\":\"\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VSwitch": {
+            "id": "Switch_Gg1j-PfsC",
+            "name": "VSwitch",
+            "type": "com",
+            "alias": "开关",
+            "icon": "v-icon-interact",
+            "img": "images/缩略图/开关.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 636,
+                "y": 401,
+                "w": 120,
+                "h": 60,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "on": {
+                    "eventName": "on",
+                    "description": "开启",
+                    "fields": []
+                },
+                "off": {
+                    "eventName": "off",
+                    "description": "关闭",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "按钮文字",
+                            "type": "string",
+                            "path": "config.content.buttonContent"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": [
+                        {
+                            "methodCode": "on",
+                            "methodName": "开启"
+                        },
+                        {
+                            "methodCode": "off",
+                            "methodName": "关闭"
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "disabled": false,
+                "loading": false,
+                "size": "large",
+                "scale": 1,
+                "checkedColor": "#409eff",
+                "uncheckedColor": "#dcdfe6",
+                "checkedText": {
+                    "content": "开",
+                    "textStyle": {
+                        "fontSize": 16,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    }
+                },
+                "uncheckedText": {
+                    "content": "关",
+                    "textStyle": {
+                        "fontSize": 16,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    }
+                },
+                "cursor": "pointer"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "当前值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "开关接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Switch_Gg1j-PfsC",
+                    "id": "qufZ8QgkwO",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":false}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VSlider": {
+            "id": "Slider_QotT3BkXn",
+            "name": "VSlider",
+            "type": "com",
+            "alias": "滑动选择",
+            "icon": "v-icon-interact",
+            "img": "images/缩略图/滑动选择.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 869,
+                "y": 416,
+                "w": 120,
+                "h": 60,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "change": {
+                    "eventName": "change",
+                    "description": "数值变化",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "button": {
+                    "url": "/public/images/sliderbutton.png",
+                    "width": 30,
+                    "height": 30
+                },
+                "max": 100,
+                "min": 0,
+                "defaultValue": 0,
+                "disabled": false,
+                "reverse": false,
+                "step": 1,
+                "vertical": false,
+                "tooltip": false,
+                "placement": "top-start",
+                "cursor": "pointer",
+                "debounceTime": 200
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "Slider_QotT3BkXn",
+                    "id": "1vvoXaa5-2",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":0}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VSearchBox": {
+            "id": "SearchBox_G5BdK3PKy",
+            "name": "VSearchBox",
+            "type": "com",
+            "alias": "查询框",
+            "icon": "v-icon-interact",
+            "img": "images/缩略图/查询框.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 433,
+                "y": 447,
+                "w": 300,
+                "h": 56,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "buttonClick": {
+                    "eventName": "buttonClick",
+                    "description": "按钮点击",
+                    "fields": []
+                },
+                "textChange": {
+                    "eventName": "textChange",
+                    "description": "文本变更",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "backgroundStyle": {
+                    "color": "#465558",
+                    "opacity": 0.2,
+                    "border": {
+                        "radius": 5,
+                        "color": "#fff",
+                        "style": "none",
+                        "width": 1
+                    }
+                },
+                "icon": {
+                    "show": true,
+                    "size": 20,
+                    "color": "#ffffff"
+                },
+                "button": {
+                    "show": true,
+                    "text": "搜索",
+                    "color": "transparent",
+                    "textStyle": {
+                        "fontFamily": "Microsoft Yahei",
+                        "fontSize": 9,
+                        "color": "#ffffff",
+                        "fontWeight": "normal"
+                    },
+                    "border": {
+                        "color": "#ffffff",
+                        "style": "solid",
+                        "width": 1
+                    },
+                    "circle": false,
+                    "round": false
+                },
+                "textBox": {
+                    "textStyle": {
+                        "fontFamily": "Microsoft Yahei",
+                        "fontSize": 24,
+                        "color": "#ffffff",
+                        "fontWeight": "normal",
+                        "textAlign": "left"
+                    },
+                    "placeholder": "请输入要搜索的内容"
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {},
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "SearchBox_G5BdK3PKy",
+                    "id": "3q8gJK9mUN",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VBasicForm": {
+            "id": "BasicForm_c70mQaM8y",
+            "name": "VBasicForm",
+            "type": "com",
+            "alias": "表单",
+            "icon": "v-icon-other",
+            "img": "images/缩略图/基础表单.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 534,
+                "y": 291,
+                "w": 400,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "submit": {
+                    "eventName": "submit",
+                    "description": "提交",
+                    "fields": []
+                },
+                "cancle": {
+                    "eventName": "cancle",
+                    "description": "取消",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "labelWidth": 80,
+                "titleConfig": {
+                    "title": "标题",
+                    "titleStyle": {
+                        "paddingTop": 0,
+                        "paddingLeft": 20,
+                        "fontSize": 20,
+                        "background": "rgba(0, 84, 151, 1)",
+                        "color": "rgba(255, 255, 235, 1)",
+                        "fontWeight": "normal",
+                        "height": 30,
+                        "width": 100,
+                        "show": true
+                    }
+                },
+                "iconConfig": {
+                    "buttonHeight": 30,
+                    "buttonWidth": 50,
+                    "iconColor": "#ffffff",
+                    "closeBackgroundColor": "rgba(255, 0, 0, 1)",
+                    "closeIcon": "images/close-o.svg"
+                },
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 20,
+                    "color": "#000",
+                    "fontWeight": "normal"
+                },
+                "background": {
+                    "show": true,
+                    "bgColor": "#fff",
+                    "borderRadius": 10,
+                    "borderColor": "#fff",
+                    "borderStyle": "solid",
+                    "borderWidth": 0
+                },
+                "items": [
+                    {
+                        "id": "项目1_K5WLWi_Zol",
+                        "code": "item_1",
+                        "label": "项目1",
+                        "pt": {
+                            "extension": {
+                                "device": null,
+                                "name": null
+                            }
+                        },
+                        "control": {
+                            "value": null,
+                            "type": "input",
+                            "required": false,
+                            "placeholder": "",
+                            "inputOptions": {},
+                            "radioOptions": {
+                                "options": [
+                                    {
+                                        "label": "选项一",
+                                        "value": "1"
+                                    },
+                                    {
+                                        "label": "选项二",
+                                        "value": "2"
+                                    },
+                                    {
+                                        "label": "选项三",
+                                        "value": "3"
+                                    }
+                                ],
+                                "labelKey": "label",
+                                "valueKey": "value"
+                            },
+                            "checkBoxOptions": {
+                                "options": [
+                                    {
+                                        "label": "选项一",
+                                        "value": 0
+                                    },
+                                    {
+                                        "label": "选项二",
+                                        "value": 0
+                                    },
+                                    {
+                                        "label": "选项三",
+                                        "value": 0
+                                    }
+                                ],
+                                "labelKey": "label",
+                                "valueKey": "value",
+                                "checkedValue": 1,
+                                "uncheckedValue": 0
+                            },
+                            "selectOptions": {
+                                "options": [
+                                    {
+                                        "label": "选项一",
+                                        "value": "1",
+                                        "style": {}
+                                    },
+                                    {
+                                        "label": "选项二",
+                                        "value": "2",
+                                        "style": {}
+                                    },
+                                    {
+                                        "label": "选项三",
+                                        "value": "3",
+                                        "style": {}
+                                    }
+                                ],
+                                "labelKey": "label",
+                                "valueKey": "value"
+                            },
+                            "numberOptions": {
+                                "min": null,
+                                "max": null,
+                                "step": 1
+                            },
+                            "dateOptions": {
+                                "dateFormat": "yyyy-MM-dd"
+                            },
+                            "timeOptions": {
+                                "timeFormat": "HH:mm"
+                            }
+                        }
+                    }
+                ],
+                "buttonOptions": {
+                    "showSubmit": true,
+                    "submitButtonType": "primary",
+                    "submitButtonText": "提交",
+                    "showCancel": true,
+                    "cancleButtonType": "default",
+                    "cancleButtonText": "取消"
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
+    },
+    "VBasicCarousel": {
+            "id": "BasicCarousel_0zScWNhC2",
+            "name": "VBasicCarousel",
+            "type": "com",
+            "alias": "滚动表格",
+            "icon": "v-icon-other",
+            "img": "images/缩略图/滚动表格.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 274,
+                "y": 237,
+                "w": 1000,
+                "h": 350,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "colNum": 0,
+                "colColor": "",
+                "colIndexList": [],
+                "colIndexColorList": [],
+                "topicShow": true,
+                "topicData": [
+                    {
+                        "topic0": "标题",
+                        "topic1": "标题",
+                        "topic2": "标题",
+                        "topic3": "标题",
+                        "topic4": "标题",
+                        "topic5": "标题",
+                        "topic6": "标题",
+                        "topic7": "标题",
+                        "topic8": "标题",
+                        "topic9": "标题",
+                        "topic10": "标题",
+                        "height": "70px",
+                        "background": "rgba(5,211,219,0.1)"
+                    }
+                ],
+                "dataList": [],
+                "dataRowColInfoList1": [],
+                "dataRowColInfoList2": [],
+                "dataRowColInfoList3": [],
+                "widthList": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "topicLength": 3,
+                "colIndex": 0,
+                "direction": "up",
+                "lineHeight": 70,
+                "interval": 1000,
+                "rowsNum": 4,
+                "transformFlag": true,
+                "backgroundOpacity": 1,
+                "topicStyleConfig": {
+                    "borderTopWidth": 3,
+                    "borderBottomWidth": 3,
+                    "borderLeftWidth": 3,
+                    "borderRightWidth": 3,
+                    "backgroundColor": "rgba(5,211,219,0.1)",
+                    "topicRowHeight": 70,
+                    "fontSize": 20,
+                    "fontColor": "rgba(255, 255, 255, 1)",
+                    "borderWidth": 2,
+                    "borderStyle": "solid",
+                    "borderColor": "rgba(94, 96, 209, 1)",
+                    "paddingTop": 0,
+                    "paddingLeft": 0,
+                    "textAlign": "center",
+                    "opacity": 1
+                },
+                "alertContent": {
+                    "highlightList1": [],
+                    "highlightList2": [],
+                    "highlightList3": [],
+                    "highlightContent": "",
+                    "color1": "rgba(255, 0, 0, 1)",
+                    "color2": "rgba(0, 255, 0, 1)",
+                    "color3": "rgba(255, 255, 0, 1)"
+                },
+                "limitContentLength": 5,
+                "tableStyleConfig": {
+                    "borderWidth": 0,
+                    "borderStyle": "solid",
+                    "borderColor": "rgba(0,255,255,0.1)",
+                    "backgroundColor": "rgba(5,211,219,0.1)",
+                    "backgroundStripeColor": "rgba(1,21,239,0.1)"
+                },
+                "cellStyleConfig": {
+                    "fontSize": 10,
+                    "fontColor": "rgba(255, 255, 255, 1)",
+                    "borderWidth": 2,
+                    "borderStyle": "solid",
+                    "borderColor": "rgba(94, 96, 209, 1)",
+                    "paddingTop": 0,
+                    "paddingLeft": 0,
+                    "textAlign": "left"
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicCarousel_0zScWNhC2",
+                    "id": "zdyo8IKqZH",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"type1\":\"内容1\",\"type2\":\"内容2\",\"type3\":\"内容3\"},{\"type1\":\"内容4\",\"type2\":\"内容5\",\"type3\":\"内容6\"},{\"type1\":\"内容7\",\"type2\":\"内容8\",\"type3\":\"内容9\"},{\"type1\":\"内容10\",\"type2\":\"内容11\",\"type3\":\"内容12\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+    },
+    "VCarouselTable": {
+            "id": "CarouselTable_oFDgY9VA9",
+            "name": "VCarouselTable",
+            "type": "com",
+            "alias": "轮播表",
+            "icon": "v-icon-other",
+            "img": "images/缩略图/滚动表格.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 358,
+                "y": 320,
+                "w": 1000,
+                "h": 350,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 240,
+            "handles": {
+                "rowClick": {
+                    "eventName": "rowClick",
+                    "description": "点击行",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "common": {
+                    "waitTime": 2000,
+                    "rowNum": 5,
+                    "showIndex": false,
+                    "carousel": "single",
+                    "hoverPause": true,
+                    "oddRowBGC": "#003B51",
+                    "evenRowBGC": "#0A2732"
+                },
+                "header": {
+                    "show": false,
+                    "indexHeader": "#",
+                    "headerHeight": 35,
+                    "headerBGC": "#00BAFF",
+                    "fontSize": 20,
+                    "fontColor": "#fff",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                    "fontFamily": "微软雅黑"
+                },
+                "columns": [],
+                "SpecialCharactersList": []
+            },
+            "apis": {
+                "source": {
+                    "fields": {},
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "CarouselTable_oFDgY9VA9",
+                    "id": "VGOozwLgQc",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[[\"行1列1\",\"行1列2\",\"行1列3\"],[\"行2列1\",\"行2列2\",\"行2列3\"],[\"行3列1\",\"行3列2\",\"行3列3\"],[\"行4列1\",\"行4列2\",\"行4列3\"],[\"行5列1\",\"行5列2\",\"行5列3\"],[\"行6列1\",\"行6列2\",\"行6列3\"],[\"行7列1\",\"行7列2\",\"行7列3\"],[\"行8列1\",\"行8列2\",\"行8列3\"],[\"行9列1\",\"行9列2\",\"行9列3\"],[\"行10列1\",\"行10列2\",\"行10列3\"]]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
     }
 }
