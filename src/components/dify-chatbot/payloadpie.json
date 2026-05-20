@@ -1,3380 +1,1371 @@
 {
-  "screen": {
-    "id": 197,
-    "name": "测试雷达图v1",
-    "share": "",
-    "thumbnail": null,
-    "groupId": 4
-  },
-  "config": {
-    "width": 1920,
-    "height": 1080,
-    "bgimage": "data/originPic/bj.png",
-    "bgcolor": "rgba(13,42,67,0)",
-    "grid": 8,
-    "screenshot": "",
-    "zoomMode": 1,
-    "useWatermark": false,
-    "styleFilterParams": {
-      "enable": false,
-      "hue": 0,
-      "saturate": 100,
-      "brightness": 100,
-      "contrast": 100,
-      "opacity": 100
+    "screen": {
+        "id": 170,
+        "name": "智慧城市运行指挥中心",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 5
     },
-    "tokenSettings": []
-  },
-  "coms": [
-    {
-      "id": "Building_CD93",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 142.19,
-        "y": 264.81,
-        "w": 35.58,
-        "h": 35.58,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/smart_city_bg.jpg",
+        "bgcolor": "#0a1a2f",
+        "grid": 10,
+        "screenshot": "",
+        "zoomMode": 0,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
         },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-144.0㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CD93",
-          "id": "VCD93",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
+        "tokenSettings": []
     },
-    {
-      "id": "Building_CD95",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 263.82,
-        "y": 679.8,
-        "w": 37.92,
-        "h": 37.92,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
+    "coms": [
+        {
+            "id": "MainTitle_X1gT8sQb",
+            "name": "VMainTitle",
+            "type": "com",
+            "alias": "城市运行指挥中心",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/通用标题.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 660,
+                "y": 30,
+                "w": 600,
+                "h": 80,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
             },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
+            "projectId": 200,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
             },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-144.00000001490116㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "标题内容",
+                            "type": "string",
+                            "path": "config.title"
+                        },
+                        {
+                            "name": "字体颜色",
+                            "type": "color",
+                            "path": "config.textStyle.color"
+                        },
+                        {
+                            "name": "背景颜色",
+                            "type": "color",
+                            "path": "config.backgroundStyle.bgColor"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
             },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
+            "config": {
+                "title": "智慧城市运行指挥中心",
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 36,
+                    "color": "#00f0ff",
+                    "fontWeight": "bold"
+                },
+                "textAlign": "center",
+                "writingMode": "horizontal-tb",
+                "letterSpacing": 2,
+                "backgroundStyle": {
+                    "show": true,
+                    "bgColor": "rgba(0, 80, 130, 0.6)",
+                    "borderRadius": 10,
+                    "borderColor": "#00f0ff",
+                    "borderStyle": "solid",
+                    "borderWidth": 2
+                },
+                "ellipsis": false,
+                "urlConfig": {
+                    "url": "",
+                    "isBlank": false
+                },
+                "animation": {
+                    "enable": true,
+                    "name": "Shine",
+                    "duration": 3000,
+                    "timing": "linear",
+                    "delay": 0,
+                    "iteration": "infinite",
+                    "direction": "alternate"
+                },
+                "cursor": "default"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "title": {
+                            "type": "string",
+                            "map": "",
+                            "description": "标题值",
+                            "optional": true
+                        },
+                        "url": {
+                            "type": "string",
+                            "map": "",
+                            "description": "超链接",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "MainTitle_X1gT8sQb",
+                    "id": "ST_9Zm2pAqK",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+        },
+        {
+            "id": "BasicBar_K2rL9tXn",
+            "name": "VBasicBar",
+            "type": "com",
+            "alias": "交通流量统计",
+            "icon": "v-icon-chart-bar",
+            "img": "images/缩略图/柱状图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 100,
+                "y": 150,
+                "w": 600,
+                "h": 400,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 200,
+            "handles": {
+                "clickChart": {
+                    "eventName": "clickChart",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 40,
+                        "bottom": 50,
+                        "left": 60,
+                        "right": 20
+                    },
+                    "innerPadding": 25,
+                    "outerPadding": 30,
+                    "barWidth": "auto",
+                    "background": {
+                        "show": true,
+                        "color": "rgba(0, 30, 50, 0.4)"
+                    },
+                    "label": {
+                        "show": true,
+                        "position": "top",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#ffffff",
+                            "fontWeight": "normal"
+                        },
+                        "offsetX": 0,
+                        "offsetY": 5
+                    }
+                },
+                "label": {
+                    "show": false,
+                    "position": "top",
+                    "textStyle": {
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.6)",
+                        "fontWeight": "normal"
+                    },
+                    "offsetX": 0,
+                    "offsetY": 0
+                },
+                "xAxis": {
+                    "show": true,
+                    "type": "category",
+                    "title": {
+                        "show": false,
+                        "name": "时间段",
+                        "location": "center",
+                        "display": {
+                            "rotate": 0,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#00f0ff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00f0ff"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#00f0ff"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "timeFormat": "HH:mm",
+                        "boundaryGap": true,
+                        "interval": "auto",
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#ffffff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(0,240,255,0.3)",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "yAxis": {
+                    "show": true,
+                    "extent": {
+                        "min": "auto",
+                        "max": "auto"
+                    },
+                    "splitNumber": 5,
+                    "title": {
+                        "show": false,
+                        "name": "流量(万辆)",
+                        "location": "center",
+                        "display": {
+                            "rotate": 90,
+                            "offset": 30
+                        },
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#00f0ff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00f0ff"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#00f0ff"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "valueFormat": "auto",
+                        "boundaryGap": 0,
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#ffffff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(0,240,255,0.3)",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "tooltip": {
+                    "show": true,
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "background": {
+                        "padding": {
+                            "h": 8,
+                            "v": 8
+                        },
+                        "color": "rgba(0, 0, 0, 0.8)"
+                    },
+                    "pointer": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 2,
+                            "color": "#00f0ff",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "legend": {
+                    "show": true,
+                    "position": "top-center",
+                    "orient": "horizontal",
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#00f0ff",
+                        "fontWeight": "normal"
+                    },
+                    "symbol": {
+                        "show": true,
+                        "icon": "auto",
+                        "width": 30,
+                        "height": 16,
+                        "gap": 12
+                    },
+                    "page": {
+                        "enabled": false,
+                        "size": {
+                            "width": 100,
+                            "height": 100
+                        },
+                        "button": {
+                            "size": 15,
+                            "color": "#000",
+                            "inactiveColor": "#000"
+                        },
+                        "pageNumColor": "#00f0ff"
+                    }
+                },
+                "series": [
+                    {
+                        "type": "bar",
+                        "id": "系列1_3sXqG7hT",
+                        "name": "实时流量",
+                        "color": {
+                            "type": "linear",
+                            "value": "#00f0ff",
+                            "from": "#00f0ff",
+                            "to": "#007aff"
+                        },
+                        "gradient": {
+                            "type": "linear",
+                            "x": 0,
+                            "y": 0,
+                            "x2": 0,
+                            "y2": 1,
+                            "colorStops": [
+                                {
+                                    "offset": 0,
+                                    "color": "#00f0ff"
+                                },
+                                {
+                                    "offset": 1,
+                                    "color": "#007aff"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "animation": {
+                    "enabled": true,
+                    "duration": 1200,
+                    "easing": "cubicOut",
+                    "delay": 0
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "时间段",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "流量值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "实时交通流量数据接口",
+                    "useAutoUpdate": true,
+                    "autoUpdate": 60
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicBar_K2rL9tXn",
+                    "id": "TD_5sW8vLmP",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"x\":\"00:00\",\"y\":\"12.5\"},{\"x\":\"04:00\",\"y\":\"8.2\"},{\"x\":\"08:00\",\"y\":\"24.7\"},{\"x\":\"12:00\",\"y\":\"18.3\"},{\"x\":\"16:00\",\"y\":\"22.1\"},{\"x\":\"20:00\",\"y\":\"15.9\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "时间段",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "流量值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "ArcBar_M5qR7wZp",
+            "name": "VArcBar",
+            "type": "com",
+            "alias": "能源消耗监测",
+            "icon": "v-icon-chart-bar",
+            "img": "images/缩略图/玉环图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 800,
+                "y": 150,
+                "w": 400,
+                "h": 400,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 200,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "pieRadiusIn": 80,
+                    "pieRadiusOut": 100,
+                    "pieColor": "#00f0ff",
+                    "pieLine": {
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00f0ff"
+                    },
+                    "colour": true,
+                    "colorList": [
+                        {
+                            "value": "#00f0ff"
+                        },
+                        {
+                            "value": "#00c0cc"
+                        },
+                        {
+                            "value": "#009099"
+                        },
+                        {
+                            "value": "#006066"
+                        },
+                        {
+                            "value": "#003033"
+                        }
+                    ]
+                },
+                "legend": {
+                    "show": true,
+                    "top": "bottom",
+                    "left": "center",
+                    "textStyle": {
+                        "fontFamily": "Microsoft Yahei",
+                        "fontWeight": "normal",
+                        "fontSize": 14,
+                        "color": "#ffffff"
+                    },
+                    "orient": "horizontal",
+                    "align": "center",
+                    "showValue": true
+                },
+                "tooltip": {
+                    "triggerOn": "mousemove",
+                    "textStyle": {
+                        "fontFamily": "Microsoft Yahei",
+                        "fontWeight": "normal",
+                        "fontSize": 14,
+                        "color": "#fff"
+                    },
+                    "padding": 8
+                },
+                "content": {
+                    "enabled": true,
+                    "padding": 8,
+                    "textStyle": {
+                        "fontFamily": "Microsoft Yahei",
+                        "fontWeight": "normal",
+                        "fontSize": 14,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "labelLine": {
+                        "show": true,
+                        "color": "#00f0ff",
+                        "width": 2,
+                        "type": "solid"
+                    }
+                },
+                "frameBackground": {
+                    "horizontal": 15,
+                    "vertical": 15,
+                    "backgroundColor": "rgba(0, 30, 50, 0.6)",
+                    "borderStyle": {
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00f0ff",
+                        "radius": 8
+                    }
+                },
+                "animation": {
+                    "enabled": true,
+                    "easing": "cubicOut",
+                    "duration": 1500
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_8dXqG7hT",
+                        "name": "能源类型"
+                    }
+                ]
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "能源类型",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "消耗量",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "实时能源消耗数据接口",
+                    "useAutoUpdate": true,
+                    "autoUpdate": 300
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "ArcBar_M5qR7wZp",
+                    "id": "ED_9sW8vLmP",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"type\":\"电力\",\"value\":\"45.2\"},{\"type\":\"天然气\",\"value\":\"28.7\"},{\"type\":\"水力\",\"value\":\"15.3\"},{\"type\":\"太阳能\",\"value\":\"8.5\"},{\"type\":\"风能\",\"value\":\"2.3\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "能源类型",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "消耗量",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "BasicPie_G3tQ2mXk",
+            "name": "VBasicPie",
+            "type": "com",
+            "alias": "应急资源分布",
+            "icon": "v-icon-chart-pie",
+            "img": "images/缩略图/饼图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 1300,
+                "y": 150,
+                "w": 500,
+                "h": 400,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 200,
+            "handles": {
+                "clickChart": {
+                    "eventName": "clickChart",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 30,
+                        "bottom": 30,
+                        "left": 30,
+                        "right": 30
+                    },
+                    "background": {
+                        "show": true,
+                        "color": "rgba(0, 30, 50, 0.4)"
+                    },
+                    "label": {
+                        "show": true,
+                        "position": "outside",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#ffffff",
+                            "fontWeight": "normal"
+                        },
+                        "offsetX": 10,
+                        "offsetY": 0
+                    }
+                },
+                "legend": {
+                    "show": true,
+                    "position": "right",
+                    "orient": "vertical",
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#ffffff",
+                        "fontWeight": "normal"
+                    },
+                    "symbol": {
+                        "show": true,
+                        "icon": "circle",
+                        "width": 12,
+                        "height": 12,
+                        "gap": 5
+                    },
+                    "page": {
+                        "enabled": false
+                    }
+                },
+                "tooltip": {
+                    "show": true,
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "background": {
+                        "padding": {
+                            "h": 8,
+                            "v": 8
+                        },
+                        "color": "rgba(0, 0, 0, 0.8)"
+                    },
+                    "pointer": {
+                        "show": true,
+                        "line": {
+                            "type": "solid",
+                            "width": 2,
+                            "color": "#00f0ff"
+                        }
+                    }
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_4sXqG7hT",
+                        "name": "应急资源",
+                        "color": {
+                            "type": "solid",
+                            "value": "#00f0ff",
+                            "from": "#00f0ff",
+                            "to": "#0000ff"
+                        },
+                        "gradient": {
+                            "type": "linear",
+                            "x": 0,
+                            "y": 0,
+                            "x2": 0,
+                            "y2": 1,
+                            "colorStops": [
+                                {
+                                    "offset": 0,
+                                    "color": "#00f0ff"
+                                },
+                                {
+                                    "offset": 1,
+                                    "color": "#007aff"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "animation": {
+                    "enabled": true,
+                    "duration": 1200,
+                    "easing": "cubicOut",
+                    "delay": 0
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "label": {
+                            "type": "string",
+                            "map": "",
+                            "description": "资源类型",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "数量",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "应急资源分布数据接口",
+                    "useAutoUpdate": true,
+                    "autoUpdate": 600
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicPie_G3tQ2mXk",
+                    "id": "ER_5sW8vLmP",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"label\":\"消防车\",\"value\":\"120\"},{\"label\":\"救护车\",\"value\":\"85\"},{\"label\":\"工程车\",\"value\":\"60\"},{\"label\":\"无人机\",\"value\":\"45\"},{\"label\":\"应急物资\",\"value\":\"3200\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "label": {
+                            "type": "string",
+                            "map": "",
+                            "description": "资源类型",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "数量",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "DynamicLine_B7qL9tXn",
+            "name": "VDynamicLine",
+            "type": "com",
+            "alias": "空气质量趋势",
+            "icon": "v-icon-chart-line",
+            "img": "images/缩略图/折线图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 100,
+                "y": 580,
+                "w": 1600,
+                "h": 400,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 200,
+            "handles": {
+                "clickChart": {
+                    "eventName": "clickChart",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 40,
+                        "bottom": 60,
+                        "left": 80,
+                        "right": 40
+                    },
+                    "background": {
+                        "show": true,
+                        "color": "rgba(0, 30, 50, 0.4)"
+                    },
+                    "lineWidth": 3,
+                    "symbolSize": 8,
+                    "smooth": true,
+                    "axisPointer": {
+                        "show": true,
+                        "type": "line",
+                        "line": {
+                            "type": "dashed",
+                            "width": 2,
+                            "color": "#00f0ff",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "label": {
+                    "show": true,
+                    "position": "top",
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#ffffff",
+                        "fontWeight": "normal"
+                    },
+                    "offsetX": 0,
+                    "offsetY": 5
+                },
+                "xAxis": {
+                    "show": true,
+                    "type": "time",
+                    "title": {
+                        "show": false,
+                        "name": "时间",
+                        "location": "center",
+                        "display": {
+                            "rotate": 0,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#00f0ff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00f0ff"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#00f0ff"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "timeFormat": "HH:mm",
+                        "boundaryGap": false,
+                        "interval": "auto",
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#ffffff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(0,240,255,0.3)",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "yAxis": {
+                    "show": true,
+                    "extent": {
+                        "min": "auto",
+                        "max": "auto"
+                    },
+                    "splitNumber": 5,
+                    "title": {
+                        "show": false,
+                        "name": "AQI指数",
+                        "location": "center",
+                        "display": {
+                            "rotate": 90,
+                            "offset": 30
+                        },
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#00f0ff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00f0ff"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#00f0ff"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "valueFormat": "auto",
+                        "boundaryGap": 0,
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#ffffff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(0,240,255,0.3)",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "tooltip": {
+                    "show": true,
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "background": {
+                        "padding": {
+                            "h": 8,
+                            "v": 8
+                        },
+                        "color": "rgba(0, 0, 0, 0.8)"
+                    },
+                    "pointer": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 2,
+                            "color": "#00f0ff",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "legend": {
+                    "show": true,
+                    "position": "top-center",
+                    "orient": "horizontal",
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#00f0ff",
+                        "fontWeight": "normal"
+                    },
+                    "symbol": {
+                        "show": true,
+                        "icon": "auto",
+                        "width": 30,
+                        "height": 16,
+                        "gap": 12
+                    },
+                    "page": {
+                        "enabled": false,
+                        "size": {
+                            "width": 100,
+                            "height": 100
+                        },
+                        "button": {
+                            "size": 15,
+                            "color": "#000",
+                            "inactiveColor": "#000"
+                        },
+                        "pageNumColor": "#00f0ff"
+                    }
+                },
+                "series": [
+                    {
+                        "type": "line",
+                        "id": "系列1_5sXqG7hT",
+                        "name": "AQI指数",
+                        "color": {
+                            "type": "linear",
+                            "value": "#00f0ff",
+                            "from": "#00f0ff",
+                            "to": "#007aff"
+                        },
+                        "gradient": {
+                            "type": "linear",
+                            "x": 0,
+                            "y": 0,
+                            "x2": 0,
+                            "y2": 1,
+                            "colorStops": [
+                                {
+                                    "offset": 0,
+                                    "color": "#00f0ff"
+                                },
+                                {
+                                    "offset": 1,
+                                    "color": "#007aff"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "animation": {
+                    "enabled": true,
+                    "duration": 1200,
+                    "easing": "cubicOut",
+                    "delay": 0
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "时间戳",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "AQI值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "实时空气质量监测数据接口",
+                    "useAutoUpdate": true,
+                    "autoUpdate": 60
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "DynamicLine_B7qL9tXn",
+                    "id": "AQ_5sW8vLmP",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"x\":\"1698765432\",\"y\":\"78\"},{\"x\":\"1698765492\",\"y\":\"82\"},{\"x\":\"1698765552\",\"y\":\"75\"},{\"x\":\"1698765612\",\"y\":\"68\"},{\"x\":\"1698765672\",\"y\":\"71\"},{\"x\":\"1698765732\",\"y\":\"79\"},{\"x\":\"1698765792\",\"y\":\"85\"},{\"x\":\"1698765852\",\"y\":\"92\"},{\"x\":\"1698765912\",\"y\":\"88\"},{\"x\":\"1698765972\",\"y\":\"80\"}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "时间戳",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "AQI值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "BgBox_R9hT4nXk",
+            "name": "VBgBox",
+            "type": "com",
+            "alias": "实时数据背景",
+            "icon": "v-icon-bgbox",
+            "img": "images/缩略图/背景容器.png",
+            "locked": true,
+            "hided": false,
+            "eventhub": false,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 1080,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 200,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "backgroundStyle": {
+                    "show": true,
+                    "bgColor": "#0a1a2f",
+                    "borderRadius": 0,
+                    "borderColor": "#00f0ff",
+                    "borderStyle": "solid",
+                    "borderWidth": 2
+                },
+                "gradient": {
+                    "type": "linear",
+                    "x": 0,
+                    "y": 0,
+                    "x2": 1,
+                    "y2": 1,
+                    "colorStops": [
+                        {
+                            "offset": 0,
+                            "color": "rgba(0, 30, 50, 0.8)"
+                        },
+                        {
+                            "offset": 1,
+                            "color": "rgba(0, 15, 25, 0.6)"
+                        }
+                    ]
+                },
+                "shadow": {
+                    "show": true,
+                    "color": "#00f0ff",
+                    "radius": 10,
+                    "offsetX": 0,
+                    "offsetY": 0
+                },
+                "animation": {
+                    "enable": true,
+                    "name": "Shine",
+                    "duration": 5000,
+                    "timing": "linear",
+                    "delay": 0,
+                    "iteration": "infinite",
+                    "direction": "alternate"
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
         }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CD95",
-          "id": "VCD95",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
     },
-    {
-      "id": "Building_CDC9",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 178.2,
-        "y": 50.0,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.4500001370907㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CDC9",
-          "id": "VCDC9",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CDCB",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 103.5,
-        "y": 70.78,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.45000010728836㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CDCB",
-          "id": "VCDCB",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE0A",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 248.0,
-        "y": 319.51,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.45000010728836㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE0A",
-          "id": "VCE0A",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE0C",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 313.7,
-        "y": 157.71,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.45000010728836㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE0C",
-          "id": "VCE0C",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE79",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 343.92,
-        "y": 978.49,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000005066395㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE79",
-          "id": "VCE79",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE7E",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 312.91,
-        "y": 905.96,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000005066395㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE7E",
-          "id": "VCE7E",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE83",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 290.07,
-        "y": 852.51,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.4000000357628㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE83",
-          "id": "VCE83",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE88",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 259.06,
-        "y": 779.99,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.4000000208616㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE88",
-          "id": "VCE88",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE8D",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 233.85,
-        "y": 721.01,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000008046627㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE8D",
-          "id": "VCE8D",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE92",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 202.85,
-        "y": 648.48,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000009536743㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE92",
-          "id": "VCE92",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE97",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 180.0,
-        "y": 595.04,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000012516975㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE97",
-          "id": "VCE97",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CE9C",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 149.0,
-        "y": 522.51,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000005066395㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CE9C",
-          "id": "VCE9C",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CF91",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 334.89,
-        "y": 233.89,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.4499998539686㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CF91",
-          "id": "VCF91",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CF94",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 377.07,
-        "y": 367.55,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.44999983906746㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CF94",
-          "id": "VCF94",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CFD6",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 50.0,
-        "y": 167.73,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.4499998986721㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CFD6",
-          "id": "VCFD6",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CFD8",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 124.69,
-        "y": 146.95,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.4499998539686㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CFD8",
-          "id": "VCFD8",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CFDA",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 199.39,
-        "y": 126.18,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.449999794364㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CFDA",
-          "id": "VCFDA",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CFDC",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 272.59,
-        "y": 477.79,
-        "w": 73.95,
-        "h": 51.51,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-266.40000000596046㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CFDC",
-          "id": "VCFDC",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CFE1",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 351.24,
-        "y": 292.66,
-        "w": 65.9,
-        "h": 43.8,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.4500000923872㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CFE1",
-          "id": "VCFE1",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    },
-    {
-      "id": "Building_CFE3",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "建筑实体",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": false,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 475.71,
-        "y": 686.83,
-        "w": 66.83,
-        "h": 50.1,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 197,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        },
-        "refreshData": {
-          "eventName": "refreshData",
-          "description": "更新数据",
-          "fields": []
-        },
-        "mouseEnter": {
-          "eventName": "mouseEnter",
-          "description": "鼠标移入",
-          "fields": []
-        },
-        "mouseLeave": {
-          "eventName": "mouseLeave",
-          "description": "鼠标移出",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            },
-            {
-              "name": "字体颜色",
-              "type": "color",
-              "path": "config.textStyle.color"
-            },
-            {
-              "name": "背景颜色",
-              "type": "color",
-              "path": "config.backgroundStyle.bgColor"
-            }
-          ],
-          "events": null
-        },
-        "event": {
-          "eventName": "event",
-          "description": "事件-点位",
-          "fields": [],
-          "properties": null,
-          "events": []
-        }
-      },
-      "config": {
-        "title": "B-289.4500000625849㎡",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 14,
-          "color": "#66CCFF",
-          "fontWeight": "bold"
-        },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 0,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0, 139, 139, 0.3)",
-          "borderRadius": 4,
-          "borderColor": "#00EEFF",
-          "borderStyle": "solid",
-          "borderWidth": 1
-        },
-        "ellipsis": false,
-        "urlConfig": {
-          "url": "",
-          "isBlank": false
-        },
-        "animation": {
-          "enable": false,
-          "name": "Updown",
-          "duration": 1000,
-          "timing": "linear",
-          "delay": 0,
-          "iteration": "infinite",
-          "direction": "alternate"
-        },
-        "cursor": "pointer"
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            },
-            "url": {
-              "type": "string",
-              "map": "",
-              "description": "超链接",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Building_CFE3",
-          "id": "VCFE3",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{}",
-            "postBodyType": "static"
-          }
-        }
-      },
-      "events": {},
-      "actions": {}
-    }
-  ],
-  "variables": {
-    "componentsView": {},
-    "publishersView": {},
-    "subscribersView": {}
-  },
-  "dataFilters": []
+    "dataFilters": []
 }

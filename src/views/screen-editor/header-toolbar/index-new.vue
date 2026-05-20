@@ -251,7 +251,7 @@
         </div>
       </div>
       <div class="datav-cavans-name">
-        <span>智慧楼宇</span>
+        <!-- <span>智慧楼宇</span> -->
       </div>
     </div>
   </div>
