@@ -9,36 +9,16 @@
  * @returns {any} 解析后的对象，如果失败返回null
  */
 export function calibrateJsonString(jsonStr) {
-  // 去除首尾空白
   let cleanedStr = jsonStr.trim();
 
-  console.log('=== calibrateJsonString 开始 ===');
-  console.log('原始字符串长度:', cleanedStr.length);
-  console.log('原始字符串开头:', cleanedStr.substring(0, 100) + '...');
-  console.log('原始字符串结尾:', cleanedStr.substring(Math.max(0, cleanedStr.length - 100)));
-
-  // 修复策略0: 处理Markdown代码块格式
-  // 移除开头的 ```json 或 ``` 标记
   cleanedStr = cleanedStr.replace(/^```(json)?\s*/i, '');
-  // 移除结尾的 ``` 标记
   cleanedStr = cleanedStr.replace(/\s*```$/, '');
-  
-  // 移除开头的省略号标记（如 "... json"）
   cleanedStr = cleanedStr.replace(/^\s*\.{3}\s*(json)?\s*/i, '');
-  // 移除结尾的省略号标记（如 "..."）
   cleanedStr = cleanedStr.replace(/\s*\.{3}\s*$/, '');
 
-  console.log('处理Markdown格式后长度:', cleanedStr.length);
-  console.log('处理后开头:', cleanedStr.substring(0, 100) + '...');
-  console.log('处理后结尾:', cleanedStr.substring(Math.max(0, cleanedStr.length - 100)));
-
-  // 尝试直接解析
   try {
-    const result = JSON.parse(cleanedStr);
-    console.log('直接解析成功');
-    return result;
+    return JSON.parse(cleanedStr);
   } catch (e) {
-    console.log('JSON解析失败，尝试修复...', e.message);
   }
 
   // 修复策略1: 找到有效的JSON起始位置
@@ -58,76 +38,48 @@ export function calibrateJsonString(jsonStr) {
   // 如果找到有效起始位置，截取从该位置开始的字符串
   if (startIndex !== -1 && startIndex > 0) {
     cleanedStr = cleanedStr.substring(startIndex);
-    console.log('截取后长度:', cleanedStr.length);
   }
 
   // 修复策略2: 不再使用extractJsonStructure，直接使用清理后的完整字符串
   // extractJsonStructure会被字符串中的大括号误导（如dataFilters的code字段）
   let fixedStr = cleanedStr;
 
-  // 修复策略3: 逐步修复各种问题
   try {
-    // 修复1: 处理缺少开头的大括号或方括号
     const firstChar = fixedStr.charAt(0);
     if (firstChar !== '{' && firstChar !== '[') {
       fixedStr = '{' + fixedStr;
     }
 
-    // 修复2: 处理缺少结尾的大括号或方括号
     const lastChar = fixedStr.charAt(fixedStr.length - 1);
     if (lastChar !== '}' && lastChar !== ']') {
       fixedStr = fixedStr + '}';
     }
 
-    // 修复3: 处理注释（JSON不支持注释）
     fixedStr = fixedStr
       .replace(/\/\/.*$/gm, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\n/gm, '');
 
-    // 修复4: 处理未闭合的字符串
     fixedStr = fixUnclosedStrings(fixedStr);
 
-    // 修复5: 添加缺失的引号（属性名）
     fixedStr = fixedStr
       .replace(/(['"])?([a-zA-Z_][a-zA-Z0-9_]*)(['"])?\s*:/g, '"$2":');
 
-    // 修复6: 修复属性名后缺少冒号的情况
-    // 例如: "screen"{ 应该是 "screen":{
     fixedStr = fixedStr
       .replace(/"([^"]+)"\s*\{/g, '"$1":{')
       .replace(/"([^"]+)"\s*\[/g, '"$1":[');
 
-    // 修复7: 修复属性值后缺少逗号的问题
     fixedStr = fixMissingCommas(fixedStr);
 
-    // 修复8: 移除多余的逗号
     fixedStr = fixedStr
       .replace(/,\s*}/g, '}')
       .replace(/,\s*]/g, ']')
       .replace(/,\s*,/g, ',');
 
-    // 修复9: 平衡大括号
     fixedStr = balanceBrackets(fixedStr);
-    console.log('正在修复JSON...',fixedStr);
-    // 尝试解析
-    const result = JSON.parse(fixedStr);
-    console.log('JSON修复成功');
-    return result;
+
+    return JSON.parse(fixedStr);
   } catch (e) {
-    console.error('JSON修复失败:', e);
-    console.log('修复后的字符串:', fixedStr.substring(0, 500) + '...');
-    
-    // 输出错误位置附近的内容
-    if (e.message && e.message.includes('position')) {
-      const match = e.message.match(/position (\d+)/);
-      if (match) {
-        const pos = parseInt(match[1]);
-        console.log('错误位置附近的内容:');
-        console.log(fixedStr.substring(Math.max(0, pos - 50), pos + 50));
-      }
-    }
-    
     return null;
   }
 }
@@ -380,7 +332,6 @@ class JSONRepairTool {
             
             return jsonString;
         } catch (error) {
-            console.error('JSON修复失败:', error);
             return jsonString;
         }
     }
@@ -629,30 +580,22 @@ class JSONRepairTool {
             JSON.parse(str);
             return str;
         } catch (error) {
-            console.warn('JSON解析失败，尝试修复:', error.message);
-            
-            // 根据错误信息进行针对性修复
             if (error.message.includes('Unexpected token')) {
-                // 处理意外的token
                 str = this.fixUnexpectedTokens(str);
             }
             
             if (error.message.includes('Unexpected end')) {
-                // 处理意外的结束
                 str = this.fixUnexpectedEnd(str);
             }
             
             if (error.message.includes('Unexpected number')) {
-                // 处理数字格式问题
                 str = this.fixNumberIssues(str);
             }
             
-            // 再次尝试解析
             try {
                 JSON.parse(str);
                 return str;
             } catch (e) {
-                console.error('最终修复失败，返回原始字符串');
                 return str;
             }
         }
@@ -783,7 +726,6 @@ class JSONRepairTool {
         
         for (const field of requiredRootFields) {
             if (!config.hasOwnProperty(field)) {
-                console.warn(`缺少根级字段: ${field}`);
                 config[field] = this.getDefaultRootField(field);
             }
         }
@@ -831,7 +773,6 @@ class JSONRepairTool {
      */
     repairComponent(component) {
         if (!component || !component.name) {
-            console.warn('无效的组件对象');
             return component;
         }
         
@@ -863,7 +804,6 @@ class JSONRepairTool {
         
         for (const field of requiredFields) {
             if (!component.hasOwnProperty(field)) {
-                console.warn(`组件 ${component.name} 缺少字段: ${field}`);
                 component[field] = this.getDefaultComponentField(field, component.name);
             }
         }
@@ -1160,7 +1100,6 @@ class JSONRepairTool {
         
         components.forEach(component => {
             if (component.name && !this.componentWhitelist.includes(component.name)) {
-                console.warn(`组件类型 ${component.name} 不在白名单中，可能需要更新白名单`);
             }
         });
     }
@@ -1177,9 +1116,7 @@ class JSONRepairTool {
         components.forEach(component => {
             if (component.id) {
                 if (ids.has(component.id)) {
-                    // ID重复，生成新的ID
                     component.id = `${component.name}_${this.generateRandomId()}`;
-                    console.warn(`组件ID重复，已生成新ID: ${component.id}`);
                 }
                 ids.add(component.id);
             }
@@ -1205,7 +1142,6 @@ class JSONRepairTool {
         // 修复组件的groupId引用
         components.forEach(component => {
             if (component.groupId && !validGroupIds.has(component.groupId)) {
-                console.warn(`组件 ${component.id} 的groupId引用了不存在的VGroup`);
                 component.groupId = null;
             }
         });
