@@ -1,4 +1,4 @@
-{
+﻿{
     "screen": {
         "id": 170,
         "name": "智慧水务监控大屏",
@@ -729,60 +729,6 @@
                 "shadow": {
                     "color": "#0099FF",
                     "radius": 10
-                }
-            },
-            "apis": {},
-            "apiData": {},
-            "events": {},
-            "actions": {},
-            "parentId": "Group_Bg_9XqR5mZn"
-        },
-        {
-            "id": "BgBox_2",
-            "name": "VBg3dMap",
-            "type": "com",
-            "alias": "地图背景",
-            "icon": "v-icon-map",
-            "img": "images/缩略图/3D地图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": false,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 600,
-                "y": 100,
-                "w": 720,
-                "h": 700,
-                "deg": 0,
-                "opacity": 0.2,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 162,
-            "handles": {},
-            "ichandles": {},
-            "config": {
-                "backgroundStyle": {
-                    "bgColor": "#003366"
-                },
-                "gradient": {
-                    "type": "radial",
-                    "x": 0.5,
-                    "y": 0.5,
-                    "x2": 0.5,
-                    "y2": 0.5,
-                    "r": 0.5,
-                    "colorStops": [
-                        { "offset": 0, "color": "#0066CC" },
-                        { "offset": 1, "color": "#003366" }
-                    ]
-                },
-                "shadow": {
-                    "color": "#0099FF",
-                    "radius": 15
                 }
             },
             "apis": {},

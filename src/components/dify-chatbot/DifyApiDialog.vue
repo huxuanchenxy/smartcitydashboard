@@ -81,6 +81,7 @@
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
         <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
         <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button>
+        <el-button type="danger" @click="calibrateJson">校准JSON</el-button>
       </span>
     </template>
   </el-dialog>
@@ -96,6 +97,8 @@ import { ThreedModule } from '@/store/modules/threed';
 import { ToolbarModule } from '@/store/modules/toolbar';
 import { saveScreen } from "@/api/screen";
 import * as payloadJson from './payloadpie.json';
+import comsTemplate from './comstemplate.json';
+import { calibrateJsonString, JSONRepairTool } from './jsonCalibration';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -545,6 +548,205 @@ export default defineComponent({
       }
     };
 
+    // 测试模式开关 - 设置为true时直接使用本地测试数据
+    const USE_TEST_DATA = true;
+
+    // 创建JSON修复工具实例
+    const jsonRepairTool = new JSONRepairTool();
+
+    // 校准JSON功能
+    const calibrateJson = async () => {
+      let jsonObj: any = null;
+
+      try {
+        if (USE_TEST_DATA) {
+          // 测试模式：使用fetch读取本地测试数据（支持非法JSON自动校准）
+          // 使用fetch而非import可以绕过编译时JSON校验
+          ElMessage.info('正在读取测试数据...');
+          try {
+            const response = await fetch('/src/components/dify-chatbot/test/testresponse.json');
+            const jsonStr = await response.text();
+            
+            // 尝试直接解析，如果失败则进行校准
+            try {
+              jsonObj = JSON.parse(jsonStr);
+            } catch (parseError) {
+              console.log('JSON解析失败，尝试校准...');
+              jsonObj = calibrateJsonString(jsonStr);
+              
+              if (!jsonObj) {
+                throw new Error('JSON校准失败: ' + parseError.message);
+              }
+            }
+          } catch (fetchError) {
+            console.error('读取测试数据失败:', fetchError);
+            throw new Error('无法读取测试数据: ' + fetchError.message);
+          }
+        } else {
+          // 正式模式：从AI回答中提取JSON
+          // 查找最后一条 AI 助手的消息
+          const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+          if (aiMessages.length === 0) {
+            ElMessage.warning('暂无 AI 回答');
+            return;
+          }
+
+          const lastAiMessage = aiMessages[aiMessages.length - 1];
+          const content = lastAiMessage.content;
+
+          // 1. 提取JSON字符串
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            ElMessage.warning('未找到JSON格式内容');
+            return;
+          }
+
+          let jsonStr = jsonMatch[0];
+
+          // 2. 校准JSON（修复常见的JSON格式问题）
+          jsonObj = calibrateJsonString(jsonStr);
+          
+          if (!jsonObj) {
+            ElMessage.error('JSON校准失败');
+            return;
+          }
+        }
+
+        // 3. 使用JSONRepairTool修复大屏配置结构
+        const refinedJson = jsonRepairTool.repairScreenConfig(jsonObj);
+
+        // 4. 根据模板修复组件配置
+        const template = comsTemplate as unknown as Record<string, any>;
+        if (refinedJson.coms && Array.isArray(refinedJson.coms)) {
+          refinedJson.coms = refinedJson.coms.map((component: any) => {
+            return refineComponentByTemplate(component, template);
+          });
+        }
+
+        // 5. 更新屏幕ID和名称
+        if(EditorModule.screen) {
+          if(EditorModule.screen.id) {
+            refinedJson.screen.id = EditorModule.screen.id;
+            if (refinedJson.coms && Array.isArray(refinedJson.coms)) {
+              refinedJson.coms.forEach(component => {
+                component.projectId = EditorModule.screen.id;
+              });
+            }
+          }
+          if(EditorModule.screen.name) {
+            refinedJson.screen.name = EditorModule.screen.name;
+          }
+        }
+
+        // 6. 保存校准后的JSON
+        // await saveScreenAI(refinedJson);
+        // ElMessage.success('JSON校准并保存成功');
+        console.log('校准后的JSON:', refinedJson);
+
+      } catch (error) {
+        console.error('校准JSON时发生错误:', error);
+        ElMessage.error('校准失败: ' + error.message);
+      }
+    };
+
+    // 根据模板修复单个组件
+    const refineComponentByTemplate = (component: any, template: Record<string, any>): any => {
+      const componentType = component.name || 'VMainTitle';
+      const templateComponent = template[componentType];
+      
+      if (!templateComponent) {
+        console.warn(`组件类型 ${componentType} 不在模板中，使用默认配置`);
+        return component;
+      }
+
+      // 创建新组件对象，以原始组件为基础
+      const newComponent: any = { ...component };
+
+      // 合并基础属性，优先使用原始值
+      newComponent.alias = component.alias !== undefined ? component.alias : templateComponent.alias;
+      newComponent.icon = component.icon !== undefined ? component.icon : templateComponent.icon;
+      newComponent.img = component.img !== undefined ? component.img : templateComponent.img;
+      newComponent.locked = component.locked !== undefined ? component.locked : templateComponent.locked;
+      newComponent.hided = component.hided !== undefined ? component.hided : templateComponent.hided;
+      newComponent.eventhub = component.eventhub !== undefined ? component.eventhub : templateComponent.eventhub;
+      newComponent.handles = component.handles || templateComponent.handles || {};
+      newComponent.ichandles = component.ichandles || templateComponent.ichandles || {};
+      newComponent.apis = templateComponent.apis || {};
+      newComponent.events = templateComponent.events || {};
+      newComponent.actions = templateComponent.actions || {};
+
+      // 保留特殊字段
+      if (component.subComs) {
+        newComponent.subComs = component.subComs;
+      }
+      if (component.parentId) {
+        newComponent.parentId = component.parentId;
+      }
+
+      // 合并attr属性
+      newComponent.attr = mergeAttr(component.attr, templateComponent.attr);
+
+      // 合并config配置
+      newComponent.config = mergeConfig(component.config || {}, templateComponent.config || {});
+
+      // 处理apiData - 保留原有结构或使用默认值
+      if (component.apiData) {
+        newComponent.apiData = { ...component.apiData };
+        if (newComponent.apiData.source) {
+          newComponent.apiData.source.comId = newComponent.id;
+        }
+      } else if (templateComponent.apiData) {
+        newComponent.apiData = { ...templateComponent.apiData };
+        if (newComponent.apiData.source) {
+          newComponent.apiData.source.comId = newComponent.id;
+        }
+      }
+
+      return newComponent;
+    };
+
+    // 合并attr属性
+    const mergeAttr = (source: any, template: any): any => {
+      return {
+        x: source?.x !== undefined ? source.x : template?.x || 0,
+        y: source?.y !== undefined ? source.y : template?.y || 0,
+        w: source?.w !== undefined ? source.w : template?.w || 300,
+        h: source?.h !== undefined ? source.h : template?.h || 200,
+        deg: source?.deg !== undefined ? source.deg : template?.deg || 0,
+        opacity: source?.opacity !== undefined ? source.opacity : template?.opacity || 1,
+        filpV: source?.filpV !== undefined ? source.filpV : template?.filpV || false,
+        filpH: source?.filpH !== undefined ? source.filpH : template?.filpH || false
+      };
+    };
+
+    // 合并config配置（递归）
+    const mergeConfig = (source: any, template: any): any => {
+      const result: any = {};
+
+      // 遍历模板的所有键
+      for (const key of Object.keys(template)) {
+        if (typeof template[key] === 'object' && template[key] !== null && !Array.isArray(template[key])) {
+          // 如果源对象也有这个键且是对象，递归合并
+          result[key] = mergeConfig(source[key] || {}, template[key]);
+        } else if (Array.isArray(template[key])) {
+          // 如果是数组，使用源数组或模板数组
+          result[key] = Array.isArray(source[key]) ? source[key] : template[key];
+        } else {
+          // 基本类型，优先使用源值，否则使用模板值
+          result[key] = source[key] !== undefined ? source[key] : template[key];
+        }
+      }
+
+      // 添加源对象中存在但模板中不存在的字段
+      for (const key of Object.keys(source)) {
+        if (!(key in result)) {
+          result[key] = source[key];
+        }
+      }
+
+      return result;
+    };
+
     // 临时保存payload数据
     const saveTempPayload = async () => {
       try {
@@ -588,6 +790,7 @@ export default defineComponent({
       outputJsonToConsole,
       saveTempPayload,
       fetchAndSaveScreenAI,
+      calibrateJson,
       handleEnter,
       formatContent,
       formatTime
