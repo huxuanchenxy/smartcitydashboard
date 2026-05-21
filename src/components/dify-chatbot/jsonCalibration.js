@@ -12,12 +12,10 @@ export function calibrateJsonString(jsonStr) {
   // 去除首尾空白
   let cleanedStr = jsonStr.trim();
 
-  // 尝试直接解析
-  try {
-    return JSON.parse(cleanedStr);
-  } catch (e) {
-    console.log('JSON解析失败，尝试修复...');
-  }
+  console.log('=== calibrateJsonString 开始 ===');
+  console.log('原始字符串长度:', cleanedStr.length);
+  console.log('原始字符串开头:', cleanedStr.substring(0, 100) + '...');
+  console.log('原始字符串结尾:', cleanedStr.substring(Math.max(0, cleanedStr.length - 100)));
 
   // 修复策略0: 处理Markdown代码块格式
   // 移除开头的 ```json 或 ``` 标记
@@ -29,6 +27,19 @@ export function calibrateJsonString(jsonStr) {
   cleanedStr = cleanedStr.replace(/^\s*\.{3}\s*(json)?\s*/i, '');
   // 移除结尾的省略号标记（如 "..."）
   cleanedStr = cleanedStr.replace(/\s*\.{3}\s*$/, '');
+
+  console.log('处理Markdown格式后长度:', cleanedStr.length);
+  console.log('处理后开头:', cleanedStr.substring(0, 100) + '...');
+  console.log('处理后结尾:', cleanedStr.substring(Math.max(0, cleanedStr.length - 100)));
+
+  // 尝试直接解析
+  try {
+    const result = JSON.parse(cleanedStr);
+    console.log('直接解析成功');
+    return result;
+  } catch (e) {
+    console.log('JSON解析失败，尝试修复...', e.message);
+  }
 
   // 修复策略1: 找到有效的JSON起始位置
   const firstBraceIndex = cleanedStr.indexOf('{');
@@ -47,13 +58,14 @@ export function calibrateJsonString(jsonStr) {
   // 如果找到有效起始位置，截取从该位置开始的字符串
   if (startIndex !== -1 && startIndex > 0) {
     cleanedStr = cleanedStr.substring(startIndex);
+    console.log('截取后长度:', cleanedStr.length);
   }
 
   // 修复策略2: 不再使用extractJsonStructure，直接使用清理后的完整字符串
   // extractJsonStructure会被字符串中的大括号误导（如dataFilters的code字段）
   let fixedStr = cleanedStr;
 
-  // 修复策略2: 逐步修复各种问题
+  // 修复策略3: 逐步修复各种问题
   try {
     // 修复1: 处理缺少开头的大括号或方括号
     const firstChar = fixedStr.charAt(0);
@@ -97,7 +109,7 @@ export function calibrateJsonString(jsonStr) {
 
     // 修复9: 平衡大括号
     fixedStr = balanceBrackets(fixedStr);
-
+    console.log('正在修复JSON...',fixedStr);
     // 尝试解析
     const result = JSON.parse(fixedStr);
     console.log('JSON修复成功');
@@ -105,6 +117,17 @@ export function calibrateJsonString(jsonStr) {
   } catch (e) {
     console.error('JSON修复失败:', e);
     console.log('修复后的字符串:', fixedStr.substring(0, 500) + '...');
+    
+    // 输出错误位置附近的内容
+    if (e.message && e.message.includes('position')) {
+      const match = e.message.match(/position (\d+)/);
+      if (match) {
+        const pos = parseInt(match[1]);
+        console.log('错误位置附近的内容:');
+        console.log(fixedStr.substring(Math.max(0, pos - 50), pos + 50));
+      }
+    }
+    
     return null;
   }
 }
@@ -210,23 +233,29 @@ export function fixUnclosedStrings(str) {
  * @returns {string} 修复后的字符串
  */
 export function fixMissingCommas(str) {
-  // 修复字符串值后面缺少逗号的情况
+  // 修复字符串值后面缺少逗号的情况（包含换行和空格）
   str = str.replace(/("[^"\\]*(?:\\.[^"\\]*)*")\s*\n?\s*("[^"]+")\s*:/g, '$1,$2:');
+  str = str.replace(/("[^"\\]*(?:\\.[^"\\]*)*")\s*\n?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1,"$2":');
   
   // 修复数字值后面缺少逗号的情况
   str = str.replace(/(\d+)\s*\n?\s*("[^"]+")\s*:/g, '$1,$2:');
+  str = str.replace(/(\d+)\s*\n?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1,"$2":');
   
   // 修复布尔值后面缺少逗号的情况
   str = str.replace(/(true|false)\s*\n?\s*("[^"]+")\s*:/g, '$1,$2:');
+  str = str.replace(/(true|false)\s*\n?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1,"$2":');
   
   // 修复null后面缺少逗号的情况
   str = str.replace(/(null)\s*\n?\s*("[^"]+")\s*:/g, '$1,$2:');
+  str = str.replace(/(null)\s*\n?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1,"$2":');
   
   // 修复对象结束后缺少逗号的情况
   str = str.replace(/(})\s*\n?\s*("[^"]+")\s*:/g, '$1,$2:');
+  str = str.replace(/(})\s*\n?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1,"$2":');
   
   // 修复数组结束后缺少逗号的情况
   str = str.replace(/(])\s*\n?\s*("[^"]+")\s*:/g, '$1,$2:');
+  str = str.replace(/(])\s*\n?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1,"$2":');
 
   return str;
 }
