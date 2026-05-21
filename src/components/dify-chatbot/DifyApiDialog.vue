@@ -639,8 +639,8 @@ export default defineComponent({
         }
 
         // 6. 保存校准后的JSON
-        // await saveScreenAI(refinedJson);
-        // ElMessage.success('JSON校准并保存成功');
+        await saveScreenAI(refinedJson);
+        ElMessage.success('JSON校准并保存成功');
         console.log('校准后的JSON:', refinedJson);
 
       } catch (error) {

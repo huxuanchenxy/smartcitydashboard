@@ -3,6 +3,9 @@
  * 用于修复非法的JSON字符串和验证大屏配置
  */
 
+// 导入组件模板
+import comsTemplate from './comstemplate.json';
+
 /**
  * 校准JSON字符串（修复非法JSON）
  * @param {string} jsonStr - 需要校准的JSON字符串
@@ -279,6 +282,7 @@ class JSONRepairTool {
             'VDynamicBar', 'VDynamicLine', 'VBasicHorizontal', 'VArcBar',
             'VDashboardPie', 'VGd3dMap', 'VGroup'
         ];
+        this.comsTemplate = comsTemplate;
     }
 
     /**
@@ -769,31 +773,117 @@ class JSONRepairTool {
     }
 
     /**
-     * 修复单个组件
+     * 修复单个组件 - 严格按照模板校对
      */
     repairComponent(component) {
         if (!component || !component.name) {
             return component;
         }
         
-        const repairedComponent = { ...component };
+        // 获取组件类型对应的模板
+        const template = this.comsTemplate[component.name];
         
-        // 1. 确保必需字段存在
-        this.ensureRequiredFields(repairedComponent);
+        if (template) {
+            // 严格按照模板结构重构组件
+            return this.refineComponentByTemplate(component, template);
+        } else {
+            // 如果模板中没有该组件类型，使用原有逻辑
+            const repairedComponent = { ...component };
+            
+            this.ensureRequiredFields(repairedComponent);
+            this.repairComponentId(repairedComponent);
+            this.repairAttrFields(repairedComponent);
+            this.repairComponentConfig(repairedComponent);
+            this.repairComponentApiData(repairedComponent);
+            
+            return repairedComponent;
+        }
+    }
+    
+    /**
+     * 根据模板严格重构组件结构
+     * @param {Object} component - 原始组件
+     * @param {Object} template - 组件模板
+     * @returns {Object} 重构后的组件
+     */
+    refineComponentByTemplate(component, template) {
+        // 创建新的组件对象，以模板为基础
+        const refinedComponent = {};
         
-        // 2. 修复ID格式
-        this.repairComponentId(repairedComponent);
+        // 遍历模板中的所有字段
+        for (const key of Object.keys(template)) {
+            if (key === 'attr' && typeof template[key] === 'object') {
+                // 处理attr字段 - 合并原始值和模板结构
+                refinedComponent[key] = this.mergeObject(template[key], component[key]);
+            } else if (key === 'config' && typeof template[key] === 'object') {
+                // 处理config字段 - 合并原始值和模板结构
+                refinedComponent[key] = this.mergeObject(template[key], component[key]);
+            } else if (key === 'handles' && typeof template[key] === 'object') {
+                // 处理handles字段 - 使用模板结构
+                refinedComponent[key] = { ...template[key] };
+            } else if (key === 'ichandles' && typeof template[key] === 'object') {
+                // 处理ichandles字段 - 使用模板结构
+                refinedComponent[key] = { ...template[key] };
+            } else if (key === 'id') {
+                // 保留原始ID，如果不存在则生成新ID
+                refinedComponent[key] = component[key] || `${component.name}_${this.generateRandomId()}`;
+            } else if (key === 'name') {
+                // 保留原始name
+                refinedComponent[key] = component[key] || template[key];
+            } else if (key === 'type') {
+                // 保留原始type，如果不存在则根据组件类型设置
+                refinedComponent[key] = component[key] || (component.name === 'VGroup' ? 'layer' : 'com');
+            } else {
+                // 其他字段：保留原始值，如果不存在则使用模板值
+                refinedComponent[key] = component[key] !== undefined && component[key] !== null 
+                    ? component[key] 
+                    : template[key];
+            }
+        }
         
-        // 3. 修复attr字段
-        this.repairAttrFields(repairedComponent);
+        // 处理特殊字段（模板中可能没有，但需要保留）
+        if (component.subComs) {
+            refinedComponent.subComs = component.subComs;
+        }
+        if (component.parentId !== undefined) {
+            refinedComponent.parentId = component.parentId;
+        }
+        if (component.groupId !== undefined) {
+            refinedComponent.groupId = component.groupId;
+        }
+        if (component.apiData) {
+            refinedComponent.apiData = component.apiData;
+        }
         
-        // 4. 根据组件类型修复config结构
-        this.repairComponentConfig(repairedComponent);
+        return refinedComponent;
+    }
+    
+    /**
+     * 合并两个对象，保留原始值，使用模板结构
+     * @param {Object} template - 模板对象
+     * @param {Object} original - 原始对象
+     * @returns {Object} 合并后的对象
+     */
+    mergeObject(template, original) {
+        if (!original || typeof original !== 'object') {
+            return { ...template };
+        }
         
-        // 5. 修复apiData结构
-        this.repairComponentApiData(repairedComponent);
+        const merged = {};
         
-        return repairedComponent;
+        for (const key of Object.keys(template)) {
+            if (typeof template[key] === 'object' && !Array.isArray(template[key])) {
+                // 递归合并嵌套对象
+                merged[key] = this.mergeObject(template[key], original[key]);
+            } else {
+                // 保留原始值，如果不存在则使用模板值
+                merged[key] = original[key] !== undefined && original[key] !== null 
+                    ? original[key] 
+                    : template[key];
+            }
+        }
+        
+        return merged;
     }
 
     /**

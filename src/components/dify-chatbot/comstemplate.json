@@ -1,5 +1,8 @@
 {
     "VMainTitle":  {
+            "id": "MainTitle_3hAAAll-t",
+            "name": "VMainTitle",
+            "type": "com",
             "alias": "通用标题",
             "icon": "v-icon-title",
             "img": "images/缩略图/通用标题.png",
@@ -677,6 +680,9 @@
             "actions": {}
     },
     "VBasicLine": {
+            "id": "BasicLine_piSIKK1bz",
+            "name": "VBasicLine",
+            "type": "com",
             "alias": "基本折线图",
             "icon": "v-icon-chart-line",
             "img": "images/缩略图/基本折线图.png",
@@ -1199,6 +1205,9 @@
             "actions": {}
     },
     "VBasicArea": {
+        "id": "BasicArea_piSIKK1bz",
+        "name": "VBasicArea",
+        "type": "com",
         "alias": "区域图",
         "icon": "v-icon-chart-line",
         "img": "images/缩略图/区域图.png",
@@ -1776,6 +1785,9 @@
         "actions": {}
     },
     "VBasicRadar": {
+            "id": "BasicRadar_piSIKK1bz",
+            "name": "VBasicRadar",
+            "type": "com",
             "alias": "雷达图",
             "icon": "v-icon-chart-radar",
             "img": "images/缩略图/雷达图.png",
@@ -1935,6 +1947,9 @@
             "actions": {}
     },
     "VButton": {
+            "id": "Button_piSIKK1bz",
+            "name": "VButton",
+            "type": "com",
             "alias": "按钮",
             "icon": "v-icon-interact",
             "img": "images/缩略图/按钮.png",
@@ -2059,6 +2074,9 @@
             "actions": {}
     },
     "VProgress": {
+            "id": "Progress_piSIKK1bz",
+            "name": "VProgress",
+            "type": "com",
             "alias": "进度条",
             "icon": "v-icon-interact",
             "img": "images/大图/进度条.png",
@@ -2452,6 +2470,9 @@
             "actions": {}
     },
     "VTimer":{
+            "id": "Timer_7hAAAll-t",
+            "name": "VTimer",
+            "type": "com",
             "alias": "时间器",
             "icon": "v-icon-title",
             "img": "images/缩略图/时间器.png",
@@ -2522,6 +2543,9 @@
             "actions": {}
     },
     "VMainImg":{
+            "id": "MainImg_8hAAAll-t",
+            "name": "VMainImg",
+            "type": "com",
             "alias": "单张图片",
             "icon": "v-icon-media",
             "img": "images/缩略图/单张图片.png",
@@ -2632,6 +2656,9 @@
             "actions": {}
     },
     "VWaterLevel":{
+            "id": "WaterLevel_9hAAAll-t",
+            "name": "VWaterLevel",
+            "type": "com",
             "alias": "水位图",
             "icon": "v-icon-other",
             "img": "images/缩略图/水位图.png",
@@ -2720,6 +2747,9 @@
             "actions": {}
     },
     "VDynamicBar":{
+            "id": "DynamicBar_9hAAAll-t",
+            "name": "VDynamicBar",
+            "type": "com",
             "alias": "动态分组柱状图",
             "icon": "v-icon-chart-bar",
             "img": "images/缩略图/垂直分组柱状图.png",
@@ -3236,6 +3266,9 @@
             "actions": {}
     },
     "VDynamicLine":{
+            "id": "DynamicLine_9hAAAll-t",
+            "name": "VDynamicLine",
+            "type": "com",
             "alias": "动态折线图",
             "icon": "v-icon-chart-line",
             "img": "images/缩略图/基本折线图.png",
@@ -3765,6 +3798,9 @@
             "actions": {}
     },
     "VBasicHorizontal":{
+            "id": "BasicHorizontal_9hAAAll-t",
+            "name": "VBasicHorizontal",
+            "type": "com",
             "alias": "基本条形图",
             "icon": "v-icon-chart-bar",
             "img": "images/缩略图/基本条形图.png",
@@ -4079,6 +4115,9 @@
             "actions": {}
     },
     "VArcBar":{
+            "id": "VArcBar_9hAAAll-t",
+            "name": "VArcBar",
+            "type": "com",
             "alias": "玉环图",
             "icon": "v-icon-chart-bar",
             "img": "images/缩略图/玉环图.png",
@@ -4286,6 +4325,9 @@
             "actions": {}
     },
     "VDashboardPie":{
+            "id": "DashboardPie_9hAAAll-t",
+            "name": "VDashboardPie",
+            "type": "com",
             "alias": "仪表饼图",
             "icon": "v-icon-chart-pie",
             "img": "images/缩略图/仪表饼图.png",
@@ -4462,6 +4504,9 @@
             "actions": {}
     },
     "VGd3dMap":{
+            "id": "Gd3dMap_9hAAAll-t",
+            "name": "VGd3dMap",
+            "type": "com",
             "alias": "高德3D地图",
             "icon": "v-icon-map",
             "img": "images/大图/高德地图.png",
