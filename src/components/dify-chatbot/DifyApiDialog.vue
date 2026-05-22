@@ -253,72 +253,74 @@ export default defineComponent({
           throw new Error('无法读取响应流');
         }
 
-        // 收集所有流式数据
-        let allData = '';
+        console.log('开始流式响应');
+
+        let fullContent = '';
+        let newConversationId = '';
+        let pendingData = ''; // 用于处理跨chunk的数据
+
+        // 流式处理每个数据块
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          allData += decoder.decode(value, { stream: true });
-        }
-        
-        console.log('收到完整流式响应，长度:', allData.length, 'chars');
-        
-        let fullContent = '';
-        let newConversationId = '';
 
-        // 处理所有数据
-        const lines = allData.split('\n');
-        for (const line of lines) {
-          if (line.trim() === '' || !line.startsWith('data: ')) continue;
-          
-          try {
-            const data = JSON.parse(line.slice(6));
-            
-            // 处理 workflow_finished 事件
-            if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
-              console.log('找到 workflow_finished 事件');
-              fullContent = data.data.outputs.answer;
-              const lastMsg = messages.value[messages.value.length - 1];
-              lastMsg.isThinking = false;
-              lastMsg.content = fullContent;
-              await scrollToBottom();
-            } else if (data.event === 'message' && data.answer) {
-              // 处理普通消息
-              fullContent += data.answer;
-              const lastMsg = messages.value[messages.value.length - 1];
-              lastMsg.isThinking = false;
-              lastMsg.content = fullContent;
-              await scrollToBottom();
-            }
-            
-            if (data.conversation_id) {
-              newConversationId = data.conversation_id;
-            }
-          } catch (e) {
-            console.warn('解析单行数据失败:', e);
-          }
-        }
-        
-        // 如果没有找到 workflow_finished 事件，尝试从原始数据中提取 answer
-        if (!fullContent && allData.includes('workflow_finished')) {
-          console.log('尝试从原始数据中提取 answer');
-          const answerMatch = allData.match(/"answer":"([^"]+)"/);
-          if (answerMatch && answerMatch[1]) {
-            let unescapedAnswer = answerMatch[1]
-              .replace(/\\\\/g, '\\')
-              .replace(/\\"/g, '"');
+          const chunk = pendingData + decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          // 保留最后一行（可能是不完整的）
+          pendingData = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+
             try {
-              const answerData = JSON.parse(unescapedAnswer);
-              if (answerData.screen) {
-                fullContent = unescapedAnswer;
+              const data = JSON.parse(line.slice(6));
+
+              // 处理普通消息 - 实时更新
+              if (data.event === 'message' && data.answer) {
+                fullContent += data.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = fullContent;
+                  await scrollToBottom();
+                }
+              }
+
+              // 处理 workflow_finished 事件 - 最终完成
+              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+                console.log('找到 workflow_finished 事件');
+                fullContent = data.data.outputs.answer;
                 const lastMsg = messages.value[messages.value.length - 1];
                 lastMsg.isThinking = false;
                 lastMsg.content = fullContent;
                 await scrollToBottom();
               }
+
+              if (data.conversation_id) {
+                newConversationId = data.conversation_id;
+              }
             } catch (e) {
-              console.warn('提取 answer 失败:', e);
+              console.warn('解析单行数据失败:', e);
             }
+          }
+        }
+
+        // 处理最后可能残留的数据
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+            if (data.event === 'message' && data.answer) {
+              fullContent += data.answer;
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+            }
+          } catch (e) {
+            console.warn('解析最后残留数据失败:', e);
           }
         }
 
