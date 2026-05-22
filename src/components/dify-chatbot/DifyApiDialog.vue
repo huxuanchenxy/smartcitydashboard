@@ -80,8 +80,9 @@
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
         <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
-        <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button>
+        <!-- <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button> -->
         <el-button type="danger" @click="calibrateJson">校准JSON</el-button>
+        <el-button type="primary" @click="copyLastMessageContent">复制回答内容</el-button>
       </span>
     </template>
   </el-dialog>
@@ -753,6 +754,41 @@ export default defineComponent({
       return result;
     };
 
+    // 复制最后一条AI回答内容
+    const copyLastMessageContent = async () => {
+      // 查找最后一条 AI 助手的消息
+      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      if (aiMessages.length === 0) {
+        ElMessage.warning('暂无 AI 回答内容可复制');
+        return;
+      }
+
+      const lastAiMessage = aiMessages[aiMessages.length - 1];
+      const content = lastAiMessage.content;
+
+      try {
+        // 使用 Clipboard API 复制内容
+        await navigator.clipboard.writeText(content);
+        ElMessage.success('内容已复制到剪贴板');
+      } catch (error) {
+        console.error('复制失败:', error);
+        // 降级方案：创建临时文本区域
+        const textarea = document.createElement('textarea');
+        textarea.value = content;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          ElMessage.success('内容已复制到剪贴板');
+        } catch (e) {
+          ElMessage.error('复制失败，请手动复制');
+        }
+        document.body.removeChild(textarea);
+      }
+    };
+
     // 临时保存payload数据
     const saveTempPayload = async () => {
       try {
@@ -797,6 +833,7 @@ export default defineComponent({
       saveTempPayload,
       fetchAndSaveScreenAI,
       calibrateJson,
+      copyLastMessageContent,
       handleEnter,
       formatContent,
       formatTime
