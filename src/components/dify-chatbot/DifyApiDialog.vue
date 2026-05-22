@@ -79,6 +79,7 @@
         <el-button @click="handleClose">关闭</el-button>
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
+        <el-button type="success" @click="saveRawJson">原始保存</el-button>
         <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
         <!-- <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button> -->
         <el-button type="danger" @click="calibrateJson">校准JSON</el-button>
@@ -820,6 +821,62 @@ export default defineComponent({
       }
     };
 
+    // 原始保存 - 只调用calibrateJsonString校准JSON格式，不进行后续组件校对
+    const saveRawJson = async () => {
+      try {
+        // 查找最后一条 AI 助手的消息
+        const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+        if (aiMessages.length === 0) {
+          ElMessage.warning('暂无 AI 回答');
+          return;
+        }
+
+        const lastAiMessage = aiMessages[aiMessages.length - 1];
+        const content = lastAiMessage.content;
+
+        // 1. 提取JSON字符串
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          ElMessage.warning('未找到JSON格式内容');
+          return;
+        }
+
+        let jsonStr = jsonMatch[0];
+
+        // 2. 只调用calibrateJsonString校准JSON格式（处理markdown等格式问题）
+        const jsonObj = calibrateJsonString(jsonStr);
+        
+        if (!jsonObj) {
+          ElMessage.error('JSON校准失败');
+          return;
+        }
+
+        // 3. 更新屏幕ID和名称
+        if(EditorModule.screen) {
+          if(EditorModule.screen.id) {
+            jsonObj.screen.id = EditorModule.screen.id;
+            if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
+              jsonObj.coms.forEach(component => {
+                component.projectId = EditorModule.screen.id;
+              });
+            }
+          }
+          if(EditorModule.screen.name) {
+            jsonObj.screen.name = EditorModule.screen.name;
+          }
+        }
+
+        // 4. 保存校准后的JSON（不进行后续组件修复和模板校对）
+        await saveScreenAI(jsonObj);
+        ElMessage.success('原始保存成功');
+        console.log('原始保存的JSON:', jsonObj);
+
+      } catch (error) {
+        console.error('原始保存时发生错误:', error);
+        ElMessage.error('保存失败: ' + error.message);
+      }
+    };
+
     return {
       dialogVisible,
       userQuery,
@@ -834,6 +891,7 @@ export default defineComponent({
       fetchAndSaveScreenAI,
       calibrateJson,
       copyLastMessageContent,
+      saveRawJson,
       handleEnter,
       formatContent,
       formatTime
