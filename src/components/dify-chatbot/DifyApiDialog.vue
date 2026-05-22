@@ -529,8 +529,7 @@ export default defineComponent({
         abortController.value.abort();
       }
       dialogVisible.value = false;
-      messages.value = [];
-      conversationId.value = '';
+      // 保留消息和会话ID，不移除
       emit('close');
       
       // 关闭弹窗后重新加载页面数据
