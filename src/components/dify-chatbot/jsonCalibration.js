@@ -819,11 +819,17 @@ class JSONRepairTool {
                 // 处理config字段 - 合并原始值和模板结构
                 refinedComponent[key] = this.mergeObject(template[key], component[key]);
             } else if (key === 'handles' && typeof template[key] === 'object') {
-                // 处理handles字段 - 使用模板结构
+                // 处理handles字段 - 严格按照模板结构
                 refinedComponent[key] = { ...template[key] };
             } else if (key === 'ichandles' && typeof template[key] === 'object') {
-                // 处理ichandles字段 - 使用模板结构
+                // 处理ichandles字段 - 严格按照模板结构
                 refinedComponent[key] = { ...template[key] };
+            } else if (key === 'apis' && typeof template[key] === 'object') {
+                // 处理apis字段 - 严格按照模板结构
+                refinedComponent[key] = this.mergeObject(template[key], component[key]);
+            } else if (key === 'apiData' && typeof template[key] === 'object') {
+                // 处理apiData字段 - 合并原始数据和模板结构
+                refinedComponent[key] = this.mergeApiData(template[key], component[key]);
             } else if (key === 'id') {
                 // 保留原始ID，如果不存在则生成新ID
                 refinedComponent[key] = component[key] || `${component.name}_${this.generateRandomId()}`;
@@ -851,11 +857,73 @@ class JSONRepairTool {
         if (component.groupId !== undefined) {
             refinedComponent.groupId = component.groupId;
         }
-        if (component.apiData) {
-            refinedComponent.apiData = component.apiData;
-        }
         
         return refinedComponent;
+    }
+    
+    /**
+     * 合并apiData字段 - 保留原始数据，使用模板结构
+     * @param {Object} templateApiData - 模板apiData
+     * @param {Object} originalApiData - 原始apiData
+     * @returns {Object} 合并后的apiData
+     */
+    mergeApiData(templateApiData, originalApiData) {
+        if (!originalApiData || typeof originalApiData !== 'object') {
+            return { ...templateApiData };
+        }
+        
+        const merged = {};
+        
+        for (const key of Object.keys(templateApiData)) {
+            if (typeof templateApiData[key] === 'object' && !Array.isArray(templateApiData[key])) {
+                // 对于source等嵌套对象，使用模板结构但保留原始数据
+                if (key === 'source') {
+                    merged[key] = this.mergeApiDataSource(templateApiData[key], originalApiData[key]);
+                } else {
+                    merged[key] = this.mergeObject(templateApiData[key], originalApiData[key]);
+                }
+            } else {
+                merged[key] = originalApiData[key] !== undefined && originalApiData[key] !== null 
+                    ? originalApiData[key] 
+                    : templateApiData[key];
+            }
+        }
+        
+        return merged;
+    }
+    
+    /**
+     * 合并apiData.source字段 - 保留原始数据配置
+     * @param {Object} templateSource - 模板source
+     * @param {Object} originalSource - 原始source
+     * @returns {Object} 合并后的source
+     */
+    mergeApiDataSource(templateSource, originalSource) {
+        if (!originalSource || typeof originalSource !== 'object') {
+            return { ...templateSource };
+        }
+        
+        const merged = { ...templateSource };
+        
+        // 保留原始的关键字段
+        if (originalSource.comId) {
+            merged.comId = originalSource.comId;
+        }
+        if (originalSource.id) {
+            merged.id = originalSource.id;
+        }
+        if (originalSource.type) {
+            merged.type = originalSource.type;
+        }
+        if (originalSource.pageFilters) {
+            merged.pageFilters = originalSource.pageFilters;
+        }
+        if (originalSource.config) {
+            // 保留原始的数据配置
+            merged.config = this.mergeObject(templateSource.config || {}, originalSource.config);
+        }
+        
+        return merged;
     }
     
     /**
@@ -872,7 +940,26 @@ class JSONRepairTool {
         const merged = {};
         
         for (const key of Object.keys(template)) {
-            if (typeof template[key] === 'object' && !Array.isArray(template[key])) {
+            if (Array.isArray(template[key])) {
+                // 处理数组类型
+                if (Array.isArray(original[key]) && original[key].length > 0) {
+                    // 如果原始数组有元素，保留原始数组，但确保每个元素都有必需字段
+                    merged[key] = original[key].map((item, index) => {
+                        // 跳过 null 或 undefined 元素
+                        if (item === null || item === undefined) {
+                            return null;
+                        }
+                        // 如果元素是对象，使用模板的第一个元素作为基础结构
+                        if (typeof item === 'object' && template[key][0]) {
+                            return this.mergeObject(template[key][0], item);
+                        }
+                        return item;
+                    }).filter(item => item !== null); // 过滤掉 null 元素
+                } else {
+                    // 如果原始数组为空或不存在，使用模板数组
+                    merged[key] = [...template[key]];
+                }
+            } else if (typeof template[key] === 'object' && template[key] !== null) {
                 // 递归合并嵌套对象
                 merged[key] = this.mergeObject(template[key], original[key]);
             } else {
