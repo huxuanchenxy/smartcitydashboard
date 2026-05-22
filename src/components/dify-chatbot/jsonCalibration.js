@@ -1394,9 +1394,8 @@ class JSONRepairTool {
                 if (typeof dataString === 'string') {
                     comp.apiData.source.config.data = this.ensureEscapedJSONString(dataString);
                 } else if (typeof dataString === 'object') {
-                    // 如果是对象，转换为JSON字符串
-                    comp.apiData.source.config.data = JSON.stringify(dataString)
-                        .replace(/"/g, '\\"');
+                    // 如果是对象，转换为JSON字符串（JSON.stringify已正确处理转义）
+                    comp.apiData.source.config.data = JSON.stringify(dataString);
                 }
             }
         });
@@ -1407,10 +1406,10 @@ class JSONRepairTool {
      */
     ensureEscapedJSONString(str) {
         try {
-            // 尝试解析，如果成功说明是有效的JSON
+            // 尝试解析，如果成功说明已经是有效的JSON字符串，不需要额外转义
             JSON.parse(str);
-            // 确保双引号被正确转义
-            return str.replace(/\\(["\\])/g, '$1').replace(/"/g, '\\"');
+            // 如果已经是有效的JSON，直接返回，不要再次转义
+            return str;
         } catch (e) {
             // 解析失败，返回原始字符串
             return str;

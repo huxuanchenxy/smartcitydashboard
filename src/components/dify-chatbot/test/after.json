@@ -1,0 +1,619 @@
+﻿{
+    "screen": {
+        "id": 278,
+        "name": "test56",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 1
+    },
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0)",
+        "grid": 1,
+        "screenshot": "",
+        "zoomMode": 0,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
+        },
+        "tokenSettings": []
+    },
+    "coms": [
+        {
+            "id": "MainTitle_VMAIN_001",
+            "name": "VMainTitle",
+            "type": "com",
+            "alias": "主标题",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/通用标题.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": true,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 760,
+                "y": 50,
+                "w": 400,
+                "h": 80,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 278,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "标题内容",
+                            "type": "string",
+                            "path": "config.title"
+                        },
+                        {
+                            "name": "字体颜色",
+                            "type": "color",
+                            "path": "config.textStyle.color"
+                        },
+                        {
+                            "name": "背景颜色",
+                            "type": "color",
+                            "path": "config.backgroundStyle.bgColor"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "title": "智慧水务监测平台",
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 36,
+                    "color": "#00F0FF",
+                    "fontWeight": "bold"
+                },
+                "textAlign": "center",
+                "writingMode": "horizontal-tb",
+                "letterSpacing": 2,
+                "backgroundStyle": {
+                    "show": false,
+                    "bgColor": "#008bff",
+                    "borderRadius": 15,
+                    "borderColor": "#fff",
+                    "borderStyle": "solid",
+                    "borderWidth": 1
+                },
+                "ellipsis": false,
+                "urlConfig": {
+                    "url": "",
+                    "isBlank": false
+                },
+                "animation": {
+                    "enable": true,
+                    "name": "Updown",
+                    "duration": 2000,
+                    "timing": "linear",
+                    "delay": 0,
+                    "iteration": "infinite",
+                    "direction": "alternate"
+                },
+                "cursor": "default"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "title": {
+                            "type": "string",
+                            "map": "",
+                            "description": "标题值",
+                            "optional": true
+                        },
+                        "url": {
+                            "type": "string",
+                            "map": "",
+                            "description": "超链接",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": true,
+                    "autoUpdate": "3"
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "MainTitle_VMAIN_001",
+                    "id": "STATIC_001",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"title\":\"智慧水务监测平台\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+        },
+        {
+            "id": "WaterLevel_001",
+            "name": "VWaterLevel",
+            "type": "com",
+            "alias": "水位监测",
+            "icon": "v-icon-water",
+            "img": "images/缩略图/水位图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": true,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 800,
+                "y": 200,
+                "w": 320,
+                "h": 600,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 278,
+            "handles": {
+                "itemClick": {
+                    "eventName": "itemClick",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                },
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "水位值",
+                            "type": "number",
+                            "path": "config.value"
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "global": {
+                    "shape": "cylinder",
+                    "waveNum": 3,
+                    "waveHeight": 0.15,
+                    "waveOpacity": 0.6,
+                    "formatter": "{value}米",
+                    "color1": "#0099CC",
+                    "color2": "#003366"
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "number",
+                            "map": "",
+                            "description": "水位数值",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": true,
+                    "autoUpdate": "10"
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "WaterLevel_001",
+                    "id": "STATIC_002",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":3.75}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+        },
+        {
+            "id": "BasicBar_001",
+            "name": "VBasicBar",
+            "type": "com",
+            "alias": "水质监测",
+            "icon": "v-icon-bar",
+            "img": "images/缩略图/柱状图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": true,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 200,
+                "y": 600,
+                "w": 1520,
+                "h": 400,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 278,
+            "handles": {
+                "clickChart": {
+                    "eventName": "clickChart",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                },
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": []
+                }
+            },
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 60,
+                        "bottom": 80,
+                        "left": 100,
+                        "right": 40
+                    },
+                    "innerPadding": 0.2,
+                    "outerPadding": 0.3,
+                    "barWidth": 24,
+                    "background": {
+                        "show": true,
+                        "color": "rgba(255, 255, 255, 0.1)"
+                    }
+                },
+                "label": {
+                    "show": true,
+                    "position": "top",
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "offsetX": 0,
+                    "offsetY": -10
+                },
+                "xAxis": {
+                    "show": true,
+                    "type": "category",
+                    "title": {
+                        "show": false,
+                        "name": "",
+                        "location": "center",
+                        "display": {
+                            "rotate": 0,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#fff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00F0FF"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#00F0FF"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "timeFormat": "",
+                        "boundaryGap": true,
+                        "interval": 0,
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#fff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "#006699",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "yAxis": {
+                    "show": true,
+                    "extent": {
+                        "min": "auto",
+                        "max": "auto"
+                    },
+                    "splitNumber": 5,
+                    "title": {
+                        "show": false,
+                        "name": "",
+                        "location": "center",
+                        "display": {
+                            "rotate": 0,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#fff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 2,
+                        "color": "#00F0FF"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#00F0FF"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "valueFormat": "auto",
+                        "boundaryGap": true,
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 14,
+                            "color": "#fff",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "#006699",
+                            "dashedLength": 5,
+                            "dashedSpace": 5
+                        }
+                    }
+                },
+                "tooltip": {
+                    "show": true,
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "background": {
+                        "padding": {
+                            "h": 5,
+                            "v": 5
+                        },
+                        "color": "rgba(0,0,0,0.7)"
+                    },
+                    "pointer": {
+                        "show": true,
+                        "line": {
+                            "type": "solid",
+                            "width": 1,
+                            "color": "#00F0FF",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                },
+                "legend": {
+                    "show": true,
+                    "position": "top",
+                    "orient": "horizontal",
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "symbol": {
+                        "show": true,
+                        "icon": "circle",
+                        "width": 12,
+                        "height": 12,
+                        "gap": 10
+                    },
+                    "page": {
+                        "enabled": false,
+                        "size": {
+                            "width": 100,
+                            "height": 100
+                        },
+                        "button": {
+                            "size": 15,
+                            "color": "#00F0FF",
+                            "inactiveColor": "#000"
+                        },
+                        "pageNumColor": "#00F0FF"
+                    }
+                },
+                "series": [
+                    {
+                        "type": "bar",
+                        "id": "series_1",
+                        "name": "PH值",
+                        "color": {
+                            "type": "solid",
+                            "value": "#00FF99",
+                            "from": "",
+                            "to": ""
+                        }
+                    },
+                    {
+                        "type": "bar",
+                        "id": "series_2",
+                        "name": "浊度",
+                        "color": {
+                            "type": "solid",
+                            "value": "#00CCFF",
+                            "from": "",
+                            "to": ""
+                        }
+                    }
+                ],
+                "animation": {
+                    "enabled": true,
+                    "duration": 1000,
+                    "easing": "linear",
+                    "delay": 0
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "类目",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": true,
+                    "autoUpdate": "60"
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicBar_001",
+                    "id": "STATIC_003",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"name\":\"监测点1\",\"value\":7.2},{\"name\":\"监测点2\",\"value\":6.8},{\"name\":\"监测点3\",\"value\":7.5},{\"name\":\"监测点4\",\"value\":7.0}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+        }
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
+}
