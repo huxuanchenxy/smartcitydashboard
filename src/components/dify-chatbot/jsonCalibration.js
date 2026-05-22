@@ -819,13 +819,13 @@ class JSONRepairTool {
                 // 处理config字段 - 合并原始值和模板结构
                 refinedComponent[key] = this.mergeObject(template[key], component[key]);
             } else if (key === 'handles' && typeof template[key] === 'object') {
-                // 处理handles字段 - 严格按照模板结构
-                refinedComponent[key] = { ...template[key] };
+                // 处理handles字段 - 合并原始数据和模板结构
+                refinedComponent[key] = this.mergeHandles(template[key], component[key]);
             } else if (key === 'ichandles' && typeof template[key] === 'object') {
-                // 处理ichandles字段 - 严格按照模板结构
-                refinedComponent[key] = { ...template[key] };
+                // 处理ichandles字段 - 合并原始数据和模板结构
+                refinedComponent[key] = this.mergeIchandles(template[key], component[key]);
             } else if (key === 'apis' && typeof template[key] === 'object') {
-                // 处理apis字段 - 严格按照模板结构
+                // 处理apis字段 - 合并原始数据和模板结构
                 refinedComponent[key] = this.mergeObject(template[key], component[key]);
             } else if (key === 'apiData' && typeof template[key] === 'object') {
                 // 处理apiData字段 - 合并原始数据和模板结构
@@ -921,6 +921,64 @@ class JSONRepairTool {
         if (originalSource.config) {
             // 保留原始的数据配置
             merged.config = this.mergeObject(templateSource.config || {}, originalSource.config);
+        }
+        
+        return merged;
+    }
+    
+    /**
+     * 合并handles字段 - 以模板为基础，合并原始数据
+     * @param {Object} templateHandles - 模板handles
+     * @param {Object} originalHandles - 原始handles
+     * @returns {Object} 合并后的handles
+     */
+    mergeHandles(templateHandles, originalHandles) {
+        if (!templateHandles || typeof templateHandles !== 'object') {
+            return originalHandles || {};
+        }
+        
+        if (!originalHandles || typeof originalHandles !== 'object') {
+            return { ...templateHandles };
+        }
+        
+        // 以模板为基础，合并原始数据
+        const merged = { ...templateHandles };
+        
+        // 遍历原始数据中的key，如果有额外的字段，添加进去
+        for (const key of Object.keys(originalHandles)) {
+            if (!(key in merged)) {
+                // 如果原始数据有模板没有的字段，添加进去
+                merged[key] = originalHandles[key];
+            }
+        }
+        
+        return merged;
+    }
+    
+    /**
+     * 合并ichandles字段 - 以模板为基础，合并原始数据
+     * @param {Object} templateIchandles - 模板ichandles
+     * @param {Object} originalIchandles - 原始ichandles
+     * @returns {Object} 合并后的ichandles
+     */
+    mergeIchandles(templateIchandles, originalIchandles) {
+        if (!templateIchandles || typeof templateIchandles !== 'object') {
+            return originalIchandles || {};
+        }
+        
+        if (!originalIchandles || typeof originalIchandles !== 'object') {
+            return { ...templateIchandles };
+        }
+        
+        // 以模板为基础，合并原始数据
+        const merged = { ...templateIchandles };
+        
+        // 遍历原始数据中的key，如果有额外的字段，添加进去
+        for (const key of Object.keys(originalIchandles)) {
+            if (!(key in merged)) {
+                // 如果原始数据有模板没有的字段，添加进去
+                merged[key] = originalIchandles[key];
+            }
         }
         
         return merged;

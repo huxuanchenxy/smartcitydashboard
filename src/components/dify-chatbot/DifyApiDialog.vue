@@ -463,9 +463,13 @@ export default defineComponent({
               
             }
             
+            // 使用JSONRepairTool修复大屏配置结构
+            const repairTool = new JSONRepairTool();
+            const repairedJson = repairTool.repairScreenConfig(jsonObj);
+            
             // 调用saveScreenAI方法保存AI生成的屏幕数据
-            await saveScreenAI(jsonObj);
-            console.log('AI 回答中的 JSON 内容saveScreenAI:', jsonObj);
+            await saveScreenAI(repairedJson);
+            console.log('AI 回答中的 JSON 内容saveScreenAI:', repairedJson);
             return;
           } catch (parseError) {
             console.warn('找到 JSON 格式但解析失败:', parseError);
