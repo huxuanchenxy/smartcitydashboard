@@ -1321,9 +1321,21 @@ class JSONRepairTool {
                 merged[key] = this.mergeObject(template[key], original[key]);
             } else {
                 // 保留原始值，如果不存在则使用模板值
-                merged[key] = original[key] !== undefined && original[key] !== null 
-                    ? original[key] 
-                    : template[key];
+                // 新增：类型一致性校验 - 如果类型不一致，使用模板值
+                const templateType = typeof template[key];
+                const originalType = typeof original[key];
+                
+                if (original[key] !== undefined && original[key] !== null) {
+                    // 类型不一致时，使用模板值
+                    if (templateType !== originalType) {
+                        console.warn(`[JSON校准] 类型不匹配: ${key} 期望 ${templateType}，实际是 ${originalType}，已使用模板值`);
+                        merged[key] = template[key];
+                    } else {
+                        merged[key] = original[key];
+                    }
+                } else {
+                    merged[key] = template[key];
+                }
             }
         }
         

@@ -2,391 +2,339 @@
 
 ```json
 {
-  "screen": {
-    "id": 1,
-    "name": "智慧校园监控",
-    "share": "",
-    "thumbnail": null,
-    "groupId": 1
-  },
-  "config": {
-    "width": 1920,
-    "height": 1080,
-    "bgimage": "",
-    "bgcolor": "rgba(13,42,67,1)",
-    "grid": 10,
-    "screenshot": "",
-    "zoomMode": 0,
-    "useWatermark": false,
-    "styleFilterParams": {
-      "enable": false,
-      "hue": 0,
-      "saturate": 100,
-      "brightness": 100,
-      "contrast": 100,
-      "opacity": 100
+    "screen": {
+        "id": 197,
+        "name": "智慧医疗监控",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 4
     },
-    "tokenSettings": []
-  },
-  "coms": [
-    {
-      "id": "MainTitle_001",
-      "name": "VMainTitle",
-      "type": "com",
-      "alias": "校园监控系统",
-      "icon": "v-icon-title",
-      "img": "images/缩略图/通用标题.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": true,
-      "selected": true,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 760,
-        "y": 50,
-        "w": 400,
-        "h": 80,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 1,
-      "handles": {
-        "click": {
-          "eventName": "click",
-          "description": "点击",
-          "fields": []
-        }
-      },
-      "ichandles": {
-        "property": {
-          "eventName": "property",
-          "description": "属性-点位",
-          "fields": [],
-          "properties": [
-            {
-              "name": "标题内容",
-              "type": "string",
-              "path": "config.title"
-            }
-          ]
-        }
-      },
-      "config": {
-        "title": "校园监控指挥中心",
-        "textStyle": {
-          "fontFamily": "Microsoft Yahei",
-          "fontSize": 36,
-          "color": "#ffffff",
-          "fontWeight": "bold"
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/medical_bg.png",
+        "bgcolor": "rgba(18,32,53,1)",
+        "grid": 10,
+        "screenshot": "",
+        "zoomMode": 0,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
         },
-        "textAlign": "center",
-        "writingMode": "horizontal-tb",
-        "letterSpacing": 2,
-        "backgroundStyle": {
-          "show": true,
-          "bgColor": "rgba(0,82,147,0.8)",
-          "borderRadius": 10,
-          "borderColor": "#00eaff",
-          "borderStyle": "solid",
-          "borderWidth": 2
-        }
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "title": {
-              "type": "string",
-              "map": "",
-              "description": "标题值",
-              "optional": true
-            }
-          },
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "MainTitle_001",
-          "id": "MainTitle_001_data",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{\"title\":\"校园监控指挥中心\"}",
-            "postBodyType": "static"
-          }
-        }
-      }
+        "tokenSettings": []
     },
-    {
-      "id": "Gd3dMap_002",
-      "name": "VGd3dMap",
-      "type": "com",
-      "alias": "校园三维地图",
-      "icon": "v-icon-map",
-      "img": "images/缩略图/地图.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": true,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 100,
-        "y": 150,
-        "w": 1720,
-        "h": 800,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 1,
-      "handles": {},
-      "ichandles": {},
-      "config": {
-        "key": "amap_key",
-        "center": {
-          "lng": 116.397428,
-          "lat": 39.90923
-        },
-        "zooms": {
-          "min": 10,
-          "max": 18
-        },
-        "wallColor": "#003366",
-        "roofColor": "#0066cc",
-        "features": ["bg", "road", "building", "point"],
-        "showRoad": true,
-        "showPoint": true,
-        "showPark": true,
-        "polygonSetting": {
-          "fillColor": "#1791fc",
-          "strokeOpacity": 0.8,
-          "fillOpacity": 0.4,
-          "strokeColor": "#FF33FF",
-          "strokeWeight": 2,
-          "strokeStyle": "solid"
-        },
-        "zoom": 15,
-        "viewMode": "3D",
-        "rotateEnable": true,
-        "theme": "normal",
-        "trafficLayer": false,
-        "geoLayer": "default",
-        "areaLayer": {
-          "district": "校园区域",
-          "enable": true,
-          "hideOther": {
-            "enable": true,
-            "color": "#000000"
-          },
-          "border": {
-            "show": true,
-            "color": "#FF0000",
-            "width": 3
-          }
-        },
-        "pointConfigs": [
-          {
-            "name": "监控点",
-            "apiUrl": "/api/cameras",
-            "iconUrl": "images/icon/camera.png",
-            "iconWidth": 32,
-            "iconHeight": 32,
-            "dataJson": "[{name:'教学楼A',lng:116.397428,lat:39.90923}]"
-          }
-        ]
-      },
-      "apis": {
-        "source": {
-          "fields": {},
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": false,
-          "autoUpdate": 1
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Gd3dMap_002",
-          "id": "Gd3dMap_002_data",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{\"status\":\"static\"}",
-            "postBodyType": "static"
-          }
-        }
-      }
-    },
-    {
-      "id": "Timer_003",
-      "name": "VTimer",
-      "type": "com",
-      "alias": "时间轴",
-      "icon": "v-icon-time",
-      "img": "images/缩略图/时间轴.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": true,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 100,
-        "y": 960,
-        "w": 1720,
-        "h": 60,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 1,
-      "handles": {},
-      "ichandles": {},
-      "config": {
-        "iconStyle": {
-          "show": true,
-          "size": 24,
-          "color": "#ffffff",
-          "marginRight": 10
-        },
-        "time": {
-          "textStyle": {
-            "fontFamily": "Arial",
-            "fontSize": 24,
-            "color": "#00eaff",
-            "fontWeight": "normal"
-          },
-          "format": "YYYY-MM-DD HH:mm:ss",
-          "duration": 1000,
-          "horizontal": "center",
-          "vertical": "middle",
-          "show": true
-        },
-        "week": {
-          "marginLeft": 5,
-          "show": true
-        }
-      },
-      "apis": {
-        "source": {
-          "fields": {},
-          "render": "render",
-          "description": "",
-          "useAutoUpdate": true,
-          "autoUpdate": "1"
-        }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Timer_003",
-          "id": "Timer_003_data",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{\"status\":\"static\"}",
-            "postBodyType": "static"
-          }
-        }
-      }
-    },
-    {
-      "id": "Progress_004",
-      "name": "VProgress",
-      "type": "com",
-      "alias": "系统负载",
-      "icon": "v-icon-progress",
-      "img": "images/缩略图/进度条.png",
-      "locked": false,
-      "hided": false,
-      "eventhub": false,
-      "selected": true,
-      "hovered": false,
-      "renameing": false,
-      "special": "",
-      "attr": {
-        "x": 1600,
-        "y": 50,
-        "w": 220,
-        "h": 80,
-        "deg": 0,
-        "opacity": 1,
-        "filpV": false,
-        "filpH": false
-      },
-      "projectId": 1,
-      "handles": {},
-      "ichandles": {},
-      "config": {
-        "barColor": "rgb(32,128,240)",
-        "railColor": "rgb(235,235,235)",
-        "radius": 5,
-        "indicator": {
-          "show": true,
-          "placement": "outside",
-          "unit": "%",
-          "fontFamily": "Microsoft YaHei",
-          "fontWeight": "normal",
-          "fontSize": 16,
-          "color": "#fff"
-        }
-      },
-      "apis": {
-        "source": {
-          "fields": {
-            "type": {
-              "type": "string",
-              "map": "",
-              "description": "分类",
-              "optional": false
+    "coms": [
+        {
+            "id": "MainTitle_Medical_001",
+            "name": "VMainTitle",
+            "type": "com",
+            "alias": "医疗主标题",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/通用标题.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": true,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 660,
+                "y": 30,
+                "w": 600,
+                "h": 80,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
             },
-            "value": {
-              "type": "string",
-              "map": "",
-              "description": "值",
-              "optional": false
-            }
-          },
-          "render": "render",
-          "description": "进度条接口",
-          "useAutoUpdate": true,
-          "autoUpdate": "5"
+            "projectId": 197,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "title": "智慧医疗监控中心",
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 36,
+                    "color": "#00F0FF",
+                    "fontWeight": "bold"
+                },
+                "textAlign": "center",
+                "writingMode": "horizontal-tb",
+                "letterSpacing": 2,
+                "backgroundStyle": {
+                    "show": true,
+                    "bgColor": "rgba(0,88,128,0.3)",
+                    "borderRadius": 10,
+                    "borderColor": "#00C0C0",
+                    "borderStyle": "dashed"
+                },
+                "ellipsis": false,
+                "urlConfig": {
+                    "url": "",
+                    "isBlank": false
+                },
+                "animation": {
+                    "enable": true,
+                    "name": "Blink",
+                    "duration": 2000,
+                    "timing": "linear",
+                    "delay": 0,
+                    "iteration": "infinite",
+                    "direction": "alternate"
+                },
+                "cursor": "default"
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
+        },
+        {
+            "id": "VVideo_Patient_002",
+            "name": "VVideo",
+            "type": "com",
+            "alias": "视频监控区",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/视频.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 50,
+                "y": 150,
+                "w": 800,
+                "h": 600,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {},
+            "ichandles": {},
+            "config": {
+                "autoplay": true,
+                "controls": true,
+                "loop": true,
+                "muted": true,
+                "poster": "images/缩略图/video_loading.png",
+                "preload": "auto",
+                "src": "rtmp://live.patientmonitor.com/stream"
+            },
+            "apis": {},
+            "api5Data": {},
+            "events": {},
+            "actions": {}
+        },
+        {
+            "id": "VArcBar_Stats_003",
+            "name": "VArcBar",
+            "type": "com",
+            "alias": "玉环图",
+            "icon": "v-icon-chart-bar",
+            "img": "images/缩略图/玉环图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 900,
+                "y": 200,
+                "w": 400,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {},
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 10,
+                        "bottom": 10,
+                        "left": 10,
+                        "right": 10
+                    },
+                    "pieRadiusIn": 40,
+                    "pieRadiusOut": 60,
+                    "pieColor": "#c23531",
+                    "pieLine": {
+                        "type": "solid",
+                        "width": 1,
+                        "color": "#c23531"
+                    },
+                    "colour": true,
+                    "colorList": [
+                        {"value": "#589799"},
+                        {"value": "#76C3D1"},
+                        {"value": "#537FA9"},
+                        {"value": "#8CF1EB"},
+                        {"value": "#82C5F9"},
+                        {"value": "#FFD977"},
+                        {"value": "#8277F6"},
+                        {"value": "#E6E6E6"},
+                        {"value": "#FFFFFF"}
+                    ]
+                },
+                "legend": {
+                    "show": false
+                },
+                "tooltip": {
+                    "triggerOn": "mousemove"
+                },
+                "content": {
+                    "enabled": true
+                },
+                "frameBackground": {
+                    "horizontal": 10,
+                    "vertical": 10,
+                    "backgroundColor": "#333"
+                },
+                "animation": {
+                    "enabled": true,
+                    "easing": "cubicOut",
+                    "duration": 1500
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_Patient",
+                        "name": "患者分布"
+                    }
+                ]
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "玉环图接口",
+                    "useAutoUpdate": true,
+                    "autoUpdate": 30
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "VArcBar_Stats_003",
+                    "id": "ZxZr6Nb0sz",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"type\":\"内科\",\"value\":320},{\"type\":\"外科\",\"value\":280},{\"type\":\"急诊\",\"value\":150},{\"type\":\"ICU\",\"value\":90}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+        },
+        {
+            "id": "VProgress_System_004",
+            "name": "VProgress",
+            "type": "com",
+            "alias": "系统状态",
+            "icon": "v-icon-interact",
+            "img": "images/大图/进度条.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 900,
+                "y": 550,
+                "w": 400,
+                "h": 40,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 197,
+            "handles": {},
+            "ichandles": {},
+            "config": {
+                "barColor": "rgb(32,128,240)",
+                "railColor": "rgb(235,235,235)",
+                "radius": 5,
+                "indicator": {
+                    "show": true,
+                    "placement": "outside",
+                    "unit": "%",
+                    "fontFamily": "Microsoft YaHei",
+                    "fontSize": 16
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "description": "进度值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "进度条接口"
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "VProgress_System_004",
+                    "id": "Ri4LQrDXeg",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":82}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
         }
-      },
-      "apiData": {
-        "source": {
-          "comId": "Progress_004",
-          "id": "Progress_004_data",
-          "type": "static",
-          "pageFilters": [],
-          "config": {
-            "useFilter": false,
-            "data": "{\"value\":65}",
-            "postBodyType": "static"
-          }
-        }
-      }
-    }
-  ],
-  "variables": {
-    "componentsView": {},
-    "publishersView": {},
-    "subscribersView": {}
-  },
-  "dataFilters": []
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
 }
 ```
