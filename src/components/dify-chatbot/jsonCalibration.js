@@ -1090,13 +1090,16 @@ class JSONRepairTool {
             return { ...templateHandles };
         }
         
-        // 以模板为基础，合并原始数据
+        // 以模板为基础，合并原始数据（优先保留原始数据的值）
         const merged = { ...templateHandles };
         
-        // 遍历原始数据中的key，如果有额外的字段，添加进去
+        // 遍历原始数据中的key
         for (const key of Object.keys(originalHandles)) {
-            if (!(key in merged)) {
-                // 如果原始数据有模板没有的字段，添加进去
+            if (key in merged && typeof originalHandles[key] === 'object' && typeof merged[key] === 'object') {
+                // 如果双方都有这个key且都是对象，递归合并
+                merged[key] = { ...merged[key], ...originalHandles[key] };
+            } else {
+                // 否则直接使用原始数据的值（包括新增字段）
                 merged[key] = originalHandles[key];
             }
         }
@@ -1119,13 +1122,16 @@ class JSONRepairTool {
             return { ...templateIchandles };
         }
         
-        // 以模板为基础，合并原始数据
+        // 以模板为基础，合并原始数据（优先保留原始数据的值）
         const merged = { ...templateIchandles };
         
-        // 遍历原始数据中的key，如果有额外的字段，添加进去
+        // 遍历原始数据中的key
         for (const key of Object.keys(originalIchandles)) {
-            if (!(key in merged)) {
-                // 如果原始数据有模板没有的字段，添加进去
+            if (key in merged && typeof originalIchandles[key] === 'object' && typeof merged[key] === 'object') {
+                // 如果双方都有这个key且都是对象，递归合并
+                merged[key] = { ...merged[key], ...originalIchandles[key] };
+            } else {
+                // 否则直接使用原始数据的值（包括新增字段）
                 merged[key] = originalIchandles[key];
             }
         }
@@ -1144,8 +1150,13 @@ class JSONRepairTool {
             return { ...template };
         }
         
+        if (!template || typeof template !== 'object') {
+            return { ...original };
+        }
+        
         const merged = {};
         
+        // 遍历模板中的key
         for (const key of Object.keys(template)) {
             if (Array.isArray(template[key])) {
                 // 处理数组类型
@@ -1174,6 +1185,13 @@ class JSONRepairTool {
                 merged[key] = original[key] !== undefined && original[key] !== null 
                     ? original[key] 
                     : template[key];
+            }
+        }
+        
+        // 保留原始数据中模板没有的额外字段
+        for (const key of Object.keys(original)) {
+            if (!(key in merged)) {
+                merged[key] = original[key];
             }
         }
         

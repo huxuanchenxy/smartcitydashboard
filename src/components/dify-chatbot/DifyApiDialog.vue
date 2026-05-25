@@ -694,9 +694,10 @@ export default defineComponent({
       newComponent.eventhub = component.eventhub !== undefined ? component.eventhub : templateComponent.eventhub;
       newComponent.handles = component.handles || templateComponent.handles || {};
       newComponent.ichandles = component.ichandles || templateComponent.ichandles || {};
-      newComponent.apis = templateComponent.apis || {};
-      newComponent.events = templateComponent.events || {};
-      newComponent.actions = templateComponent.actions || {};
+      // 优先使用原始数据，只有在原始数据不存在时才使用模板值
+      newComponent.apis = component.apis !== undefined ? component.apis : (templateComponent.apis || {});
+      newComponent.events = component.events !== undefined ? component.events : (templateComponent.events || {});
+      newComponent.actions = component.actions !== undefined ? component.actions : (templateComponent.actions || {});
 
       // 保留特殊字段
       if (component.subComs) {
