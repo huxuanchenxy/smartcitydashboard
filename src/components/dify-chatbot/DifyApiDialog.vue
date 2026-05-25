@@ -436,10 +436,21 @@ export default defineComponent({
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         
         if (jsonMatch) {
-          const jsonStr = jsonMatch[0];
+          let jsonStr = jsonMatch[0];
           
-          try {
-            const jsonObj = JSON.parse(jsonStr);
+          // 先进行基本的格式校准（处理markdown标记、引号问题等）
+          let jsonObj = calibrateJsonString(jsonStr);
+          
+          if (!jsonObj) {
+            // 如果校准失败，尝试直接解析
+            try {
+              jsonObj = JSON.parse(jsonStr);
+            } catch (parseError) {
+              console.warn('JSON校准失败且直接解析也失败:', parseError);
+              ElMessage.warning('无法解析JSON内容');
+              return;
+            }
+          }
             
             // if (dataSProject) {
             //   // 将值添加到 JSON 对象中，键名为 projectid
@@ -469,15 +480,20 @@ export default defineComponent({
             
             // 使用JSONRepairTool修复大屏配置结构
             const repairTool = new JSONRepairTool();
-            const repairedJson = repairTool.repairScreenConfig(jsonObj);
+            let repairedJson = repairTool.repairScreenConfig(jsonObj);
+            
+            // 根据模板修复组件配置（与校准JSON保持一致）
+            const template = comsTemplate as unknown as Record<string, any>;
+            if (repairedJson.coms && Array.isArray(repairedJson.coms)) {
+              repairedJson.coms = repairedJson.coms.map((component: any) => {
+                return refineComponentByTemplate(component, template);
+              });
+            }
             
             // 调用saveScreenAI方法保存AI生成的屏幕数据
             await saveScreenAI(repairedJson);
             console.log('AI 回答中的 JSON 内容saveScreenAI:', repairedJson);
             return;
-          } catch (parseError) {
-            console.warn('找到 JSON 格式但解析失败:', parseError);
-          }
         }
 
         // 查找 JSON 数组（以 [ 开头，以 ] 结尾）
