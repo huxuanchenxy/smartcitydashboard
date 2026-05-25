@@ -4,7 +4,7 @@ import { getApiUrl2 } from '@/utils/apiUrl'
 export function getModelList(projectId:number) {
   // console.log(`aaa${window.location.protocol}//${window.location.hostname}:${import.meta.env.VITE_APP_API_Port}/device/server/mgt/threedModel/query`)
   let url = getApiUrl2('device/server/mgt/threedModel/query')
-  console.log(`requrl--- ${url}`)
+  // console.log(`requrl--- ${url}`)
   // return request.post(`${import.meta.env.VITE_APP_API_Host}/device/server/mgt/threedModel/query`,{ projectId })
   return request.post(url,{ projectId })
 

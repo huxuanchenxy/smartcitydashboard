@@ -2,1003 +2,391 @@
 
 ```json
 {
-    "screen": {
-        "id": 200,
-        "name": "智慧城市大屏",
-        "share": "",
-        "thumbnail": null,
-        "groupId": 5
+  "screen": {
+    "id": 1,
+    "name": "智慧校园监控",
+    "share": "",
+    "thumbnail": null,
+    "groupId": 1
+  },
+  "config": {
+    "width": 1920,
+    "height": 1080,
+    "bgimage": "",
+    "bgcolor": "rgba(13,42,67,1)",
+    "grid": 10,
+    "screenshot": "",
+    "zoomMode": 0,
+    "useWatermark": false,
+    "styleFilterParams": {
+      "enable": false,
+      "hue": 0,
+      "saturate": 100,
+      "brightness": 100,
+      "contrast": 100,
+      "opacity": 100
     },
-    "config": {
-        "width": 1920,
-        "height": 1080,
-        "bgimage": "data/originPic/smart_city_bg.png",
-        "bgcolor": "rgba(0, 25, 51, 0.9)",
-        "grid": 10,
-        "screenshot": "",
-        "zoomMode": 0,
-        "useWatermark": false,
-        "styleFilterParams": {
-            "enable": false,
-            "hue": 0,
-            "saturate": 100,
-            "brightness": 100,
-            "contrast": 100,
-            "opacity": 100
-        },
-        "tokenSettings": []
-    },
-    "coms": [
-        {
-            "id": "MainTitle_SmartCity",
-            "name": "VMainTitle",
-            "type": "com",
-            "alias": "智慧城市运行监测",
-            "icon": "v-icon-title",
-            "img": "images/缩略图/通用标题.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 700,
-                "y": 30,
-                "w": 500,
-                "h": 60,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 201,
-            "handles": {
-                "click": {
-                    "eventName": "click",
-                    "description": "点击",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "title": "智慧城市运行监测",
-                "textStyle": {
-                    "fontFamily": "Microsoft Yahei",
-                    "fontSize": 36,
-                    "color": "#00FEFE",
-                    "fontWeight": "bold"
-                },
-                "textAlign": "center",
-                "writingMode": "horizontal-tb",
-                "letterSpacing": 2,
-                "backgroundStyle": {
-                    "show": false,
-                    "bgColor": "rgba(0, 113, 188, 0.3)",
-                    "borderRadius": 0,
-                    "borderColor": "#00FEFE",
-                    "borderStyle": "solid",
-                    "borderWidth": 1
-                },
-                "ellipsis": false,
-                "urlConfig": {
-                    "url": "",
-                    "isBlank": false
-                },
-                "animation": {
-                    "enable": true,
-                    "name": "fadeIn",
-                    "duration": 1000,
-                    "timing": "ease-in-out",
-                    "delay": 0,
-                    "iteration": "1",
-                    "direction": "normal"
-                },
-                "cursor": "default"
-            },
-            "apis": {},
-            "apiData": {},
-            "events": {},
-            "actions": {}
-        },
-        {
-            "id": "BasicBar_Traffic",
-            "name": "VBasicBar",
-            "type": "com",
-            "alias": "交通流量监测",
-            "icon": "v-icon-chart-bar",
-            "img": "images/缩略图/柱状图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 150,
-                "y": 150,
-                "w": 600,
-                "h": 400,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 201,
-            "handles": {
-                "clickChart": {
-                    "eventName": "clickChart",
-                    "description": "点击项",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "global": {
-                    "fontFamily": "Microsoft Yahei",
-                    "margin": {
-                        "top": 40,
-                        "bottom": 50,
-                        "left": 50,
-                        "right": 10
-                    },
-                    "innerPadding": 20,
-                    "outerPadding": 30,
-                    "barWidth": "auto",
-                    "background": {
-                        "show": true,
-                        "color": "rgba(255, 255, 255, 0.05)"
-                    }
-                },
-                "label": {
-                    "show": false,
-                    "position": "top",
-                    "textStyle": {
-                        "": 12,
-                        "color": "rgba(255, 255, 255, 0.6)",
-                        "fontWeight": "normal"
-                    },
-                    "offsetX": 0,
-                    "offsetY": 0
-                },
-                "xAxis": {
-                    "show": true,
-                    "type": "category",
-                    "title": {
-                        "show": false,
-                        "name": "时段",
-                        "location": "center",
-                        "display": {
-                            "rotate": 0,
-                            "offset": 20
-                        },
-                        "textStyle": {
-                            "fontSize": 12,
-                            "color": "#90a0ae",
-                            "fontWeight": "normal"
-                        }
-                    },
-                    "axisLine": {
-                        "show": true,
-                        "type": "solid",
-                        "width": 1,
-                        "color": "rgba(255, 255, 255, 0.5)"
-                    },
-                    "axisTick": {
-                        "show": true,
-                        "type": "solid",
-                        "width": 1,
-                        "color": "rgba(255, 255, 255, 0.5)"
-                    },
-                    "axisLabel": {
-                        "show": true,
-                        "timeFormat": "HH:00",
-                        "boundaryGap": true,
-                        "interval": "auto",
-                        "display": {
-                            "rotate": 45,
-                            "margin": 10
-                        },
-                        "align": "center",
-                        "textStyle": {
-                            "fontSize": 12,
-                            "color": "rgba(255, 255, 255, 0.6)",
-                            "fontWeight": "normal"
-                        }
-                    },
-                    "grid": {
-                        "show": true,
-                        "line": {
-                            "type": "dashed",
-                            "width": 1,
-                            "color": "rgba(233, 228, 228, 0.1)",
-                            "dashedLength": 4,
-                            "dashedSpace": 4
-                        }
-                    }
-                },
-                "yAxis": {
-                    "show": true,
-                    "extent": {
-                        "min": "auto",
-                        "max": "auto"
-                    },
-                    "splitNumber": 0,
-                    "title": {
-                        "show": false,
-                        "name": "流量(万辆)",
-                        "location": "center",
-                        "display": {
-                            "rotate": 90,
-                            "offset": 20
-                        },
-                        "textStyle": {
-                            "fontSize": 12,
-                            "color": "#90a0ae",
-                            "fontWeight": "normal"
-                        }
-                    },
-                    "axisLine": {
-                        "show": true,
-                        "type": "solid",
-                        "width": 1,
-                        "color": "rgba(255, 255, 255, 0.5)"
-                    },
-                    "axisTick": {
-                        "show": true,
-                        "type": "solid",
-                        "width": 1,
-                        "color": "rgba(255, 255, 255, 0.5)"
-                    },
-                    "axisLabel": {
-                        "show": true,
-                        "valueFormat": "auto",
-                        "boundaryGap": 0,
-                        "display": {
-                            "rotate": 0,
-                            "margin": 10
-                        },
-                        "align": "center",
-                        "textStyle": {
-                            "fontSize": 12,
-                            "color": "rgba(255, 255, 255, 0.6)",
-                            "fontWeight": "normal"
-                        }
-                    },
-                    "grid": {
-                        "show": true,
-                        "line": {
-                            "type": "dashed",
-                            "width": 1,
-                            "color": "rgba(233, 228, 228, 0.1)",
-                            "dashedLength": 4,
-                            "dashedSpace": 4
-                        }
-                    }
-                },
-                "tooltip": {
-                    "show": true,
-                    "textStyle": {
-                        "fontSize": 14,
-                        "color": "#fff",
-                        "fontWeight": "normal"
-                    },
-                    "background": {
-                        "padding": {
-                            "h": 5,
-                            "v": 5
-                        },
-                        "color": "rgba(0, 0, 0, 0.65)"
-                    },
-                    "pointer": {
-                        "show": true,
-                        "line": {
-                            "type": "dashed",
-                            "width": 1,
-                            "color": "#f5dc69",
-                            "dashedLength": 4,
-                            "dashedSpace": 4
-                        }
-                    }
-                },
-                "legend": {
-                    "show": false,
-                    "position": "top-center",
-                    "orient": "horizontal",
-                    "textStyle": {
-                        "fontSize": 12,
-                        "color": "#90a0ae",
-                        "fontWeight": "normal"
-                    },
-                    "symbol": {
-                        "show": true,
-                        "icon": "auto",
-                        "width": 25,
-                        "height": 14,
-                        "gap": 10
-                    },
-                    "page": {
-                        "enabled": false,
-                        "size": {
-                            "width": 100,
-                            "height": 100
-                        },
-                        "button": {
-                            "size": 15,
-                            "color": "#000",
-                            "inactiveColor": "#000"
-                        },
-                        "pageNumColor": "#90a0ae"
-                    }
-                },
-                "series": [
-                    {
-                        "type": "bar",
-                        "id": "系列1_Traffic",
-                        "name": "交通流量",
-                        "color": {
-                            "type": "solid",
-                            "value": "#00baff",
-                            "from": "#fff",
-                           to": "#000"
-                        }
-                    }
-                ],
-                "animation": {
-                    "enabled": true,
-                    "duration": 1000,
-                    "easing": "cubicOut",
-                    "delay": 0
-                }
-            },
-            "apis": {
-                "source": {
-                    "fields": {
-                        "x": {
-                            "type": "string",
-                            "map": "",
-                            "description": "时段",
-                            "optional": false
-                        },
-                        "y": {
-                            "type": "string",
-                            "map": "",
-                            "description": "流量",
-                            "optional": false
-                        }
-                    },
-                    "render": "render",
-                    "description": "交通流量数据接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 5
-                }
-            },
-            "apiData": {
-                "source": {
-                    "comId": "BasicBar_Traffic",
-                    "id": "TrafficData",
-                    "type": "static",
-                    "pageFilters": [],
-                    "config": {
-                        "useFilter": false,
-                        "data": "[{\"x\":\"08:00\",\"y\":450},{\"x\":\"10:00\",\"y\":620},{\"x\":\"12:00\",\"y\":380},{\"x\":\"14:00\",\"y\":510},{\"x\":\"16:00\",\"y\":720},{\"x\":\"18:00\",\"y\":850}]",
-                        "postBodyType": "static"
-                    }
-                }
-            },
-            "events": {
-                "click": {
-                    "description": "当点击数据项时",
-                    "fields": {
-                        "x": {
-                            "type": "string",
-                            "map": "",
-                            "description": "时段",
-                            "optional": false
-                        },
-                        "y": {
-                            "type": "string",
-                            "map": "",
-                            "description": "流量",
-                            "optional": false
-                        }
-                    }
-                }
-            },
-            "actions": {}
-        },
-        {
-            "id": "BasicRadar_Energy",
-            "name": "VBasicRadar",
-            "type": "com",
-            "alias": "能源消耗监测",
-            "icon": "v-icon-chart-radar",
-            "img": "images/缩略图/雷达图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 800,
-                "y": 150,
-                "w": 400,
-                "h": 400,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 201,
-            "handles": {
-                "click": {
-                    "eventName": "click",
-                    "description": "点击",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "color": "#fff",
-                "startAngle": 90,
-                "splitNumber": 4,
-                "shape": "polygon",
-                "splitAreaStyle": {
-                    "color": "#FFFFFF00",
-                    "shadowColor": "rgba(0, 0, 0, 0)",
-                    "shadowBlur": 0
-                },
-                "axisName": {
-                    "formatter": "{value}",
-                    "color": "#FFFFFFFF",
-                    "show": true,
-                    "fontStyle": "normal",
-                    "fontWeight": "normal",
-                    "fontFamily": "sans-serif",
-                    "fontSize": 14
-                },
-                "axisLine": {
-                    "show": true,
-                    "lineStyle": {
-                        "color": "rgb(123, 123, 123)",
-                        "width": 2,
-                        "type": "solid",
-                        "opacity": 0.6
-                    }
-                },
-                "splitLine": {
-                    "lineStyle": {
-                        "color": "rgba(123, 123, 123, 1)",
-                        "width": 2,
-                        "type": "solid"
-                    },
-                    "show": true
-                },
-                "axisTick": {
-                    "show": true,
-                    "splitNumber": 2,
-                    "lineStyle": {
-                        "width": 2,
-                        "color": "#999"
-                    }
-                },
-                "dataArea": {
-                    "symbolSize": "10",
-                    "symbol": "circle",
-                    "areaStyle": {
-                        "color": "rgba(117,156,122,1)"
-                    },
-                    "lineStyle": {
-                        "color": "#fff",
-                        "width": 1,
-                        "type": "solid",
-                        "shadowColor": "rgba(0, 0, 0, 0.2)",
-                        "shadowBlur": 0
-                    }
-                }
-            },
-            "apis": {
-                "source": {
-                    "fields": {
-                        "name": {
-                            "type": "string",
-                            "map": "",
-                            "description": "能源类型",
-                            "optional": false
-                        },
-                        "max": {
-                            "type": "string",
-                            "map": "",
-                            "description": "最大值",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "当前值",
-                            "optional": false
-                        }
-                    },
-                    "render": "render",
-                    "description": "能源消耗数据接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 5                }
-            },
-            "apiData": {
-                "source": {
-                    "comId": "BasicRadar_Energy",
-                    "id": "EnergyData",
-                    "type": "static",
-                    "pageFilters": [],
-                    "config": {
-                        "useFilter": false,
-                        "data": "[{\"name\":\"电力\",\"max\":10000,\"value\":7800},{\"name\":\"燃气\",\"max\":8000,\"value\":6200},{\"name\":\"水耗\",\"max\":12000,\"value\":9500},{\"name\":\"热能\",\"max\":6000,\"value\":4700}]",
-                        "postBodyType": "static"
-                    }
-                }
-            },
-            "events": {
-                "click": {
-                    "description": "当点击数据项时",
-                    "fields": {
-                        "name": {
-                            "type": "string",
-                            "map": "",
-                            "description": "能源类型",
-                            "optional": false
-                        },
-                        "max": {
-                            "type": "string",
-                            "map": "",
-                            "description": "最大值",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "当前值",
-                            "optional": false
-                        }
-                    }
-                }
-            },
-            "actions": {}
-        },
-        {
-            "id": "DashboardPie_AQI",
-            "name": "VDashboardPie",
-            "type": "com",
-            "alias": "空气质量监测",
-            "icon": "v-icon-chart-pie",
-            "img": "images/缩略图/仪表饼图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 1250,
-                "y": 180,
-                "w": 300,
-                "h": 300,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 201,
-            "handles": {
-                "click": {
-                    "eventName": "click",
-                    "description": "点击",
-                    "fields": []
-                },
-                "refreshData": {
-                    "eventName": "refreshData",
-                    "description": "更新数据",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "graphical": {
-                    "margin": {
-                        "top": 0,
-                        "bottom": 0,
-                        "left": 0,
-                        "right": 0
-                    },
-                    "min": 0,
-                    "max": 100,
-                    "startAngle": 180,
-                    "endAngle": 0
-                },
-                "pointer": {
-                    "show": true,
-                    "length": 75,
-                    "width": 16,
-                    "horizontal": 0,
-                    "vertical": 5
-                },
-                "progress": {
-                    "show": false,
-                    "roundCap": false,
-                    "color": "#3dabff",
-                    "border": {
-                        "type": "solid",
-                        "width": 1,
-                        "color": "#464646"
-                    }
-                },
-                "axisLine": {
-                    "width": 12,
-                    "color": "#55585b"
-                },
-                "splitLine": {
-                    "length": 12,
-                    "lineStyle": {
-                        "width": 3,
-                        "color": "#999"
-                    }
-                },
-                "axisTick": {
-                    "show": true,
-                    "splitNumber": 2,
-                    "lineStyle": {
-                        "width": 2,
-                        "color": "#999"
-                    }
-                },
-                "axisLabel": {
-                    "show": true,
-                    "distance": 20,
-                    "color": "#464646",
-                    "fontFamily": "Microsoft YaHei",
-                    "fontWeight": "normal",
-                    "fontSize": 20
-                },
-                "title": {
-                    "show": true,
-                    "horizontal": 0,
-                    "vertical": -30,
-                    "text": "AQI",
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "normal",
-                        "fontSize": 30,
-                        "color": "#fff"
-                    }
-                },
-                "content": {
-                    "show": true,
-                    "horizontal": 0,
-                    "vertical": 30,
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "normal",
-                        "fontSize": 30,
-                        "color": "rgba(255, 255, 255, 0.3)"
-                    },
-                    "labelLine": {
-                        "show": false,
-                        "color": "#fff",
-                        "width": 1,
-                        "type": "solid"
-                    }
-                },
-                "animation": {
-                    "enabled": true,
-                    "easing": "cubicOut",
-                    "duration": 1000
-                },
- "series": []
-            },
-            "apis": {
-                "source": {
-                    "fields": {
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "AQI数值",
-                            "optional": false
-                        }
-                    },
-                    "render": "render",
-                    "description": "空气质量数据接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 5
-                }
-            },
-            "apiData": {
-                "source": {
-                    "comId": "DashboardPie_AQI",
-                    "id": "AQIData",
-                    "type": "static",
-                    "pageFilters": [],
-                    "config": {
-                        "useFilter": false,
-                        "data": "{\"value\":78}",
-                        "postBodyType": "static"
-                    }
-                }
-            },
-            "events": {
-                "click": {
-                    "description": "当点击数据项时",
-                    "fields": {
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "AQI数值",
-                            "optional": false
-                        }
-                    }
-                }
-            },
-            "actions": {}
-        },
-        {
-            "id": "ArcBar_Parking",
-            "name": "VArcBar",
-            "type": "com",
-            "alias": "停车位使用率",
-            "icon": "v-icon-chart-bar",
-            "img": "images/缩略图/玉环图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 1250,
-                "y": 500,
-                "w": 300,
-                "h": 150,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 201,
-            "handles": {
-                "click": {
-                    "eventName": "click",
-                    "description": "点击",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "graphical": {
-                    "margin": {
-                        "top": 0,
-                        "bottom": 0,
-                        "left": 0,
-                        "right": 0
-                    },
-                    "pieRadiusIn": 50,
-                    "pieRadiusOut": 70,
-                    "pieColor": "#c23531",
-                    "pieLine": {
-                        "type": "solid",
-                        "width": 0,
-                        "color": "#c23531"
-                    },
-                    "colour": true,
-                    "colorList": [
-                        {
-                            "value": "#589799"
-                        },
-                        {
-                            "value": "#76C3D1"
-                        },
-                        {
-                            "value": "#537FA9"
-                        },
-                        {
-                            "value": "#8CF1EB"
-                        },
-                        {
-                            "value": "#82C5F9"
-                        },
-                        {
-                            "value": "#FFD977"
-                        },
-                        {
-                            "value": "#8277F6"
-                        },
-                        {
-                            "value": "#E6E6E6"
-                        },
-                        {
-                            "value": "#FFFFFF"
-                        }
-                    ]
-                },
-                "legend": {
-                    "show": false,
-                    "top": "top",
-                    "left": "left",
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "normal",
-                        "fontSize": 12,
-                        "color": "#fff"
-                    },
-                    "orient": "vertical",
-                    "align": "left",
-                    "showValue": false
-                },
-                "tooltip": {
-                    "triggerOn": "mousemove",
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "normal",
-                        "fontSize": 12,
-                        "color": "#333"
-                    },
-                    "padding": 5
-                },
-                "content": {
-                    "enabled": true,
-                    "padding": 5,
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "normal",
-                        "fontSize": 12,
-                        "color": "rgba(255, 255, 255, 0.3)"
-                    },
-                    "labelLine": {
-                        "show": false,
-                        "color": "#fff",
-                        "width": 1,
-                        "type": "solid"
-                    }
-                },
-                "frameBackground": {
-                    "horizontal": 12,
-                    "vertical": 12,
-                    "backgroundColor": "#333",
-                    "borderStyle": {
-                        "type": "dashed",
-                        "width": 1,
-                        "color": "#f5dc69",
-                        "radius": 4
-                    }
-                },
-                "animation": {
-                    "enabled": true,
-                    "easing": "cubicOut",
-                    "duration": 1000
-                },
-                "series": [
-                    {
-                        "type": "pie",
-                        "id": "系列1_Parking",
-                        "name": "停车位"
-                    }
-                ]
-            },
-            "apis": {
-                "source": {
-                    "fields": {
-                        "type": {
-                            "type": "string",
-                            "map": "",
-                            "description": "分类",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
-                            "optional": false
-                        }
-                    },
-                    "render":render",
-                    "description": "停车位使用率接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 5
-                }
-            },
-            "apiData": {
-                "source": {
-                    "comId": "ArcBar_Parking",
-                    "id": "ParkingData",
-                    "type": "static",
-                    "pageFilters": [],
-                    "config": {
-                        "useFilter": false,
-                        "data": "[{\"type\":\"已使用\",\"value\":65},{\"type\":\"空闲\",\"value\":35}]",
-                        "postBodyType": "static"
-                    }
-                }
-            },
-            "events": {
-                "click": {
-                    "description": "当点击数据项时",
-                    "fields": {
-                        "type": {
-                            "type": "string",
-                            "map": "",
-                            "description": "分类",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
-                            "optional": false
-                        }
-                    }
-                }
-            },
-            "actions": {}
+    "tokenSettings": []
+  },
+  "coms": [
+    {
+      "id": "MainTitle_001",
+      "name": "VMainTitle",
+      "type": "com",
+      "alias": "校园监控系统",
+      "icon": "v-icon-title",
+      "img": "images/缩略图/通用标题.png",
+      "locked": false,
+      "hided": false,
+      "eventhub": true,
+      "selected": true,
+      "hovered": false,
+      "renameing": false,
+      "special": "",
+      "attr": {
+        "x": 760,
+        "y": 50,
+        "w": 400,
+        "h": 80,
+        "deg": 0,
+        "opacity": 1,
+        "filpV": false,
+        "filpH": false
+      },
+      "projectId": 1,
+      "handles": {
+        "click": {
+          "eventName": "click",
+          "description": "点击",
+          "fields": []
         }
-    ],
-    "variables": {
-        "componentsView": {},
-        "publishersView": {},
-        "subscribersView": {}
+      },
+      "ichandles": {
+        "property": {
+          "eventName": "property",
+          "description": "属性-点位",
+          "fields": [],
+          "properties": [
+            {
+              "name": "标题内容",
+              "type": "string",
+              "path": "config.title"
+            }
+          ]
+        }
+      },
+      "config": {
+        "title": "校园监控指挥中心",
+        "textStyle": {
+          "fontFamily": "Microsoft Yahei",
+          "fontSize": 36,
+          "color": "#ffffff",
+          "fontWeight": "bold"
+        },
+        "textAlign": "center",
+        "writingMode": "horizontal-tb",
+        "letterSpacing": 2,
+        "backgroundStyle": {
+          "show": true,
+          "bgColor": "rgba(0,82,147,0.8)",
+          "borderRadius": 10,
+          "borderColor": "#00eaff",
+          "borderStyle": "solid",
+          "borderWidth": 2
+        }
+      },
+      "apis": {
+        "source": {
+          "fields": {
+            "title": {
+              "type": "string",
+              "map": "",
+              "description": "标题值",
+              "optional": true
+            }
+          },
+          "render": "render",
+          "description": "",
+          "useAutoUpdate": false,
+          "autoUpdate": 1
+        }
+      },
+      "apiData": {
+        "source": {
+          "comId": "MainTitle_001",
+          "id": "MainTitle_001_data",
+          "type": "static",
+          "pageFilters": [],
+          "config": {
+            "useFilter": false,
+            "data": "{\"title\":\"校园监控指挥中心\"}",
+            "postBodyType": "static"
+          }
+        }
+      }
     },
-    "dataFilters": []
+    {
+      "id": "Gd3dMap_002",
+      "name": "VGd3dMap",
+      "type": "com",
+      "alias": "校园三维地图",
+      "icon": "v-icon-map",
+      "img": "images/缩略图/地图.png",
+      "locked": false,
+      "hided": false,
+      "eventhub": false,
+      "selected": true,
+      "hovered": false,
+      "renameing": false,
+      "special": "",
+      "attr": {
+        "x": 100,
+        "y": 150,
+        "w": 1720,
+        "h": 800,
+        "deg": 0,
+        "opacity": 1,
+        "filpV": false,
+        "filpH": false
+      },
+      "projectId": 1,
+      "handles": {},
+      "ichandles": {},
+      "config": {
+        "key": "amap_key",
+        "center": {
+          "lng": 116.397428,
+          "lat": 39.90923
+        },
+        "zooms": {
+          "min": 10,
+          "max": 18
+        },
+        "wallColor": "#003366",
+        "roofColor": "#0066cc",
+        "features": ["bg", "road", "building", "point"],
+        "showRoad": true,
+        "showPoint": true,
+        "showPark": true,
+        "polygonSetting": {
+          "fillColor": "#1791fc",
+          "strokeOpacity": 0.8,
+          "fillOpacity": 0.4,
+          "strokeColor": "#FF33FF",
+          "strokeWeight": 2,
+          "strokeStyle": "solid"
+        },
+        "zoom": 15,
+        "viewMode": "3D",
+        "rotateEnable": true,
+        "theme": "normal",
+        "trafficLayer": false,
+        "geoLayer": "default",
+        "areaLayer": {
+          "district": "校园区域",
+          "enable": true,
+          "hideOther": {
+            "enable": true,
+            "color": "#000000"
+          },
+          "border": {
+            "show": true,
+            "color": "#FF0000",
+            "width": 3
+          }
+        },
+        "pointConfigs": [
+          {
+            "name": "监控点",
+            "apiUrl": "/api/cameras",
+            "iconUrl": "images/icon/camera.png",
+            "iconWidth": 32,
+            "iconHeight": 32,
+            "dataJson": "[{name:'教学楼A',lng:116.397428,lat:39.90923}]"
+          }
+        ]
+      },
+      "apis": {
+        "source": {
+          "fields": {},
+          "render": "render",
+          "description": "",
+          "useAutoUpdate": false,
+          "autoUpdate": 1
+        }
+      },
+      "apiData": {
+        "source": {
+          "comId": "Gd3dMap_002",
+          "id": "Gd3dMap_002_data",
+          "type": "static",
+          "pageFilters": [],
+          "config": {
+            "useFilter": false,
+            "data": "{\"status\":\"static\"}",
+            "postBodyType": "static"
+          }
+        }
+      }
+    },
+    {
+      "id": "Timer_003",
+      "name": "VTimer",
+      "type": "com",
+      "alias": "时间轴",
+      "icon": "v-icon-time",
+      "img": "images/缩略图/时间轴.png",
+      "locked": false,
+      "hided": false,
+      "eventhub": false,
+      "selected": true,
+      "hovered": false,
+      "renameing": false,
+      "special": "",
+      "attr": {
+        "x": 100,
+        "y": 960,
+        "w": 1720,
+        "h": 60,
+        "deg": 0,
+        "opacity": 1,
+        "filpV": false,
+        "filpH": false
+      },
+      "projectId": 1,
+      "handles": {},
+      "ichandles": {},
+      "config": {
+        "iconStyle": {
+          "show": true,
+          "size": 24,
+          "color": "#ffffff",
+          "marginRight": 10
+        },
+        "time": {
+          "textStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 24,
+            "color": "#00eaff",
+            "fontWeight": "normal"
+          },
+          "format": "YYYY-MM-DD HH:mm:ss",
+          "duration": 1000,
+          "horizontal": "center",
+          "vertical": "middle",
+          "show": true
+        },
+        "week": {
+          "marginLeft": 5,
+          "show": true
+        }
+      },
+      "apis": {
+        "source": {
+          "fields": {},
+          "render": "render",
+          "description": "",
+          "useAutoUpdate": true,
+          "autoUpdate": "1"
+        }
+      },
+      "apiData": {
+        "source": {
+          "comId": "Timer_003",
+          "id": "Timer_003_data",
+          "type": "static",
+          "pageFilters": [],
+          "config": {
+            "useFilter": false,
+            "data": "{\"status\":\"static\"}",
+            "postBodyType": "static"
+          }
+        }
+      }
+    },
+    {
+      "id": "Progress_004",
+      "name": "VProgress",
+      "type": "com",
+      "alias": "系统负载",
+      "icon": "v-icon-progress",
+      "img": "images/缩略图/进度条.png",
+      "locked": false,
+      "hided": false,
+      "eventhub": false,
+      "selected": true,
+      "hovered": false,
+      "renameing": false,
+      "special": "",
+      "attr": {
+        "x": 1600,
+        "y": 50,
+        "w": 220,
+        "h": 80,
+        "deg": 0,
+        "opacity": 1,
+        "filpV": false,
+        "filpH": false
+      },
+      "projectId": 1,
+      "handles": {},
+      "ichandles": {},
+      "config": {
+        "barColor": "rgb(32,128,240)",
+        "railColor": "rgb(235,235,235)",
+        "radius": 5,
+        "indicator": {
+          "show": true,
+          "placement": "outside",
+          "unit": "%",
+          "fontFamily": "Microsoft YaHei",
+          "fontWeight": "normal",
+          "fontSize": 16,
+          "color": "#fff"
+        }
+      },
+      "apis": {
+        "source": {
+          "fields": {
+            "type": {
+              "type": "string",
+              "map": "",
+              "description": "分类",
+              "optional": false
+            },
+            "value": {
+              "type": "string",
+              "map": "",
+              "description": "值",
+              "optional": false
+            }
+          },
+          "render": "render",
+          "description": "进度条接口",
+          "useAutoUpdate": true,
+          "autoUpdate": "5"
+        }
+      },
+      "apiData": {
+        "source": {
+          "comId": "Progress_004",
+          "id": "Progress_004_data",
+          "type": "static",
+          "pageFilters": [],
+          "config": {
+            "useFilter": false,
+            "data": "{\"value\":65}",
+            "postBodyType": "static"
+          }
+        }
+      }
+    }
+  ],
+  "variables": {
+    "componentsView": {},
+    "publishersView": {},
+    "subscribersView": {}
+  },
+  "dataFilters": []
 }
 ```

@@ -12,135 +12,194 @@ import comsTemplate from './comstemplate.json';
  * @returns {any} 解析后的对象，如果失败返回null
  */
 export function calibrateJsonString(jsonStr) {
-  let cleanedStr = jsonStr;
-
-  // 移除 UTF-8 BOM 字符（\uFEFF 或 \xEF\xBB\xBF）
-  if (cleanedStr.charCodeAt(0) === 0xFEFF) {
-    cleanedStr = cleanedStr.substring(1);
-  } else if (cleanedStr.substring(0, 3) === '\xEF\xBB\xBF') {
-    cleanedStr = cleanedStr.substring(3);
-  }
-
-  // 移除 markdown 代码块标记（检查开头和结尾）
-  // 检查开头是否有 ```json 或 ```
-  if (/^\s*```json\s*/i.test(cleanedStr)) {
-    cleanedStr = cleanedStr.replace(/^\s*```json\s*/i, '');
-  } else if (/^\s*```\s*/i.test(cleanedStr)) {
-    cleanedStr = cleanedStr.replace(/^\s*```\s*/i, '');
-  }
-  
-  // 检查结尾是否有 ```
-  if (/\s*```\s*$/i.test(cleanedStr)) {
-    cleanedStr = cleanedStr.replace(/\s*```\s*$/i, '');
-  }
-  
-  // 清理控制字符：只移除真正的控制字符，保留\n和\r（这些是数据内容）
-  cleanedStr = cleanedStr
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-  
-  // 先修复属性值缺少引号的问题（必须在转义控制字符之前处理）
-  // 否则 :static" 中的 " 会被误认为是字符串开始，导致后面的换行符被错误转义
-  cleanedStr = cleanedStr.replace(/:(\s*)([a-zA-Z_][a-zA-Z0-9_]*)"/g, ':$1"$2"');
-  
-  // 修复属性名缺少前引号的情况（必须在转义控制字符之前处理）
-  // 例如：to": "#000" 应该是 "to": "#000"
-  // 匹配前面是逗号、换行、制表符或空格的情况
-  cleanedStr = cleanedStr.replace(/(?:^|[,\r\n\t ])([a-zA-Z_][a-zA-Z0-9_]*)"\s*:/g, '"$1":');
-  
-  // 修复 "key" [ 的情况（必须在转义控制字符之前处理）
-  // 否则 "fields []" 中的 ]" 会被误认为是字符串结束，导致后面的换行符被错误转义
-  // 匹配 "属性名" [ 或 "属性名" { 的情况（属性名后面可能没有闭合引号）
-  // 使用负向前瞻和负向后瞻确保不匹配字符串值中的内容
-  // (?<!") 确保前面不是引号，避免匹配 "return { 这样的字符串值
-  // 但又要确保是属性定义，所以需要检查前面是逗号、换行或开头
-  cleanedStr = cleanedStr.replace(/(?:^|[,\r\n\t ])"([a-zA-Z_][a-zA-Z0-9_]*)"\s+(\[|\{)/g, '"$1":$2');
-  
-  // 转义字符串内的控制字符（JSON 字符串内不允许直接换行）
-  cleanedStr = escapeControlCharsInStrings(cleanedStr);
-  
-  // 移除 JSON 结构中的控制字符（\r 和 \n）
-  // 注意：字符串内的已经在上面转义了，这里只处理结构中的
-  cleanedStr = cleanedStr.replace(/[\r\n]/g, '');
-  
-  cleanedStr = cleanedStr.trim();
-
   try {
-    return JSON.parse(cleanedStr);
-  } catch (e) {
-  }
+    let cleanedStr = jsonStr;
 
-  // 修复策略1: 找到有效的JSON起始位置
-  const firstBraceIndex = cleanedStr.indexOf('{');
-  const firstBracketIndex = cleanedStr.indexOf('[');
-  
-  // 找到第一个 { 或 [
-  let startIndex = -1;
-  if (firstBraceIndex !== -1 && firstBracketIndex !== -1) {
-    startIndex = Math.min(firstBraceIndex, firstBracketIndex);
-  } else if (firstBraceIndex !== -1) {
-    startIndex = firstBraceIndex;
-  } else if (firstBracketIndex !== -1) {
-    startIndex = firstBracketIndex;
-  }
-  
-  // 如果找到有效起始位置，截取从该位置开始的字符串
-  if (startIndex !== -1 && startIndex > 0) {
-    cleanedStr = cleanedStr.substring(startIndex);
-  }
-
-  // 修复策略2: 不再使用extractJsonStructure，直接使用清理后的完整字符串
-  // extractJsonStructure会被字符串中的大括号误导（如dataFilters的code字段）
-  let fixedStr = cleanedStr;
-
-  try {
-    const firstChar = fixedStr.charAt(0);
-    if (firstChar !== '{' && firstChar !== '[') {
-      fixedStr = '{' + fixedStr;
+    // 移除 UTF-8 BOM 字符（\uFEFF 或 \xEF\xBB\xBF）
+    if (cleanedStr.charCodeAt(0) === 0xFEFF) {
+      cleanedStr = cleanedStr.substring(1);
+    } else if (cleanedStr.substring(0, 3) === '\xEF\xBB\xBF') {
+      cleanedStr = cleanedStr.substring(3);
     }
 
-    const lastChar = fixedStr.charAt(fixedStr.length - 1);
-    if (lastChar !== '}' && lastChar !== ']') {
-      fixedStr = fixedStr + '}';
+    // 移除 markdown 代码块标记（检查开头和结尾）
+    // 无脑模式：循环移除开头的 markdown 标记（处理可能有多个标记的情况）
+    let removedMarkdown = true;
+    while (removedMarkdown) {
+      removedMarkdown = false;
+      // 检查开头是否有 ```json 或 ```（忽略大小写和前后空白）
+      if (/^\s*```(json)?\s*/i.test(cleanedStr)) {
+        cleanedStr = cleanedStr.replace(/^\s*```(json)?\s*/i, '');
+        removedMarkdown = true;
+      }
+      // 检查结尾是否有 ```（忽略大小写和前后空白）
+      if (/\s*```\s*$/i.test(cleanedStr)) {
+        cleanedStr = cleanedStr.replace(/\s*```\s*$/i, '');
+        removedMarkdown = true;
+      }
     }
-
-    fixedStr = fixedStr
-      .replace(/\/\/.*$/gm, '')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*\n/gm, '');
-
-    // 修复属性值缺少引号的情况：:static" -> :"static"
-    fixedStr = fixedStr
-      .replace(/:(\s*)([a-zA-Z_][a-zA-Z0-9_]*)"/g, ':$1"$2"');
-
-    // 修复未闭合的字符串
-    fixedStr = fixUnclosedStrings(fixedStr);
-
-    // 修复属性名缺少引号的情况
-    fixedStr = fixedStr
-      .replace(/(['"])?([a-zA-Z_][a-zA-Z0-9_]*)(['"])?\s*:/g, '"$2":');
-
-    // 修复 "key" { 或 "key" [ 的情况（包括中间有多个空格的情况）
-
-    fixedStr = fixedStr
-      .replace(/"([^"]+)"\s+\{/g, '"$1":{')
-      .replace(/"([^"]+)"\s+\[/g, '"$1":[');
     
-    // 再次处理没有空格的情况
-    fixedStr = fixedStr
-      .replace(/"([^"]+)"\s*\{/g, '"$1":{')
-      .replace(/"([^"]+)"\s*\[/g, '"$1":[');
-
-    fixedStr = fixMissingCommas(fixedStr);
-
-    fixedStr = fixedStr
-      .replace(/,\s*}/g, '}')
-      .replace(/,\s*]/g, ']')
-      .replace(/,\s*,/g, ',');
-
-    fixedStr = balanceBrackets(fixedStr);
+    cleanedStr = cleanedStr
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    
+    // 修复属性值缺少引号的问题（必须在转义控制字符之前处理）
+    // 使用状态机方式，只在字符串外部进行修复，避免修改字符串内部的值
+    // 例如：:static" -> :"static"，但不应该修改 "HH:mm:ss" 中的 :ss"
+    let result = '';
+    let inString = false;
+    let escaped = false;
+    
+    for (let i = 0; i < cleanedStr.length; i++) {
+      const char = cleanedStr[i];
+      
+      if (escaped) {
+        result += char;
+        escaped = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        result += char;
+        escaped = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = !inString;
+        result += char;
+        continue;
+      }
+      
+      // 不在字符串内部时，检查是否需要修复属性值缺少引号
+      if (!inString && char === ':') {
+        // 检查后面是否是 空白 + 单词字符 + "
+        const remaining = cleanedStr.substring(i + 1);
+        const match = remaining.match(/^(\s*)([a-zA-Z_][a-zA-Z0-9_]*)"/);
+        if (match) {
+          // 找到了 :static" 模式，修复为 :"static"
+          result += ':"' + match[2] + '"';
+          i += match[0].length - 1; // -1 因为循环会 i++
+          continue;
+        }
+      }
+      
+      result += char;
+    }
+    
+    cleanedStr = result;
+    
+    // 修复属性名缺少前引号的情况（必须在转义控制字符之前处理）
+    // 例如：to": "#000" 应该是 "to": "#000"
+    // 匹配前面是逗号、换行、制表符或空格的情况
+    // 使用负向前瞻 (?!\s*") 确保后面不是另一个引号（避免匹配字符串值）
+    cleanedStr = cleanedStr.replace(/(?:^|[,\r\n\t ])([a-zA-Z_][a-zA-Z0-9_]*)"\s*:/g, '"$1":');
+    
+    // 修复 "key" [ 的情况（必须在转义控制字符之前处理）
+    // 否则 "fields []" 中的 ]" 会被误认为是字符串结束，导致后面的换行符被错误转义
+    // 匹配 "属性名" [ 或 "属性名" { 的情况（属性名后面可能没有闭合引号）
+    // 使用负向前瞻和负向后瞻确保不匹配字符串值中的内容
+    // (?<!") 确保前面不是引号，避免匹配 "return { 这样的字符串值
+    // 但又要确保是属性定义，所以需要检查前面是逗号、换行或开头
+    cleanedStr = cleanedStr.replace(/(?:^|[,\r\n\t ])"([a-zA-Z_][a-zA-Z0-9_]*)"\s+(\[|\{)/g, '"$1":$2');
+    
+    // 转义字符串内的控制字符（JSON 字符串内不允许直接换行）
+    cleanedStr = escapeControlCharsInStrings(cleanedStr);
+    
+    // 移除 JSON 结构中的控制字符（\r 和 \n）
+    // 注意：字符串内的已经在上面转义了，这里只处理结构中的
+    cleanedStr = cleanedStr.replace(/[\r\n]/g, '');
+    
+    cleanedStr = cleanedStr.trim();
 
     try {
-      return JSON.parse(fixedStr);
+      const result = JSON.parse(cleanedStr);
+      return result;
+    } catch (e) {
+      // 提取错误位置附近的内容
+      const match = e.message.match(/position (\d+)/);
+      if (match) {
+        const pos = parseInt(match[1]);
+        console.log('错误位置附近内容:', JSON.stringify(cleanedStr.substring(Math.max(0, pos - 50), pos + 50)));
+        console.log('错误位置:', pos, '字符:', JSON.stringify(cleanedStr.substring(pos, pos + 10)));
+      }
+    }
+
+    // 修复策略1: 找到有效的JSON起始位置
+    const firstBraceIndex = cleanedStr.indexOf('{');
+    const firstBracketIndex = cleanedStr.indexOf('[');
+    
+    // 找到第一个 { 或 [
+    let startIndex = -1;
+    if (firstBraceIndex !== -1 && firstBracketIndex !== -1) {
+      startIndex = Math.min(firstBraceIndex, firstBracketIndex);
+    } else if (firstBraceIndex !== -1) {
+      startIndex = firstBraceIndex;
+    } else if (firstBracketIndex !== -1) {
+      startIndex = firstBracketIndex;
+    }
+    
+    // 如果找到有效起始位置，截取从该位置开始的字符串
+    if (startIndex !== -1 && startIndex > 0) {
+      cleanedStr = cleanedStr.substring(startIndex);
+    }
+
+    // 修复策略2: 不再使用extractJsonStructure，直接使用清理后的完整字符串
+    // extractJsonStructure会被字符串中的大括号误导（如dataFilters的code字段）
+    let fixedStr = cleanedStr;
+
+    try {
+      const firstChar = fixedStr.charAt(0);
+      if (firstChar !== '{' && firstChar !== '[') {
+        fixedStr = '{' + fixedStr;
+      }
+
+      const lastChar = fixedStr.charAt(fixedStr.length - 1);
+      if (lastChar !== '}' && lastChar !== ']') {
+        fixedStr = fixedStr + '}';
+      }
+
+      fixedStr = fixedStr
+        .replace(/\/\/.*$/gm, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\n/gm, '');
+
+      // 修复属性值缺少引号的情况：:static" -> :"static"
+      fixedStr = fixedStr
+        .replace(/:(\s*)([a-zA-Z_][a-zA-Z0-9_]*)"/g, ':$1"$2"');
+
+      // 修复未闭合的字符串
+      fixedStr = fixUnclosedStrings(fixedStr);
+
+      // 修复属性名缺少引号的情况
+      // 只修复真正的 JSON 属性定义，避免修改字符串值中的内容
+      // 使用字符遍历来正确识别是否在字符串内部
+      fixedStr = fixPropertyNamesWithoutQuotes(fixedStr);
+
+      // 修复 "key" { 或 "key" [ 的情况（包括中间有多个空格的情况）
+      fixedStr = fixedStr
+        .replace(/"([^"]+)"\s+\{/g, '"$1":{')
+        .replace(/"([^"]+)"\s+\[/g, '"$1":[');
+      
+      // 再次处理没有空格的情况
+      fixedStr = fixedStr
+        .replace(/"([^"]+)"\s*\{/g, '"$1":{')
+        .replace(/"([^"]+)"\s*\[/g, '"$1":[');
+
+      fixedStr = fixMissingCommas(fixedStr);
+
+      fixedStr = fixedStr
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']')
+        .replace(/,\s*,/g, ',');
+
+      fixedStr = balanceBrackets(fixedStr);
+
+      try {
+        const result = JSON.parse(fixedStr);
+        return result;
+      } catch (e) {
+        return null;
+      }
     } catch (e) {
       return null;
     }
@@ -343,6 +402,72 @@ export function fixUnclosedStrings(str) {
     return str + '"';
   }
   return str;
+}
+
+/**
+ * 修复属性名缺少引号的问题
+ * 只修复真正的 JSON 属性定义，避免修改字符串值中的内容
+ * @param {string} str - 原始字符串
+ * @returns {string} 修复后的字符串
+ */
+export function fixPropertyNamesWithoutQuotes(str) {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+  let i = 0;
+  
+  while (i < str.length) {
+    const char = str[i];
+    
+    // 处理转义字符
+    if (escaped) {
+      result += char;
+      escaped = false;
+      i++;
+      continue;
+    }
+    
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      i++;
+      continue;
+    }
+    
+    // 处理引号（切换字符串状态）
+    if (char === '"') {
+      result += char;
+      inString = !inString;
+      i++;
+      continue;
+    }
+    
+    // 如果在字符串内部，直接复制字符
+    if (inString) {
+      result += char;
+      i++;
+      continue;
+    }
+    
+    // 不在字符串内部，检查是否匹配属性名缺少引号的情况
+    // 匹配：单词字符 + 冒号（前面是逗号、换行、制表符、开头或 {）
+    const matchResult = str.substring(i).match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:/);
+    if (matchResult) {
+      // 检查前面是否是有效的分隔符（逗号、换行、制表符、开头或 {）
+      if (result === '' || /[,\r\n\t{]$/.test(result)) {
+        // 这是一个真正的属性定义，添加引号
+        result += '"' + matchResult[1] + '":';
+        i += matchResult[0].length;
+        continue;
+      }
+    }
+    
+    // 不匹配，直接复制字符
+    result += char;
+    i++;
+  }
+  
+  return result;
 }
 
 /**
