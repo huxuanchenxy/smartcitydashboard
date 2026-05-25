@@ -21,9 +21,18 @@ export function calibrateJsonString(jsonStr) {
     cleanedStr = cleanedStr.substring(3);
   }
 
-  // 移除 markdown 代码块标记
-  cleanedStr = cleanedStr.replace(/^\s*```(json)?\s*/i, '');
-  cleanedStr = cleanedStr.replace(/\s*```\s*$/, '');
+  // 移除 markdown 代码块标记（检查开头和结尾）
+  // 检查开头是否有 ```json 或 ```
+  if (/^\s*```json\s*/i.test(cleanedStr)) {
+    cleanedStr = cleanedStr.replace(/^\s*```json\s*/i, '');
+  } else if (/^\s*```\s*/i.test(cleanedStr)) {
+    cleanedStr = cleanedStr.replace(/^\s*```\s*/i, '');
+  }
+  
+  // 检查结尾是否有 ```
+  if (/\s*```\s*$/i.test(cleanedStr)) {
+    cleanedStr = cleanedStr.replace(/\s*```\s*$/i, '');
+  }
   
   // 清理控制字符：只移除真正的控制字符，保留\n和\r（这些是数据内容）
   cleanedStr = cleanedStr
