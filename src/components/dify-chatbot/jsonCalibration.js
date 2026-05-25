@@ -12,12 +12,43 @@ import comsTemplate from './comstemplate.json';
  * @returns {any} 解析后的对象，如果失败返回null
  */
 export function calibrateJsonString(jsonStr) {
-  let cleanedStr = jsonStr.trim();
+  let cleanedStr = jsonStr;
 
-  cleanedStr = cleanedStr.replace(/^```(json)?\s*/i, '');
-  cleanedStr = cleanedStr.replace(/\s*```$/, '');
-  cleanedStr = cleanedStr.replace(/^\s*\.{3}\s*(json)?\s*/i, '');
-  cleanedStr = cleanedStr.replace(/\s*\.{3}\s*$/, '');
+  // 移除 UTF-8 BOM 字符（\uFEFF 或 \xEF\xBB\xBF）
+  if (cleanedStr.charCodeAt(0) === 0xFEFF) {
+    cleanedStr = cleanedStr.substring(1);
+  } else if (cleanedStr.substring(0, 3) === '\xEF\xBB\xBF') {
+    cleanedStr = cleanedStr.substring(3);
+  }
+
+  // 移除 markdown 代码块标记
+  cleanedStr = cleanedStr.replace(/^\s*```(json)?\s*/i, '');
+  cleanedStr = cleanedStr.replace(/\s*```\s*$/, '');
+  
+  // 清理控制字符：只移除真正的控制字符，保留\n和\r（这些是数据内容）
+  cleanedStr = cleanedStr
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  // 先修复属性值缺少引号的问题（必须在转义控制字符之前处理）
+  // 否则 :static" 中的 " 会被误认为是字符串开始，导致后面的换行符被错误转义
+  cleanedStr = cleanedStr.replace(/:(\s*)([a-zA-Z_][a-zA-Z0-9_]*)"/g, ':$1"$2"');
+  
+  // 修复 "key" [ 的情况（必须在转义控制字符之前处理）
+  // 否则 "fields []" 中的 ]" 会被误认为是字符串结束，导致后面的换行符被错误转义
+  // 匹配 "属性名" [ 或 "属性名" { 的情况（属性名后面可能没有闭合引号）
+  // 使用负向前瞻和负向后瞻确保不匹配字符串值中的内容
+  // (?<!") 确保前面不是引号，避免匹配 "return { 这样的字符串值
+  // 但又要确保是属性定义，所以需要检查前面是逗号、换行或开头
+  cleanedStr = cleanedStr.replace(/(?:^|[,\r\n\t ])"([a-zA-Z_][a-zA-Z0-9_]*)"\s+(\[|\{)/g, '"$1":$2');
+  
+  // 转义字符串内的控制字符（JSON 字符串内不允许直接换行）
+  cleanedStr = escapeControlCharsInStrings(cleanedStr);
+  
+  // 移除 JSON 结构中的控制字符（\r 和 \n）
+  // 注意：字符串内的已经在上面转义了，这里只处理结构中的
+  cleanedStr = cleanedStr.replace(/[\r\n]/g, '');
+  
+  cleanedStr = cleanedStr.trim();
 
   try {
     return JSON.parse(cleanedStr);
@@ -63,11 +94,24 @@ export function calibrateJsonString(jsonStr) {
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\n/gm, '');
 
+    // 修复属性值缺少引号的情况：:static" -> :"static"
+    fixedStr = fixedStr
+      .replace(/:(\s*)([a-zA-Z_][a-zA-Z0-9_]*)"/g, ':$1"$2"');
+
+    // 修复未闭合的字符串
     fixedStr = fixUnclosedStrings(fixedStr);
 
+    // 修复属性名缺少引号的情况
     fixedStr = fixedStr
       .replace(/(['"])?([a-zA-Z_][a-zA-Z0-9_]*)(['"])?\s*:/g, '"$2":');
 
+    // 修复 "key" { 或 "key" [ 的情况（包括中间有多个空格的情况）
+
+    fixedStr = fixedStr
+      .replace(/"([^"]+)"\s+\{/g, '"$1":{')
+      .replace(/"([^"]+)"\s+\[/g, '"$1":[');
+    
+    // 再次处理没有空格的情况
     fixedStr = fixedStr
       .replace(/"([^"]+)"\s*\{/g, '"$1":{')
       .replace(/"([^"]+)"\s*\[/g, '"$1":[');
@@ -81,10 +125,115 @@ export function calibrateJsonString(jsonStr) {
 
     fixedStr = balanceBrackets(fixedStr);
 
-    return JSON.parse(fixedStr);
+    try {
+      return JSON.parse(fixedStr);
+    } catch (e) {
+      return null;
+    }
   } catch (e) {
     return null;
   }
+}
+
+/**
+ * 转义字符串内的控制字符（JSON 字符串内不允许直接换行）
+ * @param {string} str - 原始字符串
+ * @returns {string} 处理后的字符串
+ */
+export function escapeControlCharsInStrings(str) {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+
+    if (inString) {
+      if (char === '\n') {
+        result += '\\n';
+      } else if (char === '\r') {
+        result += '\\r';
+      } else {
+        result += char;
+      }
+    } else {
+      result += char;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * 将字符串中的换行符转义（JSON 字符串内不允许直接换行）
+ * @param {string} str - 原始字符串
+ * @returns {string} 处理后的字符串
+ */
+export function escapeNewlinesInStrings(str) {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    if (escaped) {
+      // 如果上一个字符是转义符，直接添加当前字符
+      result += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      // 遇到转义符，标记下一个字符需要特殊处理
+      result += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      // 遇到双引号，切换字符串状态
+      inString = !inString;
+      result += char;
+      continue;
+    }
+
+    if (inString) {
+      // 在字符串内部
+      if (char === '\n') {
+        // 字符串内的换行符需要转义
+        result += '\\n';
+      } else if (char === '\r') {
+        // 字符串内的回车符需要转义
+        result += '\\r';
+      } else {
+        result += char;
+      }
+    } else {
+      // 在字符串外部，保持原样
+      result += char;
+    }
+  }
+
+  return result;
 }
 
 /**
