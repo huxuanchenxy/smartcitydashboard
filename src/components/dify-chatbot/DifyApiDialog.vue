@@ -64,6 +64,14 @@
           <div class="input-actions">
             <span class="hint" v-if="isLoading">AI 正在思考中，请稍候...</span>
             <el-button 
+              v-if="isLoading"
+              type="danger"
+              @click="stopGeneration"
+              class="stop-button"
+            >
+              停止生成
+            </el-button>
+            <el-button 
               type="primary" 
               @click="sendMessage" 
               :loading="isLoading"
@@ -158,6 +166,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
+    const currentTaskId = ref<string | null>(null);
 
     // 监听 visible 变化
     watch(() => props.visible, (newVal) => {
@@ -308,6 +317,10 @@ export default defineComponent({
 
               // 处理普通消息 - 实时更新
               if (data.event === 'message' && data.answer) {
+                // 保存 task_id 用于停止请求
+                if (data.task_id) {
+                  currentTaskId.value = data.task_id;
+                }
                 fullContent += data.answer;
                 const lastMsg = messages.value[messages.value.length - 1];
                 if (lastMsg?.role === 'assistant') {
@@ -387,9 +400,16 @@ export default defineComponent({
       } catch (error: any) {
         console.error('发送消息失败:', error);
         
-        // 如果是用户取消，不显示错误
+        // 如果是用户取消，不显示错误，保留已收到的内容
         if (error.name === 'AbortError') {
-          messages.value.pop(); // 移除思考中的消息
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            // 如果没有内容，显示"已停止"提示
+            if (!lastMsg.content.trim()) {
+              lastMsg.content = '已停止生成';
+            }
+          }
           return;
         }
 
@@ -404,6 +424,7 @@ export default defineComponent({
       } finally {
         isLoading.value = false;
         abortController.value = null;
+        currentTaskId.value = null;
       }
     };
 
@@ -412,6 +433,41 @@ export default defineComponent({
       messages.value = [];
       conversationId.value = '';
       ElMessage.success('对话已清空');
+    };
+
+    // 停止生成
+    const stopGeneration = async () => {
+      if (!isLoading.value) return;
+      
+      // 先调用官方停止接口
+      if (currentTaskId.value) {
+        try {
+          const response = await fetch(`${props.baseUrl}/v1/chat-messages/${currentTaskId.value}/stop`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${props.apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              user: props.userId
+            })
+          });
+          
+          const result = await response.json();
+          if (result.result === 'success') {
+            console.log('停止请求成功');
+          }
+        } catch (error) {
+          console.error('调用停止接口失败:', error);
+        }
+      }
+      
+      // 取消本地请求
+      if (abortController.value) {
+        abortController.value.abort();
+      }
+      
+      ElMessage.info('已停止生成');
     };
 
     // 保存AI生成的屏幕数据
@@ -920,6 +976,7 @@ export default defineComponent({
       handleClose,
       sendMessage,
       clearMessages,
+      stopGeneration,
       outputJsonToConsole,
       saveTempPayload,
       fetchAndSaveScreenAI,
