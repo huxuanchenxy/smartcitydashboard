@@ -80,7 +80,7 @@
         <el-button type="warning" @click="clearMessages">清空对话</el-button>
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
         <el-button type="success" @click="saveRawJson">原始保存</el-button>
-        <el-button type="info" @click="saveTempPayload">临时保存payload</el-button>
+        <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
         <!-- <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button> -->
         <el-button type="danger" @click="calibrateJson">校准JSON</el-button>
         <el-button type="primary" @click="copyLastMessageContent">复制回答内容</el-button>
