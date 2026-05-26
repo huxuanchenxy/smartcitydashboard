@@ -6,7 +6,10 @@
     :before-close="handleClose"
     :close-on-click-modal="false"
     append-to-body
+    :show-close="true"
+    class="custom-close-dialog"
   >
+    <button class="my-close-btn" @click="handleClose">×</button>
     <div class="dify-api-container">
       <!-- 消息区域 -->
       <div class="message-section" ref="messageContainer">
@@ -69,6 +72,7 @@
             >
               {{ isLoading ? '发送中' : '发送' }}
             </el-button>
+            <el-button type="warning" @click="clearMessages">清空对话</el-button>
           </div>
         </div>
       </div>
@@ -76,8 +80,8 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleClose">关闭</el-button>
-        <el-button type="warning" @click="clearMessages">清空对话</el-button>
+        <!-- <el-button @click="handleClose">关闭</el-button> -->
+        
         <el-button type="primary" @click="outputJsonToConsole">AI生成画布</el-button>
         <el-button type="success" @click="saveRawJson">原始保存</el-button>
         <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
@@ -1129,9 +1133,48 @@ export default defineComponent({
 }
 
 :deep(.el-dialog__header) {
-  border-bottom: 1px solid #e4e7ed;
-  margin-right: 0;
   padding: 16px 20px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+:deep(.el-dialog__headerbtn) {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 隐藏原来的关闭按钮 */
+:deep(.el-dialog__headerbtn) {
+  visibility: hidden;
+}
+
+/* 自定义关闭按钮 */
+.my-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #909399;
+  line-height: 32px;
+  text-align: center;
+  z-index: 100;
+}
+
+.my-close-btn:hover {
+  color: #606266;
 }
 
 :deep(.el-dialog__footer) {
