@@ -496,38 +496,6 @@ export default defineComponent({
             return;
         }
 
-        // 查找 JSON 数组（以 [ 开头，以 ] 结尾）
-        // const jsonArrayMatch = content.match(/\[[\s\S]*\]/);
-        
-        // if (jsonArrayMatch) {
-        //   const jsonStr = jsonArrayMatch[0];
-        //   try {
-        //     const jsonObj = JSON.parse(jsonStr);
-            
-        //     if (dataSProject) {
-        //       // 将值添加到 JSON 数组的每个对象中，键名为 projectid
-        //       if (Array.isArray(jsonObj)) {
-        //         jsonObj.forEach(item => {
-        //           if (typeof item === 'object' && item !== null) {
-        //             item.projectid = dataSProject;
-        //             // 添加 screen 数据（只包含id和name）
-        //             item.screen = {
-        //               id: EditorModule.screen.id,
-        //               name: EditorModule.screen.name
-        //             };
-        //           }
-        //         });
-        //       }
-        //     }
-            
-        //     console.log('AI 回答中的 JSON 内容:', jsonObj);
-        //     ElMessage.success('JSON 已输出到控制台');
-        //     return;
-        //   } catch (parseError) {
-        //     console.warn('找到 JSON 数组格式但解析失败:', parseError);
-        //   }
-        // }
-
         // 如果没有找到 JSON 格式，提示用户
         ElMessage.warning('回答内容中未找到有效的 JSON 格式');
         console.log('AI 回答内容（非 JSON）:', content);
