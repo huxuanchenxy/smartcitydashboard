@@ -237,7 +237,7 @@ export default defineComponent({
           body: JSON.stringify({
             inputs: props.data,
             query: query,
-            response_mode: 'streaming', // 改回流式模式
+            response_mode: 'streaming',
             conversation_id: conversationId.value,
             user: props.userId
           }),
@@ -259,7 +259,8 @@ export default defineComponent({
 
         let fullContent = '';
         let newConversationId = '';
-        let pendingData = ''; // 用于处理跨chunk的数据
+        let pendingData = '';
+        let hasError = false; // 【新增】标记是否已处理过错误事件
 
         // 流式处理每个数据块
         while (true) {
@@ -277,6 +278,29 @@ export default defineComponent({
 
             try {
               const data = JSON.parse(line.slice(6));
+
+              // 【新增】处理 error 事件
+              if (data.event === 'error') {
+                hasError = true;
+                const errorMsg = data.message || '服务发生未知错误';
+                const errorCode = data.code || 'unknown';
+                const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+                
+                console.error(errorDetail); // 控制台打印
+                
+                // 更新最后一条消息为错误提示
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = `请求失败：${errorMsg}`;
+                }
+                
+                ElMessage.error(errorDetail); // 弹出报错消息
+                continue;
+              }
+
+              // 如果已经出现过 error 事件，跳过后续数据处理
+              if (hasError) continue;
 
               // 处理普通消息 - 实时更新
               if (data.event === 'message' && data.answer) {
@@ -312,7 +336,26 @@ export default defineComponent({
         if (pendingData.trim() && pendingData.startsWith('data: ')) {
           try {
             const data = JSON.parse(pendingData.slice(6));
-            if (data.event === 'message' && data.answer) {
+            
+            // 【新增】处理残留数据中的 error 事件
+            if (data.event === 'error') {
+              hasError = true;
+              const errorMsg = data.message || '服务发生未知错误';
+              const errorCode = data.code || 'unknown';
+              const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+              
+              console.error(errorDetail);
+              
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = `请求失败：${errorMsg}`;
+              }
+              
+              ElMessage.error(errorDetail);
+            }
+            
+            if (!hasError && data.event === 'message' && data.answer) {
               fullContent += data.answer;
               const lastMsg = messages.value[messages.value.length - 1];
               if (lastMsg?.role === 'assistant') {
@@ -332,7 +375,10 @@ export default defineComponent({
           emit('conversation-created', newConversationId);
         }
 
-        emit('message-received', fullContent);
+        // 【新增】如果发生了错误，不再触发 message-received 成功事件
+        if (!hasError) {
+          emit('message-received', fullContent);
+        }
 
       } catch (error: any) {
         console.error('发送消息失败:', error);
