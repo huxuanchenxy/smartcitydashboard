@@ -11,12 +11,12 @@
         <n-icon class="icon-search">
           <IconSearch />
         </n-icon>
-        <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
+        <!-- <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
           <n-icon>
             <IconAi />
           </n-icon>
           <span>AI助手</span>
-        </n-button>
+        </n-button> -->
       </div>
     </div>
     <div class="main-screen">

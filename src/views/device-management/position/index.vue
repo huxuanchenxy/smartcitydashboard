@@ -36,11 +36,11 @@
                 <IconServerSearch />
               </n-icon>
               <span>Dify 聊天机器人 (iframe)</span></n-button> -->
-            <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
+            <!-- <n-button class="Server-button" color="#722ED1" @click="openDifyApiDialog">
               <n-icon>
                 <IconAi />
               </n-icon>
-              <span>Dify 聊天机器人 (API)</span></n-button>
+              <span>Dify 聊天机器人 (API)</span></n-button> -->
           </div>
         </div>
 
