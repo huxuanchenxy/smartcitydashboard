@@ -2,19 +2,154 @@
 
 ```json
 {
-  "screen": {
-    "id": 169,
-    "name": "智慧交通监测屏",
-    "share": "",
-    "thumbnail": null,
-    "groupId": 4
-  },
-  "config": {
-    "width": 1920,
-    "height": 1080,
-    "bgimage": "data/originPic/traffic_bg.png",
-    "bgcolor": "#0a1a2f",
-    "grid": 1,
-    "screenshot": "",
-    "zoomMode": 0,
-    "useWatermark": false,
+    "screen": {
+        "id": 1,
+        "name": "智慧环保大屏",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 1
+    },
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0.95)",
+        "grid": 10,
+        "screenshot": "",
+        "zoomMode": 0,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
+        },
+        "tokenSettings": []
+    },
+    "coms": [
+        {
+            "id": "MainTitle_VK9X1c1ry",
+            "name": "VMainTitle",
+            "type": "com",
+            "alias": "智慧环保",
+            "icon": "v-icon-title",
+            "img": "images/缩略图/通用标题.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": false,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 760,
+                "y": 50,
+                "w": 400,
+                "h": 80,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 159,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "refreshData": {
+                    "eventName": "refreshData",
+                    "description": "更新数据",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "title": "智慧环保监测平台",
+                "textStyle": {
+                    "fontFamily": "Microsoft Yahei",
+                    "fontSize": 36,
+                    "color": "#34FFF5",
+                    "fontWeight": "bold"
+                },
+                "textAlign": "center",
+                "writingMode": "horizontal-tb",
+                "letterSpacing": 2,
+                "backgroundStyle": {
+                    "show": true,
+                    "bgColor": "rgba(0,0,0,0.3)",
+                    "borderRadius": 10,
+                    "borderColor": "#34FFF5",
+                    "borderStyle": "solid",
+                    "borderWidth": 2
+                },
+                "ellipsis": false,
+                "urlConfig": {
+                    "url": "",
+                    "isBlank": false
+                },
+                "animation": {
+                    "enable": true,
+                    "name": "Updown",
+                    "duration": 2000,
+                    "timing": "linear",
+                    "delay": 0,
+                    "iteration": "infinite",
+                    "direction": "alternate"
+                },
+                "cursor": "default"
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "title": {
+                            "type": "string",
+                            "map": "",
+                            "description": "标题值",
+                            "optional": true
+                        }
+                    },
+                    "render": "render",
+                    "description": "",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "MainTitle_VK9X1c1ry",
+                    "id": "j7QOyBwuXH",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"title\":\"智慧环保监测平台\"}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {},
+            "actions": {}
+        }
+    ],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
+}
+```
