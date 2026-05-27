@@ -87,16 +87,22 @@
     </div>
 
     <template #footer>
-      <span class="dialog-footer">
+      <div class="dialog-footer">
         <!-- <el-button @click="handleClose">关闭</el-button> -->
-        
+
         <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button>
         <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button>
         <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
         <!-- <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button> -->
         <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button>
         <el-button type="primary" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
-      </span>
+        <!-- <el-switch
+          v-model="enableJsonValidation"
+          active-text="JSON校验"
+          inactive-text="JSON校验"
+          class="json-validation-switch"
+        /> -->
+      </div>
     </template>
   </el-dialog>
 </template>
@@ -167,6 +173,8 @@ export default defineComponent({
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
     const currentTaskId = ref<string | null>(null);
+    // JSON保存前校验开关 - 开启时会在saveScreenAI前校验JSON结构是否符合最低要求
+    const enableJsonValidation = ref(true);
 
     // 监听 visible 变化
     watch(() => props.visible, (newVal) => {
@@ -470,6 +478,42 @@ export default defineComponent({
       ElMessage.info('已停止生成');
     };
 
+    // 校验屏幕JSON是否符合最低结构要求
+    // 返回true表示通过校验，false表示未通过
+    const validateScreenJsonStructure = (jsonObj: any): boolean => {
+      // 检查是否为对象
+      if (!jsonObj || typeof jsonObj !== 'object') {
+        ElMessage.warning('JSON结构无效：根对象不存在或不是有效对象');
+        return false;
+      }
+
+      // 检查screen对象
+      if (!jsonObj.screen || typeof jsonObj.screen !== 'object') {
+        ElMessage.warning('JSON结构无效：缺少screen对象或screen不是有效对象');
+        return false;
+      }
+
+      // 检查screen.id
+      if (jsonObj.screen.id === undefined || jsonObj.screen.id === null) {
+        ElMessage.warning('JSON结构无效：screen对象缺少id字段');
+        return false;
+      }
+
+      // 检查screen.name
+      if (jsonObj.screen.name === undefined || jsonObj.screen.name === null) {
+        ElMessage.warning('JSON结构无效：screen对象缺少name字段');
+        return false;
+      }
+
+      // 检查coms数组
+      if (!Array.isArray(jsonObj.coms)) {
+        ElMessage.warning('JSON结构无效：coms不是有效的数组');
+        return false;
+      }
+
+      return true;
+    };
+
     // 保存AI生成的屏幕数据
     const saveScreenAI = async (jsonObj: any) => {
       try {
@@ -595,7 +639,13 @@ export default defineComponent({
                 return refineComponentByTemplate(component, template);
               });
             }
-            
+
+            // JSON结构校验（如果开启校验功能）
+            if (enableJsonValidation.value && !validateScreenJsonStructure(repairedJson)) {
+              console.warn('JSON结构校验未通过，拒绝保存');
+              return;
+            }
+
             // 调用saveScreenAI方法保存AI生成的屏幕数据
             await saveScreenAI(repairedJson);
             console.log('AI 回答中的 JSON 内容saveScreenAI:', repairedJson);
@@ -733,6 +783,12 @@ export default defineComponent({
           if(EditorModule.screen.name) {
             refinedJson.screen.name = EditorModule.screen.name;
           }
+        }
+
+        // JSON结构校验（如果开启校验功能）
+        if (enableJsonValidation.value && !validateScreenJsonStructure(refinedJson)) {
+          console.warn('JSON结构校验未通过，拒绝保存');
+          return;
         }
 
         // 6. 保存校准后的JSON
@@ -956,6 +1012,12 @@ export default defineComponent({
           }
         }
 
+        // JSON结构校验（如果开启校验功能）
+        if (enableJsonValidation.value && !validateScreenJsonStructure(jsonObj)) {
+          console.warn('JSON结构校验未通过，拒绝保存');
+          return;
+        }
+
         // 4. 保存校准后的JSON（不进行后续组件修复和模板校对）
         await saveScreenAI(jsonObj);
         ElMessage.success('原始保存成功');
@@ -973,6 +1035,7 @@ export default defineComponent({
       messages,
       isLoading,
       messageContainer,
+      enableJsonValidation,
       handleClose,
       sendMessage,
       clearMessages,
@@ -1237,5 +1300,18 @@ export default defineComponent({
 :deep(.el-dialog__footer) {
   border-top: 1px solid #e4e7ed;
   padding: 12px 20px;
+}
+
+/* JSON校验开关样式 */
+.json-validation-switch {
+  margin-left: auto;
+}
+
+.dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 </style>

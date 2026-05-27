@@ -1,0 +1,35 @@
+{
+    "screen": {
+        "id": 299,
+        "name": "边界测试",
+        "share": "",
+        "thumbnail": null,
+        "groupId": 7
+    },
+    "config": {
+        "width": 1920,
+        "height": 1080,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0)",
+        "grid": 8,
+        "screenshot": "",
+        "zoomMode": 1,
+        "useWatermark": false,
+        "styleFilterParams": {
+            "enable": false,
+            "hue": 0,
+            "saturate": 100,
+            "brightness": 100,
+            "contrast": 100,
+            "opacity": 100
+        },
+        "tokenSettings": []
+    },
+    "coms": [],
+    "variables": {
+        "componentsView": {},
+        "publishersView": {},
+        "subscribersView": {}
+    },
+    "dataFilters": []
+}
