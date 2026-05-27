@@ -1,7 +1,7 @@
 ﻿{
     "screen": {
-        "id": 288,
-        "name": "智慧医疗大屏",
+        "id": 300,
+        "name": "聊天报错情况",
         "share": "",
         "thumbnail": null,
         "groupId": 1
@@ -9,9 +9,9 @@
     "config": {
         "width": 1920,
         "height": 1080,
-        "bgimage": "images/背景/medical_bg.png",
-        "bgcolor": "#0A1F3C",
-        "grid": 20,
+        "bgimage": "data/originPic/bj.png",
+        "bgcolor": "rgba(13,42,67,0)",
+        "grid": 10,
         "screenshot": "",
         "zoomMode": 0,
         "useWatermark": false,
@@ -27,10 +27,10 @@
     },
     "coms": [
         {
-            "id": "MainTitle_V1",
+            "id": "MainTitle_X1gT9sQb",
             "name": "VMainTitle",
             "type": "com",
-            "alias": "智慧医疗监控中心",
+            "alias": "智能办公中心",
             "icon": "v-icon-title",
             "img": "images/缩略图/通用标题.png",
             "locked": false,
@@ -42,7 +42,7 @@
             "special": "",
             "attr": {
                 "x": 760,
-                "y": 50,
+                "y": 20,
                 "w": 400,
                 "h": 80,
                 "deg": 0,
@@ -50,7 +50,7 @@
                 "filpV": false,
                 "filpH": false
             },
-            "projectId": 288,
+            "projectId": 300,
             "handles": {
                 "click": {
                     "eventName": "click",
@@ -106,9 +106,9 @@
                 }
             },
             "config": {
-                "title": "智慧医疗监控中心",
+                "title": "智能办公空间监测平台",
                 "textStyle": {
-                    "fontFamily": "Microsoft YaHei",
+                    "fontFamily": "Microsoft Yahei",
                     "fontSize": 36,
                     "color": "#00F0FF",
                     "fontWeight": "bold"
@@ -117,12 +117,12 @@
                 "writingMode": "horizontal-tb",
                 "letterSpacing": 2,
                 "backgroundStyle": {
-                    "show": false,
-                    "bgColor": "#00000000",
-                    "borderRadius": 0,
-                    "borderColor": "#fff",
+                    "show": true,
+                    "bgColor": "rgba(0, 170, 255, 0.1)",
+                    "borderRadius": 10,
+                    "borderColor": "#00AAFF",
                     "borderStyle": "solid",
-                    "borderWidth": 1
+                    "borderWidth": 2
                 },
                 "ellipsis": false,
                 "urlConfig": {
@@ -131,13 +131,12 @@
                 },
                 "animation": {
                     "enable": true,
-                    "name": "fadeIn",
-                    "duration": 1000,
+                    "name": "ZoomIn",
+                    "duration": 2000,
                     "timing": "ease-in-out",
                     "delay": 0,
-                    "iteration": "once",
-                    "direction": "normal",
-                    "state": "running"
+                    "iteration": "infinite",
+                    "direction": "alternate"
                 },
                 "cursor": "default"
             },
@@ -158,20 +157,20 @@
                         }
                     },
                     "render": "render",
-                    "description": "主标题接口",
+                    "description": "",
                     "useAutoUpdate": false,
                     "autoUpdate": 1
                 }
             },
             "apiData": {
                 "source": {
-                    "comId": "MainTitle_V1",
-                    "id": "ST001",
+                    "comId": "MainTitle_X1gT9sQb",
+                    "id": "ST_1",
                     "type": "static",
                     "pageFilters": [],
                     "config": {
                         "useFilter": false,
-                        "data": "{\"title\":\"智慧医疗监控中心\"}",
+                        "data": "{\"title\":\"智能办公空间监测平台\"}",
                         "postBodyType": "static"
                     }
                 }
@@ -180,12 +179,12 @@
             "actions": {}
         },
         {
-            "id": "DashboardPie_V2",
-            "name": "VDashboardPie",
+            "id": "BasicLine_A1bC2dEf",
+            "name": "VBasicLine",
             "type": "com",
-            "alias": "病床使用率",
-            "icon": "v-icon-chart-pie",
-            "img": "images/缩略图/仪表饼图.png",
+            "alias": "办公能耗趋势",
+            "icon": "v-icon-chart-line",
+            "img": "images/缩略图/基本折线图.png",
             "locked": false,
             "hided": false,
             "eventhub": false,
@@ -194,207 +193,16 @@
             "renameing": false,
             "special": "",
             "attr": {
-                "x": 300,
-                "y": 250,
-                "w": 400,
-                "h": 300,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 288,
-            "handles": {
-                "click": {
-                    "eventName": "click",
-                    "description": "点击",
-                    "fields": []
-                },
-                "refreshData": {
-                    "eventName": "refreshData",
-                    "description": "更新数据",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "graphical": {
-                    "margin": {
-                        "top": 10,
-                        "bottom": 10,
-                        "left": 10,
-                        "right": 10
-                    },
-                    "min": 0,
-                    "max": 100,
-                    "startAngle": 180,
-                    "endAngle": 0
-                },
-                "pointer": {
-                    "show": true,
-                    "length": 70,
-                    "width": 12,
-                    "horizontal": 0,
-                    "vertical": 0
-                },
-                "progress": {
-                    "show": true,
-                    "roundCap": true,
-                    "color": "#00C8E9",
-                    "border": {
-                        "type": "solid",
-                        "width": 1,
-                        "color": "#00C8E9"
-                    }
-                },
-                "axisLine": {
-                    "width": 10,
-                    "color": "#1A3B6D"
-                },
-                "splitLine": {
-                    "length": 15,
-                    "lineStyle": {
-                        "width": 2,
-                        "color": "#00C8E9"
-                    }
-                },
-                "axisTick": {
-                    "show": true,
-                    "splitNumber": 2,
-                    "lineStyle": {
-                        "width": 2,
-                        "color": "#00C8E9"
-                    }
-                },
-                "axisLabel": {
-                    "show": true,
-                    "distance": 25,
-                    "color": "#00F0FF",
-                    "fontFamily": "Microsoft YaHei",
-                    "fontWeight": "normal",
-                    "fontSize": 18
-                },
-                "title": {
-                    "show": true,
-                    "horizontal": 0,
-                    "vertical": -40,
-                    "text": "病床使用率",
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "bold",
-                        "fontSize": 24,
-                        "color": "#00F0FF"
-                    }
-                },
-                "content": {
-                    "show": true,
-                    "horizontal": 0,
-                    "vertical": 0,
-                    "textStyle": {
-                        "fontFamily": "Microsoft YaHei",
-                        "fontWeight": "bold",
-                        "fontSize": 36,
-                        "color": "#00F0FF"
-                    },
-                    "labelLine": {
-                        "show": false,
-                        "color": "#00C8E9",
-                        "width": 2,
-                        "type": "solid"
-                    }
-                },
-                "animation": {
-                    "enabled": true,
-                    "easing": "cubicOut",
-                    "duration": 1500
-                },
-                "series": [
-                    {
-                        "type": "pie",
-                        "id": "BED_USAGE",
-                        "name": "病床使用率"
-                    }
-                ]
-            },
-            "apis": {
-                "source": {
-                    "fields": {
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
-                            "optional": false
-                        }
-                    },
-                    "render": "render",
-                    "description": "仪表饼图接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 60
-                }
-            },
-            "apiData": {
-                "source": {
-                    "comId": "DashboardPie_V2",
-                    "id": "DP001",
-                    "type": "static",
-                    "pageFilters": [],
-                    "config": {
-                        "useFilter": false,
-                        "data": "{\"value\":72.5}",
-                        "postBodyType": "static"
-                    }
-                }
-            },
-            "events": {
-                "click": {
-                    "description": "当点击数据项时",
-                    "fields": {
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
-                            "optional": false
-                        }
-                    }
-                }
-            },
-            "actions": {}
-        },
-        {
-            "id": "BasicRadar_V3",
-            "name": "VBasicRadar",
-            "type": "com",
-            "alias": "科室绩效评估",
-            "icon": "v-icon-chart-radar",
-            "img": "images/缩略图/雷达图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 850,
-                "y": 200,
-                "w": 500,
+                "x": 100,
+                "y": 150,
+                "w": 600,
                 "h": 400,
                 "deg": 0,
                 "opacity": 1,
                 "filpV": false,
                 "filpH": false
             },
-            "projectId": 288,
+            "projectId": 300,
             "handles": {
                 "click": {
                     "eventName": "click",
@@ -409,252 +217,68 @@
                 "mouseLeave": {
                     "eventName": "mouseLeave",
                     "description": "鼠标移出",
-                    "fields": []
-                }
-            },
-            "ichandles": {},
-            "config": {
-                "color": "#00F0FF",
-                "startAngle": 90,
-                "splitNumber": 5,
-                "shape": "polygon",
-                "splitAreaStyle": {
-                    "color": "#002B5B",
-                    "shadowColor": "rgba(0, 0, 0, 0)",
-                    "shadowBlur": 0
-                },
-                "axisName": {
-                    "formatter": "{value}",
-                    "color": "#00F0FF",
-                    "show": true,
-                    "fontStyle": "normal",
-                    "fontWeight": "bold",
-                    "fontFamily": "Microsoft YaHei",
-                    "fontSize": 16
-                },
-                "axisLine": {
-                    "show": true,
-                    "lineStyle": {
-                        "color": "#00C8E9",
-                        "width": 2,
-                        "type": "solid",
-                        "opacity": 0.8
-                    }
-                },
-                "splitLine": {
-                    "lineStyle": {
-                        "color": "#00C8E9",
-                        "width": 1.5,
-                        "type": "dashed"
-                    },
-                    "show": true
-                },
-                "dataArea": {
-                    "symbolSize": "8",
-                    "symbol": "circle",
-                    "areaStyle": {
-                        "color": "rgba(0, 199, 231, 0.6)"
-                    },
-                    "lineStyle": {
-                        "color": "#00C8E9",
-                        "width": 2,
-                        "type": "solid",
-                        "shadowColor": "rgba(0, 0, 0, 0.3)",
-                        "shadowBlur": 5
-                    }
-                }
-            },
-            "apis": {
-                "source": {
-                    "fields": {
-                        "name": {
-                            "type": "string",
-                            "map": "",
-                            "description": "分类",
-                            "optional": false
-                        },
-                        "max": {
-                            "type": "string",
-                            "map": "",
-                            "description": "最大值",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
-                            "optional": false
-                        }
-                    },
-                    "render": "render",
-                    "description": "基本雷达图接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 120
-                }
-            },
-            "apiData": {
-                "source": {
-                    "comId": "BasicRadar_V3",
-                    "id": "RD001",
-                    "type": "static",
-                    "pageFilters": [],
-                    "config": {
-                        "useFilter": false,
-                        "data": "[{\"name\":\"急诊\",\"max\":100,\"value\":85},{\"name\":\"内科\",\"max\":100,\"value\":78},{\"name\":\"外科\",\"max\":100,\"value\":92},{\"name\":\"儿科\",\"max\":100,\"value\":88},{\"name\":\"ICU\",\"max\":100,\"value\":76}]",
-                        "postBodyType": "static"
-                    }
-                }
-            },
-            "events": {
-                "click": {
-                    "description": "当点击数据项时",
-                    "fields": {
-                        "name": {
-                            "type": "string",
-                            "map": "",
-                            "description": "分类",
-                            "optional": false
-                        },
-                        "max": {
-                            "type": "string",
-                            "map": "",
-                            "description": "最大值",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
-                            "optional": false
-                        }
-                    }
-                }
-            },
-            "actions": {}
-        },
-        {
-            "id": "BasicBar_V4",
-            "name": "VBasicBar",
-            "type": "com",
-            "alias": "科室患者数量",
-            "icon": "v-icon-chart-bar",
-            "img": "images/缩略图/柱状图.png",
-            "locked": false,
-            "hided": false,
-            "eventhub": false,
-            "selected": true,
-            "hovered": false,
-            "renameing": false,
-            "special": "",
-            "attr": {
-                "x": 150,
-                "y": 600,
-                "w": 1620,
-                "h": 400,
-                "deg": 0,
-                "opacity": 1,
-                "filpV": false,
-                "filpH": false
-            },
-            "projectId": 288,
-            "handles": {
-                "clickChart": {
-                    "eventName": "clickChart",
-                    "description": "点击项",
-                    "fields": []
-                },
-                "mouseEnter": {
-                    "eventName": "mouseEnter",
-                    "description": "鼠标移入",
-                    "fields": []
-                },
-                "mouseLeave": {
-                    "eventName": "mouseLeave",
-                    "description": "鼠标移出",
-                    "fields": []
-                },
-                "click": {
-                    "eventName": "click",
-                    "description": "点击",
-                    "fields": []
-                },
-                "refreshData": {
-                    "eventName": "refreshData",
-                    "description": "更新数据",
                     "fields": []
                 }
             },
             "ichandles": {},
             "config": {
                 "global": {
-                    "fontFamily": "Microsoft YaHei",
+                    "fontFamily": "Microsoft Yahei",
                     "margin": {
                         "top": 40,
-                        "bottom": 60,
-                        "left": 80,
-                        "right": 40
+                        "bottom": 50,
+                        "left": 60,
+                        "right": 30
                     },
-                    "innerPadding": 0.2,
-                    "outerPadding": 0.1,
-                    "barWidth": 24,
-                    "background": {
-                        "show": false,
-                        "color": "#00000000"
-                    }
-                },
-                "label": {
-                    "show": false,
-                    "position": "top",
-                    "textStyle": {
-                        "fontSize": 14,
-                        "color": "#00F0FF",
-                        "fontWeight": "normal"
-                    },
-                    "offsetX": 0,
-                    "offsetY": 0
+                    "connectNulls": false
                 },
                 "xAxis": {
                     "show": true,
                     "type": "category",
+                    "extent": {
+                        "min": "auto",
+                        "max": "auto"
+                    },
+                    "boundaryGap": true,
                     "title": {
                         "show": false,
-                        "name": "",
+                        "name": "X轴",
                         "location": "center",
                         "display": {
                             "rotate": 0,
                             "offset": 20
                         },
                         "textStyle": {
-                            "fontSize": 18,
-                            "color": "#00F0FF",
-                            "fontWeight": "bold"
+                            "fontSize": 12,
+                            "color": "#90a0ae",
+                            "fontWeight": "normal"
                         }
                     },
                     "axisLine": {
                         "show": true,
                         "type": "solid",
-                        "width": 2,
-                        "color": "#00C8E9"
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
                     },
                     "axisTick": {
                         "show": true,
                         "type": "solid",
-                        "width": 2,
-                        "color": "#00C8E9"
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
                     },
                     "axisLabel": {
                         "show": true,
-                        "timeFormat": "",
-                        "boundaryGap": true,
-                        "interval": 0,
+                        "valueFormat": "d",
+                        "timeFormat": "MM/DD",
+                        "interval": "auto",
                         "display": {
                             "rotate": 0,
-                            "margin": 0
+                            "margin": 10
                         },
                         "align": "center",
                         "textStyle": {
-                            "fontSize": 16,
-                            "color": "#00F0FF",
+                            "fontSize": 12,
+                            "color": "rgba(255, 255, 255, 0.6)",
                             "fontWeight": "normal"
                         }
                     },
@@ -663,153 +287,344 @@
                         "line": {
                             "type": "dashed",
                             "width": 1,
-                            "color": "#1A3B6D",
-                            "dashedLength": 5,
-                            "dashedSpace": 5,
-                            "show": true
+                            "color": "rgba(233, 228, 228, 0.1)",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
                         }
-                    },
-                    "extent": {
-                        "min": "auto",
-                        "max": "auto"
-                    },
-                    "boundaryGap": true
+                    }
                 },
                 "yAxis": {
                     "show": true,
+                    "type": "value",
                     "extent": {
                         "min": "auto",
                         "max": "auto"
                     },
-                    "splitNumber": 5,
                     "title": {
                         "show": false,
-                        "name": "",
+                        "name": "Y轴",
                         "location": "center",
                         "display": {
-                            "rotate": 0,
+                            "rotate": 90,
                             "offset": 20
                         },
                         "textStyle": {
-                            "fontSize": 18,
-                            "color": "#00F0FF",
-                            "fontWeight": "bold"
+                            "fontSize": 12,
+                            "color": "#90a0ae",
+                            "fontWeight": "normal"
                         }
                     },
                     "axisLine": {
-                        "show": false,
+                        "show": true,
                         "type": "solid",
-                        "width": 2,
-                        "color": "#00C8E9"
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
                     },
                     "axisTick": {
-                        "show": false,
+                        "show": true,
                         "type": "solid",
-                        "width": 2,
-                        "color": "#00C8E9"
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
                     },
                     "axisLabel": {
                         "show": true,
                         "valueFormat": "auto",
-                        "boundaryGap": true,
+                        "timeFormat": "MM/DD",
+                        "boundaryGap": 0,
                         "display": {
                             "rotate": 0,
-                            "margin": 0
+                            "margin": 8
                         },
                         "align": "right",
                         "textStyle": {
-                            "fontSize": 14,
-                            "color": "#00F0FF",
+                            "fontSize": 12,
+                            "color": "rgba(255, 255, 255, 0.6)",
                             "fontWeight": "normal"
-                        },
-                        "timeFormat": ""
+                        }
                     },
                     "grid": {
                         "show": true,
                         "line": {
                             "type": "dashed",
                             "width": 1,
-                            "color": "#1A3B6D",
-                            "dashedLength": 5,
-                            "dashedSpace": 5,
-                            "show": true
+                            "color": "rgba(233, 228, 228, 0.1)",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
                         }
-                    },
-                    "type": "value"
+                    }
                 },
                 "tooltip": {
                     "show": true,
+                    "triggerOn": "mousemove",
                     "textStyle": {
                         "fontSize": 14,
-                        "color": "#00F0FF",
+                        "color": "#fff",
                         "fontWeight": "normal"
                     },
                     "background": {
                         "padding": {
-                            "h": 10,
-                            "v": 8
+                            "h": 5,
+                            "v": 5
                         },
-                        "color": "#1A3B6D",
-                        "borderColor": "#00C8E9",
+                        "color": "rgba(0, 0, 0, 0.65)",
+                        "borderColor": "rgba(0, 0, 0, 0.25)",
                         "borderWidth": 1
                     },
                     "pointer": {
                         "show": true,
                         "line": {
-                            "type": "solid",
+                            "type": "dashed",
                             "width": 1,
-                            "color": "#00C8E9",
+                            "color": "#f5dc69",
                             "dashedLength": 4,
                             "dashedSpace": 4
                         }
-                    },
-                    "triggerOn": "mousemove"
+                    }
                 },
                 "legend": {
-                    "show": false,
-                    "position": {
-                        "top": 10,
-                        "bottom": 10,
-                        "left": 10,
-                        "right": 10
-                    },
+                    "show": true,
+                    "position": "top-center",
                     "orient": "horizontal",
                     "textStyle": {
-                        "fontSize": 14,
-                        "color": "#00F0FF",
+                        "fontSize": 12,
+                        "color": "#90a0ae",
                         "fontWeight": "normal"
                     },
                     "symbol": {
                         "show": true,
-                        "icon": "circle",
-                        "width": 12,
-                        "height": 12,
-                        "gap": 8
+                        "icon": "auto",
+                        "width": 25,
+                        "height": 14,
+                        "gap": 10
                     },
                     "page": {
                         "enabled": false,
                         "size": {
-                            "width": 80,
-                            "height": 30
+                            "width": 100,
+                            "height": 100
                         },
                         "button": {
-                            "size": 20,
-                            "color": "#00C8E9",
-                            "inactiveColor": "#00557F"
+                            "size": 15,
+                            "color": "#000",
+                            "inactiveColor": "#000"
                         },
-                        "pageNumColor": "#00F0FF"
+                        "pageNumColor": "#90a0ae"
                     }
                 },
                 "series": [
                     {
-                        "type": "bar",
-                        "id": "PATIENT_COUNT",
-                        "name": "患者数量",
-                        "color": {
-                            "type": "solid",
-                            "value": "#00C8E9",
-                            "from": "",
-                            "to": ""
+                        "type": "line",
+                        "id": "cJJO6Z5-NJ",
+                        "name": "",
+                        "line": {
+                            "color": "#34FFF5",
+                            "style": "solid",
+                            "width": 1,
+                            "opacity": 1,
+                            "smooth": 0.5
+                        },
+                        "point": {
+                            "icon": "roundRect",
+                            "color": "#34FFF5",
+                            "borderColor": "rgba(0, 0, 0, 0.44)",
+                            "borderWidth": 1,
+                            "borderType": "solid",
+                            "opacity": 1
+                        },
+                        "label": {
+                            "show": false,
+                            "field": "y",
+                            "valueFormat": "auto",
+                            "describe": {
+                                "prefix": "",
+                                "suffix": ""
+                            },
+                            "offset": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotate": 0,
+                            "textStyle": {
+                                "fontSize": 12,
+                                "color": "#ddd",
+                                "fontWeight": "normal"
+                            },
+                            "stroke": {
+                                "color": "#000",
+                                "width": 0
+                            }
+                        }
+                    },
+                    {
+                        "type": "line",
+                        "id": "VZ_G4faO4P",
+                        "name": "",
+                        "line": {
+                            "color": "#30D9F1",
+                            "style": "solid",
+                            "width": 1,
+                            "opacity": 1,
+                            "smooth": 0.5
+                        },
+                        "point": {
+                            "icon": "roundRect",
+                            "color": "#30D9F1",
+                            "borderColor": "rgba(0, 0, 0, 0.44)",
+                            "borderWidth": 1,
+                            "borderType": "solid",
+                            "opacity": 1
+                        },
+                        "label": {
+                            "show": false,
+                            "field": "y",
+                            "valueFormat": "auto",
+                            "describe": {
+                                "prefix": "",
+                                "suffix": ""
+                            },
+                            "offset": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotate": 0,
+                            "textStyle": {
+                                "fontSize": 12,
+                                "color": "#ddd",
+                                "fontWeight": "normal"
+                            },
+                            "stroke": {
+                                "color": "#000",
+                                "width": 0
+                            }
+                        }
+                    },
+                    {
+                        "type": "line",
+                        "id": "tMBUaBfyiS",
+                        "name": "",
+                        "line": {
+                            "color": "#2CB4ED",
+                            "style": "solid",
+                            "width": 1,
+                            "opacity": 1,
+                            "smooth": 0.5
+                        },
+                        "point": {
+                            "icon": "roundRect",
+                            "color": "#2CB4ED",
+                            "borderColor": "rgba(0, 0, 0, 0.44)",
+                            "borderWidth": 1,
+                            "borderType": "solid",
+                            "opacity": 1
+                        },
+                        "label": {
+                            "show": false,
+                            "field": "y",
+                            "valueFormat": "auto",
+                            "describe": {
+                                "prefix": "",
+                                "suffix": ""
+                            },
+                            "offset": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotate": 0,
+                            "textStyle": {
+                                "fontSize": 12,
+                                "color": "#ddd",
+                                "fontWeight": "normal"
+                            },
+                            "stroke": {
+                                "color": "#000",
+                                "width": 0
+                            }
+                        }
+                    },
+                    {
+                        "type": "line",
+                        "id": "d3E1xonQag",
+                        "name": "",
+                        "line": {
+                            "color": "#288EE8",
+                            "style": "solid",
+                            "width": 1,
+                            "opacity": 1,
+                            "smooth": 0.5
+                        },
+                        "point": {
+                            "icon": "roundRect",
+                            "color": "#288EE8",
+                            "borderColor": "rgba(0, 0, 0, 0.44)",
+                            "borderWidth": 1,
+                            "borderType": "solid",
+                            "opacity": 1
+                        },
+                        "label": {
+                            "show": false,
+                            "field": "y",
+                            "valueFormat": "auto",
+                            "describe": {
+                                "prefix": "",
+                                "suffix": ""
+                            },
+                            "offset": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotate": 0,
+                            "textStyle": {
+                                "fontSize": 12,
+                                "color": "#ddd",
+                                "fontWeight": "normal"
+                            },
+                            "stroke": {
+                                "color": "#000",
+                                "width": 0
+                            }
+                        }
+                    },
+                    {
+                        "type": "line",
+                        "id": "5dLadjgE7w",
+                        "name": "",
+                        "line": {
+                            "color": "#2469E4",
+                            "style": "solid",
+                            "width": 1,
+                            "opacity": 1,
+                            "smooth": 0.5
+                        },
+                        "point": {
+                            "icon": "roundRect",
+                            "color": "#2469E4",
+                            "borderColor": "rgba(0, 0, 0, 0.44)",
+                            "borderWidth": 1,
+                            "borderType": "solid",
+                            "opacity": 1
+                        },
+                        "label": {
+                            "show": false,
+                            "field": "y",
+                            "valueFormat": "auto",
+                            "describe": {
+                                "prefix": "",
+                                "suffix": ""
+                            },
+                            "offset": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotate": 0,
+                            "textStyle": {
+                                "fontSize": 12,
+                                "color": "#ddd",
+                                "fontWeight": "normal"
+                            },
+                            "stroke": {
+                                "color": "#000",
+                                "width": 0
+                            }
                         }
                     }
                 ],
@@ -835,34 +650,28 @@
                             "description": "值",
                             "optional": false
                         },
-                        "category": {
+                        "s": {
                             "type": "string",
                             "map": "",
-                            "description": "分类",
-                            "optional": false
-                        },
-                        "value": {
-                            "type": "string",
-                            "map": "",
-                            "description": "值",
+                            "description": "系列",
                             "optional": false
                         }
                     },
                     "render": "render",
-                    "description": "基本柱状图接口",
-                    "useAutoUpdate": true,
-                    "autoUpdate": 60
+                    "description": "基本折线图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
                 }
             },
             "apiData": {
                 "source": {
-                    "comId": "BasicBar_V4",
-                    "id": "BB001",
+                    "comId": "BasicLine_A1bC2dEf",
+                    "id": "fye3T4RA9k",
                     "type": "static",
                     "pageFilters": [],
                     "config": {
                         "useFilter": false,
-                        "data": "[{\"category\":\"急诊\",\"value\":135},{\"category\":\"内科\",\"value\":98},{\"category\":\"外科\",\"value\":112},{\"category\":\"儿科\",\"value\":89},{\"category\":\"ICU\",\"value\":45}]",
+                        "data": "[{\"x\":\"2000\",\"y\":2845,\"s\":\"类型A\"},{\"x\":\"2000\",\"y\":2327,\"s\":\"类型B\"},{\"x\":\"2000\",\"y\":1289,\"s\":\"类型C\"},{\"x\":\"2000\",\"y\":226,\"s\":\"类型D\"},{\"x\":\"2000\",\"y\":46,\"s\":\"类型E\"},{\"x\":\"2001\",\"y\":2848,\"s\":\"类型A\"},{\"x\":\"2001\",\"y\":2445,\"s\":\"类型B\"},{\"x\":\"2001\",\"y\":1316,\"s\":\"类型C\"},{\"x\":\"2001\",\"y\":237,\"s\":\"类型D\"},{\"x\":\"2001\",\"y\":47,\"s\":\"类型E\"},{\"x\":\"2002\",\"y\":2832,\"s\":\"类型A\"},{\"x\":\"2002\",\"y\":2518,\"s\":\"类型B\"},{\"x\":\"2002\",\"y\":1342,\"s\":\"类型C\"},{\"x\":\"2002\",\"y\":252,\"s\":\"类型D\"},{\"x\":\"2002\",\"y\":49,\"s\":\"类型E\"},{\"x\":\"2003\",\"y\":2958,\"s\":\"类型A\"},{\"x\":\"2003\",\"y\":2695,\"s\":\"类型B\"},{\"x\":\"2003\",\"y\":1397,\"s\":\"类型C\"},{\"x\":\"2003\",\"y\":276,\"s\":\"类型D\"},{\"x\":\"2003\",\"y\":48,\"s\":\"类型E\"},{\"x\":\"2004\",\"y\":3043,\"s\":\"类型A\"},{\"x\":\"2004\",\"y\":2906,\"s\":\"类型B\"},{\"x\":\"2004\",\"y\":1443,\"s\":\"类型C\"},{\"x\":\"2004\",\"y\":298,\"s\":\"类型D\"},{\"x\":\"2004\",\"y\":54,\"s\":\"类型E\"},{\"x\":\"2005\",\"y\":3068,\"s\":\"类型A\"},{\"x\":\"2005\",\"y\":3108,\"s\":\"类型B\"},{\"x\":\"2005\",\"y\":1485,\"s\":\"类型C\"},{\"x\":\"2005\",\"y\":320,\"s\":\"类型D\"},{\"x\":\"2005\",\"y\":60,\"s\":\"类型E\"},{\"x\":\"2006\",\"y\":3091,\"s\":\"类型A\"},{\"x\":\"2006\",\"y\":3293,\"s\":\"类型B\"},{\"x\":\"2006\",\"y\":1534,\"s\":\"类型C\"},{\"x\":\"2006\",\"y\":356,\"s\":\"类型D\"},{\"x\":\"2006\",\"y\":62,\"s\":\"类型E\"},{\"x\":\"2007\",\"y\":3071,\"s\":\"类型A\"},{\"x\":\"2007\",\"y\":3422,\"s\":\"类型B\"},{\"x\":\"2007\",\"y\":1562,\"s\":\"类型C\"},{\"x\":\"2007\",\"y\":382,\"s\":\"类型D\"},{\"x\":\"2007\",\"y\":66,\"s\":\"类型E\"},{\"x\":\"2008\",\"y\":3103,\"s\":\"类型A\"},{\"x\":\"2008\",\"y\":3587,\"s\":\"类型B\"},{\"x\":\"2008\",\"y\":1630,\"s\":\"类型C\"},{\"x\":\"2008\",\"y\":388,\"s\":\"类型D\"},{\"x\":\"2008\",\"y\":69,\"s\":\"类型E\"},{\"x\":\"2009\",\"y\":3042,\"s\":\"类型A\"},{\"x\":\"2009\",\"y\":3590,\"s\":\"类型B\"},{\"x\":\"2009\",\"y\":1584,\"s\":\"类型C\"},{\"x\":\"2009\",\"y\":415,\"s\":\"类型D\"},{\"x\":\"2009\",\"y\":66,\"s\":\"类型E\"},{\"x\":\"2010\",\"y\":3107,\"s\":\"类型A\"},{\"x\":\"2010\",\"y\":3812,\"s\":\"类型B\"},{\"x\":\"2010\",\"y\":1696,\"s\":\"类型C\"},{\"x\":\"2010\",\"y\":446,\"s\":\"类型D\"},{\"x\":\"2010\",\"y\":67,\"s\":\"类型E\"},{\"x\":\"2011\",\"y\":3134,\"s\":\"类型A\"},{\"x\":\"2011\",\"y\":4055,\"s\":\"类型B\"},{\"x\":\"2011\",\"y\":1756,\"s\":\"类型C\"},{\"x\":\"2011\",\"y\":494,\"s\":\"类型D\"},{\"x\":\"2011\",\"y\":64,\"s\":\"类型E\"},{\"x\":\"2012\",\"y\":3200,\"s\":\"类型A\"},{\"x\":\"2012\",\"y\":4106,\"s\":\"类型B\"},{\"x\":\"2012\",\"y\":1783,\"s\":\"类型C\"},{\"x\":\"2012\",\"y\":519,\"s\":\"类型D\"},{\"x\":\"2012\",\"y\":65,\"s\":\"类型E\"},{\"x\":\"2013\",\"y\":3220,\"s\":\"类型A\"},{\"x\":\"2013\",\"y\":4126,\"s\":\"类型B\"},{\"x\":\"2013\",\"y\":1806,\"s\":\"类型C\"},{\"x\":\"2013\",\"y\":554,\"s\":\"类型D\"},{\"x\":\"2013\",\"y\":68,\"s\":\"类型E\"},{\"x\":\"2014\",\"y\":3280,\"s\":\"类型A\"},{\"x\":\"2014\",\"y\":4117,\"s\":\"类型B\"},{\"x\":\"2014\",\"y\":1823,\"s\":\"类型C\"},{\"x\":\"2014\",\"y\":568,\"s\":\"类型D\"},{\"x\":\"2014\",\"y\":68,\"s\":\"类型E\"}]",
                         "postBodyType": "static"
                     }
                 }
@@ -871,7 +680,722 @@
                 "click": {
                     "description": "当点击数据项时",
                     "fields": {
-                        "category": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "类目",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        },
+                        "s": {
+                            "type": "string",
+                            "map": "",
+                            "description": "系列",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "BasicBar_Q0gvjDvYs",
+            "name": "VBasicBar",
+            "type": "com",
+            "alias": "部门效率排名",
+            "icon": "v-icon-chart-bar",
+            "img": "images/缩略图/柱状图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 800,
+                "y": 150,
+                "w": 600,
+                "h": 400,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 300,
+            "handles": {
+                "clickChart": {
+                    "eventName": "clickChart",
+                    "description": "点击项",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 40,
+                        "bottom": 50,
+                        "left": 50,
+                        "right": 10
+                    },
+                    "innerPadding": 20,
+                    "outerPadding": 30,
+                    "barWidth": "auto",
+                    "background": {
+                        "show": true,
+                        "color": "rgba(255, 255, 255, 0.1)"
+                    }
+                },
+                "label": {
+                    "show": false,
+                    "position": "top",
+                    "textStyle": {
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.6)",
+                        "fontWeight": "normal"
+                    },
+                    "offsetX": 0,
+                    "offsetY": 0
+                },
+                "xAxis": {
+                    "show": true,
+                    "type": "category",
+                    "title": {
+                        "show": false,
+                        "name": "X轴",
+                        "location": "center",
+                        "display": {
+                            "rotate": 0,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "#90a0ae",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "timeFormat": "MM/DD",
+                        "boundaryGap": true,
+                        "interval": "auto",
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "rgba(255, 255, 255, 0.6)",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(233, 228, 228, 0.1)",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                },
+                "yAxis": {
+                    "show": true,
+                    "extent": {
+                        "min": "auto",
+                        "max": "auto"
+                    },
+                    "splitNumber": 0,
+                    "title": {
+                        "show": false,
+                        "name": "Y轴",
+                        "location": "center",
+                        "display": {
+                            "rotate": 90,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "#90a0ae",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "valueFormat": "auto",
+                        "boundaryGap": 0,
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "rgba(255, 255, 255, 0.6)",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(233, 228, 228, 0.1)",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                },
+                "tooltip": {
+                    "show": true,
+                    "textStyle": {
+                        "fontSize": 14,
+                        "color": "#fff",
+                        "fontWeight": "normal"
+                    },
+                    "background": {
+                        "padding": {
+                            "h": 5,
+                            "v": 5
+                        },
+                        "color": "rgba(0, 0, 0, 0.65)"
+                    },
+                    "pointer": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "#f5dc69",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                },
+                "legend": {
+                    "show": true,
+                    "position": "top-center",
+                    "orient": "horizontal",
+                    "textStyle": {
+                        "fontSize": 12,
+                        "color": "#90a0ae",
+                        "fontWeight": "normal"
+                    },
+                    "symbol": {
+                        "show": true,
+                        "icon": "auto",
+                        "width": 25,
+                        "height": 14,
+                        "gap": 10
+                    },
+                    "page": {
+                        "enabled": false,
+                        "size": {
+                            "width": 100,
+                            "height": 100
+                        },
+                        "button": {
+                            "size": 15,
+                            "color": "#000",
+                            "inactiveColor": "#000"
+                        },
+                        "pageNumColor": "#90a0ae"
+                    }
+                },
+                "series": [
+                    {
+                        "type": "bar",
+                        "id": "系列1_qkzh8nVeAD",
+                        "name": "系列1",
+                        "color": {
+                            "type": "solid",
+                            "value": "#00baff",
+                            "from": "#fff",
+                            "to": "#000"
+                        }
+                    }
+                ],
+                "animation": {
+                    "enabled": true,
+                    "duration": 1000,
+                    "easing": "cubicOut",
+                    "delay": 0
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "类目",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本柱状图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicBar_Q0gvjDvYs",
+                    "id": "vEAOUjp9Ca",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"x\":\"上海\",\"y\":23},{\"x\":\"深圳\",\"y\":13},{\"x\":\"合肥\",\"y\":2},{\"x\":\"成都\",\"y\":9},{\"x\":\"安徽\",\"y\":5},{\"x\":\"北京\",\"y\":10},{\"x\":\"杭州\",\"y\":14},{\"x\":\"长沙\",\"y\":24}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "x": {
+                            "type": "string",
+                            "map": "",
+                            "description": "类目",
+                            "optional": false
+                        },
+                        "y": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "BasicPie_1pdjk9Yqn",
+            "name": "VBasicPie",
+            "type": "com",
+            "alias": "资源占比分析",
+            "icon": "v-icon-chart-pie",
+            "img": "images/缩略图/饼图.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 100,
+                "y": 600,
+                "w": 400,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 300,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "graphical": {
+                    "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "pieRadius": 50,
+                    "pieColor": "#c23531",
+                    "pieLine": {
+                        "type": "solid",
+                        "width": 0,
+                        "color": "#c23531"
+                    },
+                    "Nightingale": true,
+                    "colour": true,
+                    "colorList": [
+                        {
+                            "value": "#589799"
+                        },
+                        {
+                            "value": "#76C3D1"
+                        },
+                        {
+                            "value": "#537FA9"
+                        },
+                        {
+                            "value": "#8CF1EB"
+                        },
+                        {
+                            "value": "#82C5F9"
+                        },
+                        {
+                            "value": "#FFD977"
+                        },
+                        {
+                            "value": "#8277F6"
+                        },
+                        {
+                            "value": "#E6E6E6"
+                        },
+                        {
+                            "value": "#FFFFFF"
+                        }
+                    ]
+                },
+                "legend": {
+                    "show": true,
+                    "top": "top",
+                    "left": "left",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "#90a0ae"
+                    },
+                    "orient": "vertical",
+                    "align": "left",
+                    "showValue": false,
+                    "position": "right-center",
+                    "symbol": {
+                        "show": true,
+                        "icon": "auto",
+                        "width": 25,
+                        "height": 14,
+                        "gap": 10
+                    },
+                    "page": {
+                        "enabled": false,
+                        "size": {
+                            "width": 100,
+                            "height": 100
+                        },
+                        "button": {
+                            "size": 15,
+                            "color": "#000",
+                            "inactiveColor": "#000"
+                        },
+                        "pageNumColor": "#90a0ae"
+                    }
+                },
+                "tooltip": {
+                    "triggerOn": "mousemove",
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 14,
+                        "color": "#fff"
+                    },
+                    "padding": 5,
+                    "show": true,
+                    "background": {
+                        "padding": {
+                            "h": 5,
+                            "v": 5
+                        },
+                        "color": "rgba(0, 0, 0, 0.65)",
+                        "borderColor": "rgba(0, 0, 0, 0.25)",
+                        "borderWidth": 1
+                    },
+                    "pointer": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "#f5dc69",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                },
+                "content": {
+                    "enabled": true,
+                    "padding": 5,
+                    "textStyle": {
+                        "fontFamily": "Microsoft YaHei",
+                        "fontWeight": "normal",
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.3)"
+                    }
+                },
+                "frameBackground": {
+                    "horizontal": 12,
+                    "vertical": 12,
+                    "backgroundColor": "#333",
+                    "borderStyle": {
+                        "type": "dashed",
+                        "width": 1,
+                        "color": "#f5dc69",
+                        "radius": 4
+                    }
+                },
+                "animation": {
+                    "enabled": true,
+                    "easing": "cubicOut",
+                    "duration": 1000,
+                    "delay": 0
+                },
+                "series": [
+                    {
+                        "type": "pie",
+                        "id": "系列1_pie",
+                        "name": "系列1",
+                        "column": null,
+                        "color": {
+                            "type": "solid",
+                            "value": "#ff9900",
+                            "from": "#fff",
+                            "to": "#000"
+                        },
+                        "radius": "50%",
+                        "center": [
+                            "50%",
+                            "50%"
+                        ],
+                        "label": {
+                            "show": true,
+                            "position": "outside",
+                            "formatter": "{b}: {d}%",
+                            "textStyle": {
+                                "fontSize": 12,
+                                "color": "#ddd",
+                                "fontWeight": "normal"
+                            }
+                        },
+                        "itemStyle": {
+                            "borderRadius": 5,
+                            "borderWidth": 1,
+                            "borderColor": "#000"
+                        },
+                        "emphasis": {
+                            "itemStyle": {
+                                "shadowBlur": 10,
+                                "shadowOffsetX": 0,
+                                "shadowOffsetY": 0,
+                                "shadowColor": "rgba(0, 0, 0, 0.5)"
+                            },
+                            "label": {
+                                "show": true,
+                                "fontSize": 14,
+                                "fontWeight": "bold"
+                            }
+                        }
+                    }
+                ],
+                "global": {
+                    "fontFamily": "Microsoft Yahei",
+                    "margin": {
+                        "top": 40,
+                        "bottom": 50,
+                        "left": 60,
+                        "right": 30
+                    },
+                    "innerPadding": 20,
+                    "outerPadding": 30,
+                    "background": {
+                        "show": true,
+                        "color": "rgba(255, 255, 255, 0.1)"
+                    }
+                },
+                "label": {
+                    "show": false,
+                    "position": "top",
+                    "textStyle": {
+                        "fontSize": 12,
+                        "color": "rgba(255, 255, 255, 0.6)",
+                        "fontWeight": "normal"
+                    },
+                    "offsetX": 0,
+                    "offsetY": 0
+                },
+                "xAxis": {
+                    "show": true,
+                    "type": "category",
+                    "title": {
+                        "show": false,
+                        "name": "X轴",
+                        "location": "center",
+                        "display": {
+                            "rotate": 0,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "#90a0ae",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "valueFormat": "d",
+                        "timeFormat": "MM/DD",
+                        "interval": "auto",
+                        "display": {
+                            "rotate": 0,
+                            "margin": 10
+                        },
+                        "align": "center",
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "rgba(255, 255, 255, 0.6)",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(233, 228, 228, 0.1)",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                },
+                "yAxis": {
+                    "show": true,
+                    "type": "value",
+                    "extent": {
+                        "min": "auto",
+                        "max": "auto"
+                    },
+                    "title": {
+                        "show": false,
+                        "name": "Y轴",
+                        "location": "center",
+                        "display": {
+                            "rotate": 90,
+                            "offset": 20
+                        },
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "#90a0ae",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "axisLine": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisTick": {
+                        "show": true,
+                        "type": "solid",
+                        "width": 1,
+                        "color": "rgba(255, 255, 255, 0.5)"
+                    },
+                    "axisLabel": {
+                        "show": true,
+                        "valueFormat": "auto",
+                        "timeFormat": "MM/DD",
+                        "boundaryGap": 0,
+                        "display": {
+                            "rotate": 0,
+                            "margin": 8
+                        },
+                        "align": "right",
+                        "textStyle": {
+                            "fontSize": 12,
+                            "color": "rgba(255, 255, 255, 0.6)",
+                            "fontWeight": "normal"
+                        }
+                    },
+                    "grid": {
+                        "show": true,
+                        "line": {
+                            "type": "dashed",
+                            "width": 1,
+                            "color": "rgba(233, 228, 228, 0.1)",
+                            "dashedLength": 4,
+                            "dashedSpace": 4
+                        }
+                    }
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
                             "type": "string",
                             "map": "",
                             "description": "分类",
@@ -881,6 +1405,284 @@
                             "type": "string",
                             "map": "",
                             "description": "值",
+                            "optional": false
+                        },
+                        "label": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类标签",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "基本饼图接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "BasicPie_1pdjk9Yqn",
+                    "id": "pieData_1",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "[{\"label\":\"会议室\",\"value\":40},{\"label\":\"办公区\",\"value\":30},{\"label\":\"公共区\",\"value\":20},{\"label\":\"设备区\",\"value\":10}]",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击数据项时",
+                    "fields": {
+                        "label": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类标签",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "VProgress_123456",
+            "name": "VProgress",
+            "type": "com",
+            "alias": "空间利用率",
+            "icon": "v-icon-progress",
+            "img": "images/缩略图/进度条.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 550,
+                "y": 650,
+                "w": 300,
+                "h": 150,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 300,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "barColor": "#00FF00",
+                "railColor": "#444",
+                "radius": 10,
+                "indicator": {
+                    "show": true,
+                    "placement": "right",
+                    "unit": "%",
+                    "fontFamily": "Microsoft Yahei",
+                    "fontWeight": "bold",
+                    "fontSize": 24,
+                    "color": "#00FF00"
+                },
+                "value": 75
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "type": {
+                            "type": "string",
+                            "map": "",
+                            "description": "分类",
+                            "optional": false
+                        },
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "进度值",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "进度条接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {
+                "source": {
+                    "comId": "VProgress_123456",
+                    "id": "progressData_1",
+                    "type": "static",
+                    "pageFilters": [],
+                    "config": {
+                        "useFilter": false,
+                        "data": "{\"value\":75}",
+                        "postBodyType": "static"
+                    }
+                }
+            },
+            "events": {
+                "click": {
+                    "description": "当点击进度条时",
+                    "fields": {
+                        "value": {
+                            "type": "string",
+                            "map": "",
+                            "description": "进度值",
+                            "optional": false
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        {
+            "id": "VBgBox_987654",
+            "name": "VBgBox",
+            "type": "com",
+            "alias": "信息展示区",
+            "icon": "v-icon-bgbox",
+            "img": "images/缩略图/背景框.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 900,
+                "y": 600,
+                "w": 500,
+                "h": 300,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 300,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {},
+            "config": {
+                "borderRadius": 15,
+                "fills": [
+                    {
+                        "fill": "rgba(0, 170, 255, 0.1)",
+                        "opacity": 1
+                    }
+                ],
+                "border": {
+                    "show": true,
+                    "type": "solid",
+                    "flat": {
+                        "width": 2,
+                        "style": "solid",
+                        "color": "#00AAFF"
+                    },
+                    "linearGradient": {
+                        "width": 0,
+                        "color": {
+                            "angle": 0,
+                            "stops": [
+                                {
+                                    "offset": 0,
+                                    "color": "#00DEFF"
+                                },
+                                {
+                                    "offset": 100,
+                                    "color": "#008BFF"
+                                }
+                            ]
+                        }
+                    },
+                    "imageType": "none",
+                    "presetImage": "",
+                    "customImage": {
+                        "source": "",
+                        "slice": "32 37 fill",
+                        "width": "32px 37px",
+                        "outset": "0",
+                        "repeat": "no-repeat"
+                    }
+                },
+                "filter": {
+                    "blur": "0px"
+                },
+                "backdropFilter": {
+                    "blur": "0px"
+                },
+                "urlConfig": {
+                    "url": "",
+                    "ifBlank": false
+                }
+            },
+            "apis": {
+                "source": {
+                    "fields": {
+                        "content": {
+                            "type": "string",
+                            "map": "",
+                            "description": "展示内容",
+                            "optional": false
+                        }
+                    },
+                    "render": "render",
+                    "description": "背景框接口",
+                    "useAutoUpdate": false,
+                    "autoUpdate": 1
+                }
+            },
+            "apiData": {},
+            "events": {
+                "click": {
+                    "description": "当点击背景框时",
+                    "fields": {
+                        "content": {
+                            "type": "string",
+                            "map": "",
+                            "description": "展示内容",
                             "optional": false
                         }
                     }
