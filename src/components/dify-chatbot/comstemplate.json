@@ -11262,5 +11262,387 @@
             },
             "events": {},
             "actions": {}
+    },
+    "VSvgLine": {
+            "id": "SvgLine_jbPBPzWKN",
+            "name": "VSvgLine",
+            "type": "com",
+            "alias": "SVG连接线",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/SVG连接线.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 515,
+                "y": 206,
+                "w": 272,
+                "h": 223,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 144,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "线条颜色",
+                            "type": "color",
+                            "path": "config.props.stroke"
+                        },
+                        {
+                            "name": "色块颜色",
+                            "type": "color",
+                            "path": "config.animations.color"
+                        },
+                        {
+                            "name": "轨迹图片",
+                            "type": "image",
+                            "path": "config.imgStyle.backgroundImage"
+                        },
+                        {
+                            "name": "动画速率(秒)",
+                            "type": "number",
+                            "path": "config.animations.dur"
+                        },
+                        {
+                            "name": "反转动画",
+                            "type": "enableTypes",
+                            "path": "config.animations.reverse"
+                        },
+                        {
+                            "name": "动画开启",
+                            "type": "enableTypes",
+                            "path": "config.animations.enable"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "pointVisiable": false,
+                "mode": "svg",
+                "type": "ConnectionLine",
+                "props": {
+                    "stroke": "#34FFF5",
+                    "strokeWidth": 5,
+                    "pointPosition": [
+                        {
+                            "x": 20,
+                            "y": 100
+                        },
+                        {
+                            "x": 200,
+                            "y": 100
+                        }
+                    ]
+                },
+                "animations": {
+                    "type": "Electricity",
+                    "dur": 20,
+                    "repeatCount": {
+                        "val": "indefinite",
+                        "disabled": true
+                    },
+                    "color": "#0a7ae2",
+                    "reverse": false,
+                    "rotate": false,
+                    "enable": true
+                },
+                "action": {
+                    "state": "None",
+                    "index": -1
+                },
+                "imgStyle": {
+                    "width": 300,
+                    "height": 180,
+                    "backgroundImage": "data/originPic/main-img.png",
+                    "repeat": "no-repeat",
+                    "radius": 1,
+                    "hideLine": false
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
+    },
+    "VSvgReservoir":{
+            "id": "SvgReservoir_hLyqu8DEA",
+            "name": "VSvgReservoir",
+            "type": "com",
+            "alias": "SVG蓄水池",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/SVG连接线.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 808,
+                "y": 353,
+                "w": 200,
+                "h": 200,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 304,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "当前值",
+                            "type": "number",
+                            "path": "config.currentValue"
+                        },
+                        {
+                            "name": "动画速率(秒)",
+                            "type": "number",
+                            "path": "config.wave.animate.dur"
+                        },
+                        {
+                            "name": "动画开启",
+                            "type": "enableTypes",
+                            "path": "config.wave.animate.enable"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "maxValue": 100,
+                "currentValue": 66,
+                "text": {
+                    "enable": true,
+                    "fontSize": 30,
+                    "color": "#000",
+                    "fontWeight": "normal"
+                },
+                "shape": "rect",
+                "wave": {
+                    "waveNum": 1,
+                    "waveHeight": 10,
+                    "waveOpacity": 1,
+                    "waveColor": {
+                        "type": "solid",
+                        "value": "#008DD0",
+                        "from": "#008DD0",
+                        "to": "#6ACFFF"
+                    },
+                    "animate": {
+                        "enable": true,
+                        "dur": 1.5
+                    },
+                    "maxWidth": 100,
+                    "maxHeight": 100,
+                    "top": 0,
+                    "left": 0
+                },
+                "bgColor": {
+                    "type": "solid",
+                    "value": "#fff",
+                    "from": "#fff",
+                    "to": "#6ACFFF"
+                },
+                "imgStyle": {
+                    "backgroundImage": "data/originPic/main-img.png",
+                    "repeat": "no-repeat",
+                    "radius": 1
+                },
+                "border": {
+                    "width": 10,
+                    "color": "#E8E8E8FF"
+                },
+                "formatter": "%"
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
+    },
+    "VSvgBlower": {
+            "id": "SvgBlower_CAhg7L74d",
+            "name": "VSvgBlower",
+            "type": "com",
+            "alias": "SVG鼓风机",
+            "icon": "v-icon-media",
+            "img": "images/缩略图/SVG连接线.png",
+            "locked": false,
+            "hided": false,
+            "eventhub": false,
+            "selected": true,
+            "hovered": false,
+            "renameing": false,
+            "special": "",
+            "attr": {
+                "x": 770,
+                "y": 378,
+                "w": 200,
+                "h": 200,
+                "deg": 0,
+                "opacity": 1,
+                "filpV": false,
+                "filpH": false
+            },
+            "projectId": 304,
+            "handles": {
+                "click": {
+                    "eventName": "click",
+                    "description": "点击",
+                    "fields": []
+                },
+                "mouseEnter": {
+                    "eventName": "mouseEnter",
+                    "description": "鼠标移入",
+                    "fields": []
+                },
+                "mouseLeave": {
+                    "eventName": "mouseLeave",
+                    "description": "鼠标移出",
+                    "fields": []
+                }
+            },
+            "ichandles": {
+                "property": {
+                    "eventName": "property",
+                    "description": "属性-点位",
+                    "fields": [],
+                    "properties": [
+                        {
+                            "name": "转速(圈/秒)",
+                            "type": "number",
+                            "path": "config.fan.animate.dur"
+                        },
+                        {
+                            "name": "动画开启",
+                            "type": "enableTypes",
+                            "path": "config.fan.animate.enable"
+                        }
+                    ],
+                    "events": null
+                },
+                "event": {
+                    "eventName": "event",
+                    "description": "事件-点位",
+                    "fields": [],
+                    "properties": null,
+                    "events": []
+                }
+            },
+            "config": {
+                "color1": {
+                    "type": "solid",
+                    "value": "#7191CA",
+                    "from": "#7191CA",
+                    "to": "#7191CA"
+                },
+                "color2": {
+                    "type": "solid",
+                    "value": "#6C98B8",
+                    "from": "#6C98B8",
+                    "to": "#6C98B8"
+                },
+                "color3": {
+                    "type": "solid",
+                    "value": "#3A566D",
+                    "from": "#3A566D",
+                    "to": "#3A566D"
+                },
+                "color4": {
+                    "type": "solid",
+                    "value": "#A4E2FF",
+                    "from": "#A4E2FF",
+                    "to": "#A4E2FF"
+                },
+                "color5": {
+                    "type": "solid",
+                    "value": "#FFFFFF",
+                    "from": "#FFFFFF",
+                    "to": "#FFFFFF"
+                },
+                "color6": {
+                    "type": "solid",
+                    "value": "#3D3D3D",
+                    "from": "#3D3D3D",
+                    "to": "#3D3D3D"
+                },
+                "fan": {
+                    "direction": "clockwise",
+                    "animate": {
+                        "enable": true,
+                        "dur": 1
+                    }
+                }
+            },
+            "apis": {},
+            "apiData": {},
+            "events": {},
+            "actions": {}
     }
+    
 }
