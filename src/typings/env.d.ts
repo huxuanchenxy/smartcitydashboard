@@ -19,4 +19,10 @@ interface ImportMetaEnv {
   VITE_APP_APIMANAGE_GETTOKEN: string;
   VITE_APP_API_Host: string;
   VITE_APP_API_Port: string;
+  
+  // Dify AI 对话配置
+  VITE_APP_DIFY_API_KEY: string;
+  VITE_APP_DIFY_API_KEY_FLOW1: string; // 发送2功能的第一次调用 API Key
+  VITE_APP_DIFY_API_KEY_FLOW2: string; // 发送2功能的第二次调用 API Key
+  VITE_APP_DIFY_BASE_URL: string;
 }

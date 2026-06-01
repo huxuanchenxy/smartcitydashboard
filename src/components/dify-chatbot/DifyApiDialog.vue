@@ -71,7 +71,7 @@
             >
               停止生成
             </el-button>
-            <el-button 
+            <el-button
               type="primary" 
               @click="sendMessage" 
               :loading="isLoading"
@@ -79,6 +79,14 @@
               class="send-button"
             >
               {{ isLoading ? '发送中' : '发送' }}
+            </el-button>
+            <el-button
+              type="primary"
+              @click="sendMessage2"
+              :disabled="isLoading || !userQuery.trim()"
+              class="send2-button"
+            >
+              {{ isLoading ? '发送中' : '发送2' }}
             </el-button>
             <el-button type="warning" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
           </div>
@@ -145,6 +153,16 @@ export default defineComponent({
     apiKey: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY 
+    },
+    // 发送2功能的第一次调用 API Key（对应第一个 chatflow）
+    apiKeyFlow1: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW1 || ''
+    },
+    // 发送2功能的第二次调用 API Key（对应第二个 chatflow）
+    apiKeyFlow2: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW2 || ''
     },
     baseUrl: {
       type: String,
@@ -223,7 +241,10 @@ export default defineComponent({
       if (!userQuery.value.trim() || isLoading.value) return;
 
       const query = userQuery.value.trim();
-      
+
+      console.log('=== 发送 第一次调用开始 ===');
+      console.log('发送 query:', query);
+
       // 添加用户消息
       messages.value.push({
         role: 'user',
@@ -402,6 +423,8 @@ export default defineComponent({
 
         // 【新增】如果发生了错误，不再触发 message-received 成功事件
         if (!hasError) {
+          console.log('=== 发送 第一次调用完成 ===');
+          console.log('发送 回答:', fullContent);
           emit('message-received', fullContent);
         }
 
@@ -429,6 +452,332 @@ export default defineComponent({
         }
 
         ElMessage.error('发送消息失败: ' + error.message);
+      } finally {
+        isLoading.value = false;
+        abortController.value = null;
+        currentTaskId.value = null;
+      }
+    };
+
+    // 发送消息2 - 连续调用两次接口，第一次的回答作为第二次的query
+    const sendMessage2 = async () => {
+      if (!userQuery.value.trim() || isLoading.value) return;
+
+      const query = userQuery.value.trim();
+
+      console.log('=== 发送2 第一次调用开始 ===');
+      console.log('发送2 query:', query);
+
+      // 添加用户消息
+      messages.value.push({
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      });
+
+      // 添加第一次调用的 AI 消息（显示思考中状态）
+      messages.value.push({
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true
+      });
+
+      await scrollToBottom();
+
+      userQuery.value = '';
+      isLoading.value = true;
+      abortController.value = new AbortController();
+
+      let firstCallAnswer = '';
+
+      try {
+        // 使用 apiKeyFlow1，如果未配置则回退到 apiKey
+        const apiKey1 = props.apiKeyFlow1 || props.apiKey;
+        
+        const response1 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey1}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: props.data,
+            query: query,
+            response_mode: 'streaming',
+            conversation_id: conversationId.value,
+            user: props.userId
+          }),
+          signal: abortController.value.signal
+        });
+
+        if (!response1.ok) {
+          throw new Error(`第一次调用 HTTP error! status: ${response1.status}`);
+        }
+
+        const reader1 = response1.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader1) {
+          throw new Error('第一次调用无法读取响应流');
+        }
+
+        console.log('发送2 第一次调用开始流式响应');
+
+        let fullContent1 = '';
+        let pendingData = '';
+
+        while (true) {
+          const { done, value } = await reader1.read();
+          if (done) break;
+
+          const chunk = pendingData + decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          pendingData = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.event === 'error') {
+                console.error('发送2 第一次调用错误:', data.message || '未知错误');
+                continue;
+              }
+
+              if (data.event === 'message' && data.answer) {
+                fullContent1 += data.answer;
+                const msgIndex = messages.value.length - 1;
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: fullContent1,
+                  isThinking: false
+                };
+                await scrollToBottom();
+              }
+
+              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+                console.log('发送2 第一次调用找到 workflow_finished 事件');
+                fullContent1 = data.data.outputs.answer;
+                const msgIndex = messages.value.length - 1;
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: fullContent1,
+                  isThinking: false
+                };
+                await scrollToBottom();
+              }
+            } catch (e) {
+              console.warn('发送2 第一次调用解析数据失败:', e);
+            }
+          }
+        }
+
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+            if (data.event === 'message' && data.answer) {
+              fullContent1 += data.answer;
+              const msgIndex = messages.value.length - 1;
+              messages.value[msgIndex] = {
+                ...messages.value[msgIndex],
+                content: fullContent1,
+                isThinking: false
+              };
+              await scrollToBottom();
+            }
+            if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+              fullContent1 = data.data.outputs.answer;
+              const msgIndex = messages.value.length - 1;
+              messages.value[msgIndex] = {
+                ...messages.value[msgIndex],
+                content: fullContent1,
+                isThinking: false
+              };
+              await scrollToBottom();
+            }
+          } catch (e) {
+            console.warn('发送2 第一次调用解析残留数据失败:', e);
+          }
+        }
+
+        firstCallAnswer = fullContent1;
+        console.log('=== 发送2 第一次调用完成 ===');
+        console.log('发送2 第一次回答:', firstCallAnswer);
+
+        // 添加第二次调用的 AI 消息
+        messages.value.push({
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          isThinking: true
+        });
+
+        console.log('=== 发送2 第二次调用开始 ===');
+        console.log('发送2 第二次 query (来自第一次回答):', firstCallAnswer);
+
+        // 使用 apiKeyFlow2，如果未配置则回退到 apiKey
+        const apiKey2 = props.apiKeyFlow2 || props.apiKey;
+
+        const response2 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey2}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: props.data,
+            query: firstCallAnswer,
+            response_mode: 'streaming',
+            conversation_id: conversationId.value,
+            user: props.userId
+          }),
+          signal: abortController.value.signal
+        });
+
+        if (!response2.ok) {
+          throw new Error(`第二次调用 HTTP error! status: ${response2.status}`);
+        }
+
+        const reader2 = response2.body?.getReader();
+
+        if (!reader2) {
+          throw new Error('第二次调用无法读取响应流');
+        }
+
+        console.log('发送2 第二次调用开始流式响应');
+
+        let fullContent2 = '';
+        pendingData = '';
+        let hasError = false;
+
+        while (true) {
+          const { done, value } = await reader2.read();
+          if (done) break;
+
+          const chunk = pendingData + decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          pendingData = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.event === 'error') {
+                hasError = true;
+                const errorMsg = data.message || '服务发生未知错误';
+                const errorDetail = `[Dify Error] ${errorMsg}`;
+                console.error('发送2 第二次调用错误:', errorDetail);
+                const msgIndex = messages.value.length - 1;
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: `请求失败：${errorMsg}`,
+                  isThinking: false
+                };
+                ElMessage.error(errorDetail);
+                continue;
+              }
+
+              if (hasError) continue;
+
+              if (data.event === 'message' && data.answer) {
+                if (data.task_id) {
+                  currentTaskId.value = data.task_id;
+                }
+                fullContent2 += data.answer;
+                const msgIndex = messages.value.length - 1;
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: fullContent2,
+                  isThinking: false
+                };
+                await scrollToBottom();
+              }
+
+              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+                console.log('发送2 第二次调用找到 workflow_finished 事件');
+                fullContent2 = data.data.outputs.answer;
+                const msgIndex = messages.value.length - 1;
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: fullContent2,
+                  isThinking: false
+                };
+                await scrollToBottom();
+              }
+            } catch (e) {
+              console.warn('发送2 第二次调用解析数据失败:', e);
+            }
+          }
+        }
+
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+
+            if (data.event === 'error') {
+              hasError = true;
+              const errorMsg = data.message || '服务发生未知错误';
+              ElMessage.error(errorMsg);
+              const msgIndex = messages.value.length - 1;
+              messages.value[msgIndex] = {
+                ...messages.value[msgIndex],
+                content: `请求失败：${errorMsg}`,
+                isThinking: false
+              };
+            }
+
+            if (!hasError && data.event === 'message' && data.answer) {
+              fullContent2 += data.answer;
+              const msgIndex = messages.value.length - 1;
+              messages.value[msgIndex] = {
+                ...messages.value[msgIndex],
+                content: fullContent2,
+                isThinking: false
+              };
+              await scrollToBottom();
+            }
+          } catch (e) {
+            console.warn('发送2 第二次调用解析残留数据失败:', e);
+          }
+        }
+
+        console.log('=== 发送2 第二次调用完成 ===');
+        console.log('发送2 最终回答:', fullContent2);
+
+        if (!hasError) {
+          emit('message-received', fullContent2);
+        }
+
+      } catch (error: any) {
+        console.error('发送2 发送消息失败:', error);
+
+        if (error.name === 'AbortError') {
+          const msgIndex = messages.value.length - 1;
+          if (msgIndex >= 0 && messages.value[msgIndex]?.role === 'assistant') {
+            messages.value[msgIndex] = {
+              ...messages.value[msgIndex],
+              isThinking: false,
+              content: messages.value[msgIndex].content.trim() || '已停止生成'
+            };
+          }
+          ElMessage.info('已停止生成');
+          return;
+        }
+
+        const msgIndex = messages.value.length - 1;
+        if (msgIndex >= 0 && messages.value[msgIndex]?.role === 'assistant') {
+          messages.value[msgIndex] = {
+            ...messages.value[msgIndex],
+            isThinking: false,
+            content: '抱歉，服务暂时不可用，请稍后重试。'
+          };
+        }
+
+        ElMessage.error('发送2 发送消息失败: ' + error.message);
       } finally {
         isLoading.value = false;
         abortController.value = null;
@@ -1038,6 +1387,7 @@ export default defineComponent({
       enableJsonValidation,
       handleClose,
       sendMessage,
+      sendMessage2,
       clearMessages,
       stopGeneration,
       outputJsonToConsole,
