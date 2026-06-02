@@ -89,10 +89,39 @@
               {{ isLoading ? '发送中' : '发送2' }}
             </el-button>
             <el-button type="warning" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
+            <el-button type="info" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
+            <el-link
+              v-if="lastUploadedImage"
+              type="primary"
+              :underline="false"
+              @click="openImagePreview"
+              class="image-preview-link"
+            >
+              🖼️ 查看最新上传的图片
+            </el-link>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 上传图片输入框（隐藏） -->
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+      style="display: none"
+      @change="handleImageUpload"
+    />
+
+    <!-- 图片预览弹窗 -->
+    <el-dialog
+      v-model="imagePreviewVisible"
+      title="图片预览"
+      width="600px"
+      append-to-body
+    >
+      <img :src="previewImageUrl" alt="预览图片" style="width: 100%;" />
+    </el-dialog>
 
     <template #footer>
       <div class="dialog-footer">
@@ -164,6 +193,11 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW2 || ''
     },
+    // 新程序专用 API Key
+    apiKeyFlow3: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW3 || ''
+    },
     baseUrl: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_BASE_URL || 'http://10.89.34.9'
@@ -193,6 +227,11 @@ export default defineComponent({
     const currentTaskId = ref<string | null>(null);
     // JSON保存前校验开关 - 开启时会在saveScreenAI前校验JSON结构是否符合最低要求
     const enableJsonValidation = ref(true);
+    // 图片上传相关
+    const fileInput = ref<HTMLInputElement | null>(null);
+    const imagePreviewVisible = ref(false);
+    const previewImageUrl = ref('');
+    const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
 
     // 监听 visible 变化
     watch(() => props.visible, (newVal) => {
@@ -783,6 +822,96 @@ export default defineComponent({
         abortController.value = null;
         currentTaskId.value = null;
       }
+    };
+
+    // 触发图片上传
+    const triggerImageUpload = () => {
+      fileInput.value?.click();
+    };
+
+    // 处理图片上传
+    const handleImageUpload = async (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const file = target.files?.[0];
+      
+      if (!file) return;
+
+      // 检查文件类型
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        ElMessage.error('请选择有效的图片格式（png/jpeg/jpg/webp/gif）');
+        target.value = '';
+        return;
+      }
+
+      // 显示加载状态
+      isLoading.value = true;
+
+      try {
+        // 使用 apiKeyFlow3，如果未配置则回退到 apiKey
+        const apiKey = props.apiKeyFlow3 || props.apiKey;
+        
+        console.log('=== 开始上传图片 ===');
+        console.log('文件名:', file.name);
+        console.log('文件大小:', file.size);
+        console.log('文件类型:', file.type);
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('user', props.userId || 'abc-123');
+
+        const response = await fetch(`${props.baseUrl}/v1/files/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`上传失败 HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        console.log('=== 图片上传成功 ===');
+        console.log('上传结果:', JSON.stringify(result, null, 2));
+
+        // 保存图片信息（不显示在对话框中）
+        lastUploadedImage.value = {
+          id: result.id,
+          name: result.name,
+          size: result.size,
+          extension: result.extension,
+          mime_type: result.mime_type,
+          created_at: result.created_at
+        };
+
+        // 预览图片（不自动打开预览，只保存图片数据）
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImageUrl.value = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+
+        ElMessage.success(`图片 "${result.name}" 上传成功！点击旁边的链接查看预览`);
+
+      } catch (error: any) {
+        console.error('图片上传失败:', error);
+        ElMessage.error('图片上传失败：' + error.message);
+      } finally {
+        isLoading.value = false;
+        target.value = ''; // 重置文件输入
+      }
+    };
+
+    // 打开图片预览
+    const openImagePreview = () => {
+      if (!lastUploadedImage.value) {
+        ElMessage.warning('暂无已上传的图片');
+        return;
+      }
+      imagePreviewVisible.value = true;
     };
 
     // 清空消息
@@ -1385,6 +1514,10 @@ export default defineComponent({
       isLoading,
       messageContainer,
       enableJsonValidation,
+      fileInput,
+      imagePreviewVisible,
+      previewImageUrl,
+      lastUploadedImage,
       handleClose,
       sendMessage,
       sendMessage2,
@@ -1398,7 +1531,10 @@ export default defineComponent({
       saveRawJson,
       handleEnter,
       formatContent,
-      formatTime
+      formatTime,
+      triggerImageUpload,
+      handleImageUpload,
+      openImagePreview
     };
   }
 });
@@ -1586,6 +1722,20 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.image-preview-link {
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.image-preview-link:hover {
+  background-color: #f0f9ff;
 }
 
 .hint {

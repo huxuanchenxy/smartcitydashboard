@@ -24,5 +24,6 @@ interface ImportMetaEnv {
   VITE_APP_DIFY_API_KEY: string;
   VITE_APP_DIFY_API_KEY_FLOW1: string; // 发送2功能的第一次调用 API Key
   VITE_APP_DIFY_API_KEY_FLOW2: string; // 发送2功能的第二次调用 API Key
+  VITE_APP_DIFY_API_KEY_FLOW3: string; // 新程序专用 API Key
   VITE_APP_DIFY_BASE_URL: string;
 }

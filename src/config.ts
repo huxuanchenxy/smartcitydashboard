@@ -14,6 +14,9 @@ export const difyConfig = {
   // 发送2功能的第二次调用 API Key（对应第二个 chatflow）
   apiKeyFlow2: '',
   
+  // 新程序专用 API Key
+  apiKeyFlow3: '',
+  
   // API 基础地址
   baseUrl: '',
 }
