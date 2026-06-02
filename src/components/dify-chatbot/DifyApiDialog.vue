@@ -8,6 +8,7 @@
     append-to-body
     :show-close="true"
     class="custom-close-dialog"
+    top="10vh"
   >
     <button class="my-close-btn" @click="handleClose">×</button>
     <div class="dify-api-container">
@@ -90,6 +91,14 @@
             </el-button>
             <el-button type="warning" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
             <el-button type="info" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
+            <el-button 
+              type="success" 
+              @click="cadToJson" 
+              :disabled="isLoading || !lastUploadedImage"
+              :loading="isCadConverting"
+            >
+              {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
+            </el-button>
             <el-link
               v-if="lastUploadedImage"
               type="primary"
@@ -117,7 +126,7 @@
     <el-dialog
       v-model="imagePreviewVisible"
       title="图片预览"
-      width="600px"
+      width="800px"
       append-to-body
     >
       <img :src="previewImageUrl" alt="预览图片" style="width: 100%;" />
@@ -177,7 +186,7 @@ export default defineComponent({
     },
     width: {
       type: String,
-      default: '800px'
+      default: '900px'
     },
     apiKey: {
       type: String,
@@ -232,6 +241,7 @@ export default defineComponent({
     const imagePreviewVisible = ref(false);
     const previewImageUrl = ref('');
     const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
+    const isCadConverting = ref(false); // CAD转JSON转换状态
 
     // 监听 visible 变化
     watch(() => props.visible, (newVal) => {
@@ -914,6 +924,151 @@ export default defineComponent({
       imagePreviewVisible.value = true;
     };
 
+    // CAD转JSON
+    const cadToJson = async () => {
+      if (!lastUploadedImage.value) {
+        ElMessage.warning('请先上传图片');
+        return;
+      }
+
+      isCadConverting.value = true;
+
+      // 添加用户消息
+      messages.value.push({
+        role: 'user',
+        content: `📐 CAD转JSON (图片: ${lastUploadedImage.value.name})`,
+        timestamp: Date.now()
+      });
+
+      // 添加AI消息（思考中状态）
+      const msgIndex = messages.value.length;
+      messages.value.push({
+        role: 'assistant',
+        content: '',
+        isThinking: true,
+        timestamp: Date.now()
+      });
+
+      await scrollToBottom();
+
+      try {
+        // 使用 apiKeyFlow3，如果未配置则回退到 apiKey
+        const apiKey = props.apiKeyFlow3 || props.apiKey;
+        
+        console.log('=== CAD转JSON 开始 ===');
+        console.log('使用图片ID:', lastUploadedImage.value.id);
+
+        const requestBody = {
+          inputs: {},
+          query: 'cad转json',
+          response_mode: 'streaming',
+          conversation_id: '',
+          user: props.userId || 'abc-123',
+          files: [
+            {
+              type: 'image',
+              transfer_method: 'local_file',
+              upload_file_id: lastUploadedImage.value.id
+            }
+          ]
+        };
+
+        console.log('请求体:', JSON.stringify(requestBody, null, 2));
+
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error(`请求失败 HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('无法获取响应流');
+        }
+
+        const decoder = new TextDecoder('utf-8');
+        let fullContent = '';
+
+        console.log('=== CAD转JSON 开始流式响应 ===');
+
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            console.log('=== CAD转JSON 流式响应结束 ===');
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(line => line.trim());
+          
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            
+            try {
+              const data = JSON.parse(line.substring(6));
+              
+              if (data.event === 'message') {
+                if (data.answer) {
+                  fullContent += data.answer;
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    content: fullContent,
+                    isThinking: false
+                  };
+                  await scrollToBottom();
+                }
+              } else if (data.event === 'error') {
+                throw new Error(data.message || '转换失败');
+              } else if (data.event === 'end') {
+                console.log('=== CAD转JSON 找到 end 事件 ===');
+                break;
+              }
+            } catch (jsonError) {
+              console.warn('解析JSON失败:', line, jsonError);
+            }
+          }
+        }
+
+        console.log('=== CAD转JSON 完成 ===');
+        console.log('转换结果:', fullContent);
+
+        // 确保消息状态正确
+        messages.value[msgIndex] = {
+          ...messages.value[msgIndex],
+          content: fullContent,
+          isThinking: false
+        };
+
+        await scrollToBottom();
+
+        ElMessage.success('CAD转JSON完成！');
+
+      } catch (error: any) {
+        console.error('CAD转JSON失败:', error);
+        
+        // 更新消息显示错误
+        messages.value[messages.value.length - 1] = {
+          ...messages.value[messages.value.length - 1],
+          content: `CAD转JSON失败：${error.message}`,
+          isThinking: false
+        };
+
+        await scrollToBottom();
+
+        ElMessage.error('CAD转JSON失败：' + error.message);
+      } finally {
+        isCadConverting.value = false;
+      }
+    };
+
     // 清空消息
     const clearMessages = () => {
       messages.value = [];
@@ -1518,6 +1673,7 @@ export default defineComponent({
       imagePreviewVisible,
       previewImageUrl,
       lastUploadedImage,
+      isCadConverting,
       handleClose,
       sendMessage,
       sendMessage2,
@@ -1534,7 +1690,8 @@ export default defineComponent({
       formatTime,
       triggerImageUpload,
       handleImageUpload,
-      openImagePreview
+      openImagePreview,
+      cadToJson
     };
   }
 });
@@ -1584,7 +1741,7 @@ export default defineComponent({
 .message-item {
   display: flex;
   flex-direction: column;
-  max-width: 85%;
+  max-width: 90%;
   animation: fadeIn 0.3s ease;
 }
 
