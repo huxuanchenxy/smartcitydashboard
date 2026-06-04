@@ -854,6 +854,14 @@ export default defineComponent({
         return;
       }
 
+      // 检查文件大小（小于2MB）
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        ElMessage.error('图片大小不能超过2MB');
+        target.value = '';
+        return;
+      }
+
       // 显示加载状态
       isLoading.value = true;
 
