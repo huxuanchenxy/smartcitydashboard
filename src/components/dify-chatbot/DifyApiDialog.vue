@@ -63,9 +63,9 @@
             @keydown.enter.prevent="handleEnter"
           ></el-input>
           <div class="input-actions">
-            <span class="hint" v-if="isLoading">AI 正在思考中，请稍候...</span>
+            <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
             <el-button 
-              v-if="isLoading"
+              v-if="isLoading || isCadConverting"
               type="danger"
               @click="stopGeneration"
               class="stop-button"
@@ -951,6 +951,9 @@ export default defineComponent({
 
       await scrollToBottom();
 
+      // 创建 AbortController 用于取消请求
+      abortController.value = new AbortController();
+
       try {
         // 使用 apiKeyFlow3，如果未配置则回退到 apiKey
         const apiKey = props.apiKeyFlow3 || props.apiKey;
@@ -981,7 +984,8 @@ export default defineComponent({
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          signal: abortController.value.signal
         });
 
         if (!response.ok) {
@@ -1014,6 +1018,11 @@ export default defineComponent({
             
             try {
               const data = JSON.parse(line.substring(6));
+              
+              // 保存 taskId 用于停止生成
+              if (data.task_id) {
+                currentTaskId.value = data.task_id;
+              }
               
               if (data.event === 'message') {
                 if (data.answer) {
@@ -1052,6 +1061,13 @@ export default defineComponent({
         ElMessage.success('CAD转JSON完成！');
 
       } catch (error: any) {
+        // 如果是用户主动取消，不显示错误
+        if (error.name === 'AbortError') {
+          console.log('CAD转JSON已停止');
+          ElMessage.info('CAD转JSON已停止');
+          return;
+        }
+
         console.error('CAD转JSON失败:', error);
         
         // 更新消息显示错误
@@ -1066,6 +1082,8 @@ export default defineComponent({
         ElMessage.error('CAD转JSON失败：' + error.message);
       } finally {
         isCadConverting.value = false;
+        abortController.value = null;
+        currentTaskId.value = null;
       }
     };
 
@@ -1078,7 +1096,7 @@ export default defineComponent({
 
     // 停止生成
     const stopGeneration = async () => {
-      if (!isLoading.value) return;
+      if (!isLoading.value && !isCadConverting.value) return;
       
       // 先调用官方停止接口
       if (currentTaskId.value) {
@@ -1106,6 +1124,24 @@ export default defineComponent({
       // 取消本地请求
       if (abortController.value) {
         abortController.value.abort();
+      }
+      
+      // 将最后一条 AI 消息的 isThinking 设置为 false
+      if (messages.value.length > 0) {
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg.role === 'assistant' && lastMsg.isThinking) {
+          messages.value[messages.value.length - 1] = {
+            ...lastMsg,
+            isThinking: false
+          };
+        }
+      }
+      
+      // 如果是 CAD转JSON，清理状态
+      if (isCadConverting.value) {
+        isCadConverting.value = false;
+        abortController.value = null;
+        currentTaskId.value = null;
       }
       
       ElMessage.info('已停止生成');
