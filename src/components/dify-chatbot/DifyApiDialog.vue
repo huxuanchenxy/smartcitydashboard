@@ -88,46 +88,48 @@
             </el-link>
             </div>
           </div>
-          <el-input
-            v-model="userQuery"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入您的问题..."
-            resize="none"
-            :disabled="isLoading"
-            @keydown.enter.prevent="handleEnter"
-          ></el-input>
-          <div class="input-actions">
-            <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
-            <el-button 
-              v-if="isLoading || isCadConverting"
-              type="danger"
-              size="small"
-              @click="stopGeneration"
-              class="stop-button"
-            >
-              停止生成
-            </el-button>
-            <el-button
-              type="primary" 
-              size="small"
-              @click="sendMessage" 
-              :loading="isLoading"
-              :disabled="!userQuery.trim() || isLoading"
-              class="send-button"
-            >
-              {{ isLoading ? '发送中' : '发送' }}
-            </el-button>
-            <el-button
-              type="primary"
-              size="small"
-              @click="sendMessage2"
-              :disabled="isLoading || !userQuery.trim()"
-              class="send2-button"
-            >
-              {{ isLoading ? '发送中' : '发送2' }}
-            </el-button>
-            
+          <!-- 输入框和发送按钮行 -->
+          <div class="input-row">
+            <el-input
+              v-model="userQuery"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入您的问题..."
+              resize="none"
+              :disabled="isLoading"
+              @keydown.enter.prevent="handleEnter"
+            ></el-input>
+            <div class="input-actions">
+              <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
+              <el-button 
+                v-if="isLoading || isCadConverting"
+                type="danger"
+                size="small"
+                @click="stopGeneration"
+                class="stop-button"
+              >
+                停止生成
+              </el-button>
+              <el-button
+                type="primary" 
+                size="small"
+                @click="sendMessage" 
+                :loading="isLoading"
+                :disabled="!userQuery.trim() || isLoading"
+                class="send2-button"
+              >
+                {{ isLoading ? '发送中' : '发送' }}
+              </el-button>
+              <el-button
+                type="primary"
+                size="small"
+                @click="sendMessage2"
+                :disabled="isLoading || !userQuery.trim()"
+                class="send2-button"
+              >
+                {{ isLoading ? '发送中' : '发送(深度)' }}
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -1963,6 +1965,23 @@ export default defineComponent({
 .top-bar-actions {
   display: flex;
   gap: 8px;
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.input-row :deep(.el-textarea) {
+  flex: 1;
+}
+
+.input-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 
