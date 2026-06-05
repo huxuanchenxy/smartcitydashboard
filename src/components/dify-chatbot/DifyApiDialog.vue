@@ -67,6 +67,7 @@
             <el-button 
               v-if="isLoading || isCadConverting"
               type="danger"
+              size="small"
               @click="stopGeneration"
               class="stop-button"
             >
@@ -74,6 +75,7 @@
             </el-button>
             <el-button
               type="primary" 
+              size="small"
               @click="sendMessage" 
               :loading="isLoading"
               :disabled="!userQuery.trim() || isLoading"
@@ -83,16 +85,18 @@
             </el-button>
             <el-button
               type="primary"
+              size="small"
               @click="sendMessage2"
               :disabled="isLoading || !userQuery.trim()"
               class="send2-button"
             >
               {{ isLoading ? '发送中' : '发送2' }}
             </el-button>
-            <el-button type="warning" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
-            <el-button type="info" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
+            <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
+            <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
             <el-button 
               type="success" 
+              size="small"
               @click="cadToJson" 
               :disabled="isLoading || !lastUploadedImage"
               :loading="isCadConverting"
