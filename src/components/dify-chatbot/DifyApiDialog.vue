@@ -66,6 +66,7 @@
               </option>
             </select>
             <div class="top-bar-actions">
+              <el-button type="primary" size="small" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
               <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
               <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
               <el-button 
@@ -84,7 +85,7 @@
               @click="openImagePreview"
               class="image-preview-link"
             >
-              🖼️ 查看最新上传的图片
+              🖼️ 查看
             </el-link>
             </div>
           </div>
@@ -163,7 +164,7 @@
         <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
         <!-- <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button> -->
         <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button>
-        <el-button type="primary" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
+        
         <!-- <el-switch
           v-model="enableJsonValidation"
           active-text="JSON校验"
@@ -1965,6 +1966,7 @@ export default defineComponent({
 .top-bar-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .input-row {
