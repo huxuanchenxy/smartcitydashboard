@@ -53,17 +53,41 @@
       <!-- 输入区域 -->
       <div class="input-section">
         <div class="input-wrapper">
-          <!-- 推荐问题下拉框 -->
-          <select
-            v-model="selectedQuestion"
-            :disabled="isLoading"
-            style="width: 280px; height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; margin-bottom: 10px; cursor: pointer;"
-          >
-            <option value="" disabled>选择推荐问题...</option>
-            <option v-for="question in recommendQuestions" :key="question" :value="question">
-              {{ question }}
-            </option>
-          </select>
+          <!-- 推荐问题下拉框和操作按钮行 -->
+          <div class="top-bar">
+            <select
+              v-model="selectedQuestion"
+              :disabled="isLoading"
+              style="width: 280px; height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; cursor: pointer;"
+            >
+              <option value="" disabled>选择推荐问题...</option>
+              <option v-for="question in recommendQuestions" :key="question" :value="question">
+                {{ question }}
+              </option>
+            </select>
+            <div class="top-bar-actions">
+              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
+              <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
+              <el-button 
+              type="success" 
+              size="small"
+              @click="cadToJson" 
+              :disabled="isLoading || !lastUploadedImage"
+              :loading="isCadConverting"
+            >
+              {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
+            </el-button>
+            <el-link
+              v-if="lastUploadedImage"
+              type="primary"
+              :underline="false"
+              @click="openImagePreview"
+              class="image-preview-link"
+            >
+              🖼️ 查看最新上传的图片
+            </el-link>
+            </div>
+          </div>
           <el-input
             v-model="userQuery"
             type="textarea"
@@ -103,26 +127,7 @@
             >
               {{ isLoading ? '发送中' : '发送2' }}
             </el-button>
-            <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
-            <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
-            <el-button 
-              type="success" 
-              size="small"
-              @click="cadToJson" 
-              :disabled="isLoading || !lastUploadedImage"
-              :loading="isCadConverting"
-            >
-              {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
-            </el-button>
-            <el-link
-              v-if="lastUploadedImage"
-              type="primary"
-              :underline="false"
-              @click="openImagePreview"
-              class="image-preview-link"
-            >
-              🖼️ 查看最新上传的图片
-            </el-link>
+            
           </div>
         </div>
       </div>
@@ -1946,6 +1951,18 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-bar-actions {
+  display: flex;
+  gap: 8px;
 }
 
 
