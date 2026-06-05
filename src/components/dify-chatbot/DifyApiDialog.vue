@@ -53,6 +53,17 @@
       <!-- 输入区域 -->
       <div class="input-section">
         <div class="input-wrapper">
+          <!-- 推荐问题下拉框 -->
+          <select
+            v-model="selectedQuestion"
+            :disabled="isLoading"
+            style="width: 280px; height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; margin-bottom: 10px; cursor: pointer;"
+          >
+            <option value="" disabled>选择推荐问题...</option>
+            <option v-for="question in recommendQuestions" :key="question" :value="question">
+              {{ question }}
+            </option>
+          </select>
           <el-input
             v-model="userQuery"
             type="textarea"
@@ -246,6 +257,25 @@ export default defineComponent({
     const previewImageUrl = ref('');
     const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
     const isCadConverting = ref(false); // CAD转JSON转换状态
+
+    // 推荐问题相关
+    const recommendQuestions = [
+      '生成智慧城市大屏',
+      '智慧水务',
+      '智慧医疗',
+      '智慧教育',
+      '智慧交通',
+      '智慧园区'
+    ];
+    const selectedQuestion = ref('');
+
+    // 监听推荐问题选择变化
+    watch(selectedQuestion, (newVal) => {
+      if (newVal && newVal.trim()) {
+        userQuery.value = newVal;
+        selectedQuestion.value = ''; // 清空选择
+      }
+    });
 
     // 监听 visible 变化
     watch(() => props.visible, (newVal) => {
@@ -1722,6 +1752,8 @@ export default defineComponent({
       previewImageUrl,
       lastUploadedImage,
       isCadConverting,
+      recommendQuestions,
+      selectedQuestion,
       handleClose,
       sendMessage,
       sendMessage2,
@@ -1915,6 +1947,8 @@ export default defineComponent({
   flex-direction: column;
   gap: 10px;
 }
+
+
 
 :deep(.el-textarea__inner) {
   border-radius: 8px;
