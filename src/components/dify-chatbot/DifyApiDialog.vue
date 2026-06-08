@@ -111,7 +111,7 @@
               >
                 停止生成
               </el-button>
-              <el-button
+              <!-- <el-button
                 type="primary" 
                 size="small"
                 @click="sendMessage" 
@@ -120,8 +120,8 @@
                 class="send2-button"
               >
                 {{ isLoading ? '发送中' : '发送' }}
-              </el-button>
-              <el-button
+              </el-button> -->
+              <!-- <el-button
                 type="primary"
                 size="small"
                 @click="sendMessage2"
@@ -129,6 +129,15 @@
                 class="send2-button"
               >
                 {{ isLoading ? '发送中' : '发送(深度)' }}
+              </el-button> -->
+              <el-button
+                type="success"
+                size="small"
+                @click="sendMessage3"
+                :disabled="isLoading || !userQuery.trim()"
+                class="send3-button"
+              >
+                {{ isLoading ? '发送中' : '发送' }}
               </el-button>
             </div>
           </div>
@@ -159,11 +168,11 @@
       <div class="dialog-footer">
         <!-- <el-button @click="handleClose">关闭</el-button> -->
 
-        <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button>
-        <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button>
+        <!-- <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button> -->
+        <!-- <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button> -->
         <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
-        <!-- <el-button type="success" @click="fetchAndSaveScreenAI">从URL读取JSON</el-button> -->
-        <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button>
+        <el-button type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading">AI生成画布</el-button>
+        <!-- <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button> -->
         
         <!-- <el-switch
           v-model="enableJsonValidation"
@@ -229,6 +238,11 @@ export default defineComponent({
     apiKeyFlow3: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW3 || ''
+    },
+    // difyapidialog 专用 API Key
+    apiKeyFlow4: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW4 || ''
     },
     baseUrl: {
       type: String,
@@ -323,7 +337,7 @@ export default defineComponent({
     // 处理回车发送（Shift+Enter 换行）
     const handleEnter = (e: KeyboardEvent) => {
       if (!e.shiftKey) {
-        sendMessage();
+        sendMessage3();
       }
     };
 
@@ -876,6 +890,232 @@ export default defineComponent({
       }
     };
 
+    // 发送消息3 - 使用 FLOW4 的 API Key
+    const sendMessage3 = async () => {
+      if (!userQuery.value.trim() || isLoading.value) return;
+
+      const query = userQuery.value.trim();
+
+      console.log('=== 发送3 调用开始 ===');
+      console.log('发送3 query:', query);
+
+      // 添加用户消息
+      messages.value.push({
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      });
+
+      // 添加 AI 思考中的占位消息
+      const thinkingMsg: Message = {
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true
+      };
+      messages.value.push(thinkingMsg);
+      
+      await scrollToBottom();
+      
+      userQuery.value = '';
+      isLoading.value = true;
+
+      // 创建 AbortController 用于取消请求
+      abortController.value = new AbortController();
+
+      try {
+        // 使用 apiKeyFlow4，如果未配置则回退到 apiKey
+        const apiKey4 = props.apiKeyFlow4 || props.apiKey;
+        
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey4}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: props.data,
+            query: query,
+            response_mode: 'streaming',
+            conversation_id: conversationId.value,
+            user: props.userId
+          }),
+          signal: abortController.value.signal
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        console.log('发送3 开始流式响应');
+
+        let fullContent = '';
+        let newConversationId = '';
+        let pendingData = '';
+        let hasError = false;
+
+        // 流式处理每个数据块
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = pendingData + decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          // 保留最后一行（可能是不完整的）
+          pendingData = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              // 处理 error 事件
+              if (data.event === 'error') {
+                hasError = true;
+                const errorMsg = data.message || '服务发生未知错误';
+                const errorCode = data.code || 'unknown';
+                const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+                
+                console.error(errorDetail); // 控制台打印
+                
+                // 更新最后一条消息为错误提示
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = `请求失败：${errorMsg}`;
+                }
+                
+                ElMessage.error(errorDetail); // 弹出报错消息
+                continue;
+              }
+
+              // 如果已经出现过 error 事件，跳过后续数据处理
+              if (hasError) continue;
+
+              // 处理普通消息 - 实时更新
+              if (data.event === 'message' && data.answer) {
+                // 保存 task_id 用于停止请求
+                if (data.task_id) {
+                  currentTaskId.value = data.task_id;
+                }
+                fullContent += data.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = fullContent;
+                  await scrollToBottom();
+                }
+              }
+
+              // 处理 workflow_finished 事件 - 最终完成
+              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+                console.log('发送3 找到 workflow_finished 事件');
+                fullContent = data.data.outputs.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+
+              if (data.conversation_id) {
+                newConversationId = data.conversation_id;
+              }
+            } catch (e) {
+              console.warn('发送3 解析单行数据失败:', e);
+            }
+          }
+        }
+
+        // 处理最后可能残留的数据
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+            
+            // 处理残留数据中的 error 事件
+            if (data.event === 'error') {
+              hasError = true;
+              const errorMsg = data.message || '服务发生未知错误';
+              const errorCode = data.code || 'unknown';
+              const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+              
+              console.error(errorDetail);
+              
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = `请求失败：${errorMsg}`;
+              }
+              
+              ElMessage.error(errorDetail);
+            }
+            
+            if (!hasError && data.event === 'message' && data.answer) {
+              fullContent += data.answer;
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+            }
+          } catch (e) {
+            console.warn('发送3 解析最后残留数据失败:', e);
+          }
+        }
+
+        // 更新会话 ID
+        if (newConversationId && !conversationId.value) {
+          conversationId.value = newConversationId;
+          emit('conversation-created', newConversationId);
+        }
+
+        // 如果发生了错误，不再触发 message-received 成功事件
+        if (!hasError) {
+          console.log('=== 发送3 调用完成 ===');
+          console.log('发送3 回答:', fullContent);
+          emit('message-received', fullContent);
+        }
+
+      } catch (error: any) {
+        console.error('发送3 发送消息失败:', error);
+        
+        // 如果是用户取消，不显示错误，保留已收到的内容
+        if (error.name === 'AbortError') {
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            // 如果没有内容，显示"已停止"提示
+            if (!lastMsg.content.trim()) {
+              lastMsg.content = '已停止生成';
+            }
+          }
+          return;
+        }
+
+        // 更新最后一条消息为错误提示
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.isThinking = false;
+          lastMsg.content = '抱歉，服务暂时不可用，请稍后重试。';
+        }
+
+        ElMessage.error('发送3 发送消息失败: ' + error.message);
+      } finally {
+        isLoading.value = false;
+        abortController.value = null;
+        currentTaskId.value = null;
+      }
+    };
+
     // 触发图片上传
     const triggerImageUpload = () => {
       fileInput.value?.click();
@@ -1248,8 +1488,13 @@ export default defineComponent({
 
     // 从URL读取JSON并保存屏幕数据
     const fetchAndSaveScreenAI = async () => {
+      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      if (aiMessages.length === 0) {
+        ElMessage.warning('暂无 AI 回答');
+        return;
+      }
       try {
-        ElMessage.info('正在读取JSON数据...');
+        ElMessage.info('正在加载JSON数据...');
         const response = await fetch('http://10.89.33.97:5000/data.json');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -1765,6 +2010,7 @@ export default defineComponent({
       handleClose,
       sendMessage,
       sendMessage2,
+      sendMessage3,
       clearMessages,
       stopGeneration,
       outputJsonToConsole,
