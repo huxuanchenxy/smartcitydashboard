@@ -1,110 +1,268 @@
 {
-  "metadata": {
-    "cad_file": "unknown.dxf",
-    "cad_bounds": {
-      "min_x": 0,
-      "max_x": 20000,
-      "min_y": 0,
-      "max_y": 15200
-    },
-    "scale": 0,
-    "screen_resolution": [1920, 1080],
-    "original_image_size": {
-      "width": 1920,
-      "height": 1080
-    },
-    "content_bounds": {
-      "left": 50,
-      "top": 100,
-      "right": 1870,
-      "bottom": 980
-    },
-    "display_transform": {
-      "scale_factor": 0.95,
-      "left_margin": 0,
-      "top_margin": 140,
-      "scaled_width": 1920,
-      "scaled_height": 800
-    }
-  },
-  "elements": [
+  "equipment": [
     {
-      "element_id": "elem_001",
-      "type": "equipment",
-      "sub_type": "manual_call_point",
-      "cad_block_name": null,
-      "label": "AN9",
-      "cad_handle": null,
-      "original_position": {
-        "x": 320,
-        "y": 320
-      },
+      "equipment_id": "1",
+      "type": "火灾预警",
+      "label": "A53",
       "cad_position": {
-        "x": 3200,
-        "y": 3200,
+        "x": 2200.5,
+        "y": 2800.2,
         "rotation": 0
       },
       "screen_position": {
-        "x": 520,
+        "x": 250,
         "y": 300,
         "rotation": 0
       },
       "bounding_box": {
-        "x1": 3180,
-        "y1": 3180,
-        "x2": 3220,
-        "y2": 3220
+        "x1": 2180,
+        "y1": 2780,
+        "x2": 2220,
+        "y2": 2820
       },
-      "screen_bounding_box": {
-        "x1": 510,
-        "y1": 290,
-        "x2": 530,
-        "y2": 310
-      },
-      "screen_size": {
-        "width": 20,
-        "height": 20
-      },
-      "confidence": "高"
+      "diameter": 40
     },
     {
-      "element_id": "elem_002",
-      "type": "equipment",
-      "sub_type": "manual_call_point",
-      "cad_block_name": null,
-      "label": "AN15",
-      "cad_handle": null,
-      "original_position": {
-        "x": 1580,
-        "y": 320
-      },
+      "equipment_id": "2",
+      "type": "火灾预警",
+      "label": "A52",
       "cad_position": {
-        "x": 15800,
-        "y": 3200,
+        "x": 3400.5,
+        "y": 2800.2,
         "rotation": 0
       },
       "screen_position": {
-        "x": 1380,
+        "x": 370,
         "y": 300,
         "rotation": 0
       },
       "bounding_box": {
-        "x1": 15780,
-        "y1": 3180,
-        "x2": 15820,
-        "y2": 3220
+        "x1": 3380,
+        "y1": 2780,
+        "x2": 3420,
+        "y2": 2820
       },
-      "screen_bounding_box": {
-        "x1": 1370,
-        "y1": 290,
-        "x2": 1390,
-        "y2": 310
+      "diameter": 40
+    },
+    {
+      "equipment_id": "3",
+      "type": "火灾预警",
+      "label": "A51",
+      "cad_position": {
+        "x": 4600.5,
+        "y": 2800.2,
+        "rotation": 0
       },
-      "screen_size": {
-        "width": 20,
-        "height": 20
+      "screen_position": {
+        "x": 490,
+        "y": 300,
+        "rotation": 0
       },
-      "confidence": "高"
+      "bounding_box": {
+        "x1": 4580,
+        "y1": 2780,
+        "x2": 4620,
+        "y2": 2820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "4",
+      "type": "火灾预警",
+      "label": "A65",
+      "cad_position": {
+        "x": 5800.5,
+        "y": 2800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 610,
+        "y": 300,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 5780,
+        "y1": 2780,
+        "x2": 5820,
+        "y2": 2820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "5",
+      "type": "火灾预警",
+      "label": "A64",
+      "cad_position": {
+        "x": 7000.5,
+        "y": 2800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 730,
+        "y": 300,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 6980,
+        "y1": 2780,
+        "x2": 7020,
+        "y2": 2820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "6",
+      "type": "火灾预警",
+      "label": "A63",
+      "cad_position": {
+        "x": 8200.5,
+        "y": 2800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 850,
+        "y": 300,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 8180,
+        "y1": 2780,
+        "x2": 8220,
+        "y2": 2820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "7",
+      "type": "火灾预警",
+      "label": "A54",
+      "cad_position": {
+        "x": 2200.5,
+        "y": 1800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 250,
+        "y": 200,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 2180,
+        "y1": 1780,
+        "x2": 2220,
+        "y2": 1820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "8",
+      "type": "火灾预警",
+      "label": "A55",
+      "cad_position": {
+        "x": 3400.5,
+        "y": 1800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 370,
+        "y": 200,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 3380,
+        "y1": 1780,
+        "x2": 3420,
+        "y2": 1820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "9",
+      "type": "火灾预警",
+      "label": "A59",
+      "cad_position": {
+        "x": 4600.5,
+        "y": 1800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 490,
+        "y": 200,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 4580,
+        "y1": 1780,
+        "x2": 4620,
+        "y2": 1820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "10",
+      "type": "火灾预警",
+      "label": "A60",
+      "cad_position": {
+        "x": 5800.5,
+        "y": 1800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 610,
+        "y": 200,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 5780,
+        "y1": 1780,
+        "x2": 5820,
+        "y2": 1820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "11",
+      "type": "火灾预警",
+      "label": "A61",
+      "cad_position": {
+        "x": 7000.5,
+        "y": 1800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 730,
+        "y": 200,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 6980,
+        "y1": 1780,
+        "x2": 7020,
+        "y2": 1820
+      },
+      "diameter": 40
+    },
+    {
+      "equipment_id": "12",
+      "type": "火灾预警",
+      "label": "A62",
+      "cad_position": {
+        "x": 8200.5,
+        "y": 1800.2,
+        "rotation": 0
+      },
+      "screen_position": {
+        "x": 850,
+        "y": 200,
+        "rotation": 0
+      },
+      "bounding_box": {
+        "x1": 8180,
+        "y1": 1780,
+        "x2": 8220,
+        "y2": 1820
+      },
+      "diameter": 40
     }
   ]
 }

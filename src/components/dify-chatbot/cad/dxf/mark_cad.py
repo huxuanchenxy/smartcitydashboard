@@ -3,7 +3,8 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 
-def mark_image_with_boxes(image_path: str, json_path: str, output_path: str = None):
+def mark_image_with_boxes(image_path: str, json_path: str, output_path: str = None, 
+                          default_size: int = 30, screen_resolution: tuple = None):
     """
     根据JSON中定义的设备坐标和尺寸，在图片上绘制红框并标注坐标值。
     支持坐标转换：JSON中的坐标是相对于screen_resolution的，需要转换到原图实际尺寸。
@@ -12,6 +13,8 @@ def mark_image_with_boxes(image_path: str, json_path: str, output_path: str = No
         image_path: JPG图片路径
         json_path: 对应的JSON配置文件路径
         output_path: 输出文件路径，默认为原文件名+(标记).jpg
+        default_size: 默认标记框大小（像素），当JSON中没有尺寸信息时使用
+        screen_resolution: JSON坐标的参考分辨率，默认自动从图片推断或使用(1920, 1080)
     """
     # 读取JSON配置
     with open(json_path, 'r', encoding='utf-8') as f:
@@ -28,10 +31,24 @@ def mark_image_with_boxes(image_path: str, json_path: str, output_path: str = No
     except:
         font = ImageFont.load_default()
 
-    # 获取JSON中的屏幕分辨率（默认1920x1080）
-    metadata = config.get("metadata", {})
-    screen_res = metadata.get("screen_resolution", [1920, 1080])
-    screen_width, screen_height = screen_res[0], screen_res[1]
+    # 获取或推断屏幕分辨率
+    if screen_resolution:
+        screen_width, screen_height = screen_resolution
+    else:
+        # 尝试从metadata获取
+        metadata = config.get("metadata", {})
+        screen_res = metadata.get("screen_resolution")
+        if screen_res:
+            screen_width, screen_height = screen_res[0], screen_res[1]
+        else:
+            # 根据图片宽高比推断（假设16:9）
+            aspect_ratio = img_width / img_height
+            if abs(aspect_ratio - 16/9) < 0.1:
+                # 16:9 比例，推断为1920x1080
+                screen_width, screen_height = 1920, 1080
+            else:
+                # 使用图片原始尺寸
+                screen_width, screen_height = img_width, img_height
 
     # 计算缩放比例（等比缩放，宽度填满）
     scale_x = img_width / screen_width
@@ -46,28 +63,38 @@ def mark_image_with_boxes(image_path: str, json_path: str, output_path: str = No
     print(f"JSON屏幕分辨率: {screen_width}x{screen_height}")
     print(f"缩放比例: {scale_x:.4f}")
     print(f"垂直偏移: {offset_y:.2f}")
+    print(f"默认标记框大小: {default_size}px")
 
-    # 遍历所有元素（支持新格式 elements）
-    elements = config.get("elements", config.get("equipment", []))
+    # 遍历所有元素（支持多种格式）
+    elements = config.get("equipment", config.get("elements", []))
     
     for element in elements:
         try:
-            # 解析 screen_position 和 screen_size（新格式）
+            # 解析 screen_position
             screen_pos = element.get("screen_position", {})
+            
+            if not screen_pos:
+                print(f"跳过元素 {element.get('label', 'unknown')}：缺少screen_position")
+                continue
+            
+            center_x = float(screen_pos["x"])
+            center_y = float(screen_pos["y"])
+            
+            # 获取尺寸：优先使用diameter，其次使用screen_size，最后使用默认值
+            diameter = element.get("diameter")
             screen_size = element.get("screen_size", {})
             
-            if screen_pos and screen_size:
-                # 使用 screen_position 和 screen_size
-                center_x = float(screen_pos["x"])
-                center_y = float(screen_pos["y"])
-                width_px = float(screen_size["width"])
-                height_px = float(screen_size["height"])
+            if diameter:
+                # 使用diameter作为正方形边框
+                width_px = float(diameter)
+                height_px = float(diameter)
+            elif screen_size:
+                width_px = float(screen_size.get("width", default_size))
+                height_px = float(screen_size.get("height", default_size))
             else:
-                # 兼容旧格式
-                center_x = float(element["center_x"])
-                center_y = float(element["center_y"])
-                width_px = float(element["width_px"])
-                height_px = float(element["height_px"])
+                # 使用默认大小
+                width_px = default_size
+                height_px = default_size
 
             # 坐标转换：从JSON分辨率转换到原图实际尺寸
             # 使用宽度缩放比例，并考虑垂直偏移
@@ -88,7 +115,7 @@ def mark_image_with_boxes(image_path: str, json_path: str, output_path: str = No
 
             # 准备标注文本（显示原图坐标）
             label = element.get("label", element.get("name", ""))
-            text = f"{label}\n({int(actual_center_x)}, {int(actual_center_y)})\n{int(actual_width)}x{int(actual_height)}"
+            text = f"{label}\n({int(actual_center_x)}, {int(actual_center_y)})"
 
             # 计算文本位置（放在矩形上方或右侧）
             text_x = right + 5
@@ -117,11 +144,21 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 3:
-        print("用法: python mark_cad.py <图片路径> <JSON配置路径> [输出文件路径]")
+        print("用法: python mark_cad.py <图片路径> <JSON配置路径> [输出文件路径] [参考分辨率宽] [参考分辨率高] [默认框大小]")
+        print("示例: python mark_cad.py image.jpg config.json output.jpg 1920 1080 30")
         sys.exit(1)
 
     image_path = sys.argv[1]
     json_path = sys.argv[2]
     output_path = sys.argv[3] if len(sys.argv) > 3 else None
+    
+    # 解析可选参数
+    screen_resolution = None
+    default_size = 30
+    
+    if len(sys.argv) >= 6:
+        screen_resolution = (int(sys.argv[4]), int(sys.argv[5]))
+    if len(sys.argv) >= 7:
+        default_size = int(sys.argv[6])
 
-    mark_image_with_boxes(image_path, json_path, output_path)
+    mark_image_with_boxes(image_path, json_path, output_path, default_size, screen_resolution)
