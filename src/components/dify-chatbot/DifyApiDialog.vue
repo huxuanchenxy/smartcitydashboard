@@ -111,7 +111,7 @@
               >
                 停止生成
               </el-button>
-              <el-button
+              <!-- <el-button
                 type="primary" 
                 size="small"
                 @click="sendMessage" 
@@ -120,7 +120,7 @@
                 class="send2-button"
               >
                 {{ isLoading ? '发送中' : '发送' }}
-              </el-button>
+              </el-button> -->
               <!-- <el-button
                 type="primary"
                 size="small"
@@ -168,11 +168,11 @@
       <div class="dialog-footer">
         <!-- <el-button @click="handleClose">关闭</el-button> -->
 
-        <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button>
-        <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button>
+        <!-- <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button> -->
+        <!-- <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button> -->
         <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
         <el-button type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading">AI生成画布</el-button>
-        <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button>
+        <!-- <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button> -->
         
         <!-- <el-switch
           v-model="enableJsonValidation"

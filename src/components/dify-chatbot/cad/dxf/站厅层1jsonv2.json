@@ -5,44 +5,44 @@
             "type": "手动报警按钮",
             "label": "AN9",
             "cad_position": {
-                "x": 1950.5,
-                "y": 2800.2,
+                "x": 1840.0,
+                "y": 2800.0,
                 "rotation": 0
             },
             "screen_position": {
-                "x": 250,
-                "y": 320,
+                "x": 200,
+                "y": 350,
                 "rotation": 0
             },
             "bounding_box": {
-                "x1": 1930,
+                "x1": 1800,
                 "y1": 2780,
-                "x2": 1970,
+                "x2": 1880,
                 "y2": 2820
             },
-            "diameter": 100
+            "diameter": "20"
         },
         {
             "equipment_id": "2",
             "type": "手动报警按钮",
             "label": "AN15",
             "cad_position": {
-                "x": 1780.5,
-                "y": 2400.2,
+                "x": 1840.0,
+                "y": 1800.0,
                 "rotation": 0
             },
             "screen_position": {
-                "x": 220,
-                "y": 280,
+                "x": 200,
+                "y": 650,
                 "rotation": 0
             },
             "bounding_box": {
-                "x1": 1760,
-                "y1": 2380,
-                "x2": 1800,
-                "y2": 2420
+                "x1": 1800,
+                "y1": 1780,
+                "x2": 1880,
+                "y2": 1820
             },
-            "diameter": 100
+            "diameter": "20"
         }
     ]
 }
