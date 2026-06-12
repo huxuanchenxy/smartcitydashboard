@@ -22,30 +22,79 @@
           <div
             v-for="(message, index) in messages"
             :key="index"
-            :class="['message-item', message.role === 'user' ? 'user-message' : 'assistant-message']"
+            :class="['message-item', message.role === 'user' ? 'user-message' : 'assistant-message', { 'human-interaction-message': message.isHumanInteraction }]"
           >
-            <div class="message-header">
-              <div class="avatar" :class="message.role">
-                {{ message.role === 'user' ? '👤' : '🤖' }}
+            <!-- 人工介入消息 -->
+            <div v-if="message.isHumanInteraction" class="human-interaction-wrapper">
+              <!-- 人工介入提示条 -->
+              <div class="agent-indicator">
+                <span class="agent-icon">🔔</span>
+                <span class="agent-text">人工介入</span>
               </div>
-              <div class="message-role">{{ message.role === 'user' ? '用户' : 'AI 助手' }}</div>
-            </div>
-            <div class="message-content">
-              <!-- 思考中状态 -->
-              <div v-if="message.isThinking" class="thinking-indicator">
-                <span class="thinking-dots">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </span>
-                <span class="thinking-text">思考中</span>
+              
+              <!-- AI 消息内容 -->
+              <div class="ai-message-content">
+                <div v-html="formatContent(message.content)"></div>
               </div>
-              <!-- 正常内容 -->
-              <div v-else class="content-text" v-html="formatContent(message.content)"></div>
+              
+              <!-- 用户反馈输入区域 -->
+              <div class="human-feedback-section">
+                <textarea
+                  v-model="currentHumanInput"
+                  rows="3"
+                  placeholder="在此填写修改意见:"
+                  class="feedback-textarea"
+                  :disabled="isSubmitting"
+                ></textarea>
+                <div class="feedback-actions">
+                  <el-button
+                    type="primary"
+                    @click="handleHumanApprove(index)"
+                    :disabled="isSubmitting || message.isProcessed"
+                    :loading="isSubmitting"
+                  >
+                    {{ isSubmitting ? '提交中' : '确认' }}
+                  </el-button>
+                  <el-button
+                    type="default"
+                    @click="handleHumanRevise(index)"
+                    :disabled="isSubmitting || message.isProcessed"
+                    :loading="isSubmitting"
+                  >
+                    {{ isSubmitting ? '提交中' : '修改' }}
+                  </el-button>
+                </div>
+                <div class="expiry-note">
+                  ⚠️ 此操作将在3天内过期。
+                </div>
+              </div>
             </div>
-            <div class="message-time" v-if="!message.isThinking">
-              {{ formatTime(message.timestamp) }}
-            </div>
+            
+            <!-- 普通消息 -->
+            <template v-else>
+              <div class="message-header">
+                <div class="avatar" :class="message.role">
+                  {{ message.role === 'user' ? '👤' : '🤖' }}
+                </div>
+                <div class="message-role">{{ message.role === 'user' ? '用户' : 'AI 助手' }}</div>
+              </div>
+              <div class="message-content">
+                <!-- 思考中状态 -->
+                <div v-if="message.isThinking" class="thinking-indicator">
+                  <span class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </span>
+                  <span class="thinking-text">思考中</span>
+                </div>
+                <!-- 正常内容 -->
+                <div v-else class="content-text" v-html="formatContent(message.content)"></div>
+              </div>
+              <div class="message-time" v-if="!message.isThinking">
+                {{ formatTime(message.timestamp) }}
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -139,6 +188,15 @@
               >
                 {{ isLoading ? '发送中' : '发送' }}
               </el-button>
+              <el-button
+                type="primary"
+                size="small"
+                @click="sendMessage4()"
+                :disabled="isLoading || !userQuery.trim()"
+                class="send4-button"
+              >
+                {{ isLoading ? '发送中' : '发送4' }}
+              </el-button>
             </div>
           </div>
         </div>
@@ -203,6 +261,10 @@ interface Message {
   content: string;
   timestamp: number;
   isThinking?: boolean;
+  isHumanInteraction?: boolean;
+  formToken?: string;
+  workflowRunId?: string;
+  isProcessed?: boolean;
 }
 
 export default defineComponent({
@@ -244,6 +306,11 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW4 || ''
     },
+    // difyapidialog 专用 API Key (FLOWa1)
+    apiKeyFlowA1: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWa1 || ''
+    },
     baseUrl: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_BASE_URL || 'http://10.89.34.9'
@@ -279,6 +346,10 @@ export default defineComponent({
     const previewImageUrl = ref('');
     const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
     const isCadConverting = ref(false); // CAD转JSON转换状态
+
+    // 人工介入相关
+    const isSubmitting = ref(false);
+    const currentHumanInput = ref('');
 
     // 推荐问题相关
     const recommendQuestions = [
@@ -322,7 +393,13 @@ export default defineComponent({
     };
 
     // 格式化内容（支持简单的换行）
-    const formatContent = (content: string) => {
+    const formatContent = (content: any) => {
+      if (content === null || content === undefined) {
+        return '';
+      }
+      if (typeof content !== 'string') {
+        return String(content);
+      }
       return content.replace(/\n/g, '<br>');
     };
 
@@ -1113,6 +1190,563 @@ export default defineComponent({
         isLoading.value = false;
         abortController.value = null;
         currentTaskId.value = null;
+      }
+    };
+
+    // 发送消息4 - 使用 FLOWa1 的 API Key，支持工作流暂停和人工介入
+    const sendMessage4 = async (queryText?: string) => {
+      const query = queryText || userQuery.value.trim();
+      if (!query || isLoading.value) return;
+
+      console.log('=== 发送4 调用开始 ===');
+      console.log('发送4 query:', query);
+
+      // 添加用户消息
+      messages.value.push({
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      });
+
+      // 添加 AI 思考中的占位消息
+      const thinkingMsg: Message = {
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true
+      };
+      messages.value.push(thinkingMsg);
+      
+      await scrollToBottom();
+      
+      if (!queryText) {
+        userQuery.value = '';
+      }
+      isLoading.value = true;
+
+      // 创建 AbortController 用于取消请求
+      abortController.value = new AbortController();
+
+      // 定义需要在 try-finally 中共享的变量
+      let isPaused = false;
+      let pauseData: any = null;
+      let currentFormToken = '';
+      let currentWorkflowRunId = '';
+
+      try {
+        // 使用 apiKeyFlowA1，如果未配置则回退到 apiKeyFlow4
+        const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
+        
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: props.data || {},
+            query: query,
+            response_mode: 'streaming',
+            conversation_id: conversationId.value,
+            user: props.userId,
+            files: []
+          }),
+          signal: abortController.value.signal
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`发送4 请求失败 (${response.status}):`, errorText);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        console.log('发送4 开始流式响应');
+
+        let fullContent = '';
+        let newConversationId = '';
+        let pendingData = '';
+        let hasError = false;
+
+        // 流式处理每个数据块
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = pendingData + decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          // 保留最后一行（可能是不完整的）
+          pendingData = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              // 处理 error 事件
+              if (data.event === 'error') {
+                hasError = true;
+                const errorMsg = data.message || '服务发生未知错误';
+                const errorCode = data.code || 'unknown';
+                const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+                
+                console.error(errorDetail);
+                
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = `请求失败：${errorMsg}`;
+                }
+                
+                ElMessage.error(errorDetail);
+                continue;
+              }
+
+              // 如果已经出现过 error 事件，跳过后续数据处理
+              if (hasError) continue;
+
+              // 处理 workflow_paused 事件 - 工作流暂停，需要人工介入
+              if (data.event === 'workflow_paused') {
+                console.log('⏸️ 检测到工作流暂停');
+                isPaused = true;
+                pauseData = data;
+                
+                // 保存 workflow_run_id 和 conversation_id
+                if (data.data && data.data.workflow_run_id) {
+                  currentWorkflowRunId = data.data.workflow_run_id;
+                }
+                if (data.conversation_id) {
+                  newConversationId = data.conversation_id;
+                }
+                
+                // 提取 form_token
+                const formToken = extractFormToken(data);
+                if (formToken) {
+                  currentFormToken = formToken;
+                  console.log('🔑 Form Token:', formToken);
+                }
+                
+                // 收集当前消息内容
+                if (data.answer) {
+                  fullContent += data.answer;
+                }
+                
+                // 更新消息状态
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = fullContent;
+                }
+                
+                await scrollToBottom();
+                
+                // 跳出循环，准备显示人工介入弹窗
+                break;
+              }
+
+              // 处理普通消息 - 实时更新
+              if (data.event === 'message' && data.answer) {
+                if (data.task_id) {
+                  currentTaskId.value = data.task_id;
+                }
+                fullContent += data.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = fullContent;
+                  await scrollToBottom();
+                }
+              }
+
+              // 处理 workflow_finished 事件 - 最终完成
+              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+                console.log('发送4 找到 workflow_finished 事件');
+                fullContent = data.data.outputs.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+
+              if (data.conversation_id) {
+                newConversationId = data.conversation_id;
+              }
+            } catch (e) {
+              console.warn('发送4 解析单行数据失败:', e);
+            }
+          }
+          
+          // 如果检测到暂停，跳出外层循环
+          if (isPaused) break;
+        }
+
+        // 如果工作流暂停，添加人工介入消息到对话中
+        if (isPaused && pauseData) {
+          console.log('📢 检测到工作流暂停，添加人工介入消息');
+          
+          // 提取暂停时的消息内容
+          let content = '';
+          if (pauseData.data && pauseData.data.reasons && pauseData.data.reasons.length > 0) {
+            const reason = pauseData.data.reasons[0];
+            if (reason.form_content) {
+              content = reason.form_content
+                .replace(/\\n/g, '\n')
+                .replace(/\*\*/g, '');
+            }
+          }
+          
+          // 如果没有提取到内容，使用已收集的消息
+          if (!content.trim()) {
+            content = fullContent || 'AI 需要您的反馈以继续处理...';
+          }
+          
+          // 更新最后一条消息为人工介入消息
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            lastMsg.content = content;
+            lastMsg.isHumanInteraction = true;
+            lastMsg.formToken = currentFormToken;
+            lastMsg.workflowRunId = currentWorkflowRunId;
+          }
+          
+          await scrollToBottom();
+          
+          // 更新会话 ID
+          if (newConversationId && !conversationId.value) {
+            conversationId.value = newConversationId;
+            emit('conversation-created', newConversationId);
+          }
+          
+          isLoading.value = false;
+          return; // 等待用户操作
+        }
+
+        // 处理最后可能残留的数据
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+            
+            if (data.event === 'error') {
+              hasError = true;
+              const errorMsg = data.message || '服务发生未知错误';
+              const errorDetail = `[Dify Error] ${errorMsg}`;
+              
+              console.error(errorDetail);
+              
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = `请求失败：${errorMsg}`;
+              }
+              
+              ElMessage.error(errorDetail);
+            }
+            
+            if (!hasError && data.event === 'message' && data.answer) {
+              fullContent += data.answer;
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+            }
+          } catch (e) {
+            console.warn('发送4 解析最后残留数据失败:', e);
+          }
+        }
+
+        // 更新会话 ID
+        if (newConversationId && !conversationId.value) {
+          conversationId.value = newConversationId;
+          emit('conversation-created', newConversationId);
+        }
+
+        // 如果发生了错误，不再触发 message-received 成功事件
+        if (!hasError) {
+          console.log('=== 发送4 调用完成 ===');
+          console.log('发送4 回答:', fullContent);
+          emit('message-received', fullContent);
+        }
+
+      } catch (error: any) {
+        console.error('发送4 发送消息失败:', error);
+        
+        if (error.name === 'AbortError') {
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            if (!lastMsg.content.trim()) {
+              lastMsg.content = '已停止生成';
+            }
+          }
+          return;
+        }
+
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.isThinking = false;
+          lastMsg.content = '抱歉，服务暂时不可用，请稍后重试。';
+        }
+
+        ElMessage.error('发送4 发送消息失败: ' + error.message);
+      } finally {
+        if (!isPaused) {
+          isLoading.value = false;
+          abortController.value = null;
+          currentTaskId.value = null;
+        }
+      }
+    };
+
+    // 从暂停数据中提取 form_token
+    const extractFormToken = (pauseData: any): string => {
+      if (pauseData.data && pauseData.data.reasons && pauseData.data.reasons.length > 0) {
+        const reason = pauseData.data.reasons[0];
+        if (reason.form_token) return reason.form_token;
+        
+        // 尝试从原始数据中提取
+        const raw = JSON.stringify(pauseData);
+        const match = raw.match(/"form_token"\s*:\s*"([^"]+)"/);
+        if (match) return match[1];
+        
+        // 尝试从 node_id 中提取
+        if (pauseData.data.paused_nodes && pauseData.data.paused_nodes.length > 0) {
+          return pauseData.data.paused_nodes[0];
+        }
+      }
+      return '';
+    };
+
+    // 提交表单
+    const submitForm = async (formToken: string, inputs: Record<string, any>, action: string): Promise<any> => {
+      const submitUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
+      
+      console.log(`📤 提交表单到: ${submitUrl}`);
+      console.log('📤 提交数据:', JSON.stringify({ inputs, action }, null, 2));
+      
+      const response = await fetch(submitUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ inputs, action })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`表单提交失败 (${response.status})`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ 表单提交成功');
+      console.log('📥 返回数据:', JSON.stringify(result, null, 2));
+      return result;
+    };
+
+    // 等待工作流完成
+    const waitForWorkflowCompletion = async (workflowRunId: string, intervalMs: number = 2000, maxRetries: number = 30): Promise<any> => {
+      console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
+      
+      let retries = 0;
+      let finalResult = null;
+
+      while (retries < maxRetries) {
+        retries++;
+        const url = `${props.baseUrl}/v1/workflows/run/${workflowRunId}`;
+        
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`查询失败 (${response.status})`);
+          }
+          
+          const result = await response.json();
+          const status = result.status;
+          
+          console.log(`   🔁 第 ${retries} 次查询: 状态 = ${status}`);
+
+          if (status === 'succeeded') {
+            console.log('   ✅ 工作流执行成功！');
+            finalResult = result;
+            break;
+          } else if (status === 'failed') {
+            console.error('   ❌ 工作流执行失败');
+            console.error('   错误信息:', result.error);
+            finalResult = result;
+            break;
+          } else if (status === 'stopped') {
+            console.warn('   ⚠️ 工作流已停止');
+            finalResult = result;
+            break;
+          }
+        } catch (error) {
+          console.error(`   ⚠️ 查询出错: ${error.message}`);
+        }
+
+        if (!finalResult) {
+          await new Promise(resolve => setTimeout(resolve, intervalMs));
+        }
+      }
+
+      if (!finalResult) {
+        throw new Error(`轮询超时：在 ${maxRetries} 次尝试后工作流仍未完成`);
+      }
+
+      return finalResult;
+    };
+
+    // 处理人工介入 - Approve
+    const handleHumanApprove = async (msgIndex: number) => {
+      const message = messages.value[msgIndex];
+      if (!message?.formToken) {
+        ElMessage.error('无法获取表单令牌');
+        return;
+      }
+      
+      isSubmitting.value = true;
+      isLoading.value = true;
+      
+      // 标记消息为已处理，防止重复提交
+      message.isProcessed = true;
+      
+      // 添加用户反馈消息
+      messages.value.push({
+        role: 'user',
+        content: `✅ 确认 - ${currentHumanInput.value || '确认继续'}`,
+        timestamp: Date.now()
+      });
+      
+      // 添加 AI 思考中消息
+      const thinkingMsg: Message = {
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true
+      };
+      messages.value.push(thinkingMsg);
+      
+      await scrollToBottom();
+
+      try {
+        // 提交表单
+        await submitForm(message.formToken, { usercomments: currentHumanInput.value || '' }, 'approve');
+        
+        // 等待工作流处理
+        console.log('⏳ 等待工作流处理完成...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // 查询工作流运行结果
+        if (message.workflowRunId) {
+          const finalResult = await waitForWorkflowCompletion(message.workflowRunId);
+          console.log('\n🎉 流程执行完成！');
+          
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            
+            if (finalResult.outputs && finalResult.outputs.answer) {
+              lastMsg.content = finalResult.outputs.answer;
+            } else if (finalResult.status === 'succeeded') {
+              lastMsg.content = '工作流执行成功完成！';
+            } else if (finalResult.error) {
+              lastMsg.content = `工作流执行失败：${finalResult.error}`;
+            } else {
+              lastMsg.content = '工作流已完成，但没有返回结果。';
+            }
+          }
+          
+          await scrollToBottom();
+          emit('message-received', lastMsg?.content || '');
+        } else {
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            lastMsg.content = '已确认，工作流继续执行中...';
+          }
+        }
+        
+      } catch (error: any) {
+        console.error('人工介入 Approve 失败:', error);
+        
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.isThinking = false;
+          lastMsg.content = `提交失败：${error.message}`;
+        }
+        
+        ElMessage.error('提交失败：' + error.message);
+      } finally {
+        isSubmitting.value = false;
+        isLoading.value = false;
+        currentHumanInput.value = '';
+      }
+    };
+
+    // 处理人工介入 - Revise
+    const handleHumanRevise = async (msgIndex: number) => {
+      const message = messages.value[msgIndex];
+      if (!message?.formToken) {
+        ElMessage.error('无法获取表单令牌');
+        return;
+      }
+      
+      isSubmitting.value = true;
+      isLoading.value = true;
+      
+      // 标记消息为已处理，防止重复提交
+      message.isProcessed = true;
+      
+      // 添加用户反馈消息
+      messages.value.push({
+        role: 'user',
+        content: `🔄 修改 - ${currentHumanInput.value || '修改继续'}`,
+        timestamp: Date.now()
+      });
+      
+      await scrollToBottom();
+
+      try {
+        // 提交表单
+        await submitForm(message.formToken, { usercomments: currentHumanInput.value || '' }, 'revise');
+        
+        // 继续对话，将用户反馈作为新的查询
+        console.log('🔄 用户选择 Revise，继续对话...');
+        
+        // 延迟一下再继续
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 继续发送消息，将用户反馈作为新的查询
+        await sendMessage4(currentHumanInput.value || '继续');
+        
+      } catch (error: any) {
+        console.error('人工介入 Revise 失败:', error);
+        
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.isThinking = false;
+          lastMsg.content = `提交失败：${error.message}`;
+        }
+        
+        ElMessage.error('提交失败：' + error.message);
+      } finally {
+        isSubmitting.value = false;
+        currentHumanInput.value = '';
       }
     };
 
@@ -2007,10 +2641,15 @@ export default defineComponent({
       isCadConverting,
       recommendQuestions,
       selectedQuestion,
+      currentHumanInput,
+      isSubmitting,
       handleClose,
       sendMessage,
       sendMessage2,
       sendMessage3,
+      sendMessage4,
+      handleHumanApprove,
+      handleHumanRevise,
       clearMessages,
       stopGeneration,
       outputJsonToConsole,
@@ -2336,5 +2975,96 @@ export default defineComponent({
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* 人工介入消息样式 */
+.human-interaction-message {
+  background: #fffbe6 !important;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #fef3c7;
+}
+
+.human-interaction-wrapper {
+  width: 100%;
+}
+
+.agent-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #fffbe6 0%, #fff3cd 100%);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border-left: 4px solid #f59e0b;
+}
+
+.agent-icon {
+  font-size: 16px;
+}
+
+.agent-text {
+  font-weight: 600;
+  color: #d97706;
+  font-size: 13px;
+}
+
+.ai-message-content {
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+  white-space: pre-wrap;
+  border: 1px solid #e5e7eb;
+}
+
+.human-feedback-section {
+  background-color: #ffffff;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.human-feedback-section .feedback-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  resize: vertical;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.human-feedback-section .feedback-textarea:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.feedback-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.feedback-actions :deep(.el-button) {
+  min-width: 80px;
+  font-size: 13px;
+}
+
+.expiry-note {
+  font-size: 11px;
+  color: #f59e0b;
+  text-align: center;
+  padding: 6px;
+  background-color: #fffbeb;
+  border-radius: 4px;
 }
 </style>
