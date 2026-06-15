@@ -196,7 +196,7 @@
                 :disabled="isLoading || !userQuery.trim()"
                 class="send-water-button"
               >
-                {{ isLoading ? '发送中' : '发送(水务专用)' }}
+                {{ isLoading ? '发送中' : '发送' }}
               </el-button>
             </div>
           </div>
