@@ -1,7 +1,7 @@
 <template>
   <div :id="'div_' + comid" :style="wrapperStyle">
     <button :style="buttonStyle" @click="handleClick">
-      <IconAi class="ai-icon" />
+      <IconAi class="ai-icon" :style="iconStyle" />
     </button>
     
     <!-- Dify API 聊天机器人弹框 -->
@@ -65,15 +65,32 @@ export default defineComponent({
       console.log('Dify API message sent')
     }
 
+    const buttonSize = computed(() => {
+      return Math.min(attr.value.w, attr.value.h) - 20
+    })
+
     const buttonStyle = computed(() => {
       const style = {
-        padding: '10px',
+        padding: '5px',
         border: 'none',
         borderRadius: '8px',
         cursor: 'pointer',
         backgroundColor: '#FFFFFF',
+        width: `${buttonSize.value}px`,
+        height: `${buttonSize.value}px`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }
       return style as CSSProperties
+    })
+
+    const iconStyle = computed(() => {
+      const iconSize = Math.max(16, buttonSize.value - 10)
+      return {
+        width: `${iconSize}px`,
+        height: `${iconSize}px`,
+      } as CSSProperties
     })
 
     const wrapperStyle = computed(() => {
@@ -89,6 +106,7 @@ export default defineComponent({
     return {
       buttonImage,
       buttonStyle,
+      iconStyle,
       wrapperStyle,
       handleClick,
       comid,
