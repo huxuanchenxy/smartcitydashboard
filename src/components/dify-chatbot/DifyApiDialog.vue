@@ -53,7 +53,7 @@
                     :disabled="isSubmitting || message.isProcessed"
                     :loading="isSubmitting"
                   >
-                    {{ isSubmitting ? '提交中' : '确认' }}
+                    确认
                   </el-button>
                   <el-button
                     type="default"
@@ -61,7 +61,7 @@
                     :disabled="isSubmitting || message.isProcessed"
                     :loading="isSubmitting"
                   >
-                    {{ isSubmitting ? '提交中' : '修改' }}
+                    修改
                   </el-button>
                 </div>
                 <div class="expiry-note">
@@ -1712,10 +1712,13 @@ export default defineComponent({
       // 标记消息为已处理，防止重复提交
       message.isProcessed = true;
       
+      // 获取修改意见
+      const reviseQuery = currentHumanInput.value || '继续';
+      
       // 添加用户反馈消息
       messages.value.push({
         role: 'user',
-        content: `🔄 修改 - ${currentHumanInput.value || '修改继续'}`,
+        content: reviseQuery,
         timestamp: Date.now()
       });
       
@@ -1723,16 +1726,173 @@ export default defineComponent({
 
       try {
         // 提交表单
-        await submitForm(message.formToken, { usercomments: currentHumanInput.value || '' }, 'revise');
+        await submitForm(message.formToken, { usercomments: reviseQuery }, 'revise');
         
         // 继续对话，将用户反馈作为新的查询
         console.log('🔄 用户选择 Revise，继续对话...');
         
-        // 延迟一下再继续
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 添加 AI 思考中消息
+        const thinkingMsg: Message = {
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          isThinking: true
+        };
+        messages.value.push(thinkingMsg);
         
-        // 继续发送消息，将用户反馈作为新的查询
-        await sendMessage4(currentHumanInput.value || '继续');
+        await scrollToBottom();
+        
+        // 使用相同的 conversation_id 再次调用 chat-messages 接口
+        const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
+        
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: props.data || {},
+            query: reviseQuery,
+            response_mode: 'streaming',
+            conversation_id: conversationId.value,
+            user: props.userId,
+            files: []
+          }),
+          signal: abortController.value.signal
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Revise 请求失败 (${response.status}):`, errorText);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        console.log('Revise 开始流式响应');
+        
+        let fullContent = '';
+        let isPaused = false;
+        let pauseData: any = null;
+        let currentFormToken = '';
+        let currentWorkflowRunId = '';
+        let pendingData = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) {
+              console.log('Revise 流式响应完成');
+              break;
+            }
+            
+            const chunk = pendingData + decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            // 保留最后一行（可能是不完整的）
+            pendingData = lines.pop() || '';
+            
+            for (const line of lines) {
+              if (!line.trim() || line === 'data: [DONE]') {
+                continue;
+              }
+              
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  
+                  // 处理工作流暂停事件
+                  if (data.event === 'workflow_paused') {
+                    isPaused = true;
+                    pauseData = data;
+                    
+                    // 提取 form_token（使用专门的提取函数）
+                    const formToken = extractFormToken(data);
+                    if (formToken) {
+                      currentFormToken = formToken;
+                      console.log('🔑 Form Token:', formToken);
+                    } else {
+                      // 如果提取失败，使用 task_id 作为备用
+                      currentFormToken = data.task_id || '';
+                      console.log('⚠️ 无法提取 form_token，使用 task_id:', currentFormToken);
+                    }
+                    
+                    // 保存 workflow_run_id
+                    if (data.data && data.data.workflow_run_id) {
+                      currentWorkflowRunId = data.data.workflow_run_id;
+                    } else {
+                      currentWorkflowRunId = data.workflow_run_id || '';
+                    }
+                    
+                    console.log('🔔 工作流暂停，需要人工介入:', pauseData);
+                    
+                    // 提取暂停时的消息内容（form_content）
+                    let pauseContent = '';
+                    if (pauseData.data && pauseData.data.reasons && pauseData.data.reasons.length > 0) {
+                      const reason = pauseData.data.reasons[0];
+                      if (reason.form_content) {
+                        pauseContent = reason.form_content
+                          .replace(/\\n/g, '\n')
+                          .replace(/\*\*/g, '');
+                      }
+                    }
+                    
+                    // 更新当前消息内容
+                    if (thinkingMsg) {
+                      thinkingMsg.isThinking = false;
+                      thinkingMsg.content = pauseContent || fullContent || '工作流已暂停，等待人工介入';
+                      thinkingMsg.isHumanInteraction = true;
+                      thinkingMsg.formToken = currentFormToken;
+                      thinkingMsg.workflowRunId = currentWorkflowRunId;
+                    }
+                    
+                    await scrollToBottom();
+                    break;
+                  }
+                  
+                  // 处理消息内容
+                  if (data.answer) {
+                    fullContent += data.answer;
+                    if (thinkingMsg) {
+                      thinkingMsg.content = fullContent;
+                    }
+                    await scrollToBottom();
+                  }
+                  
+                  // 处理工作流完成事件
+                  if (data.event === 'workflow_finished' || data.event === 'message_end') {
+                    if (thinkingMsg) {
+                      thinkingMsg.isThinking = false;
+                    }
+                  }
+                  
+                } catch (parseError) {
+                  console.error('解析 SSE 数据失败:', parseError);
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+        
+        // 如果工作流暂停，保持人工介入状态
+        if (isPaused && pauseData) {
+          console.log('Revise 工作流暂停，等待用户操作');
+        } else {
+          // 正常完成
+          if (thinkingMsg) {
+            thinkingMsg.isThinking = false;
+          }
+          emit('message-received', fullContent);
+        }
         
       } catch (error: any) {
         console.error('人工介入 Revise 失败:', error);
@@ -1746,6 +1906,7 @@ export default defineComponent({
         ElMessage.error('提交失败：' + error.message);
       } finally {
         isSubmitting.value = false;
+        isLoading.value = false;
         currentHumanInput.value = '';
       }
     };
