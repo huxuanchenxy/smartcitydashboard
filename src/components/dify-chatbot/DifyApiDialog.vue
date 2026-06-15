@@ -104,7 +104,9 @@
         <div class="input-wrapper">
           <!-- 推荐问题下拉框和操作按钮行 -->
           <div class="top-bar">
+            <!-- 水务模式下隐藏推荐问题下拉框 -->
             <select
+              v-if="!waterServiceMode"
               v-model="selectedQuestion"
               :disabled="isLoading"
               style="width: 280px; height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; cursor: pointer;"
@@ -115,10 +117,13 @@
               </option>
             </select>
             <div class="top-bar-actions">
+              <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
               <el-button type="primary" size="small" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
               <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
               <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
+              <!-- 水务模式下隐藏：CAD转JSON -->
               <el-button 
+              v-if="!waterServiceMode"
               type="success" 
               size="small"
               @click="cadToJson" 
@@ -127,6 +132,7 @@
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button>
+            <!-- 水务模式下保留：图片预览链接 -->
             <el-link
               v-if="lastUploadedImage"
               type="primary"
@@ -151,6 +157,7 @@
             ></el-input>
             <div class="input-actions">
               <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
+              <!-- 水务模式下保留：停止生成 -->
               <el-button 
                 v-if="isLoading || isCadConverting"
                 type="danger"
@@ -160,26 +167,9 @@
               >
                 停止生成
               </el-button>
-              <!-- <el-button
-                type="primary" 
-                size="small"
-                @click="sendMessage" 
-                :loading="isLoading"
-                :disabled="!userQuery.trim() || isLoading"
-                class="send2-button"
-              >
-                {{ isLoading ? '发送中' : '发送' }}
-              </el-button> -->
-              <!-- <el-button
-                type="primary"
-                size="small"
-                @click="sendMessage2"
-                :disabled="isLoading || !userQuery.trim()"
-                class="send2-button"
-              >
-                {{ isLoading ? '发送中' : '发送(深度)' }}
-              </el-button> -->
+              <!-- 水务模式下隐藏：发送、发送4 -->
               <el-button
+                v-if="!waterServiceMode"
                 type="success"
                 size="small"
                 @click="sendMessage3"
@@ -189,6 +179,7 @@
                 {{ isLoading ? '发送中' : '发送' }}
               </el-button>
               <el-button
+                v-if="!waterServiceMode"
                 type="primary"
                 size="small"
                 @click="sendMessage4()"
@@ -196,6 +187,16 @@
                 class="send4-button"
               >
                 {{ isLoading ? '发送中' : '发送4' }}
+              </el-button>
+              <!-- 水务模式下保留：发送(水务专用) -->
+              <el-button
+                type="warning"
+                size="small"
+                @click="sendMessageWater()"
+                :disabled="isLoading || !userQuery.trim()"
+                class="send-water-button"
+              >
+                {{ isLoading ? '发送中' : '发送(水务专用)' }}
               </el-button>
             </div>
           </div>
@@ -229,7 +230,8 @@
         <!-- <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button> -->
         <!-- <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button> -->
         <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
-        <el-button type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading">AI生成画布</el-button>
+        <!-- 水务模式下隐藏：AI生成画布 -->
+        <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading">AI生成画布</el-button>
         <!-- <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button> -->
         
         <!-- <el-switch
@@ -311,6 +313,16 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWa1 || ''
     },
+    // 水务专用 API Key
+    apiKeyFlowWater: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW_WATER || ''
+    },
+    // 水务业务模式开关（开启时仅显示水务相关控件）
+    waterServiceMode: {
+      type: Boolean,
+      default: import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE === 'true' || import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE === '1' || false
+    },
     baseUrl: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_BASE_URL || 'http://10.89.34.9'
@@ -337,6 +349,11 @@ export default defineComponent({
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
+    
+    // 调试日志：验证 waterServiceMode 的值
+    console.log('=== DifyApiDialog 初始化 ===');
+    console.log('waterServiceMode prop:', props.waterServiceMode);
+    console.log('VITE_APP_DIFY_WATER_SERVICE_MODE:', import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE);
     const currentTaskId = ref<string | null>(null);
     // JSON保存前校验开关 - 开启时会在saveScreenAI前校验JSON结构是否符合最低要求
     const enableJsonValidation = ref(true);
@@ -414,7 +431,12 @@ export default defineComponent({
     // 处理回车发送（Shift+Enter 换行）
     const handleEnter = (e: KeyboardEvent) => {
       if (!e.shiftKey) {
-        sendMessage3();
+        // 水务模式下回车调用 sendMessageWater，否则调用 sendMessage3
+        if (props.waterServiceMode) {
+          sendMessageWater();
+        } else {
+          sendMessage3();
+        }
       }
     };
 
@@ -1505,6 +1527,232 @@ export default defineComponent({
           abortController.value = null;
           currentTaskId.value = null;
         }
+      }
+    };
+
+    // 发送消息Water - 使用水务专用 API Key
+    const sendMessageWater = async () => {
+      if (!userQuery.value.trim() || isLoading.value) return;
+
+      const query = userQuery.value.trim();
+
+      console.log('=== 发送(水务专用) 调用开始 ===');
+      console.log('发送Water query:', query);
+
+      // 添加用户消息
+      messages.value.push({
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      });
+
+      // 添加 AI 思考中的占位消息
+      const thinkingMsg: Message = {
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true
+      };
+      messages.value.push(thinkingMsg);
+      
+      await scrollToBottom();
+      
+      userQuery.value = '';
+      isLoading.value = true;
+
+      // 创建 AbortController 用于取消请求
+      abortController.value = new AbortController();
+
+      try {
+        // 使用 apiKeyFlowWater，如果未配置则回退到 apiKey
+        const apiKeyWater = props.apiKeyFlowWater || props.apiKey;
+        
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKeyWater}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: props.data,
+            query: query,
+            response_mode: 'streaming',
+            conversation_id: conversationId.value,
+            user: props.userId
+          }),
+          signal: abortController.value.signal
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        console.log('发送Water 开始流式响应');
+
+        let fullContent = '';
+        let newConversationId = '';
+        let pendingData = '';
+        let hasError = false;
+
+        // 流式处理每个数据块
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = pendingData + decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          // 保留最后一行（可能是不完整的）
+          pendingData = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              // 处理 error 事件
+              if (data.event === 'error') {
+                hasError = true;
+                const errorMsg = data.message || '服务发生未知错误';
+                const errorCode = data.code || 'unknown';
+                const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+                
+                console.error(errorDetail); // 控制台打印
+                
+                // 更新最后一条消息为错误提示
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = `请求失败：${errorMsg}`;
+                }
+                
+                ElMessage.error(errorDetail); // 弹出报错消息
+                continue;
+              }
+
+              // 如果已经出现过 error 事件，跳过后续数据处理
+              if (hasError) continue;
+
+              // 处理普通消息 - 实时更新
+              if (data.event === 'message' && data.answer) {
+                // 保存 task_id 用于停止请求
+                if (data.task_id) {
+                  currentTaskId.value = data.task_id;
+                }
+                fullContent += data.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.isThinking = false;
+                  lastMsg.content = fullContent;
+                  await scrollToBottom();
+                }
+              }
+
+              // 处理 workflow_finished 事件 - 最终完成
+              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+                console.log('发送Water 找到 workflow_finished 事件');
+                fullContent = data.data.outputs.answer;
+                const lastMsg = messages.value[messages.value.length - 1];
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+
+              if (data.conversation_id) {
+                newConversationId = data.conversation_id;
+              }
+            } catch (e) {
+              console.warn('发送Water 解析单行数据失败:', e);
+            }
+          }
+        }
+
+        // 处理最后可能残留的数据
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+            
+            // 处理残留数据中的 error 事件
+            if (data.event === 'error') {
+              hasError = true;
+              const errorMsg = data.message || '服务发生未知错误';
+              const errorCode = data.code || 'unknown';
+              const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
+              
+              console.error(errorDetail);
+              
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = `请求失败：${errorMsg}`;
+              }
+              
+              ElMessage.error(errorDetail);
+            }
+            
+            if (!hasError && data.event === 'message' && data.answer) {
+              fullContent += data.answer;
+              const lastMsg = messages.value[messages.value.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.isThinking = false;
+                lastMsg.content = fullContent;
+                await scrollToBottom();
+              }
+            }
+          } catch (e) {
+            console.warn('发送Water 解析最后残留数据失败:', e);
+          }
+        }
+
+        // 更新会话 ID
+        if (newConversationId && !conversationId.value) {
+          conversationId.value = newConversationId;
+          emit('conversation-created', newConversationId);
+        }
+
+        // 如果发生了错误，不再触发 message-received 成功事件
+        if (!hasError) {
+          console.log('=== 发送(水务专用) 调用完成 ===');
+          console.log('发送Water 回答:', fullContent);
+          emit('message-received', fullContent);
+        }
+
+      } catch (error: any) {
+        console.error('发送Water 发送消息失败:', error);
+        
+        // 如果是用户取消，不显示错误，保留已收到的内容
+        if (error.name === 'AbortError') {
+          const lastMsg = messages.value[messages.value.length - 1];
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.isThinking = false;
+            // 如果没有内容，显示"已停止"提示
+            if (!lastMsg.content.trim()) {
+              lastMsg.content = '已停止生成';
+            }
+          }
+          return;
+        }
+
+        // 更新最后一条消息为错误提示
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.isThinking = false;
+          lastMsg.content = '抱歉，服务暂时不可用，请稍后重试。';
+        }
+
+        ElMessage.error('发送Water 发送消息失败: ' + error.message);
+      } finally {
+        isLoading.value = false;
+        abortController.value = null;
+        currentTaskId.value = null;
       }
     };
 
@@ -2819,6 +3067,7 @@ export default defineComponent({
       sendMessage2,
       sendMessage3,
       sendMessage4,
+      sendMessageWater,
       handleHumanApprove,
       handleHumanRevise,
       clearMessages,
