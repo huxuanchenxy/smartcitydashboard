@@ -230,6 +230,11 @@ export async function createComponent(name: string) {
       return new comModule.default();
     }
 
+    case "AiDify": {
+      const comModule = await import(`./iframe/${path}/src/${path}.ts`);
+      return new comModule.default();
+    }
+
     case "Group": {
       const comModule = await import(`./group/${path}/src/${path}.ts`);
       return new comModule.default();

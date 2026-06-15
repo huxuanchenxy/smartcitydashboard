@@ -851,6 +851,15 @@ export const iframe = {
       used: true,
       visible: true
     }
+    ,
+    {
+      name: "VAiDify",
+      alias: "AiDify",
+      img: `${imagePath}iframe.png`,
+      thum: `${thumPath}iframe.png`,
+      used: true,
+      visible: true
+    }
   ]
 };
 
