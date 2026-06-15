@@ -1695,6 +1695,8 @@ export default defineComponent({
         isSubmitting.value = false;
         isLoading.value = false;
         currentHumanInput.value = '';
+        // 确保最后滚动到底部
+        setTimeout(() => scrollToBottom(), 100);
       }
     };
 
@@ -1723,6 +1725,8 @@ export default defineComponent({
       });
       
       await scrollToBottom();
+      // 再次确保滚动（使用 setTimeout 确保 DOM 更新）
+      setTimeout(() => scrollToBottom(), 50);
 
       try {
         // 提交表单
@@ -1741,6 +1745,8 @@ export default defineComponent({
         messages.value.push(thinkingMsg);
         
         await scrollToBottom();
+        // 再次确保滚动
+        setTimeout(() => scrollToBottom(), 50);
         
         // 使用相同的 conversation_id 再次调用 chat-messages 接口
         const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
@@ -1854,6 +1860,8 @@ export default defineComponent({
                     }
                     
                     await scrollToBottom();
+                    // 再次确保滚动到最新的人工介入区域
+                    setTimeout(() => scrollToBottom(), 100);
                     break;
                   }
                   
@@ -1908,6 +1916,8 @@ export default defineComponent({
         isSubmitting.value = false;
         isLoading.value = false;
         currentHumanInput.value = '';
+        // 确保最后滚动到底部
+        setTimeout(() => scrollToBottom(), 100);
       }
     };
 
