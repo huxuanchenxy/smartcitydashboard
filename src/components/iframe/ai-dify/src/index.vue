@@ -1,7 +1,7 @@
 <template>
   <div :id="'div_' + comid" :style="wrapperStyle">
     <button :style="buttonStyle" @click="handleClick">
-      <img :src="buttonImage" style="height: 40px; width: 40px;">
+      <IconAi class="ai-icon" />
     </button>
     
     <!-- Dify API 聊天机器人弹框 -->
@@ -21,10 +21,11 @@ import type { CSSProperties } from 'vue'
 import { AiDify } from './ai-dify'
 import { useDataCenter } from '@/mixins/data-center'
 import DifyApiDialog from '@/components/dify-chatbot/DifyApiDialog.vue'
+import { IconAi } from '@/icons'
 
 export default defineComponent({
   name: 'VAiDify',
-  components: { DifyApiDialog },
+  components: { DifyApiDialog, IconAi },
   props: {
     com: {
       type: Object as PropType<AiDify>,
@@ -65,14 +66,12 @@ export default defineComponent({
     }
 
     const buttonStyle = computed(() => {
-      const bs = config.value.buttonStyle
       const style = {
         padding: '10px',
         border: 'none',
         borderRadius: '8px',
         cursor: 'pointer',
-        backgroundColor: bs.backgroundColor,
-        hoverBackgroundColor: bs.hoverBackgroundColor,
+        backgroundColor: '#FFFFFF',
       }
       return style as CSSProperties
     })
@@ -102,3 +101,33 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.ai-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.ai-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ai-icon svg path {
+  fill: #333333;
+}
+
+button:hover .ai-icon svg path {
+  fill: #FFFFFF;
+}
+</style>
