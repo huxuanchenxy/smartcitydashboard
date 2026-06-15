@@ -474,19 +474,29 @@ export default defineComponent({
       abortController.value = new AbortController();
 
       try {
+        // 构建 files 参数（如果有上传的图片）
+        const files = lastUploadedImage.value ? [{
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: lastUploadedImage.value.id
+        }] : undefined;
+
+        const requestBody = {
+          inputs: props.data,
+          query: query,
+          response_mode: 'streaming',
+          conversation_id: conversationId.value,
+          user: props.userId,
+          files: files
+        };
+
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${props.apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data,
-            query: query,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value,
-            user: props.userId
-          }),
+          body: JSON.stringify(requestBody),
           signal: abortController.value.signal
         });
 
@@ -698,20 +708,30 @@ export default defineComponent({
       try {
         // 使用 apiKeyFlow1，如果未配置则回退到 apiKey
         const apiKey1 = props.apiKeyFlow1 || props.apiKey;
-        
+
+        // 构建 files 参数（如果有上传的图片）
+        const files = lastUploadedImage.value ? [{
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: lastUploadedImage.value.id
+        }] : undefined;
+
+        const requestBody = {
+          inputs: props.data,
+          query: query,
+          response_mode: 'streaming',
+          conversation_id: conversationId.value,
+          user: props.userId,
+          files: files
+        };
+
         const response1 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey1}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data,
-            query: query,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value,
-            user: props.userId
-          }),
+          body: JSON.stringify(requestBody),
           signal: abortController.value.signal
         });
 
@@ -824,19 +844,23 @@ export default defineComponent({
         // 使用 apiKeyFlow2，如果未配置则回退到 apiKey
         const apiKey2 = props.apiKeyFlow2 || props.apiKey;
 
+        // 复用第一次调用的 files 参数（上传的图片在两次调用之间不会改变）
+        const requestBody2 = {
+          inputs: props.data,
+          query: firstCallAnswer,
+          response_mode: 'streaming',
+          conversation_id: conversationId.value,
+          user: props.userId,
+          files: files
+        };
+
         const response2 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey2}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data,
-            query: firstCallAnswer,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value,
-            user: props.userId
-          }),
+          body: JSON.stringify(requestBody2),
           signal: abortController.value.signal
         });
 
@@ -1025,20 +1049,30 @@ export default defineComponent({
       try {
         // 使用 apiKeyFlow4，如果未配置则回退到 apiKey
         const apiKey4 = props.apiKeyFlow4 || props.apiKey;
-        
+
+        // 构建 files 参数（如果有上传的图片）
+        const files = lastUploadedImage.value ? [{
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: lastUploadedImage.value.id
+        }] : undefined;
+
+        const requestBody = {
+          inputs: props.data,
+          query: query,
+          response_mode: 'streaming',
+          conversation_id: conversationId.value,
+          user: props.userId,
+          files: files
+        };
+
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey4}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data,
-            query: query,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value,
-            user: props.userId
-          }),
+          body: JSON.stringify(requestBody),
           signal: abortController.value.signal
         });
 
@@ -1258,21 +1292,30 @@ export default defineComponent({
       try {
         // 使用 apiKeyFlowA1，如果未配置则回退到 apiKeyFlow4
         const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
-        
+
+        // 构建 files 参数（如果有上传的图片）
+        const files = lastUploadedImage.value ? [{
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: lastUploadedImage.value.id
+        }] : [];
+
+        const requestBody = {
+          inputs: props.data || {},
+          query: query,
+          response_mode: 'streaming',
+          conversation_id: conversationId.value,
+          user: props.userId,
+          files: files
+        };
+
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data || {},
-            query: query,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value,
-            user: props.userId,
-            files: []
-          }),
+          body: JSON.stringify(requestBody),
           signal: abortController.value.signal
         });
 
@@ -1566,20 +1609,30 @@ export default defineComponent({
       try {
         // 使用 apiKeyFlowWater，如果未配置则回退到 apiKey
         const apiKeyWater = props.apiKeyFlowWater || props.apiKey;
-        
+
+        // 构建 files 参数（如果有上传的图片）
+        const files = lastUploadedImage.value ? [{
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: lastUploadedImage.value.id
+        }] : undefined;
+
+        const requestBody = {
+          inputs: props.data,
+          query: query,
+          response_mode: 'streaming',
+          conversation_id: conversationId.value,
+          user: props.userId,
+          files: files
+        };
+
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKeyWater}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            inputs: props.data,
-            query: query,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value,
-            user: props.userId
-          }),
+          body: JSON.stringify(requestBody),
           signal: abortController.value.signal
         });
 
@@ -1998,6 +2051,13 @@ export default defineComponent({
         
         // 使用相同的 conversation_id 再次调用 chat-messages 接口
         const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
+
+        // 构建 files 参数（如果有上传的图片）
+        const files = lastUploadedImage.value ? [{
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: lastUploadedImage.value.id
+        }] : [];
         
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
@@ -2011,7 +2071,7 @@ export default defineComponent({
             response_mode: 'streaming',
             conversation_id: conversationId.value,
             user: props.userId,
-            files: []
+            files: files
           }),
           signal: abortController.value.signal
         });
