@@ -29,7 +29,7 @@
               <!-- 人工介入提示条 -->
               <div class="agent-indicator">
                 <span class="agent-icon">🔔</span>
-                <span class="agent-text">人工介入</span>
+                <span class="agent-text">等待您的反馈</span>
               </div>
               
               <!-- AI 消息内容 -->
@@ -40,7 +40,7 @@
               <!-- 用户反馈输入区域 -->
               <div class="human-feedback-section">
                 <textarea
-                  v-model="currentHumanInput"
+                  v-model="message.humanInput"
                   rows="3"
                   placeholder="在此填写修改意见:"
                   class="feedback-textarea"
@@ -108,7 +108,7 @@
             <select
               v-if="!waterServiceMode"
               v-model="selectedQuestion"
-              :disabled="isLoading"
+              :disabled="isLoading || isAwaitingFeedback"
               style="width: 280px; height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; cursor: pointer;"
             >
               <option value="" disabled>选择推荐问题...</option>
@@ -120,14 +120,14 @@
               <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
               <el-button type="primary" size="small" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
               <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
-              <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading">上传图片</el-button>
+              <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading || isAwaitingFeedback">上传图片</el-button>
               <!-- 水务模式下隐藏：CAD转JSON -->
               <el-button 
               v-if="!waterServiceMode"
               type="success" 
               size="small"
               @click="cadToJson" 
-              :disabled="isLoading || !lastUploadedImage"
+              :disabled="isLoading || isAwaitingFeedback || !lastUploadedImage"
               :loading="isCadConverting"
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
@@ -152,7 +152,7 @@
               :rows="3"
               placeholder="请输入您的问题..."
               resize="none"
-              :disabled="isLoading"
+              :disabled="isLoading || isAwaitingFeedback"
               @keydown.enter.prevent="handleEnter"
             ></el-input>
             <div class="input-actions">
@@ -173,17 +173,18 @@
                 type="success"
                 size="small"
                 @click="sendMessage3"
-                :disabled="isLoading || !userQuery.trim()"
+                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send3-button"
               >
                 {{ isLoading ? '发送中' : '发送' }}
               </el-button>
+              <!-- 发送(反复) -->
               <el-button
                 v-if="!waterServiceMode"
                 type="primary"
                 size="small"
                 @click="sendMessage4()"
-                :disabled="isLoading || !userQuery.trim()"
+                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send4-button"
               >
                 {{ isLoading ? '发送中' : '发送4' }}
@@ -193,7 +194,7 @@
                 type="warning"
                 size="small"
                 @click="sendMessageWater()"
-                :disabled="isLoading || !userQuery.trim()"
+                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send-water-button"
               >
                 {{ isLoading ? '发送中' : '发送' }}
@@ -227,12 +228,12 @@
       <div class="dialog-footer">
         <!-- <el-button @click="handleClose">关闭</el-button> -->
 
-        <!-- <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading">AI生成画布</el-button> -->
-        <!-- <el-button type="success" @click="saveRawJson" :disabled="isLoading">原始保存</el-button> -->
-        <!-- <el-button type="info" @click="saveTempPayload">临时保存payload</el-button> -->
+        <el-button type="primary" @click="outputJsonToConsole" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
+        <el-button type="success" @click="saveRawJson" :disabled="isLoading || isAwaitingFeedback">原始保存</el-button>
+        <el-button type="info" @click="saveTempPayload" :disabled="isAwaitingFeedback">临时保存payload</el-button>
         <!-- 水务模式下隐藏：AI生成画布 -->
-        <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading">AI生成画布</el-button>
-        <!-- <el-button type="danger" @click="calibrateJson" :disabled="isLoading">校准JSON</el-button> -->
+        <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
+        <el-button type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button>
         
         <!-- <el-switch
           v-model="enableJsonValidation"
@@ -267,6 +268,7 @@ interface Message {
   formToken?: string;
   workflowRunId?: string;
   isProcessed?: boolean;
+  humanInput?: string;
 }
 
 export default defineComponent({
@@ -366,7 +368,7 @@ export default defineComponent({
 
     // 人工介入相关
     const isSubmitting = ref(false);
-    const currentHumanInput = ref('');
+    const isAwaitingFeedback = ref(false); // 是否正在等待用户反馈
 
     // 推荐问题相关
     const recommendQuestions = [
@@ -1382,6 +1384,7 @@ export default defineComponent({
               if (data.event === 'workflow_paused') {
                 console.log('⏸️ 检测到工作流暂停');
                 isPaused = true;
+                isAwaitingFeedback.value = true;
                 pauseData = data;
                 
                 // 保存 workflow_run_id 和 conversation_id
@@ -1929,7 +1932,7 @@ export default defineComponent({
       // 添加用户反馈消息
       messages.value.push({
         role: 'user',
-        content: `✅ 确认 - ${currentHumanInput.value || '确认继续'}`,
+        content: `✅ 确认 - ${message.humanInput || '确认继续'}`,
         timestamp: Date.now()
       });
       
@@ -1946,7 +1949,7 @@ export default defineComponent({
 
       try {
         // 提交表单
-        await submitForm(message.formToken, { usercomments: currentHumanInput.value || '' }, 'approve');
+        await submitForm(message.formToken, { usercomments: message.humanInput || '' }, 'approve');
         
         // 等待工作流处理
         console.log('⏳ 等待工作流处理完成...');
@@ -1995,7 +1998,7 @@ export default defineComponent({
       } finally {
         isSubmitting.value = false;
         isLoading.value = false;
-        currentHumanInput.value = '';
+        isAwaitingFeedback.value = false; // 重置等待反馈状态
         // 确保最后滚动到底部
         setTimeout(() => scrollToBottom(), 100);
       }
@@ -2016,7 +2019,7 @@ export default defineComponent({
       message.isProcessed = true;
       
       // 获取修改意见
-      const reviseQuery = currentHumanInput.value || '继续';
+      const reviseQuery = message.humanInput || '继续';
       
       // 添加用户反馈消息
       messages.value.push({
@@ -2125,6 +2128,7 @@ export default defineComponent({
                   // 处理工作流暂停事件
                   if (data.event === 'workflow_paused') {
                     isPaused = true;
+                    isAwaitingFeedback.value = true;
                     pauseData = data;
                     
                     // 提取 form_token（使用专门的提取函数）
@@ -2186,6 +2190,13 @@ export default defineComponent({
                   if (data.event === 'workflow_finished' || data.event === 'message_end') {
                     if (thinkingMsg) {
                       thinkingMsg.isThinking = false;
+                      // 检查工作流是否失败
+                      if (data.data && data.data.status === 'failed') {
+                        const errorMsg = data.data.error || '工作流执行失败';
+                        thinkingMsg.content = `❌ ${errorMsg}`;
+                        thinkingMsg.isHumanInteraction = true; // 保持等待状态，允许重新输入
+                        ElMessage.error('工作流执行失败：' + errorMsg);
+                      }
                     }
                   }
                   
@@ -2197,6 +2208,24 @@ export default defineComponent({
           }
         } finally {
           reader.releaseLock();
+        }
+        
+        // 处理残留数据中的 workflow_finished 事件（处理分块传输导致的残留）
+        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(pendingData.slice(6));
+            if (data.event === 'workflow_finished' && thinkingMsg) {
+              thinkingMsg.isThinking = false;
+              if (data.data && data.data.status === 'failed') {
+                const errorMsg = data.data.error || '工作流执行失败';
+                thinkingMsg.content = `❌ ${errorMsg}`;
+                thinkingMsg.isHumanInteraction = true;
+                ElMessage.error('工作流执行失败：' + errorMsg);
+              }
+            }
+          } catch (e) {
+            console.warn('处理残留数据失败:', e);
+          }
         }
         
         // 如果工作流暂停，保持人工介入状态
@@ -2223,7 +2252,7 @@ export default defineComponent({
       } finally {
         isSubmitting.value = false;
         isLoading.value = false;
-        currentHumanInput.value = '';
+        isAwaitingFeedback.value = false; // 重置等待反馈状态
         // 确保最后滚动到底部
         setTimeout(() => scrollToBottom(), 100);
       }
@@ -3120,8 +3149,8 @@ export default defineComponent({
       isCadConverting,
       recommendQuestions,
       selectedQuestion,
-      currentHumanInput,
       isSubmitting,
+      isAwaitingFeedback,
       handleClose,
       sendMessage,
       sendMessage2,
