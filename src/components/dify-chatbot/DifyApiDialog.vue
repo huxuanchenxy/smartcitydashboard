@@ -65,7 +65,7 @@
                   </el-button>
                 </div>
                 <div class="expiry-note">
-                  ⚠️ 此操作将在3天内过期。
+                  ⚠️ 此操作将在1小时内过期。
                 </div>
               </div>
             </div>
@@ -745,8 +745,6 @@ export default defineComponent({
                   if (lastMsg?.role === 'assistant') {
                     lastMsg.isThinking = false;
                     lastMsg.content = `❌ 工作流执行失败：${errorMsg}`;
-                    lastMsg.errorType = 'error';
-                    lastMsg.errorQuery = query;
                   }
                   ElMessage.error(`工作流执行失败：${errorMsg}`);
                 } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1116,9 +1114,7 @@ export default defineComponent({
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: `❌ 工作流执行失败：${errorMsg}`,
-                    isThinking: false,
-                    errorType: 'error',
-                    errorQuery: query
+                    isThinking: false
                   };
                   ElMessage.error(`工作流执行失败：${errorMsg}`);
                 } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1166,9 +1162,7 @@ export default defineComponent({
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   content: `❌ 工作流执行失败：${errorMsg}`,
-                  isThinking: false,
-                  errorType: 'error',
-                  errorQuery: query
+                  isThinking: false
                 };
                 ElMessage.error(`工作流执行失败：${errorMsg}`);
               } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1306,9 +1300,7 @@ export default defineComponent({
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: `❌ 工作流执行失败：${errorMsg}`,
-                    isThinking: false,
-                    errorType: 'error',
-                    errorQuery: query
+                    isThinking: false
                   };
                   ElMessage.error(`工作流执行失败：${errorMsg}`);
                 } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1461,7 +1453,7 @@ export default defineComponent({
     };
 
     // 等待工作流完成
-    const waitForWorkflowCompletion = async (workflowRunId: string, intervalMs: number = 2000, maxRetries: number = 30): Promise<any> => {
+    const waitForWorkflowCompletion = async (workflowRunId: string, formToken?: string, intervalMs: number = 2000, maxRetries: number = 30): Promise<any> => {
       console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
       
       let retries = 0;
@@ -1511,8 +1503,71 @@ export default defineComponent({
         }
       }
 
+      // 如果轮询30次后仍未完成，且有formToken，则尝试调用human_input接口
+      if (!finalResult && formToken) {
+        console.log(`\n🔄 轮询超时，尝试调用 human_input 接口恢复工作流 (formToken: ${formToken})`);
+        
+        const humanInputMaxRetries = 5;
+        for (let hiRetry = 1; hiRetry <= humanInputMaxRetries; hiRetry++) {
+          console.log(`   📤 第 ${hiRetry} 次调用 human_input 接口...`);
+          
+          try {
+            const humanInputUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
+            const response = await fetch(humanInputUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ inputs: {}, action: 'approve' })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`human_input 调用失败 (${response.status})`);
+            }
+            
+            const hiResult = await response.json();
+            console.log(`   📥 human_input 返回:`, JSON.stringify(hiResult, null, 2));
+            
+            // 等待一下再查询状态
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // 查询工作流状态
+            const statusUrl = `${props.baseUrl}/v1/workflows/run/${workflowRunId}`;
+            const statusResponse = await fetch(statusUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`
+              }
+            });
+            
+            if (statusResponse.ok) {
+              const statusResult = await statusResponse.json();
+              console.log(`   🔍 human_input 后查询状态: ${statusResult.status}`);
+              
+              if (statusResult.status === 'succeeded') {
+                console.log('   ✅ human_input 调用成功，工作流已完成！');
+                finalResult = statusResult;
+                break;
+              } else if (statusResult.status === 'failed') {
+                console.error('   ❌ human_input 后工作流执行失败');
+                finalResult = statusResult;
+                break;
+              }
+            }
+          } catch (error) {
+            console.error(`   ⚠️ human_input 调用出错: ${error.message}`);
+          }
+          
+          // 如果还没成功，等待一下再重试
+          if (!finalResult && hiRetry < humanInputMaxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        }
+      }
+
       if (!finalResult) {
-        throw new Error(`轮询超时：在 ${maxRetries} 次尝试后工作流仍未完成`);
+        throw new Error(`多次提交失败：轮询 ${maxRetries} 次后工作流仍未完成，且调用 human_input 接口 ${formToken ? 5 : 0} 次也未成功`);
       }
 
       return finalResult;
@@ -1560,7 +1615,7 @@ export default defineComponent({
         
         // 查询工作流运行结果
         if (message.workflowRunId) {
-          const finalResult = await waitForWorkflowCompletion(message.workflowRunId);
+          const finalResult = await waitForWorkflowCompletion(message.workflowRunId, message.formToken);
           console.log('\n🎉 流程执行完成！');
           
           const lastMsg = messages.value[messages.value.length - 1];
@@ -1797,7 +1852,6 @@ export default defineComponent({
                       if (data.data && data.data.status === 'failed') {
                         const errorMsg = data.data.error || '工作流执行失败';
                         thinkingMsg.content = `❌ ${errorMsg}`;
-                        thinkingMsg.isHumanInteraction = true; // 保持等待状态，允许重新输入
                         ElMessage.error('工作流执行失败：' + errorMsg);
                       }
                     }
@@ -1822,7 +1876,6 @@ export default defineComponent({
               if (data.data && data.data.status === 'failed') {
                 const errorMsg = data.data.error || '工作流执行失败';
                 thinkingMsg.content = `❌ ${errorMsg}`;
-                thinkingMsg.isHumanInteraction = true;
                 ElMessage.error('工作流执行失败：' + errorMsg);
               }
             }
