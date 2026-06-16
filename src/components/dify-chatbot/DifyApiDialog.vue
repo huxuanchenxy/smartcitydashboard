@@ -15,9 +15,9 @@
       <!-- 消息区域 -->
       <div class="message-section" ref="messageContainer">
         <div v-if="messages.length === 0" class="empty-message">
-          <div class="empty-icon">💬</div>
-          <div>暂无消息，开始您的对话吧！</div>
-        </div>
+        <div class="empty-icon">💬</div>
+        <div>暂无消息，开始您的对话吧！</div>
+      </div>
         <div v-else class="message-list">
           <div
             v-for="(message, index) in messages"
@@ -90,6 +90,20 @@
                 </div>
                 <!-- 正常内容 -->
                 <div v-else class="content-text" v-html="formatContent(message.content)"></div>
+                
+                <!-- 错误重试按钮 -->
+                <div v-if="message.errorType" class="error-retry-section">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="retryMessage(index)"
+                    :disabled="isLoading"
+                  >
+                    🔄 重试
+                  </el-button>
+                  <span v-if="message.errorType === 'timeout'" class="error-tag timeout-tag">超时</span>
+                  <span v-else class="error-tag error-tag">错误</span>
+                </div>
               </div>
               <div class="message-time" v-if="!message.isThinking">
                 {{ formatTime(message.timestamp) }}
@@ -257,7 +271,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, nextTick, PropType } from 'vue';
+import { defineComponent, ref, watch, nextTick, onUnmounted, PropType } from 'vue';
 import { ElMessage } from 'element-plus';
 import { EditorModule } from '@/store/modules/editor';
 import { FilterModule } from '@/store/modules/filter';
@@ -279,6 +293,9 @@ interface Message {
   workflowRunId?: string;
   isProcessed?: boolean;
   humanInput?: string;
+  errorType?: 'timeout' | 'error';
+  errorQuery?: string;
+  sendType?: 'sendMessage' | 'sendMessage3' | 'sendMessage4' | 'sendMessageWater';
 }
 
 export default defineComponent({
@@ -361,11 +378,15 @@ export default defineComponent({
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
+    const timeoutTimer = ref<number | null>(null);
+    // SSE 超时时间，从环境变量读取，默认 30 秒
+    const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 30000;
     
-    // 调试日志：验证 waterServiceMode 的值
+    // 调试日志：验证 waterServiceMode 和 SSE 超时的值
     console.log('=== DifyApiDialog 初始化 ===');
     console.log('waterServiceMode prop:', props.waterServiceMode);
     console.log('VITE_APP_DIFY_WATER_SERVICE_MODE:', import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE);
+    console.log('VITE_APP_DIFY_SSE_TIMEOUT_MS:', SSE_TIMEOUT_MS);
     const currentTaskId = ref<string | null>(null);
     // JSON保存前校验开关 - 开启时会在saveScreenAI前校验JSON结构是否符合最低要求
     const enableJsonValidation = ref(true);
@@ -479,6 +500,7 @@ export default defineComponent({
       clearQuery?: boolean;
       supportWorkflowPaused?: boolean;
       onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
+      sendType?: 'sendMessage' | 'sendMessage3' | 'sendMessage4' | 'sendMessageWater';
     }
 
     // 通用的发送消息函数
@@ -489,11 +511,22 @@ export default defineComponent({
         query: configQuery,
         clearQuery = true,
         supportWorkflowPaused = false,
-        onWorkflowPaused
+        onWorkflowPaused,
+        sendType
       } = config;
 
       const query = configQuery || userQuery.value.trim();
-      if (!query || isLoading.value) return '';
+      
+      if (isLoading.value) {
+        console.warn(`${logPrefix} 请求被拒绝：已有请求正在处理中`);
+        ElMessage.warning('请求处理中，请稍候');
+        return '';
+      }
+      
+      if (!query) {
+        ElMessage.warning('请输入查询内容');
+        return '';
+      }
 
       console.log(`=== ${logPrefix} 调用开始 ===`);
       console.log(`${logPrefix} query:`, query);
@@ -510,7 +543,8 @@ export default defineComponent({
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
-        isThinking: true
+        isThinking: true,
+        sendType: sendType
       };
       messages.value.push(thinkingMsg);
       
@@ -523,6 +557,20 @@ export default defineComponent({
 
       // 创建 AbortController 用于取消请求
       abortController.value = new AbortController();
+
+      const resetTimeout = () => {
+        if (timeoutTimer.value) {
+          clearTimeout(timeoutTimer.value);
+        }
+        timeoutTimer.value = window.setTimeout(() => {
+          console.error(`${logPrefix} SSE 连接超时，自动断开`);
+          if (abortController.value) {
+            abortController.value.abort(new Error('SSE_TIMEOUT'));
+          }
+        }, SSE_TIMEOUT_MS);
+      };
+
+      resetTimeout();
 
       // 定义需要在 try-finally 中共享的变量
       let isPaused = false;
@@ -579,6 +627,8 @@ export default defineComponent({
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+
+          resetTimeout();
 
           const chunk = pendingData + decoder.decode(value, { stream: true });
           const lines = chunk.split('\n');
@@ -678,13 +728,42 @@ export default defineComponent({
               }
 
               // 处理 workflow_finished 事件 - 最终完成
-              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+              if (data.event === 'workflow_finished' && data.data) {
                 console.log(`${logPrefix} 找到 workflow_finished 事件`);
-                fullContent = data.data.outputs.answer;
+                console.log(`${logPrefix} workflow_finished 数据:`, JSON.stringify(data.data));
+                
                 const lastMsg = messages.value[messages.value.length - 1];
-                lastMsg.isThinking = false;
-                lastMsg.content = fullContent;
-                await scrollToBottom();
+                
+                // 检查工作流是否失败
+                if (data.data.status === 'failed') {
+                  hasError = true;
+                  const errorMsg = data.data.error 
+                    ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
+                    : '工作流执行失败';
+                  console.error(`${logPrefix} 工作流执行失败:`, errorMsg);
+                  
+                  if (lastMsg?.role === 'assistant') {
+                    lastMsg.isThinking = false;
+                    lastMsg.content = `❌ 工作流执行失败：${errorMsg}`;
+                    lastMsg.errorType = 'error';
+                    lastMsg.errorQuery = query;
+                  }
+                  ElMessage.error(`工作流执行失败：${errorMsg}`);
+                } else if (data.data.outputs && data.data.outputs.answer) {
+                  // 工作流成功，获取答案
+                  fullContent = data.data.outputs.answer;
+                  if (lastMsg?.role === 'assistant') {
+                    lastMsg.isThinking = false;
+                    lastMsg.content = fullContent;
+                  }
+                  await scrollToBottom();
+                } else if (lastMsg?.role === 'assistant') {
+                  // 没有返回答案，结束思考状态
+                  lastMsg.isThinking = false;
+                  if (!lastMsg.content.trim()) {
+                    lastMsg.content = '工作流已完成，但未返回答案';
+                  }
+                }
               }
 
               if (data.conversation_id) {
@@ -801,24 +880,47 @@ export default defineComponent({
           const lastMsg = messages.value[messages.value.length - 1];
           if (lastMsg?.role === 'assistant') {
             lastMsg.isThinking = false;
-            // 如果没有内容，显示"已停止"提示
-            if (!lastMsg.content.trim()) {
+            
+            // 如果是超时导致的取消，显示超时提示
+            if (error.message === 'SSE_TIMEOUT') {
+              const timeoutSeconds = SSE_TIMEOUT_MS / 1000;
+              lastMsg.content = `⏱️ SSE 连接超时（超过${timeoutSeconds}秒），自动断开`;
+              lastMsg.errorType = 'timeout';
+              lastMsg.errorQuery = query;
+              ElMessage.warning(`SSE 连接超时（超过${timeoutSeconds}秒），请稍后重试`);
+            } else if (!lastMsg.content.trim()) {
+              // 用户手动停止
               lastMsg.content = '已停止生成';
             }
           }
           return '';
         }
 
-        // 更新最后一条消息为错误提示
         const lastMsg = messages.value[messages.value.length - 1];
         if (lastMsg?.role === 'assistant') {
           lastMsg.isThinking = false;
-          lastMsg.content = '抱歉，服务暂时不可用，请稍后重试。';
+          
+          if (error.message === 'SSE_TIMEOUT') {
+            const timeoutSeconds = SSE_TIMEOUT_MS / 1000;
+            lastMsg.content = `⏱️ 请求超时（超过${timeoutSeconds}秒），请稍后重试`;
+            lastMsg.errorType = 'timeout';
+            lastMsg.errorQuery = query;
+            ElMessage.warning(`请求超时（超过${timeoutSeconds}秒），请稍后重试`);
+          } else {
+            lastMsg.content = `❌ 请求失败：${error.message || '服务暂时不可用'}`;
+            lastMsg.errorType = 'error';
+            lastMsg.errorQuery = query;
+            ElMessage.error(`${logPrefix} 发送消息失败: ` + error.message);
+          }
         }
 
-        ElMessage.error(`${logPrefix} 发送消息失败: ` + error.message);
         return '';
       } finally {
+        if (timeoutTimer.value) {
+          clearTimeout(timeoutTimer.value);
+          timeoutTimer.value = null;
+        }
+        
         if (!isPaused) {
           isLoading.value = false;
           abortController.value = null;
@@ -827,11 +929,67 @@ export default defineComponent({
       }
     };
 
+    // 重试消息
+    const retryMessage = async (msgIndex: number) => {
+      const message = messages.value[msgIndex];
+      if (!message?.errorQuery || !message.sendType) return;
+
+      console.log(`=== 重试消息 ===`);
+      console.log('sendType:', message.sendType);
+      console.log('query:', message.errorQuery);
+
+      message.errorType = undefined;
+      message.errorQuery = undefined;
+      message.isThinking = true;
+      message.content = '';
+
+      switch (message.sendType) {
+        case 'sendMessage':
+          await sendRequest({
+            apiKey: props.apiKey,
+            logPrefix: '发送',
+            query: message.errorQuery,
+            clearQuery: false,
+            sendType: 'sendMessage'
+          });
+          break;
+        case 'sendMessage3':
+          await sendRequest({
+            apiKey: props.apiKeyFlow4 || props.apiKey,
+            logPrefix: '发送3',
+            query: message.errorQuery,
+            clearQuery: false,
+            sendType: 'sendMessage3'
+          });
+          break;
+        case 'sendMessage4':
+          await sendRequest({
+            apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
+            logPrefix: '发送4',
+            query: message.errorQuery,
+            clearQuery: false,
+            supportWorkflowPaused: true,
+            sendType: 'sendMessage4'
+          });
+          break;
+        case 'sendMessageWater':
+          await sendRequest({
+            apiKey: props.apiKeyFlowWater || props.apiKey,
+            logPrefix: '发送Water',
+            query: message.errorQuery,
+            clearQuery: false,
+            sendType: 'sendMessageWater'
+          });
+          break;
+      }
+    };
+
     // 发送消息 - 使用流式响应
     const sendMessage = async () => {
       await sendRequest({
         apiKey: props.apiKey,
-        logPrefix: '发送'
+        logPrefix: '发送',
+        sendType: 'sendMessage'
       });
     };
 
@@ -943,16 +1101,41 @@ export default defineComponent({
                 await scrollToBottom();
               }
 
-              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+              if (data.event === 'workflow_finished' && data.data) {
                 console.log('发送2 第一次调用找到 workflow_finished 事件');
-                fullContent1 = data.data.outputs.answer;
+                console.log('发送2 workflow_finished 数据:', JSON.stringify(data.data));
+                
                 const msgIndex = messages.value.length - 1;
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: fullContent1,
-                  isThinking: false
-                };
-                await scrollToBottom();
+                
+                if (data.data.status === 'failed') {
+                  const errorMsg = data.data.error 
+                    ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
+                    : '工作流执行失败';
+                  console.error('发送2 工作流执行失败:', errorMsg);
+                  
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    content: `❌ 工作流执行失败：${errorMsg}`,
+                    isThinking: false,
+                    errorType: 'error',
+                    errorQuery: query
+                  };
+                  ElMessage.error(`工作流执行失败：${errorMsg}`);
+                } else if (data.data.outputs && data.data.outputs.answer) {
+                  fullContent1 = data.data.outputs.answer;
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    content: fullContent1,
+                    isThinking: false
+                  };
+                  await scrollToBottom();
+                } else {
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    isThinking: false,
+                    content: messages.value[msgIndex].content || '工作流已完成，但未返回答案'
+                  };
+                }
               }
             } catch (e) {
               console.warn('发送2 第一次调用解析数据失败:', e);
@@ -973,15 +1156,36 @@ export default defineComponent({
               };
               await scrollToBottom();
             }
-            if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
-              fullContent1 = data.data.outputs.answer;
+            if (data.event === 'workflow_finished' && data.data) {
               const msgIndex = messages.value.length - 1;
-              messages.value[msgIndex] = {
-                ...messages.value[msgIndex],
-                content: fullContent1,
-                isThinking: false
-              };
-              await scrollToBottom();
+              
+              if (data.data.status === 'failed') {
+                const errorMsg = data.data.error 
+                  ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
+                  : '工作流执行失败';
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: `❌ 工作流执行失败：${errorMsg}`,
+                  isThinking: false,
+                  errorType: 'error',
+                  errorQuery: query
+                };
+                ElMessage.error(`工作流执行失败：${errorMsg}`);
+              } else if (data.data.outputs && data.data.outputs.answer) {
+                fullContent1 = data.data.outputs.answer;
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  content: fullContent1,
+                  isThinking: false
+                };
+                await scrollToBottom();
+              } else {
+                messages.value[msgIndex] = {
+                  ...messages.value[msgIndex],
+                  isThinking: false,
+                  content: messages.value[msgIndex].content || '工作流已完成，但未返回答案'
+                };
+              }
             }
           } catch (e) {
             console.warn('发送2 第一次调用解析残留数据失败:', e);
@@ -1087,16 +1291,41 @@ export default defineComponent({
                 await scrollToBottom();
               }
 
-              if (data.event === 'workflow_finished' && data.data && data.data.outputs && data.data.outputs.answer) {
+              if (data.event === 'workflow_finished' && data.data) {
                 console.log('发送2 第二次调用找到 workflow_finished 事件');
-                fullContent2 = data.data.outputs.answer;
+                console.log('发送2 第二次调用 workflow_finished 数据:', JSON.stringify(data.data));
+                
                 const msgIndex = messages.value.length - 1;
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: fullContent2,
-                  isThinking: false
-                };
-                await scrollToBottom();
+                
+                if (data.data.status === 'failed') {
+                  const errorMsg = data.data.error 
+                    ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
+                    : '工作流执行失败';
+                  console.error('发送2 第二次调用工作流执行失败:', errorMsg);
+                  
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    content: `❌ 工作流执行失败：${errorMsg}`,
+                    isThinking: false,
+                    errorType: 'error',
+                    errorQuery: query
+                  };
+                  ElMessage.error(`工作流执行失败：${errorMsg}`);
+                } else if (data.data.outputs && data.data.outputs.answer) {
+                  fullContent2 = data.data.outputs.answer;
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    content: fullContent2,
+                    isThinking: false
+                  };
+                  await scrollToBottom();
+                } else {
+                  messages.value[msgIndex] = {
+                    ...messages.value[msgIndex],
+                    isThinking: false,
+                    content: messages.value[msgIndex].content || '工作流已完成，但未返回答案'
+                  };
+                }
               }
             } catch (e) {
               console.warn('发送2 第二次调用解析数据失败:', e);
@@ -1179,7 +1408,8 @@ export default defineComponent({
     const sendMessage3 = async () => {
       await sendRequest({
         apiKey: props.apiKeyFlow4 || props.apiKey,
-        logPrefix: '发送3'
+        logPrefix: '发送3',
+        sendType: 'sendMessage3'
       });
     };
 
@@ -1190,7 +1420,8 @@ export default defineComponent({
         logPrefix: '发送4',
         query: queryText,
         clearQuery: !queryText,
-        supportWorkflowPaused: true
+        supportWorkflowPaused: true,
+        sendType: 'sendMessage4'
       });
     };
 
@@ -1198,7 +1429,8 @@ export default defineComponent({
     const sendMessageWater = async () => {
       await sendRequest({
         apiKey: props.apiKeyFlowWater || props.apiKey,
-        logPrefix: '发送Water'
+        logPrefix: '发送Water',
+        sendType: 'sendMessageWater'
       });
     };
 
@@ -2178,6 +2410,23 @@ export default defineComponent({
     // 创建JSON修复工具实例
     const jsonRepairTool = new JSONRepairTool();
 
+    // 组件销毁时清理资源
+    onUnmounted(() => {
+      console.log('=== DifyApiDialog 组件销毁 ===');
+      
+      if (abortController.value) {
+        abortController.value.abort();
+        abortController.value = null;
+      }
+      
+      if (timeoutTimer.value) {
+        clearTimeout(timeoutTimer.value);
+        timeoutTimer.value = null;
+      }
+      
+      currentTaskId.value = null;
+    });
+
     // 校准JSON功能
     const calibrateJson = async () => {
       let jsonObj: any = null;
@@ -2544,7 +2793,8 @@ export default defineComponent({
       triggerImageUpload,
       handleImageUpload,
       openImagePreview,
-      cadToJson
+      cadToJson,
+      retryMessage
     };
   }
 });
@@ -2946,5 +3196,31 @@ export default defineComponent({
   padding: 6px;
   background-color: #fffbeb;
   border-radius: 4px;
+}
+
+.error-retry-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.error-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.timeout-tag {
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+
+.error-tag {
+  background-color: #fef2f2;
+  color: #dc2626;
 }
 </style>
