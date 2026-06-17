@@ -90,20 +90,6 @@
                 </div>
                 <!-- 正常内容 -->
                 <div v-else class="content-text" v-html="formatContent(message.content)"></div>
-                
-                <!-- 错误重试按钮 -->
-                <div v-if="message.errorType" class="error-retry-section">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="retryMessage(index)"
-                    :disabled="isLoading"
-                  >
-                    🔄 重试
-                  </el-button>
-                  <span v-if="message.errorType === 'timeout'" class="error-tag timeout-tag">超时</span>
-                  <span v-else class="error-tag error-tag">错误</span>
-                </div>
               </div>
               <div class="message-time" v-if="!message.isThinking">
                 {{ formatTime(message.timestamp) }}
@@ -271,7 +257,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, nextTick, onUnmounted, PropType } from 'vue';
+import { defineComponent, ref, watch, nextTick, onUnmounted, onMounted, PropType } from 'vue';
 import { ElMessage } from 'element-plus';
 import { EditorModule } from '@/store/modules/editor';
 import { FilterModule } from '@/store/modules/filter';
@@ -293,9 +279,6 @@ interface Message {
   workflowRunId?: string;
   isProcessed?: boolean;
   humanInput?: string;
-  errorType?: 'timeout' | 'error';
-  errorQuery?: string;
-  sendType?: 'sendMessage' | 'sendMessage3' | 'sendMessage4' | 'sendMessageWater';
 }
 
 export default defineComponent({
@@ -379,8 +362,8 @@ export default defineComponent({
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
     const timeoutTimer = ref<number | null>(null);
-    // SSE 超时时间，从环境变量读取，默认 30 秒
-    const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 30000;
+    // SSE 超时时间，从环境变量读取，默认 90 秒
+    const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 90000;
     
     // 调试日志：验证 waterServiceMode 和 SSE 超时的值
     console.log('=== DifyApiDialog 初始化 ===');
@@ -400,6 +383,52 @@ export default defineComponent({
     // 人工介入相关
     const isSubmitting = ref(false);
     const isAwaitingFeedback = ref(false); // 是否正在等待用户反馈
+
+    // 消息持久化相关
+    const isHydrating = ref(false);
+    const STORAGE_KEY_PREFIX = 'dify-chat-messages-';
+
+    const getStorageKey = () => {
+      const screenId = EditorModule.screen?.id || 'default';
+      return STORAGE_KEY_PREFIX + screenId;
+    };
+
+    const saveMessagesToStorage = () => {
+      if (isHydrating.value) return;
+      try {
+        localStorage.setItem(getStorageKey(), JSON.stringify(messages.value));
+      } catch (e) {
+        console.error('保存消息到 localStorage 失败:', e);
+      }
+    };
+
+    const loadMessagesFromStorage = () => {
+      try {
+        const saved = localStorage.getItem(getStorageKey());
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            messages.value = parsed;
+          }
+        }
+      } catch (e) {
+        console.error('从 localStorage 恢复消息失败:', e);
+      }
+    };
+
+    watch(
+      () => messages.value,
+      () => {
+        saveMessagesToStorage();
+      },
+      { deep: true }
+    );
+
+    onMounted(() => {
+      isHydrating.value = true;
+      loadMessagesFromStorage();
+      isHydrating.value = false;
+    });
 
     // 推荐问题相关
     const recommendQuestions = [
@@ -500,7 +529,6 @@ export default defineComponent({
       clearQuery?: boolean;
       supportWorkflowPaused?: boolean;
       onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
-      sendType?: 'sendMessage' | 'sendMessage3' | 'sendMessage4' | 'sendMessageWater';
     }
 
     // 通用的发送消息函数
@@ -511,8 +539,7 @@ export default defineComponent({
         query: configQuery,
         clearQuery = true,
         supportWorkflowPaused = false,
-        onWorkflowPaused,
-        sendType
+        onWorkflowPaused
       } = config;
 
       const query = configQuery || userQuery.value.trim();
@@ -543,8 +570,7 @@ export default defineComponent({
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
-        isThinking: true,
-        sendType: sendType
+        isThinking: true
       };
       messages.value.push(thinkingMsg);
       
@@ -558,12 +584,15 @@ export default defineComponent({
       // 创建 AbortController 用于取消请求
       abortController.value = new AbortController();
 
+      let isTimeoutAbort = false;
+
       const resetTimeout = () => {
         if (timeoutTimer.value) {
           clearTimeout(timeoutTimer.value);
         }
         timeoutTimer.value = window.setTimeout(() => {
           console.error(`${logPrefix} SSE 连接超时，自动断开`);
+          isTimeoutAbort = true;
           if (abortController.value) {
             abortController.value.abort(new Error('SSE_TIMEOUT'));
           }
@@ -872,24 +901,31 @@ export default defineComponent({
 
       } catch (error: any) {
         console.error(`${logPrefix} 发送消息失败:`, error);
-        
+
+        // 检查是否是超时导致的取消
+        const isTimeoutError = error.message === 'SSE_TIMEOUT' || 
+                              (error.name === 'AbortError' && isTimeoutAbort);
+
+        // 如果是超时导致的取消，调用 stopGeneration(true) 显示超时提示
+        if (isTimeoutError) {
+          await stopGeneration(true);
+          return '';
+        }
+
         // 如果是用户取消，不显示错误，保留已收到的内容
         if (error.name === 'AbortError') {
           const lastMsg = messages.value[messages.value.length - 1];
           if (lastMsg?.role === 'assistant') {
             lastMsg.isThinking = false;
             
-            // 如果是超时导致的取消，显示超时提示
-            if (error.message === 'SSE_TIMEOUT') {
-              const timeoutSeconds = SSE_TIMEOUT_MS / 1000;
-              lastMsg.content = `⏱️ SSE 连接超时（超过${timeoutSeconds}秒），自动断开`;
-              lastMsg.errorType = 'timeout';
-              lastMsg.errorQuery = query;
-              ElMessage.warning(`SSE 连接超时（超过${timeoutSeconds}秒），请稍后重试`);
-            } else if (!lastMsg.content.trim()) {
+            if (!lastMsg.content.trim()) {
               // 用户手动停止
               lastMsg.content = '已停止生成';
             }
+
+            // 显式触发响应式更新和持久化
+            messages.value = [...messages.value];
+            saveMessagesToStorage();
           }
           return '';
         }
@@ -897,19 +933,12 @@ export default defineComponent({
         const lastMsg = messages.value[messages.value.length - 1];
         if (lastMsg?.role === 'assistant') {
           lastMsg.isThinking = false;
-          
-          if (error.message === 'SSE_TIMEOUT') {
-            const timeoutSeconds = SSE_TIMEOUT_MS / 1000;
-            lastMsg.content = `⏱️ 请求超时（超过${timeoutSeconds}秒），请稍后重试`;
-            lastMsg.errorType = 'timeout';
-            lastMsg.errorQuery = query;
-            ElMessage.warning(`请求超时（超过${timeoutSeconds}秒），请稍后重试`);
-          } else {
-            lastMsg.content = `❌ 请求失败：${error.message || '服务暂时不可用'}`;
-            lastMsg.errorType = 'error';
-            lastMsg.errorQuery = query;
-            ElMessage.error(`${logPrefix} 发送消息失败: ` + error.message);
-          }
+          lastMsg.content = `❌ ${logPrefix} 请求失败：${error.message || '服务暂时不可用'}`;
+          ElMessage.error(`${logPrefix} 发送消息失败: ` + error.message);
+
+          // 显式触发响应式更新和持久化
+          messages.value = [...messages.value];
+          saveMessagesToStorage();
         }
 
         return '';
@@ -927,67 +956,11 @@ export default defineComponent({
       }
     };
 
-    // 重试消息
-    const retryMessage = async (msgIndex: number) => {
-      const message = messages.value[msgIndex];
-      if (!message?.errorQuery || !message.sendType) return;
-
-      console.log(`=== 重试消息 ===`);
-      console.log('sendType:', message.sendType);
-      console.log('query:', message.errorQuery);
-
-      message.errorType = undefined;
-      message.errorQuery = undefined;
-      message.isThinking = true;
-      message.content = '';
-
-      switch (message.sendType) {
-        case 'sendMessage':
-          await sendRequest({
-            apiKey: props.apiKey,
-            logPrefix: '发送',
-            query: message.errorQuery,
-            clearQuery: false,
-            sendType: 'sendMessage'
-          });
-          break;
-        case 'sendMessage3':
-          await sendRequest({
-            apiKey: props.apiKeyFlow4 || props.apiKey,
-            logPrefix: '发送3',
-            query: message.errorQuery,
-            clearQuery: false,
-            sendType: 'sendMessage3'
-          });
-          break;
-        case 'sendMessage4':
-          await sendRequest({
-            apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
-            logPrefix: '发送4',
-            query: message.errorQuery,
-            clearQuery: false,
-            supportWorkflowPaused: true,
-            sendType: 'sendMessage4'
-          });
-          break;
-        case 'sendMessageWater':
-          await sendRequest({
-            apiKey: props.apiKeyFlowWater || props.apiKey,
-            logPrefix: '发送Water',
-            query: message.errorQuery,
-            clearQuery: false,
-            sendType: 'sendMessageWater'
-          });
-          break;
-      }
-    };
-
     // 发送消息 - 使用流式响应
     const sendMessage = async () => {
       await sendRequest({
         apiKey: props.apiKey,
-        logPrefix: '发送',
-        sendType: 'sendMessage'
+        logPrefix: '发送'
       });
     };
 
@@ -1372,7 +1345,7 @@ export default defineComponent({
             messages.value[msgIndex] = {
               ...messages.value[msgIndex],
               isThinking: false,
-              content: messages.value[msgIndex].content.trim() || '已停止生成'
+              content: messages.value[msgIndex].content.trim() || 'Dify响应超时'
             };
           }
           ElMessage.info('已停止生成');
@@ -1400,8 +1373,7 @@ export default defineComponent({
     const sendMessage3 = async () => {
       await sendRequest({
         apiKey: props.apiKeyFlow4 || props.apiKey,
-        logPrefix: '发送3',
-        sendType: 'sendMessage3'
+        logPrefix: '发送3'
       });
     };
 
@@ -1412,8 +1384,7 @@ export default defineComponent({
         logPrefix: '发送4',
         query: queryText,
         clearQuery: !queryText,
-        supportWorkflowPaused: true,
-        sendType: 'sendMessage4'
+        supportWorkflowPaused: true
       });
     };
 
@@ -1421,8 +1392,7 @@ export default defineComponent({
     const sendMessageWater = async () => {
       await sendRequest({
         apiKey: props.apiKeyFlowWater || props.apiKey,
-        logPrefix: '发送Water',
-        sendType: 'sendMessageWater'
+        logPrefix: '发送Water'
       });
     };
 
@@ -1621,7 +1591,7 @@ export default defineComponent({
           const lastMsg = messages.value[messages.value.length - 1];
           if (lastMsg?.role === 'assistant') {
             lastMsg.isThinking = false;
-            
+
             if (finalResult.outputs && finalResult.outputs.answer) {
               lastMsg.content = finalResult.outputs.answer;
             } else if (finalResult.status === 'succeeded') {
@@ -1631,8 +1601,12 @@ export default defineComponent({
             } else {
               lastMsg.content = '工作流已完成，但没有返回结果。';
             }
+
+            // 显式触发响应式更新和持久化
+            messages.value = [...messages.value];
+            saveMessagesToStorage();
           }
-          
+
           await scrollToBottom();
           emit('message-received', lastMsg?.content || '');
         } else {
@@ -1645,13 +1619,17 @@ export default defineComponent({
         
       } catch (error: any) {
         console.error('人工介入 Approve 失败:', error);
-        
+
         const lastMsg = messages.value[messages.value.length - 1];
         if (lastMsg?.role === 'assistant') {
           lastMsg.isThinking = false;
           lastMsg.content = `提交失败：${error.message}`;
+
+          // 显式触发响应式更新和持久化
+          messages.value = [...messages.value];
+          saveMessagesToStorage();
         }
-        
+
         ElMessage.error('提交失败：' + error.message);
       } finally {
         isSubmitting.value = false;
@@ -1827,8 +1805,12 @@ export default defineComponent({
                       thinkingMsg.isHumanInteraction = true;
                       thinkingMsg.formToken = currentFormToken;
                       thinkingMsg.workflowRunId = currentWorkflowRunId;
+
+                      // 显式触发响应式更新和持久化
+                      messages.value = [...messages.value];
+                      saveMessagesToStorage();
                     }
-                    
+
                     await scrollToBottom();
                     // 再次确保滚动到最新的人工介入区域
                     setTimeout(() => scrollToBottom(), 100);
@@ -1854,6 +1836,10 @@ export default defineComponent({
                         thinkingMsg.content = `❌ ${errorMsg}`;
                         ElMessage.error('工作流执行失败：' + errorMsg);
                       }
+
+                      // 显式触发响应式更新和持久化
+                      messages.value = [...messages.value];
+                      saveMessagesToStorage();
                     }
                   }
                   
@@ -1887,23 +1873,33 @@ export default defineComponent({
         // 如果工作流暂停，保持人工介入状态
         if (isPaused && pauseData) {
           console.log('Revise 工作流暂停，等待用户操作');
+          // 显式触发响应式更新和持久化
+          messages.value = [...messages.value];
+          saveMessagesToStorage();
         } else {
           // 正常完成
           if (thinkingMsg) {
             thinkingMsg.isThinking = false;
           }
+          // 显式触发响应式更新和持久化
+          messages.value = [...messages.value];
+          saveMessagesToStorage();
           emit('message-received', fullContent);
         }
         
       } catch (error: any) {
         console.error('人工介入 Revise 失败:', error);
-        
+
         const lastMsg = messages.value[messages.value.length - 1];
         if (lastMsg?.role === 'assistant') {
           lastMsg.isThinking = false;
           lastMsg.content = `提交失败：${error.message}`;
+
+          // 显式触发响应式更新和持久化
+          messages.value = [...messages.value];
+          saveMessagesToStorage();
         }
-        
+
         ElMessage.error('提交失败：' + error.message);
       } finally {
         isSubmitting.value = false;
@@ -2177,13 +2173,17 @@ export default defineComponent({
 
     // 清空消息
     const clearMessages = () => {
+      try {
+        localStorage.removeItem(getStorageKey());
+      } catch (e) {
+        console.error('清空 localStorage 失败:', e);
+      }
       messages.value = [];
-      conversationId.value = '';
       ElMessage.success('对话已清空');
     };
 
     // 停止生成
-    const stopGeneration = async () => {
+    const stopGeneration = async (isTimeout: boolean = false) => {
       if (!isLoading.value && !isCadConverting.value) return;
       
       // 先调用官方停止接口
@@ -2220,8 +2220,14 @@ export default defineComponent({
         if (lastMsg.role === 'assistant' && lastMsg.isThinking) {
           messages.value[messages.value.length - 1] = {
             ...lastMsg,
-            isThinking: false
+            isThinking: false,
+            // 如果是超时导致的停止，显示超时提示
+            content: isTimeout ? `⏱️ Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），自动断开` : (lastMsg.content || '已停止生成')
           };
+          
+          // 显式触发响应式更新和持久化
+          messages.value = [...messages.value];
+          saveMessagesToStorage();
         }
       }
       
@@ -2232,7 +2238,11 @@ export default defineComponent({
         currentTaskId.value = null;
       }
       
-      ElMessage.info('已停止生成');
+      if (isTimeout) {
+        ElMessage.warning(`Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），请稍后重试`);
+      } else {
+        ElMessage.info('已停止生成');
+      }
     };
 
     // 校验屏幕JSON是否符合最低结构要求
@@ -2846,8 +2856,7 @@ export default defineComponent({
       triggerImageUpload,
       handleImageUpload,
       openImagePreview,
-      cadToJson,
-      retryMessage
+      cadToJson
     };
   }
 });
