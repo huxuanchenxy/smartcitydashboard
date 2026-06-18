@@ -167,7 +167,7 @@
               >
                 停止生成
               </el-button>
-              <!-- 水务模式下隐藏：发送、发送4 -->
+              <!-- 水务模式下隐藏：发送、发送2、发送3、发送4 -->
               <el-button
                 v-if="!waterServiceMode"
                 type="success"
@@ -175,8 +175,20 @@
                 @click="sendMessage"
                 :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send-button"
+                title="大json"
               >
                 {{ isLoading ? '发送中' : '发送' }}
+              </el-button>
+              <el-button
+                v-if="!waterServiceMode"
+                type="success"
+                size="small"
+                @click="sendMessage2"
+                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
+                class="send2-button"
+                title="回答再次询问"
+              >
+                {{ isLoading ? '发送中' : '发送2' }}
               </el-button>
               <el-button
                 v-if="!waterServiceMode"
@@ -185,6 +197,7 @@
                 @click="sendMessage3"
                 :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send3-button"
+                title="快速环保"
               >
                 {{ isLoading ? '发送中' : '发送3' }}
               </el-button>
@@ -196,6 +209,7 @@
                 @click="sendMessage4()"
                 :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send4-button"
+                title="有暂停"
               >
                 {{ isLoading ? '发送中' : '发送4' }}
               </el-button>
@@ -206,6 +220,7 @@
                 @click="sendMessageWater()"
                 :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send-water-button"
+                title="水务专用"
               >
                 {{ isLoading ? '发送中' : '发送' }}
               </el-button>
