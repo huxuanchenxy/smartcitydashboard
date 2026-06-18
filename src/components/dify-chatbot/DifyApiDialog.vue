@@ -1552,7 +1552,7 @@ export default defineComponent({
       }
 
       if (!finalResult) {
-        throw new Error(`多次提交失败：轮询 ${maxRetries} 次后工作流仍未完成，且调用 human_input 接口 ${formToken ? 5 : 0} 次也未成功`);
+        throw new Error(`多次提交失败：轮询 ${maxRetries} 次后工作流仍未完成`);
       }
 
       return finalResult;
