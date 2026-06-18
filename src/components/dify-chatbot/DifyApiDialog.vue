@@ -340,6 +340,11 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWa1 || ''
     },
+    // difyapidialog 专用 API Key (FLOWb1)
+    apiKeyFlowB1: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb1 || ''
+    },
     // 水务专用 API Key
     apiKeyFlowWater: {
       type: String,
