@@ -122,7 +122,7 @@
               <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
               <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading || isAwaitingFeedback">上传图片</el-button>
               <!-- 水务模式下隐藏：CAD转JSON -->
-              <el-button 
+              <!-- <el-button 
               v-if="!waterServiceMode"
               type="success" 
               size="small"
@@ -131,7 +131,7 @@
               :loading="isCadConverting"
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
-            </el-button>
+            </el-button> -->
             <!-- 水务模式下保留：图片预览链接 -->
             <el-link
               v-if="lastUploadedImage"
@@ -168,7 +168,7 @@
                 停止生成
               </el-button>
               <!-- 水务模式下隐藏：发送、发送2、发送3、发送4 -->
-              <el-button
+              <!-- <el-button
                 v-if="!waterServiceMode"
                 type="success"
                 size="small"
@@ -178,8 +178,8 @@
                 title="大json"
               >
                 {{ isLoading ? '发送中' : '发送' }}
-              </el-button>
-              <el-button
+              </el-button> -->
+              <!-- <el-button
                 v-if="!waterServiceMode"
                 type="success"
                 size="small"
@@ -189,8 +189,8 @@
                 title="回答再次询问"
               >
                 {{ isLoading ? '发送中' : '发送2' }}
-              </el-button>
-              <el-button
+              </el-button> -->
+              <!-- <el-button
                 v-if="!waterServiceMode"
                 type="success"
                 size="small"
@@ -200,9 +200,9 @@
                 title="快速环保"
               >
                 {{ isLoading ? '发送中' : '发送3' }}
-              </el-button>
+              </el-button> -->
               <!-- 发送(反复) -->
-              <el-button
+              <!-- <el-button
                 v-if="!waterServiceMode"
                 type="primary"
                 size="small"
@@ -212,7 +212,7 @@
                 title="有暂停"
               >
                 {{ isLoading ? '发送中' : '发送4' }}
-              </el-button>
+              </el-button> -->
                             <!-- 发送(反复图片转换) -->
               <el-button
                 v-if="!waterServiceMode"
@@ -282,13 +282,13 @@
       <div class="dialog-footer">
         <!-- <el-button @click="handleClose">关闭</el-button> -->
 
-        <el-button v-if="!waterServiceMode" type="primary" @click="outputJsonToConsole" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
-        <el-button v-if="!waterServiceMode" type="success" @click="saveRawJson" :disabled="isLoading || isAwaitingFeedback">原始保存</el-button>
-        <el-button v-if="!waterServiceMode" type="info" @click="saveTempPayload" :disabled="isAwaitingFeedback">临时保存payload</el-button>
+        <!-- <el-button v-if="!waterServiceMode" type="primary" @click="outputJsonToConsole" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button> -->
+        <!-- <el-button v-if="!waterServiceMode" type="success" @click="saveRawJson" :disabled="isLoading || isAwaitingFeedback">原始保存</el-button> -->
+        <!-- <el-button v-if="!waterServiceMode" type="info" @click="saveTempPayload" :disabled="isAwaitingFeedback">临时保存payload</el-button> -->
         <!-- 水务模式下隐藏：AI生成画布 -->
-        <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
-        <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button>
-        <el-button type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button>
+        <!-- <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button> -->
+        <!-- <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button> -->
+        <!-- <el-button v-if="!waterServiceMode" type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button> -->
         
         <!-- <el-switch
           v-model="enableJsonValidation"
