@@ -478,6 +478,17 @@ export default defineComponent({
       isHydrating.value = true;
       loadMessagesFromStorage();
       isHydrating.value = false;
+
+      // 设置全局base64图片预览函数
+      (window as any).__previewBase64Image = (id: string) => {
+        const data = (window as any).__base64PreviewData?.[id];
+        if (data) {
+          validationResultImageUrl.value = `data:image/png;base64,${data}`;
+          validationResultImageVisible.value = true;
+        } else {
+          ElMessage.warning('无法找到图片数据');
+        }
+      };
     });
 
     // 推荐问题相关
@@ -529,7 +540,40 @@ export default defineComponent({
       if (typeof content !== 'string') {
         return String(content);
       }
-      return content.replace(/\n/g, '<br>');
+      
+      // 先处理换行
+      let result = content.replace(/\n/g, '<br>');
+      
+      // 检测并替换base64字符串为预览链接
+      // 匹配 "image": "xxxxx" 格式的base64字符串（在JSON中）
+      const base64Pattern = /"image"\s*:\s*"([A-Za-z0-9+/=]{50,})"/g;
+      result = result.replace(base64Pattern, (match, base64Data) => {
+        // 生成一个唯一ID用于点击事件
+        const id = 'base64-preview-' + Math.random().toString(36).substring(2, 9);
+        // 将base64数据存储到全局对象中
+        if (typeof window !== 'undefined') {
+          (window as any).__base64PreviewData = (window as any).__base64PreviewData || {};
+          (window as any).__base64PreviewData[id] = base64Data;
+        }
+        return `"image": "<a href="#" id="${id}" class="base64-preview-link" onclick="window.__previewBase64Image('${id}'); return false;">预览图片</a>"`;
+      });
+      
+      // 也处理直接出现的长base64字符串（不在JSON中的情况）
+      const standaloneBase64Pattern = /(?:"|')?([A-Za-z0-9+/=]{100,})(?:"|')?/g;
+      result = result.replace(standaloneBase64Pattern, (match, base64Data) => {
+        // 只处理看起来像base64的字符串（长度足够长且不是普通文本）
+        if (base64Data.length >= 100 && /^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+          const id = 'base64-preview-' + Math.random().toString(36).substring(2, 9);
+          if (typeof window !== 'undefined') {
+            (window as any).__base64PreviewData = (window as any).__base64PreviewData || {};
+            (window as any).__base64PreviewData[id] = base64Data;
+          }
+          return `<a href="#" id="${id}" class="base64-preview-link" onclick="window.__previewBase64Image('${id}'); return false;">预览图片</a>`;
+        }
+        return match;
+      });
+      
+      return result;
     };
 
     // 格式化时间
@@ -2548,6 +2592,12 @@ export default defineComponent({
       }
       
       currentTaskId.value = null;
+
+      // 清理全局base64预览相关数据
+      if (typeof window !== 'undefined') {
+        delete (window as any).__previewBase64Image;
+        delete (window as any).__base64PreviewData;
+      }
     });
 
     // 校准JSON功能
@@ -3215,6 +3265,24 @@ export default defineComponent({
 
 .image-preview-link:hover {
   background-color: #f0f9ff;
+}
+
+/* base64预览链接样式 */
+.base64-preview-link {
+  color: #409eff;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #f0f9ff;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-block;
+}
+
+.base64-preview-link:hover {
+  color: #66b1ff;
+  background-color: #ecf5ff;
 }
 
 .hint {
