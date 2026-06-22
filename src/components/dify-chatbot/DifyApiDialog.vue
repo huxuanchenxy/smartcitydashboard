@@ -1641,7 +1641,7 @@ export default defineComponent({
       }
 
       if (!finalResult) {
-        throw new Error(`多次提交失败：轮询 ${maxRetries} 次后工作流仍未完成`);
+        throw new Error(`轮询 ${maxRetries} 次后工作流仍未完成`);
       }
 
       return finalResult;
@@ -1988,6 +1988,11 @@ export default defineComponent({
           // 正常完成
           if (thinkingMsg) {
             thinkingMsg.isThinking = false;
+            // 如果没有任何内容，提示超时
+            if (!fullContent.trim()) {
+              thinkingMsg.content = '⏰ Dify响应超时';
+              ElMessage.warning('Dify响应超时');
+            }
           }
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
