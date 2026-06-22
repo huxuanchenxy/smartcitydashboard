@@ -1795,6 +1795,9 @@ export default defineComponent({
         // 使用相同的 conversation_id 再次调用 chat-messages 接口
         const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
 
+        // 创建 AbortController 用于取消请求
+        abortController.value = new AbortController();
+
         // 构建 files 参数（如果有上传的图片）
         const files = lastUploadedImage.value ? [{
           type: 'image',
@@ -1955,6 +1958,7 @@ export default defineComponent({
           }
         } finally {
           reader.releaseLock();
+          abortController.value = null;
         }
         
         // 处理残留数据中的 workflow_finished 事件（处理分块传输导致的残留）
