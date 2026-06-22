@@ -213,6 +213,18 @@
               >
                 {{ isLoading ? '发送中' : '发送4' }}
               </el-button>
+                            <!-- 发送(反复图片转换) -->
+              <el-button
+                v-if="!waterServiceMode"
+                type="primary"
+                size="small"
+                @click="sendMessage5()"
+                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
+                class="send4-button"
+                title="反复图片转换"
+              >
+                {{ isLoading ? '发送中' : '发送5' }}
+              </el-button>
               <!-- 水务模式下保留：发送(水务专用) -->
               <el-button
                 type="warning"
@@ -249,6 +261,23 @@
       <img :src="previewImageUrl" alt="预览图片" style="width: 100%;" />
     </el-dialog>
 
+    <!-- 验证结果图片预览弹窗 -->
+    <el-dialog
+      v-model="validationResultImageVisible"
+      title="验证结果图片"
+      width="800px"
+      append-to-body
+    >
+      <img :src="validationResultImageUrl" alt="验证结果图片" style="width: 100%;" />
+      <div v-if="validationResultJson" style="margin-top: 16px; padding: 12px; background-color: #f5f5f5; border-radius: 8px;">
+        <h4 style="margin-bottom: 8px;">验证结果摘要:</h4>
+        <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6;">{{ validationResultJson.summary }}</p>
+        <p v-if="validationResultJson.success !== undefined" style="font-size: 13px; margin-top: 8px;">
+          状态: <span :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }">{{ validationResultJson.success ? '成功' : '失败' }}</span>
+        </p>
+      </div>
+    </el-dialog>
+
     <template #footer>
       <div class="dialog-footer">
         <!-- <el-button @click="handleClose">关闭</el-button> -->
@@ -259,6 +288,7 @@
         <!-- 水务模式下隐藏：AI生成画布 -->
         <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
         <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button>
+        <el-button type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button>
         
         <!-- <el-switch
           v-model="enableJsonValidation"
@@ -1402,6 +1432,16 @@ export default defineComponent({
       await sendRequest({
         apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
         logPrefix: '发送4',
+        query: queryText,
+        clearQuery: !queryText,
+        supportWorkflowPaused: true
+      });
+    };
+
+    const sendMessage5 = async (queryText?: string) => {
+      await sendRequest({
+        apiKey: props.apiKeyFlowB1 || props.apiKeyFlow4 || props.apiKey,
+        logPrefix: '发送5',
         query: queryText,
         clearQuery: !queryText,
         supportWorkflowPaused: true
@@ -2776,6 +2816,66 @@ export default defineComponent({
       }
     };
 
+    const validationResultImageVisible = ref(false);
+    const validationResultImageUrl = ref('');
+    const validationResultJson = ref<any>(null);
+
+    const extractValidationResult = () => {
+      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      if (aiMessages.length === 0) {
+        ElMessage.warning('暂无 AI 回答');
+        return;
+      }
+
+      const lastAiMessage = aiMessages[aiMessages.length - 1];
+      const content = lastAiMessage.content;
+
+      const startMarker = '验证结果：';
+      const endMarker = '{{#$output.usercomments#}}';
+
+      const startIndex = content.indexOf(startMarker);
+      const endIndex = content.indexOf(endMarker);
+
+      if (startIndex === -1) {
+        ElMessage.warning('未找到"验证结果："标记');
+        return;
+      }
+
+      let jsonStr = content.substring(startIndex + startMarker.length);
+
+      if (endIndex !== -1 && endIndex > startIndex) {
+        jsonStr = jsonStr.substring(0, endIndex - startIndex - startMarker.length);
+      }
+
+      jsonStr = jsonStr.trim();
+
+      try {
+        const jsonObj = JSON.parse(jsonStr);
+        validationResultJson.value = jsonObj;
+
+        if (jsonObj.image) {
+          const base64Data = jsonObj.image;
+          let imageUrl = '';
+          
+          if (base64Data.startsWith('data:image')) {
+            imageUrl = base64Data;
+          } else {
+            imageUrl = `data:image/png;base64,${base64Data}`;
+          }
+          
+          validationResultImageUrl.value = imageUrl;
+          validationResultImageVisible.value = true;
+        } else {
+          ElMessage.warning('验证结果中没有包含图片数据');
+        }
+
+        console.log('提取的验证结果JSON:', jsonObj);
+      } catch (e) {
+        console.error('解析验证结果JSON失败:', e);
+        ElMessage.error('解析验证结果JSON失败：' + (e as Error).message);
+      }
+    };
+
     // 原始保存 - 只调用calibrateJsonString校准JSON格式，不进行后续组件校对
     const saveRawJson = async () => {
       try {
@@ -2854,11 +2954,15 @@ export default defineComponent({
       selectedQuestion,
       isSubmitting,
       isAwaitingFeedback,
+      validationResultImageVisible,
+      validationResultImageUrl,
+      validationResultJson,
       handleClose,
       sendMessage,
       sendMessage2,
       sendMessage3,
       sendMessage4,
+      sendMessage5,
       sendMessageWater,
       handleHumanApprove,
       handleHumanRevise,
@@ -2870,6 +2974,7 @@ export default defineComponent({
       calibrateJson,
       copyLastMessageContent,
       saveRawJson,
+      extractValidationResult,
       handleEnter,
       formatContent,
       formatTime,
