@@ -548,6 +548,9 @@ export default defineComponent({
       // 先处理换行
       let result = content.replace(/\n/g, '<br>');
       
+      // 移除 {{#$output.usercomments#}} 标记
+      result = result.replace(/\{\{#\$output\.usercomments#\}\}/g, '');
+      
       // 检测并替换base64字符串为预览链接
       // 匹配 "image": "xxxxx" 格式的base64字符串（在JSON中）
       const base64Pattern = /"image"\s*:\s*"([A-Za-z0-9+/=]{50,})"/g;
