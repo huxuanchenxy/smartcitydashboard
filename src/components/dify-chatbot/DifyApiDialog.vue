@@ -223,10 +223,11 @@
                 class="send4-button"
                 title="反复图片转换"
               >
-                {{ isLoading ? '发送中' : '发送5' }}
+                {{ isLoading ? '发送中' : '发送' }}
               </el-button>
               <!-- 水务模式下保留：发送(水务专用) -->
               <el-button
+                v-if="waterServiceMode"
                 type="warning"
                 size="small"
                 @click="sendMessageWater()"
@@ -489,6 +490,9 @@ export default defineComponent({
           ElMessage.warning('无法找到图片数据');
         }
       };
+
+      // 恢复上传的图片信息
+      restoreUploadedImage();
     });
 
     // 推荐问题相关
@@ -2028,6 +2032,47 @@ export default defineComponent({
       fileInput.value?.click();
     };
 
+    // 从localStorage恢复上传的图片信息
+    const restoreUploadedImage = () => {
+      try {
+        console.log('🔄 开始恢复上传的图片...');
+        const savedImageStr = localStorage.getItem('dify_uploaded_image');
+        console.log('localStorage中的dify_uploaded_image:', savedImageStr);
+
+        if (!savedImageStr) {
+          console.log('⚠️ localStorage中没有保存的图片信息');
+          return;
+        }
+
+        const savedImage = JSON.parse(savedImageStr);
+        console.log('解析后的图片信息:', savedImage);
+
+        if (!savedImage.id) {
+          console.log('⚠️ 图片信息中没有id字段');
+          return;
+        }
+
+        // 恢复图片信息（不包含 base64Data）
+        const { base64Data, ...imageInfo } = savedImage;
+        lastUploadedImage.value = imageInfo;
+        console.log('✅ 已恢复图片信息到lastUploadedImage:', lastUploadedImage.value);
+
+        // 使用 localStorage 中的 base64 数据
+        if (base64Data) {
+          previewImageUrl.value = base64Data;
+          console.log('✅ 已使用 localStorage 中的 base64 数据设置预览');
+        } else {
+          console.log('⚠️ localStorage 中没有 base64 数据');
+          localStorage.removeItem('dify_uploaded_image');
+          lastUploadedImage.value = null;
+        }
+      } catch (error) {
+        console.error('恢复上传图片失败:', error);
+        localStorage.removeItem('dify_uploaded_image');
+        lastUploadedImage.value = null;
+      }
+    };
+
     // 处理图片上传
     const handleImageUpload = async (event: Event) => {
       const target = event.target as HTMLInputElement;
@@ -2056,7 +2101,7 @@ export default defineComponent({
 
       try {
         // 使用 apiKeyFlow3，如果未配置则回退到 apiKey
-        const apiKey = props.apiKeyFlow3 || props.apiKey;
+        const apiKey = props.apiKeyFlowB1 || props.apiKey;
         
         console.log('=== 开始上传图片 ===');
         console.log('文件名:', file.name);
@@ -2094,12 +2139,32 @@ export default defineComponent({
           created_at: result.created_at
         };
 
-        // 预览图片（不自动打开预览，只保存图片数据）
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          previewImageUrl.value = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
+        console.log('准备保存到localStorage:', lastUploadedImage.value);
+
+        // 保存到localStorage，刷新后可恢复
+        try {
+          // 先读取图片的 base64 数据
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64Data = e.target?.result as string;
+            
+            // 保存图片信息（包含 base64 数据）
+            const imageData = {
+              ...lastUploadedImage.value,
+              base64Data: base64Data
+            };
+            
+            localStorage.setItem('dify_uploaded_image', JSON.stringify(imageData));
+            console.log('✅ 已保存到localStorage（包含base64数据），key: dify_uploaded_image');
+            console.log('当前localStorage内容:', localStorage.getItem('dify_uploaded_image'));
+            
+            // 设置预览图片
+            previewImageUrl.value = base64Data;
+          };
+          reader.readAsDataURL(file);
+        } catch (e) {
+          console.error('保存到localStorage失败:', e);
+        }
 
         ElMessage.success(`图片 "${result.name}" 上传成功！点击旁边的链接查看预览`);
 
@@ -2288,10 +2353,13 @@ export default defineComponent({
     const clearMessages = () => {
       try {
         localStorage.removeItem(getStorageKey());
+        localStorage.removeItem('dify_uploaded_image');
       } catch (e) {
         console.error('清空 localStorage 失败:', e);
       }
       messages.value = [];
+      lastUploadedImage.value = null;
+      previewImageUrl.value = '';
       ElMessage.success('对话已清空');
     };
 
