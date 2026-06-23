@@ -444,6 +444,11 @@ export default defineComponent({
       return STORAGE_KEY_PREFIX + screenId;
     };
 
+    const getUploadImageStorageKey = () => {
+      const screenId = EditorModule.screen?.id || 'default';
+      return 'dify_uploaded_image-' + screenId;
+    };
+
     const saveMessagesToStorage = () => {
       if (isHydrating.value) return;
       try {
@@ -473,6 +478,15 @@ export default defineComponent({
         saveMessagesToStorage();
       },
       { deep: true }
+    );
+
+    watch(
+      () => EditorModule.screen?.id,
+      () => {
+        lastUploadedImage.value = null;
+        previewImageUrl.value = '';
+        restoreUploadedImage();
+      }
     );
 
     onMounted(() => {
@@ -2038,40 +2052,23 @@ export default defineComponent({
     // 从localStorage恢复上传的图片信息
     const restoreUploadedImage = () => {
       try {
-        console.log('🔄 开始恢复上传的图片...');
-        const savedImageStr = localStorage.getItem('dify_uploaded_image');
-        console.log('localStorage中的dify_uploaded_image:', savedImageStr);
-
-        if (!savedImageStr) {
-          console.log('⚠️ localStorage中没有保存的图片信息');
-          return;
-        }
+        const savedImageStr = localStorage.getItem(getUploadImageStorageKey());
+        if (!savedImageStr) return;
 
         const savedImage = JSON.parse(savedImageStr);
-        console.log('解析后的图片信息:', savedImage);
+        if (!savedImage.id) return;
 
-        if (!savedImage.id) {
-          console.log('⚠️ 图片信息中没有id字段');
-          return;
-        }
-
-        // 恢复图片信息（不包含 base64Data）
         const { base64Data, ...imageInfo } = savedImage;
         lastUploadedImage.value = imageInfo;
-        console.log('✅ 已恢复图片信息到lastUploadedImage:', lastUploadedImage.value);
 
-        // 使用 localStorage 中的 base64 数据
         if (base64Data) {
           previewImageUrl.value = base64Data;
-          console.log('✅ 已使用 localStorage 中的 base64 数据设置预览');
         } else {
-          console.log('⚠️ localStorage 中没有 base64 数据');
-          localStorage.removeItem('dify_uploaded_image');
+          localStorage.removeItem(getUploadImageStorageKey());
           lastUploadedImage.value = null;
         }
       } catch (error) {
-        console.error('恢复上传图片失败:', error);
-        localStorage.removeItem('dify_uploaded_image');
+        localStorage.removeItem(getUploadImageStorageKey());
         lastUploadedImage.value = null;
       }
     };
@@ -2103,14 +2100,8 @@ export default defineComponent({
       isLoading.value = true;
 
       try {
-        // 使用 apiKeyFlow3，如果未配置则回退到 apiKey
         const apiKey = props.apiKeyFlowB1 || props.apiKey;
         
-        console.log('=== 开始上传图片 ===');
-        console.log('文件名:', file.name);
-        console.log('文件大小:', file.size);
-        console.log('文件类型:', file.type);
-
         const formData = new FormData();
         formData.append('file', file);
         formData.append('user', props.userId || 'abc-123');
@@ -2129,9 +2120,6 @@ export default defineComponent({
 
         const result = await response.json();
         
-        console.log('=== 图片上传成功 ===');
-        console.log('上传结果:', JSON.stringify(result, null, 2));
-
         // 保存图片信息（不显示在对话框中）
         lastUploadedImage.value = {
           id: result.id,
@@ -2142,37 +2130,25 @@ export default defineComponent({
           created_at: result.created_at
         };
 
-        console.log('准备保存到localStorage:', lastUploadedImage.value);
-
         // 保存到localStorage，刷新后可恢复
         try {
-          // 先读取图片的 base64 数据
           const reader = new FileReader();
           reader.onload = (e) => {
             const base64Data = e.target?.result as string;
-            
-            // 保存图片信息（包含 base64 数据）
             const imageData = {
               ...lastUploadedImage.value,
               base64Data: base64Data
             };
-            
-            localStorage.setItem('dify_uploaded_image', JSON.stringify(imageData));
-            console.log('✅ 已保存到localStorage（包含base64数据），key: dify_uploaded_image');
-            console.log('当前localStorage内容:', localStorage.getItem('dify_uploaded_image'));
-            
-            // 设置预览图片
+            localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageData));
             previewImageUrl.value = base64Data;
           };
           reader.readAsDataURL(file);
         } catch (e) {
-          console.error('保存到localStorage失败:', e);
         }
 
         ElMessage.success(`图片 "${result.name}" 上传成功！点击旁边的链接查看预览`);
 
       } catch (error: any) {
-        console.error('图片上传失败:', error);
         ElMessage.error('图片上传失败：' + error.message);
       } finally {
         isLoading.value = false;
@@ -2220,12 +2196,8 @@ export default defineComponent({
       abortController.value = new AbortController();
 
       try {
-        // 使用 apiKeyFlow3，如果未配置则回退到 apiKey
         const apiKey = props.apiKeyFlow3 || props.apiKey;
         
-        console.log('=== CAD转JSON 开始 ===');
-        console.log('使用图片ID:', lastUploadedImage.value.id);
-
         const requestBody = {
           inputs: {},
           query: 'cad转json',
@@ -2356,7 +2328,7 @@ export default defineComponent({
     const clearMessages = () => {
       try {
         localStorage.removeItem(getStorageKey());
-        localStorage.removeItem('dify_uploaded_image');
+        localStorage.removeItem(getUploadImageStorageKey());
       } catch (e) {
         console.error('清空 localStorage 失败:', e);
       }
