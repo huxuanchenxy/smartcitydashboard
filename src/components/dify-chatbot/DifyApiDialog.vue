@@ -507,6 +507,12 @@ export default defineComponent({
 
       // 恢复上传的图片信息
       restoreUploadedImage();
+
+      // 监听剪贴板粘贴事件
+      document.addEventListener('paste', handlePaste);
+      onUnmounted(() => {
+        document.removeEventListener('paste', handlePaste);
+      });
     });
 
     // 推荐问题相关
@@ -2049,6 +2055,24 @@ export default defineComponent({
       fileInput.value?.click();
     };
 
+    // 监听剪贴板粘贴事件（支持 Ctrl+V / Cmd+V）
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            await uploadFile(file, 'paste');
+          }
+          break;
+        }
+      }
+    };
+
     // 从localStorage恢复上传的图片信息
     const restoreUploadedImage = () => {
       try {
@@ -2073,30 +2097,20 @@ export default defineComponent({
       }
     };
 
-    // 处理图片上传
-    const handleImageUpload = async (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const file = target.files?.[0];
-      
-      if (!file) return;
-
-      // 检查文件类型
+    // 处理文件上传（支持文件输入和剪贴板粘贴）
+    const uploadFile = async (file: File, source: string = 'input') => {
       const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
       if (!validTypes.includes(file.type)) {
         ElMessage.error('请选择有效的图片格式（png/jpeg/jpg/webp/gif）');
-        target.value = '';
         return;
       }
 
-      // 检查文件大小（小于2MB）
-      const maxSize = 2 * 1024 * 1024; // 2MB
+      const maxSize = 2 * 1024 * 1024;
       if (file.size > maxSize) {
         ElMessage.error('图片大小不能超过2MB');
-        target.value = '';
         return;
       }
 
-      // 显示加载状态
       isLoading.value = true;
 
       try {
@@ -2120,7 +2134,6 @@ export default defineComponent({
 
         const result = await response.json();
         
-        // 保存图片信息（不显示在对话框中）
         lastUploadedImage.value = {
           id: result.id,
           name: result.name,
@@ -2130,7 +2143,6 @@ export default defineComponent({
           created_at: result.created_at
         };
 
-        // 保存到localStorage，刷新后可恢复
         try {
           const reader = new FileReader();
           reader.onload = (e) => {
@@ -2152,8 +2164,19 @@ export default defineComponent({
         ElMessage.error('图片上传失败：' + error.message);
       } finally {
         isLoading.value = false;
-        target.value = ''; // 重置文件输入
       }
+    };
+
+    // 处理图片上传（文件输入）
+    const handleImageUpload = async (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const file = target.files?.[0];
+      
+      if (!file) return;
+      
+      await uploadFile(file, 'input');
+      
+      target.value = '';
     };
 
     // 打开图片预览
