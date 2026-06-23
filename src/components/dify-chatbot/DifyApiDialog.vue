@@ -511,12 +511,12 @@ export default defineComponent({
 
     // 推荐问题相关
     const recommendQuestions = [
-      '生成智慧城市大屏',
-      '智慧水务',
-      '智慧医疗',
-      '智慧教育',
-      '智慧交通',
-      '智慧园区'
+      '城市数据大屏',
+      '水务智能监控',
+      '医疗健康平台',
+      '智慧教育系统',
+      '交通智能管控',
+      '园区智慧管理'
     ];
     const selectedQuestion = ref('');
 
