@@ -167,73 +167,28 @@
               >
                 停止生成
               </el-button>
-              <!-- 水务模式下隐藏：发送、发送2、发送3、发送4 -->
-              <!-- <el-button
-                v-if="!waterServiceMode"
+              <select
+                v-model="selectedSendType"
+                :disabled="isLoading || isAwaitingFeedback"
+                class="send-type-select"
+                style="width: 140px; margin-right: 8px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #dcdfe6; font-size: 13px; z-index: 1000;"
+              >
+                <option
+                  v-for="type in sendTypes"
+                  :key="type.id"
+                  :value="type.id"
+                  :disabled="type.isWaterOnly && !waterServiceMode"
+                >
+                  {{ type.label }}
+                </option>
+              </select>
+              <el-button
                 type="success"
                 size="small"
-                @click="sendMessage"
+                @click="sendDispatch"
                 :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
                 class="send-button"
-                title="大json"
-              >
-                {{ isLoading ? '发送中' : '发送' }}
-              </el-button> -->
-              <!-- <el-button
-                v-if="!waterServiceMode"
-                type="success"
-                size="small"
-                @click="sendMessage2"
-                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                class="send2-button"
-                title="回答再次询问"
-              >
-                {{ isLoading ? '发送中' : '发送2' }}
-              </el-button> -->
-              <!-- <el-button
-                v-if="!waterServiceMode"
-                type="success"
-                size="small"
-                @click="sendMessage3"
-                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                class="send3-button"
-                title="快速环保"
-              >
-                {{ isLoading ? '发送中' : '发送3' }}
-              </el-button> -->
-              <!-- 发送(反复) -->
-              <!-- <el-button
-                v-if="!waterServiceMode"
-                type="primary"
-                size="small"
-                @click="sendMessage4()"
-                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                class="send4-button"
-                title="有暂停"
-              >
-                {{ isLoading ? '发送中' : '发送4' }}
-              </el-button> -->
-                            <!-- 发送(反复图片转换) -->
-              <el-button
-                v-if="!waterServiceMode"
-                type="primary"
-                size="small"
-                @click="sendMessage5()"
-                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                class="send4-button"
-                title="反复图片转换"
-              >
-                {{ isLoading ? '发送中' : '发送' }}
-              </el-button>
-              <!-- 水务模式下保留：发送(水务专用) -->
-              <el-button
-                v-if="waterServiceMode"
-                type="warning"
-                size="small"
-                @click="sendMessageWater()"
-                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                class="send-water-button"
-                title="水务专用"
+                title="发送调度"
               >
                 {{ isLoading ? '发送中' : '发送' }}
               </el-button>
@@ -303,7 +258,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, nextTick, onUnmounted, onMounted, PropType } from 'vue';
+import { defineComponent, ref, watch, nextTick, onUnmounted, onMounted, PropType, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { EditorModule } from '@/store/modules/editor';
 import { FilterModule } from '@/store/modules/filter';
@@ -325,6 +280,23 @@ interface Message {
   workflowRunId?: string;
   isProcessed?: boolean;
   humanInput?: string;
+}
+
+interface SendMessageConfig {
+  apiKey: string;
+  logPrefix: string;
+  query?: string;
+  clearQuery?: boolean;
+  supportWorkflowPaused?: boolean;
+  onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
+}
+
+interface SendType {
+  id: string;
+  label: string;
+  title: string;
+  config: SendMessageConfig;
+  isWaterOnly?: boolean;
 }
 
 export default defineComponent({
@@ -527,6 +499,76 @@ export default defineComponent({
     ];
     const selectedQuestion = ref('');
 
+    const sendTypes = ref<SendType[]>([
+      {
+        id: 'send1',
+        label: '助手1',
+        title: '大json',
+        config: {
+          apiKey: props.apiKey,
+          logPrefix: '发送'
+        }
+      },
+      {
+        id: 'send2',
+        label: '助手2',
+        title: '回答再次询问',
+        config: {
+          apiKey: props.apiKey,
+          logPrefix: '发送2'
+        }
+      },
+      {
+        id: 'send3',
+        label: '助手3',
+        title: '快速环保',
+        config: {
+          apiKey: props.apiKeyFlow4 || props.apiKey,
+          logPrefix: '发送3'
+        }
+      },
+      {
+        id: 'send4',
+        label: '助手4',
+        title: '有暂停',
+        config: {
+          apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
+          logPrefix: '发送4',
+          supportWorkflowPaused: true
+        }
+      },
+      {
+        id: 'send5',
+        label: '助手5',
+        title: '反复图片转换',
+        config: {
+          apiKey: props.apiKeyFlowB1 || props.apiKeyFlow4 || props.apiKey,
+          logPrefix: '发送5',
+          supportWorkflowPaused: true
+        }
+      },
+      {
+        id: 'sendWater',
+        label: '助手(水务)',
+        title: '水务专用',
+        config: {
+          apiKey: props.apiKeyFlowWater || props.apiKey,
+          logPrefix: '发送Water'
+        },
+        isWaterOnly: true
+      }
+    ]);
+
+    const selectedSendType = ref<string>(props.waterServiceMode ? 'sendWater' : 'send5');
+
+    const selectOptions = computed(() => {
+      return sendTypes.value.map(t => ({
+        label: t.label,
+        value: t.id,
+        disabled: t.isWaterOnly && !props.waterServiceMode
+      }));
+    });
+
     // 监听推荐问题选择变化
     watch(selectedQuestion, (newVal) => {
       if (newVal && newVal.trim()) {
@@ -615,12 +657,7 @@ export default defineComponent({
     // 处理回车发送（Shift+Enter 换行）
     const handleEnter = (e: KeyboardEvent) => {
       if (!e.shiftKey) {
-        // 水务模式下回车调用 sendMessageWater，否则调用 sendMessage3
-        if (props.waterServiceMode) {
-          sendMessageWater();
-        } else {
-          sendMessage3();
-        }
+        sendDispatch();
       }
     };
 
@@ -642,16 +679,6 @@ export default defineComponent({
       }
       return '';
     };
-
-    // 定义发送消息的配置接口
-    interface SendMessageConfig {
-      apiKey: string;
-      logPrefix: string;
-      query?: string;
-      clearQuery?: boolean;
-      supportWorkflowPaused?: boolean;
-      onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
-    }
 
     // 通用的发送消息函数
     const sendRequest = async (config: SendMessageConfig): Promise<string> => {
@@ -745,8 +772,8 @@ export default defineComponent({
           user: props.userId,
           files: files
         };
-
-        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
+        console.log('apiKey',apiKey)
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages111`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -1526,6 +1553,20 @@ export default defineComponent({
         apiKey: props.apiKeyFlowWater || props.apiKey,
         logPrefix: '发送Water'
       });
+    };
+
+    const sendDispatch = async () => {
+      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      if (!sendType) {
+        ElMessage.warning('请选择发送类型');
+        return;
+      }
+
+      if (sendType.id === 'send2') {
+        await sendMessage2();
+      } else {
+        await sendRequest(sendType.config);
+      }
     };
 
     // 提交表单
@@ -3078,6 +3119,9 @@ export default defineComponent({
       isCadConverting,
       recommendQuestions,
       selectedQuestion,
+      sendTypes,
+      selectedSendType,
+      selectOptions,
       isSubmitting,
       isAwaitingFeedback,
       validationResultImageVisible,
@@ -3090,6 +3134,7 @@ export default defineComponent({
       sendMessage4,
       sendMessage5,
       sendMessageWater,
+      sendDispatch,
       handleHumanApprove,
       handleHumanRevise,
       clearMessages,
@@ -3368,6 +3413,24 @@ export default defineComponent({
 
 .send-button {
   min-width: 80px;
+}
+
+.send-type-select {
+  height: 32px;
+}
+
+.send-type-select :deep(.n-base-selection-label) {
+  height: 32px;
+  font-size: 13px;
+}
+
+.send-type-select :deep(.n-base-selection) {
+  height: 32px;
+  min-height: 32px;
+}
+
+.send-type-select :deep(.n-base-selection__border) {
+  height: 32px;
 }
 
 /* 对话框样式优化 */
