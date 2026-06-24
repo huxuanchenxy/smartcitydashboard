@@ -172,7 +172,7 @@
                 v-model="selectedSendType"
                 :disabled="isLoading || isAwaitingFeedback"
                 class="send-type-select"
-                style="width: 140px; margin-right: 8px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #dcdfe6; font-size: 13px; z-index: 1000;"
+                style="width:90px; margin-right: 8px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #dcdfe6; font-size: 13px; z-index: 1000;"
               >
                 <option
                   v-for="type in sendTypes"
