@@ -774,7 +774,7 @@ export default defineComponent({
           files: files
         };
         console.log('apiKey',apiKey)
-        const response = await fetch(`${props.baseUrl}/v1/chat-messages111`, {
+        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -1597,7 +1597,7 @@ export default defineComponent({
     };
 
     // 等待工作流完成
-    const waitForWorkflowCompletion = async (workflowRunId: string, formToken?: string, intervalMs: number = 2000, maxRetries: number = 30): Promise<any> => {
+    const waitForWorkflowCompletion = async (workflowRunId: string, formToken?: string, intervalMs: number = 10000, maxRetries: number = 30): Promise<any> => {
       console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
       
       let retries = 0;
@@ -1759,7 +1759,7 @@ export default defineComponent({
         
         // 查询工作流运行结果
         if (message.workflowRunId) {
-          const finalResult = await waitForWorkflowCompletion(message.workflowRunId, message.formToken);
+          const finalResult = await waitForWorkflowCompletion(message.workflowRunId);
           console.log('\n🎉 流程执行完成！');
           
           const lastMsg = messages.value[messages.value.length - 1];
