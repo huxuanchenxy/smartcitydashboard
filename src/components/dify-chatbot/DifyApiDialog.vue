@@ -167,6 +167,7 @@
               >
                 停止生成
               </el-button>
+              <!-- 助手下拉框 -->
               <select
                 v-model="selectedSendType"
                 :disabled="isLoading || isAwaitingFeedback"
@@ -177,7 +178,7 @@
                   v-for="type in sendTypes"
                   :key="type.id"
                   :value="type.id"
-                  :disabled="type.isWaterOnly && !waterServiceMode"
+                  :disabled="type.isWaterOnly ? !waterServiceMode : waterServiceMode"
                 >
                   {{ type.label }}
                 </option>
