@@ -510,9 +510,10 @@ export default defineComponent({
 
       // 监听剪贴板粘贴事件
       document.addEventListener('paste', handlePaste);
-      onUnmounted(() => {
-        document.removeEventListener('paste', handlePaste);
-      });
+    });
+
+    onUnmounted(() => {
+      document.removeEventListener('paste', handlePaste);
     });
 
     // 推荐问题相关
