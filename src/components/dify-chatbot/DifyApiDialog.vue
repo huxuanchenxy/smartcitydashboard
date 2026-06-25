@@ -212,10 +212,20 @@
     <el-dialog
       v-model="imagePreviewVisible"
       title="图片预览"
-      width="800px"
+      width="1000px"
       append-to-body
+      @open="resetImageScale"
     >
-      <img :src="previewImageUrl" alt="预览图片" style="width: 100%;" />
+      <div class="image-preview-container" @wheel.prevent="handleImageWheel">
+        <img 
+          :src="previewImageUrl" 
+          alt="预览图片" 
+          class="preview-image"
+          :style="{ transform: `scale(${imageScale})` }"
+          @click="resetImageScale"
+        />
+      </div>
+      <div class="image-preview-hint">滚轮缩放图片，点击图片重置</div>
     </el-dialog>
 
     <!-- 验证结果图片预览弹窗 -->
@@ -224,8 +234,18 @@
       title="验证结果图片"
       width="800px"
       append-to-body
+      @open="resetImageScale"
     >
-      <img :src="validationResultImageUrl" alt="验证结果图片" style="width: 100%;" />
+      <div class="image-preview-container" @wheel.prevent="handleImageWheel">
+        <img 
+          :src="validationResultImageUrl" 
+          alt="验证结果图片" 
+          class="preview-image"
+          :style="{ transform: `scale(${imageScale})` }"
+          @click="resetImageScale"
+        />
+      </div>
+      <div class="image-preview-hint">滚轮缩放图片，点击图片重置</div>
       <div v-if="validationResultJson" style="margin-top: 16px; padding: 12px; background-color: #f5f5f5; border-radius: 8px;">
         <h4 style="margin-bottom: 8px;">验证结果摘要:</h4>
         <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6;">{{ validationResultJson.summary }}</p>
@@ -403,6 +423,16 @@ export default defineComponent({
     const previewImageUrl = ref('');
     const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
     const isCadConverting = ref(false); // CAD转JSON转换状态
+
+    const imageScale = ref(1);
+    const handleImageWheel = (e: WheelEvent) => {
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const newScale = imageScale.value + delta;
+      imageScale.value = Math.max(0.1, Math.min(3, newScale));
+    };
+    const resetImageScale = () => {
+      imageScale.value = 1;
+    };
 
     // 人工介入相关
     const isSubmitting = ref(false);
@@ -3172,7 +3202,10 @@ export default defineComponent({
       triggerImageUpload,
       handleImageUpload,
       openImagePreview,
-      cadToJson
+      cadToJson,
+      imageScale,
+      handleImageWheel,
+      resetImageScale
     };
   }
 });
@@ -3636,5 +3669,30 @@ export default defineComponent({
 .error-tag {
   background-color: #fef2f2;
   color: #dc2626;
+}
+
+.image-preview-container {
+  width: 100%;
+  max-height: 600px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 600px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.image-preview-hint {
+  text-align: center;
+  font-size: 12px;
+  color: #909399;
+  margin-top: 8px;
 }
 </style>
