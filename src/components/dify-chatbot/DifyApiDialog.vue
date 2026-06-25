@@ -592,6 +592,11 @@ export default defineComponent({
       if (newVal) conversationId.value = newVal;
     });
 
+    // 监听助手类型变化，重置 conversationId
+    watch(selectedSendType, () => {
+      conversationId.value = '';
+    });
+
     // 滚动到底部
     const scrollToBottom = async () => {
       await nextTick();
@@ -769,7 +774,7 @@ export default defineComponent({
           inputs: props.data,
           query: query,
           response_mode: 'streaming',
-          conversation_id: conversationId.value,
+          conversation_id: conversationId.value || '',
           user: props.userId,
           files: files
         };
@@ -1161,7 +1166,7 @@ export default defineComponent({
           inputs: props.data,
           query: query,
           response_mode: 'streaming',
-          conversation_id: conversationId.value,
+          conversation_id: conversationId.value || '',
           user: props.userId,
           files: files
         };
@@ -1332,7 +1337,7 @@ export default defineComponent({
           inputs: props.data,
           query: firstCallAnswer,
           response_mode: 'streaming',
-          conversation_id: conversationId.value,
+          conversation_id: conversationId.value || '',
           user: props.userId,
           files: files
         };
@@ -1574,13 +1579,18 @@ export default defineComponent({
     const submitForm = async (formToken: string, inputs: Record<string, any>, action: string): Promise<any> => {
       const submitUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
       
+      // 获取当前选择的发送类型对应的 API Key
+      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      const usedApiKey = sendType?.config.apiKey || props.apiKey;
+      
       console.log(`📤 提交表单到: ${submitUrl}`);
+      console.log(`📤 使用 API Key: ${usedApiKey ? '***' + usedApiKey.slice(-4) : '未设置'}`);
       console.log('📤 提交数据:', JSON.stringify({ inputs, action }, null, 2));
       
       const response = await fetch(submitUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`,
+          'Authorization': `Bearer ${usedApiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ inputs, action })
@@ -1600,6 +1610,11 @@ export default defineComponent({
     const waitForWorkflowCompletion = async (workflowRunId: string, formToken?: string, intervalMs: number = 10000, maxRetries: number = 30): Promise<any> => {
       console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
       
+      // 获取当前选择的发送类型对应的 API Key
+      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      const usedApiKey = sendType?.config.apiKey || props.apiKey;
+      console.log(`📤 使用 API Key: ${usedApiKey ? '***' + usedApiKey.slice(-4) : '未设置'}`);
+      
       let retries = 0;
       let finalResult = null;
 
@@ -1611,7 +1626,7 @@ export default defineComponent({
           const response = await fetch(url, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`
+              'Authorization': `Bearer ${usedApiKey}`
             }
           });
           
@@ -1660,7 +1675,7 @@ export default defineComponent({
             const response = await fetch(humanInputUrl, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`,
+                'Authorization': `Bearer ${usedApiKey}`,
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({ inputs: {}, action: 'approve' })
@@ -1681,7 +1696,7 @@ export default defineComponent({
             const statusResponse = await fetch(statusUrl, {
               method: 'GET',
               headers: {
-                'Authorization': `Bearer ${props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey}`
+                'Authorization': `Bearer ${usedApiKey}`
               }
             });
             
@@ -1817,6 +1832,9 @@ export default defineComponent({
     // 处理人工介入 - Revise
     const handleHumanRevise = async (msgIndex: number) => {
       const message = messages.value[msgIndex];
+      
+      // 获取当前选择的发送类型对应的 API Key
+      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
       if (!message?.formToken) {
         ElMessage.error('无法获取表单令牌');
         return;
@@ -1863,8 +1881,8 @@ export default defineComponent({
         setTimeout(() => scrollToBottom(), 50);
         
         // 使用相同的 conversation_id 再次调用 chat-messages 接口
-        const apiKey = props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey;
-
+        const apiKey = sendType?.config.apiKey || props.apiKey;
+        
         // 创建 AbortController 用于取消请求
         abortController.value = new AbortController();
 
@@ -1885,7 +1903,7 @@ export default defineComponent({
             inputs: props.data || {},
             query: reviseQuery,
             response_mode: 'streaming',
-            conversation_id: conversationId.value,
+            conversation_id: conversationId.value || '',
             user: props.userId,
             files: files
           }),
@@ -2157,7 +2175,8 @@ export default defineComponent({
       isLoading.value = true;
 
       try {
-        const apiKey = props.apiKeyFlowB1 || props.apiKey;
+        const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+        const apiKey = sendType?.config.apiKey || props.apiKey;
         
         const formData = new FormData();
         formData.append('file', file);
