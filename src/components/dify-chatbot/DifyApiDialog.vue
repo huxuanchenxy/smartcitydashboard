@@ -235,7 +235,7 @@
           @click.stop="resetImageScale"
         />
       </div>
-      <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
+      <div class="image-preview-hint">滚轮缩放图片，右键拖动查看细节，点击图片重置</div>
     </el-dialog>
 
     <!-- 验证结果图片预览弹窗 -->
