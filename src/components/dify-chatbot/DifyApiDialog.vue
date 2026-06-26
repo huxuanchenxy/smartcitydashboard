@@ -215,17 +215,27 @@
       width="1000px"
       append-to-body
       @open="resetImageScale"
+      @close="handlePreviewClose"
     >
-      <div class="image-preview-container" @wheel.prevent="handleImageWheel">
+      <div 
+        class="image-preview-container" 
+        @wheel.prevent="handleImageWheel"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+        @mouseleave="handleMouseUp"
+      >
         <img 
+          ref="imageRef"
           :src="previewImageUrl" 
           alt="预览图片" 
           class="preview-image"
-          :style="{ transform: `scale(${imageScale})` }"
-          @click="resetImageScale"
+          :class="{ 'is-dragging': isDragging }"
+          :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
+          @click.stop="resetImageScale"
         />
       </div>
-      <div class="image-preview-hint">滚轮缩放图片，点击图片重置</div>
+      <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
     </el-dialog>
 
     <!-- 验证结果图片预览弹窗 -->
@@ -235,17 +245,27 @@
       width="800px"
       append-to-body
       @open="resetImageScale"
+      @close="handlePreviewClose"
     >
-      <div class="image-preview-container" @wheel.prevent="handleImageWheel">
+      <div 
+        class="image-preview-container" 
+        @wheel.prevent="handleImageWheel"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+        @mouseleave="handleMouseUp"
+      >
         <img 
+          ref="imageRef"
           :src="validationResultImageUrl" 
           alt="验证结果图片" 
           class="preview-image"
-          :style="{ transform: `scale(${imageScale})` }"
-          @click="resetImageScale"
+          :class="{ 'is-dragging': isDragging }"
+          :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
+          @click.stop="resetImageScale"
         />
       </div>
-      <div class="image-preview-hint">滚轮缩放图片，点击图片重置</div>
+      <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
       <div v-if="validationResultJson" style="margin-top: 16px; padding: 12px; background-color: #f5f5f5; border-radius: 8px;">
         <h4 style="margin-bottom: 8px;">验证结果摘要:</h4>
         <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6;">{{ validationResultJson.summary }}</p>
@@ -425,13 +445,70 @@ export default defineComponent({
     const isCadConverting = ref(false); // CAD转JSON转换状态
 
     const imageScale = ref(1);
+    const offsetX = ref(0);
+    const offsetY = ref(0);
+    const isDragging = ref(false);
+    const lastMouseX = ref(0);
+    const lastMouseY = ref(0);
+    const imageRef = ref<HTMLImageElement | null>(null);
+
     const handleImageWheel = (e: WheelEvent) => {
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newScale = imageScale.value + delta;
-      imageScale.value = Math.max(0.1, Math.min(3, newScale));
+      const newScale = Math.max(0.1, Math.min(5, imageScale.value + delta));
+      
+      if (newScale !== imageScale.value) {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const imageWidth = imageRef.value?.naturalWidth || 1000;
+        const imageHeight = imageRef.value?.naturalHeight || 1000;
+        const containerWidth = rect.width;
+        const containerHeight = rect.height;
+        
+        const scaleDiff = newScale / imageScale.value;
+        
+        const imageCenterX = containerWidth / 2 + offsetX.value;
+        const imageCenterY = containerHeight / 2 + offsetY.value;
+        
+        const newOffsetX = mouseX - (mouseX - imageCenterX) * scaleDiff;
+        const newOffsetY = mouseY - (mouseY - imageCenterY) * scaleDiff;
+        
+        imageScale.value = newScale;
+        offsetX.value = newOffsetX - containerWidth / 2;
+        offsetY.value = newOffsetY - containerHeight / 2;
+      }
     };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (imageScale.value <= 1) return;
+      isDragging.value = true;
+      lastMouseX.value = e.clientX;
+      lastMouseY.value = e.clientY;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.value) return;
+      const deltaX = e.clientX - lastMouseX.value;
+      const deltaY = e.clientY - lastMouseY.value;
+      offsetX.value += deltaX;
+      offsetY.value += deltaY;
+      lastMouseX.value = e.clientX;
+      lastMouseY.value = e.clientY;
+    };
+
+    const handleMouseUp = () => {
+      isDragging.value = false;
+    };
+
     const resetImageScale = () => {
       imageScale.value = 1;
+      offsetX.value = 0;
+      offsetY.value = 0;
+    };
+
+    const handlePreviewClose = () => {
+      resetImageScale();
     };
 
     // 人工介入相关
@@ -3204,8 +3281,15 @@ export default defineComponent({
       openImagePreview,
       cadToJson,
       imageScale,
+      offsetX,
+      offsetY,
+      isDragging,
       handleImageWheel,
-      resetImageScale
+      handleMouseDown,
+      handleMouseMove,
+      handleMouseUp,
+      resetImageScale,
+      handlePreviewClose
     };
   }
 });
@@ -3674,19 +3758,30 @@ export default defineComponent({
 .image-preview-container {
   width: 100%;
   max-height: 600px;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #f5f5f5;
   border-radius: 8px;
+  position: relative;
 }
 
 .preview-image {
   max-width: 100%;
   max-height: 600px;
-  transition: transform 0.2s ease;
+  transition: transform 0.1s ease;
   cursor: pointer;
+  transform-origin: center center;
+  user-select: none;
+}
+
+.preview-image.is-dragging {
+  cursor: grabbing;
+}
+
+.image-preview-container:not(.is-dragging) {
+  cursor: grab;
 }
 
 .image-preview-hint {
