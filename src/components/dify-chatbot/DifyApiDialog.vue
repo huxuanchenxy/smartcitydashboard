@@ -585,6 +585,22 @@ export default defineComponent({
         }
       };
 
+      // 设置全局识别结果JSON展开函数
+      (window as any).__toggleRecognitionJson = (id: string) => {
+        const element = document.getElementById(id);
+        const contentId = id + '-content';
+        const contentElement = document.getElementById(contentId);
+        if (element && contentElement) {
+          if (contentElement.style.display === 'none') {
+            contentElement.style.display = 'block';
+            element.textContent = '收起';
+          } else {
+            contentElement.style.display = 'none';
+            element.textContent = '展开';
+          }
+        }
+      };
+
       // 恢复上传的图片信息
       restoreUploadedImage();
 
@@ -726,6 +742,14 @@ export default defineComponent({
       
       // 移除 {{#$output.usercomments#}} 标记
       result = result.replace(/\{\{#\$output\.usercomments#\}\}/g, '');
+      
+      // 隐藏识别结果到验证结果之间的JSON字符串
+      const recognitionToValidationPattern = /识别结果:([\s\S]*?)(?=验证结果：|$)/g;
+      result = result.replace(recognitionToValidationPattern, (match, jsonContent) => {
+        const id = 'recognition-json-' + Math.random().toString(36).substring(2, 9);
+        const escapedContent = jsonContent.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `识别结果：<a href="#" id="${id}" class="hidden-content-link" onclick="window.__toggleRecognitionJson('${id}'); return false;">展开</a><div id="${id}-content" class="hidden-content" style="display:none;white-space:pre-wrap;word-break:break-all;">${escapedContent}</div>`;
+      });
       
       // 检测并替换base64字符串为预览链接
       // 匹配 "image": "xxxxx" 格式的base64字符串（在JSON中）
@@ -2841,6 +2865,7 @@ export default defineComponent({
       if (typeof window !== 'undefined') {
         delete (window as any).__previewBase64Image;
         delete (window as any).__base64PreviewData;
+        delete (window as any).__toggleRecognitionJson;
       }
     });
 
