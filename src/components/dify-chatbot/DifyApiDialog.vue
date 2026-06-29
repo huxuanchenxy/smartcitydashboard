@@ -389,6 +389,11 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb1 || ''
     },
+    // difyapidialog 专用 API Key (FLOWb2)
+    apiKeyFlowB2: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb2 || ''
+    },
     // 水务专用 API Key
     apiKeyFlowWater: {
       type: String,
@@ -668,6 +673,16 @@ export default defineComponent({
         config: {
           apiKey: props.apiKeyFlowB1 || '',
           logPrefix: '发送5',
+          supportWorkflowPaused: true
+        }
+      },
+      {
+        id: 'send6',
+        label: '助手6',
+        title: 'FLOWb2专用',
+        config: {
+          apiKey: props.apiKeyFlowB2 || '',
+          logPrefix: '发送6',
           supportWorkflowPaused: true
         }
       },
@@ -1676,8 +1691,18 @@ export default defineComponent({
 
     const sendMessage5 = async (queryText?: string) => {
       await sendRequest({
-        apiKey: props.apiKeyFlowB1 || props.apiKeyFlow4 || props.apiKey,
+        apiKey: props.apiKeyFlowB1 || '',
         logPrefix: '发送5',
+        query: queryText,
+        clearQuery: !queryText,
+        supportWorkflowPaused: true
+      });
+    };
+
+    const sendMessage6 = async (queryText?: string) => {
+      await sendRequest({
+        apiKey: props.apiKeyFlowB2 || '',
+        logPrefix: '发送6',
         query: queryText,
         clearQuery: !queryText,
         supportWorkflowPaused: true
