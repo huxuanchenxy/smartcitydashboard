@@ -624,43 +624,43 @@ export default defineComponent({
     const selectedQuestion = ref('');
 
     const sendTypes = ref<SendType[]>([
-      {
-        id: 'send1',
-        label: '助手1',
-        title: '大json',
-        config: {
-          apiKey: props.apiKey,
-          logPrefix: '发送'
-        }
-      },
-      {
-        id: 'send2',
-        label: '助手2',
-        title: '回答再次询问',
-        config: {
-          apiKey: props.apiKey,
-          logPrefix: '发送2'
-        }
-      },
-      {
-        id: 'send3',
-        label: '助手3',
-        title: '快速环保',
-        config: {
-          apiKey: props.apiKeyFlow4 || props.apiKey,
-          logPrefix: '发送3'
-        }
-      },
-      {
-        id: 'send4',
-        label: '助手4',
-        title: '有暂停',
-        config: {
-          apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
-          logPrefix: '发送4',
-          supportWorkflowPaused: true
-        }
-      },
+      // {
+      //   id: 'send1',
+      //   label: '助手1',
+      //   title: '大json',
+      //   config: {
+      //     apiKey: props.apiKey,
+      //     logPrefix: '发送'
+      //   }
+      // },
+      // {
+      //   id: 'send2',
+      //   label: '助手2',
+      //   title: '回答再次询问',
+      //   config: {
+      //     apiKey: props.apiKey,
+      //     logPrefix: '发送2'
+      //   }
+      // },
+      // {
+      //   id: 'send3',
+      //   label: '助手3',
+      //   title: '快速环保',
+      //   config: {
+      //     apiKey: props.apiKeyFlow4 || props.apiKey,
+      //     logPrefix: '发送3'
+      //   }
+      // },
+      // {
+      //   id: 'send4',
+      //   label: '助手4',
+      //   title: '有暂停',
+      //   config: {
+      //     apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
+      //     logPrefix: '发送4',
+      //     supportWorkflowPaused: true
+      //   }
+      // },
       {
         id: 'send5',
         label: '助手5',
