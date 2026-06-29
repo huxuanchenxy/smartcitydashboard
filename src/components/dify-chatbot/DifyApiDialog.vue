@@ -666,7 +666,7 @@ export default defineComponent({
         label: '助手5',
         title: '反复图片转换',
         config: {
-          apiKey: props.apiKeyFlowB1 || props.apiKeyFlow4 || props.apiKey,
+          apiKey: props.apiKeyFlowB1 || '',
           logPrefix: '发送5',
           supportWorkflowPaused: true
         }
@@ -676,7 +676,7 @@ export default defineComponent({
         label: '助手(水务)',
         title: '水务专用',
         config: {
-          apiKey: props.apiKeyFlowWater || props.apiKey,
+          apiKey: props.apiKeyFlowWater || '',
           logPrefix: '发送Water'
         },
         isWaterOnly: true
