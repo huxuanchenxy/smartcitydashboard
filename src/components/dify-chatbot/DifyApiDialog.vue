@@ -15,14 +15,18 @@
       <!-- 消息区域 -->
       <div class="message-section" ref="messageContainer">
         <div v-if="messages.length === 0" class="empty-message">
-        <div class="empty-icon">💬</div>
-        <div>暂无消息，开始您的对话吧！</div>
-      </div>
+          <div class="empty-icon">💬</div>
+          <div>暂无消息，开始您的对话吧！</div>
+        </div>
         <div v-else class="message-list">
           <div
             v-for="(message, index) in messages"
             :key="index"
-            :class="['message-item', message.role === 'user' ? 'user-message' : 'assistant-message', { 'human-interaction-message': message.isHumanInteraction }]"
+            :class="[
+              'message-item',
+              message.role === 'user' ? 'user-message' : 'assistant-message',
+              { 'human-interaction-message': message.isHumanInteraction },
+            ]"
           >
             <!-- 人工介入消息 -->
             <div v-if="message.isHumanInteraction" class="human-interaction-wrapper">
@@ -31,12 +35,12 @@
                 <span class="agent-icon">🔔</span>
                 <span class="agent-text">等待您的反馈</span>
               </div>
-              
+
               <!-- AI 消息内容 -->
               <div class="ai-message-content">
                 <div v-html="formatContent(message.content)"></div>
               </div>
-              
+
               <!-- 用户反馈输入区域 -->
               <div class="human-feedback-section">
                 <textarea
@@ -64,19 +68,17 @@
                     修改
                   </el-button>
                 </div>
-                <div class="expiry-note">
-                  ⚠️ 此操作将在1小时内过期。
-                </div>
+                <div class="expiry-note">⚠️ 此操作将在1小时内过期。</div>
               </div>
             </div>
-            
+
             <!-- 普通消息 -->
             <template v-else>
               <div class="message-header">
                 <div class="avatar" :class="message.role">
-                  {{ message.role === 'user' ? '👤' : '🤖' }}
+                  {{ message.role === "user" ? "👤" : "🤖" }}
                 </div>
-                <div class="message-role">{{ message.role === 'user' ? '用户' : 'AI 助手' }}</div>
+                <div class="message-role">{{ message.role === "user" ? "用户" : "AI 助手" }}</div>
               </div>
               <div class="message-content">
                 <!-- 思考中状态 -->
@@ -109,7 +111,15 @@
               v-if="!waterServiceMode"
               v-model="selectedQuestion"
               :disabled="isLoading || isAwaitingFeedback"
-              style="width: 280px; height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; cursor: pointer;"
+              style="
+                width: 280px;
+                height: 32px;
+                padding: 0 12px;
+                border: 1px solid #dcdfe6;
+                border-radius: 4px;
+                font-size: 14px;
+                cursor: pointer;
+              "
             >
               <option value="" disabled>选择推荐问题...</option>
               <option v-for="question in recommendQuestions" :key="question" :value="question">
@@ -118,9 +128,23 @@
             </select>
             <div class="top-bar-actions">
               <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
-              <el-button type="primary" size="small" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
-              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
-              <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading || isAwaitingFeedback">上传</el-button>
+              <el-button
+                type="primary"
+                size="small"
+                @click="copyLastMessageContent"
+                :disabled="isLoading"
+                >复制回答内容</el-button
+              >
+              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading"
+                >清空对话</el-button
+              >
+              <el-button
+                type="info"
+                size="small"
+                @click="triggerImageUpload"
+                :disabled="isLoading || isAwaitingFeedback"
+                >上传</el-button
+              >
               <!-- 水务模式下隐藏：CAD转JSON -->
               <!-- <el-button 
               v-if="!waterServiceMode"
@@ -132,16 +156,16 @@
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button> -->
-            <!-- 水务模式下保留：图片预览链接 -->
-            <el-link
-              v-if="lastUploadedImage"
-              type="primary"
-              :underline="false"
-              @click="openImagePreview"
-              class="image-preview-link"
-            >
-              🖼️ 查看
-            </el-link>
+              <!-- 水务模式下保留：图片预览链接 -->
+              <el-link
+                v-if="lastUploadedImage"
+                type="primary"
+                :underline="false"
+                @click="openImagePreview"
+                class="image-preview-link"
+              >
+                🖼️ 查看
+              </el-link>
             </div>
           </div>
           <!-- 输入框和发送按钮行 -->
@@ -155,13 +179,14 @@
               :disabled="isLoading || isAwaitingFeedback"
               @keydown.enter.prevent="handleEnter"
             ></el-input>
-            <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px;">
-
+            <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px">
               <!-- 第二行：操作按钮 -->
-              <div class="actions-row" style="display: flex; align-items: center; gap: 8px;">
-                <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
+              <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
+                <span class="hint" v-if="isLoading || isCadConverting"
+                  >AI 正在思考中，请稍候...</span
+                >
                 <!-- 水务模式下保留：停止生成 -->
-                <el-button 
+                <el-button
                   v-if="isLoading || isCadConverting"
                   type="danger"
                   size="small"
@@ -175,7 +200,15 @@
                   v-model="selectedSendType"
                   :disabled="isLoading || isAwaitingFeedback"
                   class="send-type-select"
-                  style="width:90px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #dcdfe6; font-size: 13px; z-index: 1000;"
+                  style="
+                    width: 90px;
+                    height: 32px;
+                    padding: 0 8px;
+                    border-radius: 4px;
+                    border: 1px solid #dcdfe6;
+                    font-size: 13px;
+                    z-index: 1000;
+                  "
                 >
                   <option
                     v-for="type in sendTypes"
@@ -205,35 +238,41 @@
                   class="send-button"
                   title="发送调度"
                 >
-                  {{ isLoading ? '发送中' : '发送' }}
+                  {{ isLoading ? "发送中" : "发送" }}
                 </el-button>
               </div>
             </div>
           </div>
         </div>
       </div>
-                    <!-- 步骤路径指示器 -->
-              <div class="step-path-container">
-                <div class="step-path">
-                  <!-- 步骤1：识别 -->
-                  <div class="step-node" :class="{ 'current': currentStep === 1, 'completed': currentStep > 1 }">
-                    <div class="step-dot">
-                      <span v-if="currentStep > 1" class="step-check">✓</span>
-                      <span v-else class="step-number">1</span>
-                    </div>
-                    <span class="step-label">图纸识别</span>
-                  </div>
-                  <div class="step-connector" :class="{ 'active': currentStep > 1 }"></div>
-                  <!-- 步骤2：点位绑定 -->
-                  <div class="step-node" :class="{ 'current': currentStep === 2, 'completed': currentStep > 2 }">
-                    <div class="step-dot">
-                      <span v-if="currentStep > 2" class="step-check">✓</span>
-                      <span v-else class="step-number">2</span>
-                    </div>
-                    <span class="step-label">点位绑定</span>
-                  </div>
-                </div>
-              </div>
+      <!-- 步骤路径指示器 -->
+      <div class="step-path-container">
+        <div class="step-path">
+          <!-- 步骤1：识别 -->
+          <div
+            class="step-node"
+            :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+          >
+            <div class="step-dot">
+              <span v-if="currentStep > 1" class="step-check">✓</span>
+              <span v-else class="step-number">1</span>
+            </div>
+            <span class="step-label">图纸识别</span>
+          </div>
+          <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+          <!-- 步骤2：点位绑定 -->
+          <div
+            class="step-node"
+            :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+          >
+            <div class="step-dot">
+              <span v-if="currentStep > 2" class="step-check">✓</span>
+              <span v-else class="step-number">2</span>
+            </div>
+            <span class="step-label">点位绑定</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 上传图片输入框（隐藏） -->
@@ -254,18 +293,18 @@
       @open="resetImageScale"
       @close="handlePreviewClose"
     >
-      <div 
-        class="image-preview-container" 
+      <div
+        class="image-preview-container"
         @wheel.prevent="handleImageWheel"
         @mousedown="handleMouseDown"
         @mousemove="handleMouseMove"
         @mouseup="handleMouseUp"
         @mouseleave="handleMouseUp"
       >
-        <img 
+        <img
           ref="imageRef"
-          :src="previewImageUrl" 
-          alt="预览图片" 
+          :src="previewImageUrl"
+          alt="预览图片"
           class="preview-image"
           :class="{ 'is-dragging': isDragging }"
           :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
@@ -284,18 +323,18 @@
       @open="resetImageScale"
       @close="handlePreviewClose"
     >
-      <div 
-        class="image-preview-container" 
+      <div
+        class="image-preview-container"
         @wheel.prevent="handleImageWheel"
         @mousedown="handleMouseDown"
         @mousemove="handleMouseMove"
         @mouseup="handleMouseUp"
         @mouseleave="handleMouseUp"
       >
-        <img 
+        <img
           ref="imageRef"
-          :src="validationResultImageUrl" 
-          alt="验证结果图片" 
+          :src="validationResultImageUrl"
+          alt="验证结果图片"
           class="preview-image"
           :class="{ 'is-dragging': isDragging }"
           :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
@@ -303,11 +342,22 @@
         />
       </div>
       <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
-      <div v-if="validationResultJson" style="margin-top: 16px; padding: 12px; background-color: #f5f5f5; border-radius: 8px;">
-        <h4 style="margin-bottom: 8px;">验证结果摘要:</h4>
-        <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6;">{{ validationResultJson.summary }}</p>
-        <p v-if="validationResultJson.success !== undefined" style="font-size: 13px; margin-top: 8px;">
-          状态: <span :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }">{{ validationResultJson.success ? '成功' : '失败' }}</span>
+      <div
+        v-if="validationResultJson"
+        style="margin-top: 16px; padding: 12px; background-color: #f5f5f5; border-radius: 8px"
+      >
+        <h4 style="margin-bottom: 8px">验证结果摘要:</h4>
+        <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6">
+          {{ validationResultJson.summary }}
+        </p>
+        <p
+          v-if="validationResultJson.success !== undefined"
+          style="font-size: 13px; margin-top: 8px"
+        >
+          状态:
+          <span :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }">{{
+            validationResultJson.success ? "成功" : "失败"
+          }}</span>
         </p>
       </div>
     </el-dialog>
@@ -323,7 +373,7 @@
         <!-- <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button> -->
-        
+
         <!-- <el-switch
           v-model="enableJsonValidation"
           active-text="JSON校验"
@@ -336,20 +386,29 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, nextTick, onUnmounted, onMounted, PropType, computed } from 'vue';
-import { ElMessage } from 'element-plus';
-import { EditorModule } from '@/store/modules/editor';
-import { FilterModule } from '@/store/modules/filter';
-import { UploadImagesModule } from '@/store/modules/images';
-import { ThreedModule } from '@/store/modules/threed';
-import { ToolbarModule } from '@/store/modules/toolbar';
+import {
+  defineComponent,
+  ref,
+  watch,
+  nextTick,
+  onUnmounted,
+  onMounted,
+  PropType,
+  computed,
+} from "vue";
+import { ElMessage } from "element-plus";
+import { EditorModule } from "@/store/modules/editor";
+import { FilterModule } from "@/store/modules/filter";
+import { UploadImagesModule } from "@/store/modules/images";
+import { ThreedModule } from "@/store/modules/threed";
+import { ToolbarModule } from "@/store/modules/toolbar";
 import { saveScreen } from "@/api/screen";
-import * as payloadJson from './payloadpie.json';
-import comsTemplate from './comstemplate.json';
-import { calibrateJsonString, JSONRepairTool } from './jsonCalibration';
+import * as payloadJson from "./payloadpie.json";
+import comsTemplate from "./comstemplate.json";
+import { calibrateJsonString, JSONRepairTool } from "./jsonCalibration";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: number;
   isThinking?: boolean;
@@ -379,90 +438,93 @@ interface SendType {
 }
 
 export default defineComponent({
-  name: 'DifyApiDialog',
+  name: "DifyApiDialog",
   props: {
     visible: {
       type: Boolean,
-      default: false
+      default: false,
     },
     title: {
       type: String,
-      default: 'AI 助手'
+      default: "AI 助手",
     },
     width: {
       type: String,
-      default: '900px'
+      default: "900px",
     },
     apiKey: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY 
+      default: import.meta.env.VITE_APP_DIFY_API_KEY,
     },
     // 发送2功能的第一次调用 API Key（对应第一个 chatflow）
     apiKeyFlow1: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW1 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW1 || "",
     },
     // 发送2功能的第二次调用 API Key（对应第二个 chatflow）
     apiKeyFlow2: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW2 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW2 || "",
     },
     // 新程序专用 API Key
     apiKeyFlow3: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW3 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW3 || "",
     },
     // difyapidialog 专用 API Key
     apiKeyFlow4: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW4 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW4 || "",
     },
     // difyapidialog 专用 API Key (FLOWa1)
     apiKeyFlowA1: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWa1 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWa1 || "",
     },
     // difyapidialog 专用 API Key (FLOWb1)
     apiKeyFlowB1: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb1 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb1 || "",
     },
     // difyapidialog 专用 API Key (FLOWb2)
     apiKeyFlowB2: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb2 || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb2 || "",
     },
     // 水务专用 API Key
     apiKeyFlowWater: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW_WATER || ''
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW_WATER || "",
     },
     // 水务业务模式开关（开启时仅显示水务相关控件）
     waterServiceMode: {
       type: Boolean,
-      default: import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE === 'true' || import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE === '1' || false
+      default:
+        import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE === "true" ||
+        import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE === "1" ||
+        false,
     },
     baseUrl: {
       type: String,
-      default: import.meta.env.VITE_APP_DIFY_BASE_URL || 'http://10.89.34.9'
+      default: import.meta.env.VITE_APP_DIFY_BASE_URL || "http://10.89.34.9",
     },
     userId: {
       type: String,
-      default: 'huyz'
+      default: "huyz",
     },
     conversationId: {
       type: String,
-      default: ''
+      default: "",
     },
     data: {
       type: Object as PropType<Record<string, any>>,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
-  emits: ['update:visible', 'close', 'message-sent', 'message-received', 'conversation-created'],
+  emits: ["update:visible", "close", "message-sent", "message-received", "conversation-created"],
   setup(props, { emit }) {
     const dialogVisible = ref(props.visible);
-    const userQuery = ref('');
+    const userQuery = ref("");
     const messages = ref<Message[]>([]);
     const conversationId = ref(props.conversationId);
     const isLoading = ref(false);
@@ -471,19 +533,22 @@ export default defineComponent({
     const timeoutTimer = ref<number | null>(null);
     // SSE 超时时间，从环境变量读取，默认 90 秒
     const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 90000;
-    
+
     // 调试日志：验证 waterServiceMode 和 SSE 超时的值
-    console.log('=== DifyApiDialog 初始化 ===');
-    console.log('waterServiceMode prop:', props.waterServiceMode);
-    console.log('VITE_APP_DIFY_WATER_SERVICE_MODE:', import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE);
-    console.log('VITE_APP_DIFY_SSE_TIMEOUT_MS:', SSE_TIMEOUT_MS);
+    console.log("=== DifyApiDialog 初始化 ===");
+    console.log("waterServiceMode prop:", props.waterServiceMode);
+    console.log(
+      "VITE_APP_DIFY_WATER_SERVICE_MODE:",
+      import.meta.env.VITE_APP_DIFY_WATER_SERVICE_MODE,
+    );
+    console.log("VITE_APP_DIFY_SSE_TIMEOUT_MS:", SSE_TIMEOUT_MS);
     const currentTaskId = ref<string | null>(null);
     // JSON保存前校验开关 - 开启时会在saveScreenAI前校验JSON结构是否符合最低要求
     const enableJsonValidation = ref(true);
     // 图片上传相关
     const fileInput = ref<HTMLInputElement | null>(null);
     const imagePreviewVisible = ref(false);
-    const previewImageUrl = ref('');
+    const previewImageUrl = ref("");
     const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
     const isCadConverting = ref(false); // CAD转JSON转换状态
 
@@ -491,9 +556,9 @@ export default defineComponent({
     const currentStep = ref(1); // 当前步骤：1=助手5，2=助手6
     const stepResults = ref<Record<number, string>>({}); // 保存各步骤的结果
     const needAutoProceedToStep2 = ref(false); // 是否需要自动进入步骤2
-    
+
     // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
-    const assistant5RecognitionResult = ref('');
+    const assistant5RecognitionResult = ref("");
 
     const imageScale = ref(1);
     const offsetX = ref(0);
@@ -506,25 +571,25 @@ export default defineComponent({
     const handleImageWheel = (e: WheelEvent) => {
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       const newScale = Math.max(0.1, Math.min(5, imageScale.value + delta));
-      
+
       if (newScale !== imageScale.value) {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        
+
         const imageWidth = imageRef.value?.naturalWidth || 1000;
         const imageHeight = imageRef.value?.naturalHeight || 1000;
         const containerWidth = rect.width;
         const containerHeight = rect.height;
-        
+
         const scaleDiff = newScale / imageScale.value;
-        
+
         const imageCenterX = containerWidth / 2 + offsetX.value;
         const imageCenterY = containerHeight / 2 + offsetY.value;
-        
+
         const newOffsetX = mouseX - (mouseX - imageCenterX) * scaleDiff;
         const newOffsetY = mouseY - (mouseY - imageCenterY) * scaleDiff;
-        
+
         imageScale.value = newScale;
         offsetX.value = newOffsetX - containerWidth / 2;
         offsetY.value = newOffsetY - containerHeight / 2;
@@ -568,16 +633,16 @@ export default defineComponent({
 
     // 消息持久化相关
     const isHydrating = ref(false);
-    const STORAGE_KEY_PREFIX = 'dify-chat-messages-';
+    const STORAGE_KEY_PREFIX = "dify-chat-messages-";
 
     const getStorageKey = () => {
-      const screenId = EditorModule.screen?.id || 'default';
+      const screenId = EditorModule.screen?.id || "default";
       return STORAGE_KEY_PREFIX + screenId;
     };
 
     const getUploadImageStorageKey = () => {
-      const screenId = EditorModule.screen?.id || 'default';
-      return 'dify_uploaded_image-' + screenId;
+      const screenId = EditorModule.screen?.id || "default";
+      return "dify_uploaded_image-" + screenId;
     };
 
     const saveMessagesToStorage = () => {
@@ -585,7 +650,7 @@ export default defineComponent({
       try {
         localStorage.setItem(getStorageKey(), JSON.stringify(messages.value));
       } catch (e) {
-        console.error('保存消息到 localStorage 失败:', e);
+        console.error("保存消息到 localStorage 失败:", e);
       }
     };
 
@@ -599,7 +664,7 @@ export default defineComponent({
           }
         }
       } catch (e) {
-        console.error('从 localStorage 恢复消息失败:', e);
+        console.error("从 localStorage 恢复消息失败:", e);
       }
     };
 
@@ -608,16 +673,16 @@ export default defineComponent({
       () => {
         saveMessagesToStorage();
       },
-      { deep: true }
+      { deep: true },
     );
 
     watch(
       () => EditorModule.screen?.id,
       () => {
         lastUploadedImage.value = null;
-        previewImageUrl.value = '';
+        previewImageUrl.value = "";
         restoreUploadedImage();
-      }
+      },
     );
 
     onMounted(() => {
@@ -632,22 +697,22 @@ export default defineComponent({
           validationResultImageUrl.value = `data:image/png;base64,${data}`;
           validationResultImageVisible.value = true;
         } else {
-          ElMessage.warning('无法找到图片数据');
+          ElMessage.warning("无法找到图片数据");
         }
       };
 
       // 设置全局识别结果JSON展开函数
       (window as any).__toggleRecognitionJson = (id: string) => {
         const element = document.getElementById(id);
-        const contentId = id + '-content';
+        const contentId = id + "-content";
         const contentElement = document.getElementById(contentId);
         if (element && contentElement) {
-          if (contentElement.style.display === 'none') {
-            contentElement.style.display = 'block';
-            element.textContent = '收起';
+          if (contentElement.style.display === "none") {
+            contentElement.style.display = "block";
+            element.textContent = "收起";
           } else {
-            contentElement.style.display = 'none';
-            element.textContent = '展开';
+            contentElement.style.display = "none";
+            element.textContent = "展开";
           }
         }
       };
@@ -656,23 +721,23 @@ export default defineComponent({
       restoreUploadedImage();
 
       // 监听剪贴板粘贴事件
-      document.addEventListener('paste', handlePaste);
+      document.addEventListener("paste", handlePaste);
     });
 
     onUnmounted(() => {
-      document.removeEventListener('paste', handlePaste);
+      document.removeEventListener("paste", handlePaste);
     });
 
     // 推荐问题相关
     const recommendQuestions = [
-      '城市数据大屏',
-      '水务智能监控',
-      '医疗健康平台',
-      '智慧教育系统',
-      '交通智能管控',
-      '园区智慧管理'
+      "城市数据大屏",
+      "水务智能监控",
+      "医疗健康平台",
+      "智慧教育系统",
+      "交通智能管控",
+      "园区智慧管理",
     ];
-    const selectedQuestion = ref('');
+    const selectedQuestion = ref("");
 
     const sendTypes = ref<SendType[]>([
       // {
@@ -713,103 +778,109 @@ export default defineComponent({
       //   }
       // },
       {
-        id: 'send5',
-        label: '助手5',
-        title: '反复图片转换',
+        id: "send5",
+        label: "助手5",
+        title: "反复图片转换",
         config: {
-          apiKey: props.apiKeyFlowB1 || '',
-          logPrefix: '发送5',
-          supportWorkflowPaused: true
-        }
-      },
-      {
-        id: 'send6',
-        label: '助手6',
-        title: 'FLOWb2专用',
-        config: {
-          apiKey: props.apiKeyFlowB2 || '',
-          logPrefix: '发送6',
-          supportWorkflowPaused: true
-        }
-      },
-      {
-        id: 'sendWater',
-        label: '助手(水务)',
-        title: '水务专用',
-        config: {
-          apiKey: props.apiKeyFlowWater || '',
-          logPrefix: '发送Water'
+          apiKey: props.apiKeyFlowB1 || "",
+          logPrefix: "发送5",
+          supportWorkflowPaused: true,
         },
-        isWaterOnly: true
-      }
+      },
+      {
+        id: "send6",
+        label: "助手6",
+        title: "FLOWb2专用",
+        config: {
+          apiKey: props.apiKeyFlowB2 || "",
+          logPrefix: "发送6",
+          supportWorkflowPaused: true,
+        },
+      },
+      {
+        id: "sendWater",
+        label: "助手(水务)",
+        title: "水务专用",
+        config: {
+          apiKey: props.apiKeyFlowWater || "",
+          logPrefix: "发送Water",
+        },
+        isWaterOnly: true,
+      },
     ]);
 
-    const selectedSendType = ref<string>(props.waterServiceMode ? 'sendWater' : 'send5');
+    const selectedSendType = ref<string>(props.waterServiceMode ? "sendWater" : "send5");
 
     const selectOptions = computed(() => {
-      return sendTypes.value.map(t => {
+      return sendTypes.value.map((t) => {
         let disabled = t.isWaterOnly && !props.waterServiceMode;
-        
+
         // 根据当前步骤限制可选的助手
         if (currentStep.value === 1) {
-          disabled = disabled || t.id !== 'send5';
+          disabled = disabled || t.id !== "send5";
         } else if (currentStep.value === 2) {
-          disabled = disabled || t.id !== 'send6';
+          disabled = disabled || t.id !== "send6";
         }
-        
+
         return {
           label: t.label,
           value: t.id,
-          disabled
+          disabled,
         };
       });
     });
 
     const getSendTypeDisabled = (type: any) => {
       let disabled = type.isWaterOnly ? !props.waterServiceMode : props.waterServiceMode;
-      
+
       // 根据当前步骤限制可选的助手
       if (currentStep.value === 1) {
-        disabled = disabled || type.id !== 'send5';
+        disabled = disabled || type.id !== "send5";
       } else if (currentStep.value === 2) {
-        disabled = disabled || type.id !== 'send6';
+        disabled = disabled || type.id !== "send6";
       }
-      
+
       return disabled;
     };
 
     const resetSteps = () => {
       currentStep.value = 1;
       stepResults.value = {};
-      selectedSendType.value = props.waterServiceMode ? 'sendWater' : 'send5';
-      ElMessage.info('已重置到步骤1');
+      selectedSendType.value = props.waterServiceMode ? "sendWater" : "send5";
+      ElMessage.info("已重置到步骤1");
     };
 
     // 监听推荐问题选择变化
     watch(selectedQuestion, (newVal) => {
       if (newVal && newVal.trim()) {
         userQuery.value = newVal;
-        selectedQuestion.value = ''; // 清空选择
+        selectedQuestion.value = ""; // 清空选择
       }
     });
 
     // 监听 visible 变化
-    watch(() => props.visible, (newVal) => {
-      dialogVisible.value = newVal;
-    });
+    watch(
+      () => props.visible,
+      (newVal) => {
+        dialogVisible.value = newVal;
+      },
+    );
 
     watch(dialogVisible, (newVal) => {
-      emit('update:visible', newVal);
+      emit("update:visible", newVal);
     });
 
     // 监听 conversationId 变化
-    watch(() => props.conversationId, (newVal) => {
-      if (newVal) conversationId.value = newVal;
-    });
+    watch(
+      () => props.conversationId,
+      (newVal) => {
+        if (newVal) conversationId.value = newVal;
+      },
+    );
 
     // 监听助手类型变化，重置 conversationId
     watch(selectedSendType, () => {
-      conversationId.value = '';
+      conversationId.value = "";
     });
 
     // 滚动到底部
@@ -823,47 +894,50 @@ export default defineComponent({
     // 格式化内容（支持简单的换行）
     const formatContent = (content: any) => {
       if (content === null || content === undefined) {
-        return '';
+        return "";
       }
-      if (typeof content !== 'string') {
+      if (typeof content !== "string") {
         return String(content);
       }
-      
+
       // 先处理换行
-      let result = content.replace(/\n/g, ' ');
-      
+      let result = content.replace(/\n/g, " ");
+
       // 移除 {{#$output.usercomments#}} 标记
-      result = result.replace(/\{\{#\$output\.usercomments#\}\}/g, '');
-      
+      result = result.replace(/\{\{#\$output\.usercomments#\}\}/g, "");
+
       // 隐藏识别结果到验证结果之间的JSON字符串
       const recognitionToValidationPattern = /识别结果:([\s\S]*?)(?=验证结果：|$)/g;
       result = result.replace(recognitionToValidationPattern, (match, jsonContent) => {
-        const id = 'recognition-json-' + Math.random().toString(36).substring(2, 9);
-        const escapedContent = jsonContent.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const id = "recognition-json-" + Math.random().toString(36).substring(2, 9);
+        const escapedContent = jsonContent
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
         return `识别结果：<a href="#" id="${id}" class="hidden-content-link" onclick="window.__toggleRecognitionJson('${id}'); return false;">展开</a><div id="${id}-content" class="hidden-content" style="display:none;white-space:pre-wrap;word-break:break-all;">${escapedContent}</div>`;
       });
-      
+
       // 检测并替换base64字符串为预览链接
       // 匹配 "image": "xxxxx" 格式的base64字符串（在JSON中）
       const base64Pattern = /"image"\s*:\s*"([A-Za-z0-9+/=]{50,})"/g;
       result = result.replace(base64Pattern, (match, base64Data) => {
         // 生成一个唯一ID用于点击事件
-        const id = 'base64-preview-' + Math.random().toString(36).substring(2, 9);
+        const id = "base64-preview-" + Math.random().toString(36).substring(2, 9);
         // 将base64数据存储到全局对象中
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           (window as any).__base64PreviewData = (window as any).__base64PreviewData || {};
           (window as any).__base64PreviewData[id] = base64Data;
         }
         return `"image": "<a href="#" id="${id}" class="base64-preview-link" onclick="window.__previewBase64Image('${id}'); return false;">预览图片</a>"`;
       });
-      
+
       // 也处理直接出现的长base64字符串（不在JSON中的情况）
       const standaloneBase64Pattern = /(?:"|')?([A-Za-z0-9+/=]{100,})(?:"|')?/g;
       result = result.replace(standaloneBase64Pattern, (match, base64Data) => {
         // 只处理看起来像base64的字符串（长度足够长且不是普通文本）
         if (base64Data.length >= 100 && /^[A-Za-z0-9+/=]+$/.test(base64Data)) {
-          const id = 'base64-preview-' + Math.random().toString(36).substring(2, 9);
-          if (typeof window !== 'undefined') {
+          const id = "base64-preview-" + Math.random().toString(36).substring(2, 9);
+          if (typeof window !== "undefined") {
             (window as any).__base64PreviewData = (window as any).__base64PreviewData || {};
             (window as any).__base64PreviewData[id] = base64Data;
           }
@@ -871,15 +945,15 @@ export default defineComponent({
         }
         return match;
       });
-      
+
       return result;
     };
 
     // 格式化时间
     const formatTime = (timestamp: number) => {
-      return new Date(timestamp).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit'
+      return new Date(timestamp).toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
 
@@ -895,18 +969,18 @@ export default defineComponent({
       if (pauseData.data && pauseData.data.reasons && pauseData.data.reasons.length > 0) {
         const reason = pauseData.data.reasons[0];
         if (reason.form_token) return reason.form_token;
-        
+
         // 尝试从原始数据中提取
         const raw = JSON.stringify(pauseData);
         const match = raw.match(/"form_token"\s*:\s*"([^"]+)"/);
         if (match) return match[1];
-        
+
         // 尝试从 node_id 中提取
         if (pauseData.data.paused_nodes && pauseData.data.paused_nodes.length > 0) {
           return pauseData.data.paused_nodes[0];
         }
       }
-      return '';
+      return "";
     };
 
     // 通用的发送消息函数
@@ -918,20 +992,20 @@ export default defineComponent({
         clearQuery = true,
         supportWorkflowPaused = false,
         onWorkflowPaused,
-        skipUserMessage = false
+        skipUserMessage = false,
       } = config;
 
       const query = configQuery || userQuery.value.trim();
-      
+
       if (isLoading.value) {
         console.warn(`${logPrefix} 请求被拒绝：已有请求正在处理中`);
-        ElMessage.warning('请求处理中，请稍候');
-        return '';
+        ElMessage.warning("请求处理中，请稍候");
+        return "";
       }
-      
+
       if (!query) {
-        ElMessage.warning('请输入查询内容');
-        return '';
+        ElMessage.warning("请输入查询内容");
+        return "";
       }
 
       console.log(`=== ${logPrefix} 调用开始 ===`);
@@ -940,25 +1014,25 @@ export default defineComponent({
       // 添加用户消息（可配置跳过）
       if (!skipUserMessage) {
         messages.value.push({
-          role: 'user',
+          role: "user",
           content: query,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
       // 添加 AI 思考中的占位消息
       const thinkingMsg: Message = {
-        role: 'assistant',
-        content: '',
+        role: "assistant",
+        content: "",
         timestamp: Date.now(),
-        isThinking: true
+        isThinking: true,
       };
       messages.value.push(thinkingMsg);
-      
+
       await scrollToBottom();
-      
+
       if (clearQuery && !configQuery) {
-        userQuery.value = '';
+        userQuery.value = "";
       }
       isLoading.value = true;
 
@@ -975,7 +1049,7 @@ export default defineComponent({
           console.error(`${logPrefix} SSE 连接超时，自动断开`);
           isTimeoutAbort = true;
           if (abortController.value) {
-            abortController.value.abort(new Error('SSE_TIMEOUT'));
+            abortController.value.abort(new Error("SSE_TIMEOUT"));
           }
         }, SSE_TIMEOUT_MS);
       };
@@ -985,34 +1059,38 @@ export default defineComponent({
       // 定义需要在 try-finally 中共享的变量
       let isPaused = false;
       let pauseData: any = null;
-      let currentFormToken = '';
-      let currentWorkflowRunId = '';
+      let currentFormToken = "";
+      let currentWorkflowRunId = "";
 
       try {
         // 构建 files 参数（如果有上传的图片）
-        const files = lastUploadedImage.value ? [{
-          type: 'image',
-          transfer_method: 'local_file',
-          upload_file_id: lastUploadedImage.value.id
-        }] : undefined;
+        const files = lastUploadedImage.value
+          ? [
+              {
+                type: "image",
+                transfer_method: "local_file",
+                upload_file_id: lastUploadedImage.value.id,
+              },
+            ]
+          : undefined;
 
         const requestBody = {
           inputs: props.data,
           query: query,
-          response_mode: 'streaming',
-          conversation_id: conversationId.value || '',
+          response_mode: "streaming",
+          conversation_id: conversationId.value || "",
           user: props.userId,
-          files: files
+          files: files,
         };
-        console.log('apiKey',apiKey)
+        console.log("apiKey", apiKey);
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
-          signal: abortController.value.signal
+          signal: abortController.value.signal,
         });
 
         if (!response.ok) {
@@ -1021,16 +1099,16 @@ export default defineComponent({
 
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
-        
+
         if (!reader) {
-          throw new Error('无法读取响应流');
+          throw new Error("无法读取响应流");
         }
 
         console.log(`${logPrefix} 开始流式响应`);
 
-        let fullContent = '';
-        let newConversationId = '';
-        let pendingData = '';
+        let fullContent = "";
+        let newConversationId = "";
+        let pendingData = "";
         let hasError = false;
 
         // 流式处理每个数据块
@@ -1041,32 +1119,32 @@ export default defineComponent({
           resetTimeout();
 
           const chunk = pendingData + decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          const lines = chunk.split("\n");
 
           // 保留最后一行（可能是不完整的）
-          pendingData = lines.pop() || '';
+          pendingData = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+            if (line.trim() === "" || !line.startsWith("data: ")) continue;
 
             try {
               const data = JSON.parse(line.slice(6));
 
               // 处理 error 事件
-              if (data.event === 'error') {
+              if (data.event === "error") {
                 hasError = true;
-                const errorMsg = data.message || '服务发生未知错误';
-                const errorCode = data.code || 'unknown';
-                const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
-                
+                const errorMsg = data.message || "服务发生未知错误";
+                const errorCode = data.code || "unknown";
+                const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || "N/A"}, message: ${errorMsg}`;
+
                 console.error(errorDetail);
-                
+
                 const lastMsg = messages.value[messages.value.length - 1];
-                if (lastMsg?.role === 'assistant') {
+                if (lastMsg?.role === "assistant") {
                   lastMsg.isThinking = false;
                   lastMsg.content = `请求失败：${errorMsg}`;
                 }
-                
+
                 ElMessage.error(errorDetail);
                 continue;
               }
@@ -1075,12 +1153,12 @@ export default defineComponent({
               if (hasError) continue;
 
               // 处理 workflow_paused 事件 - 工作流暂停，需要人工介入
-              if (supportWorkflowPaused && data.event === 'workflow_paused') {
-                console.log('⏸️ 检测到工作流暂停');
+              if (supportWorkflowPaused && data.event === "workflow_paused") {
+                console.log("⏸️ 检测到工作流暂停");
                 isPaused = true;
                 isAwaitingFeedback.value = true;
                 pauseData = data;
-                
+
                 // 保存 workflow_run_id 和 conversation_id
                 if (data.data && data.data.workflow_run_id) {
                   currentWorkflowRunId = data.data.workflow_run_id;
@@ -1088,28 +1166,28 @@ export default defineComponent({
                 if (data.conversation_id) {
                   newConversationId = data.conversation_id;
                 }
-                
+
                 // 提取 form_token
                 const formToken = extractFormToken(data);
                 if (formToken) {
                   currentFormToken = formToken;
-                  console.log('🔑 Form Token:', formToken);
+                  console.log("🔑 Form Token:", formToken);
                 }
-                
+
                 // 收集当前消息内容
                 if (data.answer) {
                   fullContent += data.answer;
                 }
-                
+
                 // 更新消息状态
                 const lastMsg = messages.value[messages.value.length - 1];
-                if (lastMsg?.role === 'assistant') {
+                if (lastMsg?.role === "assistant") {
                   lastMsg.isThinking = false;
                   lastMsg.content = fullContent;
                 }
-                
+
                 await scrollToBottom();
-                
+
                 // 如果有自定义的暂停处理函数，调用它
                 if (onWorkflowPaused) {
                   const shouldContinue = await onWorkflowPaused(data, fullContent);
@@ -1117,20 +1195,20 @@ export default defineComponent({
                     break;
                   }
                 }
-                
+
                 // 跳出循环，准备显示人工介入弹窗
                 break;
               }
 
               // 处理普通消息 - 实时更新
-              if (data.event === 'message' && data.answer) {
+              if (data.event === "message" && data.answer) {
                 // 保存 task_id 用于停止请求
                 if (data.task_id) {
                   currentTaskId.value = data.task_id;
                 }
                 fullContent += data.answer;
                 const lastMsg = messages.value[messages.value.length - 1];
-                if (lastMsg?.role === 'assistant') {
+                if (lastMsg?.role === "assistant") {
                   lastMsg.isThinking = false;
                   lastMsg.content = fullContent;
                   await scrollToBottom();
@@ -1138,21 +1216,21 @@ export default defineComponent({
               }
 
               // 处理 workflow_finished 事件 - 最终完成
-              if (data.event === 'workflow_finished' && data.data) {
+              if (data.event === "workflow_finished" && data.data) {
                 console.log(`${logPrefix} 找到 workflow_finished 事件`);
                 console.log(`${logPrefix} workflow_finished 数据:`, JSON.stringify(data.data));
-                
+
                 const lastMsg = messages.value[messages.value.length - 1];
-                
+
                 // 检查工作流是否失败
-                if (data.data.status === 'failed') {
+                if (data.data.status === "failed") {
                   hasError = true;
-                  const errorMsg = data.data.error 
-                    ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
-                    : '工作流执行失败';
+                  const errorMsg = data.data.error
+                    ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
+                    : "工作流执行失败";
                   console.error(`${logPrefix} 工作流执行失败:`, errorMsg);
-                  
-                  if (lastMsg?.role === 'assistant') {
+
+                  if (lastMsg?.role === "assistant") {
                     lastMsg.isThinking = false;
                     lastMsg.content = `❌ 工作流执行失败：${errorMsg}`;
                   }
@@ -1160,22 +1238,22 @@ export default defineComponent({
                 } else if (data.data.outputs && data.data.outputs.answer) {
                   // 工作流成功，获取答案
                   fullContent = data.data.outputs.answer;
-                  if (lastMsg?.role === 'assistant') {
+                  if (lastMsg?.role === "assistant") {
                     lastMsg.isThinking = false;
                     lastMsg.content = fullContent;
                   }
                   await scrollToBottom();
-                  
+
                   // 步骤1完成后标记需要进入步骤2（非人工介入场景）
                   if (currentStep.value === 1 && !isPaused) {
                     stepResults.value[1] = fullContent;
                     needAutoProceedToStep2.value = true;
                   }
-                } else if (lastMsg?.role === 'assistant') {
+                } else if (lastMsg?.role === "assistant") {
                   // 没有返回答案，结束思考状态
                   lastMsg.isThinking = false;
                   if (!lastMsg.content.trim()) {
-                    lastMsg.content = '工作流已完成，但未返回答案';
+                    lastMsg.content = "工作流已完成，但未返回答案";
                   }
                 }
               }
@@ -1187,80 +1265,78 @@ export default defineComponent({
               console.warn(`${logPrefix} 解析单行数据失败:`, e);
             }
           }
-          
+
           // 如果检测到暂停，跳出外层循环
           if (isPaused) break;
         }
 
         // 如果工作流暂停，添加人工介入消息到对话中
         if (isPaused && pauseData) {
-          console.log('📢 检测到工作流暂停，添加人工介入消息');
-          
+          console.log("📢 检测到工作流暂停，添加人工介入消息");
+
           // 提取暂停时的消息内容
-          let content = '';
+          let content = "";
           if (pauseData.data && pauseData.data.reasons && pauseData.data.reasons.length > 0) {
             const reason = pauseData.data.reasons[0];
             if (reason.form_content) {
-              content = reason.form_content
-                .replace(/\\n/g, '\n')
-                .replace(/\*\*/g, '');
+              content = reason.form_content.replace(/\\n/g, "\n").replace(/\*\*/g, "");
             }
           }
-          
+
           // 如果没有提取到内容，使用已收集的消息
           if (!content.trim()) {
-            content = fullContent || 'AI 需要您的反馈以继续处理...';
+            content = fullContent || "AI 需要您的反馈以继续处理...";
           }
-          
+
           // 更新最后一条消息为人工介入消息
           const lastMsg = messages.value[messages.value.length - 1];
-          if (lastMsg?.role === 'assistant') {
+          if (lastMsg?.role === "assistant") {
             lastMsg.isThinking = false;
             lastMsg.content = content;
             lastMsg.isHumanInteraction = true;
             lastMsg.formToken = currentFormToken;
             lastMsg.workflowRunId = currentWorkflowRunId;
           }
-          
+
           await scrollToBottom();
-          
+
           // 更新会话 ID
           if (newConversationId && !conversationId.value) {
             conversationId.value = newConversationId;
-            emit('conversation-created', newConversationId);
+            emit("conversation-created", newConversationId);
           }
-          
+
           isLoading.value = false;
           return fullContent; // 等待用户操作
         }
 
         // 处理最后可能残留的数据
-        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+        if (pendingData.trim() && pendingData.startsWith("data: ")) {
           try {
             const data = JSON.parse(pendingData.slice(6));
-            
+
             // 处理残留数据中的 error 事件
-            if (data.event === 'error') {
+            if (data.event === "error") {
               hasError = true;
-              const errorMsg = data.message || '服务发生未知错误';
-              const errorCode = data.code || 'unknown';
-              const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || 'N/A'}, message: ${errorMsg}`;
-              
+              const errorMsg = data.message || "服务发生未知错误";
+              const errorCode = data.code || "unknown";
+              const errorDetail = `[Dify Error] code: ${errorCode}, status: ${data.status || "N/A"}, message: ${errorMsg}`;
+
               console.error(errorDetail);
-              
+
               const lastMsg = messages.value[messages.value.length - 1];
-              if (lastMsg?.role === 'assistant') {
+              if (lastMsg?.role === "assistant") {
                 lastMsg.isThinking = false;
                 lastMsg.content = `请求失败：${errorMsg}`;
               }
-              
+
               ElMessage.error(errorDetail);
             }
-            
-            if (!hasError && data.event === 'message' && data.answer) {
+
+            if (!hasError && data.event === "message" && data.answer) {
               fullContent += data.answer;
               const lastMsg = messages.value[messages.value.length - 1];
-              if (lastMsg?.role === 'assistant') {
+              if (lastMsg?.role === "assistant") {
                 lastMsg.isThinking = false;
                 lastMsg.content = fullContent;
                 await scrollToBottom();
@@ -1274,14 +1350,14 @@ export default defineComponent({
         // 更新会话 ID
         if (newConversationId && !conversationId.value) {
           conversationId.value = newConversationId;
-          emit('conversation-created', newConversationId);
+          emit("conversation-created", newConversationId);
         }
 
         // 如果发生了错误，不再触发 message-received 成功事件
         if (!hasError) {
           console.log(`=== ${logPrefix} 调用完成 ===`);
           console.log(`${logPrefix} 回答:`, fullContent);
-          emit('message-received', fullContent);
+          emit("message-received", fullContent);
         }
 
         // 在返回之前检查是否需要自动进入步骤2
@@ -1291,42 +1367,41 @@ export default defineComponent({
         }
 
         return fullContent;
-
       } catch (error: any) {
         console.error(`${logPrefix} 发送消息失败:`, error);
 
         // 检查是否是超时导致的取消
-        const isTimeoutError = error.message === 'SSE_TIMEOUT' || 
-                              (error.name === 'AbortError' && isTimeoutAbort);
+        const isTimeoutError =
+          error.message === "SSE_TIMEOUT" || (error.name === "AbortError" && isTimeoutAbort);
 
         // 如果是超时导致的取消，调用 stopGeneration(true) 显示超时提示
         if (isTimeoutError) {
           await stopGeneration(true);
-          return '';
+          return "";
         }
 
         // 如果是用户取消，不显示错误，保留已收到的内容
-        if (error.name === 'AbortError') {
+        if (error.name === "AbortError") {
           const lastMsg = messages.value[messages.value.length - 1];
-          if (lastMsg?.role === 'assistant') {
+          if (lastMsg?.role === "assistant") {
             lastMsg.isThinking = false;
-            
+
             if (!lastMsg.content.trim()) {
               // 用户手动停止
-              lastMsg.content = '已停止生成';
+              lastMsg.content = "已停止生成";
             }
 
             // 显式触发响应式更新和持久化
             messages.value = [...messages.value];
             saveMessagesToStorage();
           }
-          return '';
+          return "";
         }
 
         const lastMsg = messages.value[messages.value.length - 1];
-        if (lastMsg?.role === 'assistant') {
+        if (lastMsg?.role === "assistant") {
           lastMsg.isThinking = false;
-          lastMsg.content = `❌ ${logPrefix} 请求失败：${error.message || '服务暂时不可用'}`;
+          lastMsg.content = `❌ ${logPrefix} 请求失败：${error.message || "服务暂时不可用"}`;
           ElMessage.error(`${logPrefix} 发送消息失败: ` + error.message);
 
           // 显式触发响应式更新和持久化
@@ -1334,13 +1409,13 @@ export default defineComponent({
           saveMessagesToStorage();
         }
 
-        return '';
+        return "";
       } finally {
         if (timeoutTimer.value) {
           clearTimeout(timeoutTimer.value);
           timeoutTimer.value = null;
         }
-        
+
         if (!isPaused) {
           isLoading.value = false;
           abortController.value = null;
@@ -1353,7 +1428,7 @@ export default defineComponent({
     const sendMessage = async () => {
       await sendRequest({
         apiKey: props.apiKey,
-        logPrefix: '发送'
+        logPrefix: "发送",
       });
     };
 
@@ -1363,60 +1438,64 @@ export default defineComponent({
 
       const query = userQuery.value.trim();
 
-      console.log('=== 发送2 第一次调用开始 ===');
-      console.log('发送2 query:', query);
+      console.log("=== 发送2 第一次调用开始 ===");
+      console.log("发送2 query:", query);
 
       // 添加用户消息
       messages.value.push({
-        role: 'user',
+        role: "user",
         content: query,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // 添加第一次调用的 AI 消息（显示思考中状态）
       messages.value.push({
-        role: 'assistant',
-        content: '',
+        role: "assistant",
+        content: "",
         timestamp: Date.now(),
-        isThinking: true
+        isThinking: true,
       });
 
       await scrollToBottom();
 
-      userQuery.value = '';
+      userQuery.value = "";
       isLoading.value = true;
       abortController.value = new AbortController();
 
-      let firstCallAnswer = '';
+      let firstCallAnswer = "";
 
       try {
         // 使用 apiKeyFlow1，如果未配置则回退到 apiKey
         const apiKey1 = props.apiKeyFlow1 || props.apiKey;
 
         // 构建 files 参数（如果有上传的图片）
-        const files = lastUploadedImage.value ? [{
-          type: 'image',
-          transfer_method: 'local_file',
-          upload_file_id: lastUploadedImage.value.id
-        }] : undefined;
+        const files = lastUploadedImage.value
+          ? [
+              {
+                type: "image",
+                transfer_method: "local_file",
+                upload_file_id: lastUploadedImage.value.id,
+              },
+            ]
+          : undefined;
 
         const requestBody = {
           inputs: props.data,
           query: query,
-          response_mode: 'streaming',
-          conversation_id: conversationId.value || '',
+          response_mode: "streaming",
+          conversation_id: conversationId.value || "",
           user: props.userId,
-          files: files
+          files: files,
         };
 
         const response1 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey1}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${apiKey1}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
-          signal: abortController.value.signal
+          signal: abortController.value.signal,
         });
 
         if (!response1.ok) {
@@ -1427,60 +1506,60 @@ export default defineComponent({
         const decoder = new TextDecoder();
 
         if (!reader1) {
-          throw new Error('第一次调用无法读取响应流');
+          throw new Error("第一次调用无法读取响应流");
         }
 
-        console.log('发送2 第一次调用开始流式响应');
+        console.log("发送2 第一次调用开始流式响应");
 
-        let fullContent1 = '';
-        let pendingData = '';
+        let fullContent1 = "";
+        let pendingData = "";
 
         while (true) {
           const { done, value } = await reader1.read();
           if (done) break;
 
           const chunk = pendingData + decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-          pendingData = lines.pop() || '';
+          const lines = chunk.split("\n");
+          pendingData = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+            if (line.trim() === "" || !line.startsWith("data: ")) continue;
 
             try {
               const data = JSON.parse(line.slice(6));
 
-              if (data.event === 'error') {
-                console.error('发送2 第一次调用错误:', data.message || '未知错误');
+              if (data.event === "error") {
+                console.error("发送2 第一次调用错误:", data.message || "未知错误");
                 continue;
               }
 
-              if (data.event === 'message' && data.answer) {
+              if (data.event === "message" && data.answer) {
                 fullContent1 += data.answer;
                 const msgIndex = messages.value.length - 1;
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   content: fullContent1,
-                  isThinking: false
+                  isThinking: false,
                 };
                 await scrollToBottom();
               }
 
-              if (data.event === 'workflow_finished' && data.data) {
-                console.log('发送2 第一次调用找到 workflow_finished 事件');
-                console.log('发送2 workflow_finished 数据:', JSON.stringify(data.data));
-                
+              if (data.event === "workflow_finished" && data.data) {
+                console.log("发送2 第一次调用找到 workflow_finished 事件");
+                console.log("发送2 workflow_finished 数据:", JSON.stringify(data.data));
+
                 const msgIndex = messages.value.length - 1;
-                
-                if (data.data.status === 'failed') {
-                  const errorMsg = data.data.error 
-                    ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
-                    : '工作流执行失败';
-                  console.error('发送2 工作流执行失败:', errorMsg);
-                  
+
+                if (data.data.status === "failed") {
+                  const errorMsg = data.data.error
+                    ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
+                    : "工作流执行失败";
+                  console.error("发送2 工作流执行失败:", errorMsg);
+
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: `❌ 工作流执行失败：${errorMsg}`,
-                    isThinking: false
+                    isThinking: false,
                   };
                   ElMessage.error(`工作流执行失败：${errorMsg}`);
                 } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1488,47 +1567,47 @@ export default defineComponent({
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: fullContent1,
-                    isThinking: false
+                    isThinking: false,
                   };
                   await scrollToBottom();
                 } else {
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     isThinking: false,
-                    content: messages.value[msgIndex].content || '工作流已完成，但未返回答案'
+                    content: messages.value[msgIndex].content || "工作流已完成，但未返回答案",
                   };
                 }
               }
             } catch (e) {
-              console.warn('发送2 第一次调用解析数据失败:', e);
+              console.warn("发送2 第一次调用解析数据失败:", e);
             }
           }
         }
 
-        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+        if (pendingData.trim() && pendingData.startsWith("data: ")) {
           try {
             const data = JSON.parse(pendingData.slice(6));
-            if (data.event === 'message' && data.answer) {
+            if (data.event === "message" && data.answer) {
               fullContent1 += data.answer;
               const msgIndex = messages.value.length - 1;
               messages.value[msgIndex] = {
                 ...messages.value[msgIndex],
                 content: fullContent1,
-                isThinking: false
+                isThinking: false,
               };
               await scrollToBottom();
             }
-            if (data.event === 'workflow_finished' && data.data) {
+            if (data.event === "workflow_finished" && data.data) {
               const msgIndex = messages.value.length - 1;
-              
-              if (data.data.status === 'failed') {
-                const errorMsg = data.data.error 
-                  ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
-                  : '工作流执行失败';
+
+              if (data.data.status === "failed") {
+                const errorMsg = data.data.error
+                  ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
+                  : "工作流执行失败";
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   content: `❌ 工作流执行失败：${errorMsg}`,
-                  isThinking: false
+                  isThinking: false,
                 };
                 ElMessage.error(`工作流执行失败：${errorMsg}`);
               } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1536,36 +1615,36 @@ export default defineComponent({
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   content: fullContent1,
-                  isThinking: false
+                  isThinking: false,
                 };
                 await scrollToBottom();
               } else {
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   isThinking: false,
-                  content: messages.value[msgIndex].content || '工作流已完成，但未返回答案'
+                  content: messages.value[msgIndex].content || "工作流已完成，但未返回答案",
                 };
               }
             }
           } catch (e) {
-            console.warn('发送2 第一次调用解析残留数据失败:', e);
+            console.warn("发送2 第一次调用解析残留数据失败:", e);
           }
         }
 
         firstCallAnswer = fullContent1;
-        console.log('=== 发送2 第一次调用完成 ===');
-        console.log('发送2 第一次回答:', firstCallAnswer);
+        console.log("=== 发送2 第一次调用完成 ===");
+        console.log("发送2 第一次回答:", firstCallAnswer);
 
         // 添加第二次调用的 AI 消息
         messages.value.push({
-          role: 'assistant',
-          content: '',
+          role: "assistant",
+          content: "",
           timestamp: Date.now(),
-          isThinking: true
+          isThinking: true,
         });
 
-        console.log('=== 发送2 第二次调用开始 ===');
-        console.log('发送2 第二次 query (来自第一次回答):', firstCallAnswer);
+        console.log("=== 发送2 第二次调用开始 ===");
+        console.log("发送2 第二次 query (来自第一次回答):", firstCallAnswer);
 
         // 使用 apiKeyFlow2，如果未配置则回退到 apiKey
         const apiKey2 = props.apiKeyFlow2 || props.apiKey;
@@ -1574,20 +1653,20 @@ export default defineComponent({
         const requestBody2 = {
           inputs: props.data,
           query: firstCallAnswer,
-          response_mode: 'streaming',
-          conversation_id: conversationId.value || '',
+          response_mode: "streaming",
+          conversation_id: conversationId.value || "",
           user: props.userId,
-          files: files
+          files: files,
         };
 
         const response2 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey2}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${apiKey2}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody2),
-          signal: abortController.value.signal
+          signal: abortController.value.signal,
         });
 
         if (!response2.ok) {
@@ -1597,13 +1676,13 @@ export default defineComponent({
         const reader2 = response2.body?.getReader();
 
         if (!reader2) {
-          throw new Error('第二次调用无法读取响应流');
+          throw new Error("第二次调用无法读取响应流");
         }
 
-        console.log('发送2 第二次调用开始流式响应');
+        console.log("发送2 第二次调用开始流式响应");
 
-        let fullContent2 = '';
-        pendingData = '';
+        let fullContent2 = "";
+        pendingData = "";
         let hasError = false;
 
         while (true) {
@@ -1611,25 +1690,25 @@ export default defineComponent({
           if (done) break;
 
           const chunk = pendingData + decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-          pendingData = lines.pop() || '';
+          const lines = chunk.split("\n");
+          pendingData = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+            if (line.trim() === "" || !line.startsWith("data: ")) continue;
 
             try {
               const data = JSON.parse(line.slice(6));
 
-              if (data.event === 'error') {
+              if (data.event === "error") {
                 hasError = true;
-                const errorMsg = data.message || '服务发生未知错误';
+                const errorMsg = data.message || "服务发生未知错误";
                 const errorDetail = `[Dify Error] ${errorMsg}`;
-                console.error('发送2 第二次调用错误:', errorDetail);
+                console.error("发送2 第二次调用错误:", errorDetail);
                 const msgIndex = messages.value.length - 1;
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   content: `请求失败：${errorMsg}`,
-                  isThinking: false
+                  isThinking: false,
                 };
                 ElMessage.error(errorDetail);
                 continue;
@@ -1637,7 +1716,7 @@ export default defineComponent({
 
               if (hasError) continue;
 
-              if (data.event === 'message' && data.answer) {
+              if (data.event === "message" && data.answer) {
                 if (data.task_id) {
                   currentTaskId.value = data.task_id;
                 }
@@ -1646,27 +1725,27 @@ export default defineComponent({
                 messages.value[msgIndex] = {
                   ...messages.value[msgIndex],
                   content: fullContent2,
-                  isThinking: false
+                  isThinking: false,
                 };
                 await scrollToBottom();
               }
 
-              if (data.event === 'workflow_finished' && data.data) {
-                console.log('发送2 第二次调用找到 workflow_finished 事件');
-                console.log('发送2 第二次调用 workflow_finished 数据:', JSON.stringify(data.data));
-                
+              if (data.event === "workflow_finished" && data.data) {
+                console.log("发送2 第二次调用找到 workflow_finished 事件");
+                console.log("发送2 第二次调用 workflow_finished 数据:", JSON.stringify(data.data));
+
                 const msgIndex = messages.value.length - 1;
-                
-                if (data.data.status === 'failed') {
-                  const errorMsg = data.data.error 
-                    ? data.data.error.replace(/<[^>]*>/g, '').substring(0, 200) 
-                    : '工作流执行失败';
-                  console.error('发送2 第二次调用工作流执行失败:', errorMsg);
-                  
+
+                if (data.data.status === "failed") {
+                  const errorMsg = data.data.error
+                    ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
+                    : "工作流执行失败";
+                  console.error("发送2 第二次调用工作流执行失败:", errorMsg);
+
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: `❌ 工作流执行失败：${errorMsg}`,
-                    isThinking: false
+                    isThinking: false,
                   };
                   ElMessage.error(`工作流执行失败：${errorMsg}`);
                 } else if (data.data.outputs && data.data.outputs.answer) {
@@ -1674,87 +1753,86 @@ export default defineComponent({
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: fullContent2,
-                    isThinking: false
+                    isThinking: false,
                   };
                   await scrollToBottom();
                 } else {
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     isThinking: false,
-                    content: messages.value[msgIndex].content || '工作流已完成，但未返回答案'
+                    content: messages.value[msgIndex].content || "工作流已完成，但未返回答案",
                   };
                 }
               }
             } catch (e) {
-              console.warn('发送2 第二次调用解析数据失败:', e);
+              console.warn("发送2 第二次调用解析数据失败:", e);
             }
           }
         }
 
-        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+        if (pendingData.trim() && pendingData.startsWith("data: ")) {
           try {
             const data = JSON.parse(pendingData.slice(6));
 
-            if (data.event === 'error') {
+            if (data.event === "error") {
               hasError = true;
-              const errorMsg = data.message || '服务发生未知错误';
+              const errorMsg = data.message || "服务发生未知错误";
               ElMessage.error(errorMsg);
               const msgIndex = messages.value.length - 1;
               messages.value[msgIndex] = {
                 ...messages.value[msgIndex],
                 content: `请求失败：${errorMsg}`,
-                isThinking: false
+                isThinking: false,
               };
             }
 
-            if (!hasError && data.event === 'message' && data.answer) {
+            if (!hasError && data.event === "message" && data.answer) {
               fullContent2 += data.answer;
               const msgIndex = messages.value.length - 1;
               messages.value[msgIndex] = {
                 ...messages.value[msgIndex],
                 content: fullContent2,
-                isThinking: false
+                isThinking: false,
               };
               await scrollToBottom();
             }
           } catch (e) {
-            console.warn('发送2 第二次调用解析残留数据失败:', e);
+            console.warn("发送2 第二次调用解析残留数据失败:", e);
           }
         }
 
-        console.log('=== 发送2 第二次调用完成 ===');
-        console.log('发送2 最终回答:', fullContent2);
+        console.log("=== 发送2 第二次调用完成 ===");
+        console.log("发送2 最终回答:", fullContent2);
 
         if (!hasError) {
-          emit('message-received', fullContent2);
+          emit("message-received", fullContent2);
         }
-
       } catch (error: any) {
-        console.error('发送2 发送消息失败:', error);
+        console.error("发送2 发送消息失败:", error);
 
-        if (error.name === 'AbortError') {
+        if (error.name === "AbortError") {
           const msgIndex = messages.value.length - 1;
-          if (msgIndex >= 0 && messages.value[msgIndex]?.role === 'assistant') {
+          if (msgIndex >= 0 && messages.value[msgIndex]?.role === "assistant") {
             messages.value[msgIndex] = {
               ...messages.value[msgIndex],
               isThinking: false,
-              content: messages.value[msgIndex].content.trim() || 'Dify响应超时'
+              content: messages.value[msgIndex].content.trim() || "Dify响应超时",
             };
           }
-          ElMessage.info('已停止生成');
+          ElMessage.info("已停止生成");
           return;
         }
 
         const msgIndex = messages.value.length - 1;
-        if (msgIndex >= 0 && messages.value[msgIndex]?.role === 'assistant') {
+        if (msgIndex >= 0 && messages.value[msgIndex]?.role === "assistant") {
           messages.value[msgIndex] = {
             ...messages.value[msgIndex],
             isThinking: false,
-            content: '抱歉，服务暂时不可用，请稍后重试。'
+            content: "抱歉，服务暂时不可用，请稍后重试。",
           };
         }
 
-        ElMessage.error('发送2 发送消息失败: ' + error.message);
+        ElMessage.error("发送2 发送消息失败: " + error.message);
       } finally {
         isLoading.value = false;
         abortController.value = null;
@@ -1766,7 +1844,7 @@ export default defineComponent({
     const sendMessage3 = async () => {
       await sendRequest({
         apiKey: props.apiKeyFlow4 || props.apiKey,
-        logPrefix: '发送3'
+        logPrefix: "发送3",
       });
     };
 
@@ -1774,55 +1852,55 @@ export default defineComponent({
     const sendMessage4 = async (queryText?: string) => {
       await sendRequest({
         apiKey: props.apiKeyFlowA1 || props.apiKeyFlow4 || props.apiKey,
-        logPrefix: '发送4',
+        logPrefix: "发送4",
         query: queryText,
         clearQuery: !queryText,
-        supportWorkflowPaused: true
+        supportWorkflowPaused: true,
       });
     };
 
     const sendMessage5 = async (queryText?: string) => {
       await sendRequest({
-        apiKey: props.apiKeyFlowB1 || '',
-        logPrefix: '发送5',
+        apiKey: props.apiKeyFlowB1 || "",
+        logPrefix: "发送5",
         query: queryText,
         clearQuery: !queryText,
-        supportWorkflowPaused: true
+        supportWorkflowPaused: true,
       });
     };
 
     const sendMessage6 = async (queryText?: string) => {
       await sendRequest({
-        apiKey: props.apiKeyFlowB2 || '',
-        logPrefix: '发送6',
+        apiKey: props.apiKeyFlowB2 || "",
+        logPrefix: "发送6",
         query: queryText,
         clearQuery: !queryText,
         supportWorkflowPaused: true,
-        skipUserMessage: true
+        skipUserMessage: true,
       });
     };
 
     // 自动从步骤1进入步骤2
     const autoProceedToStep2 = async () => {
-      console.log('=== 自动进入步骤2 ===');
-      
+      console.log("=== 自动进入步骤2 ===");
+
       // 切换到助手6
-      selectedSendType.value = 'send6';
+      selectedSendType.value = "send6";
       currentStep.value = 2;
-      
+
       await nextTick();
-      
+
       // 获取步骤1的结果作为步骤2的输入
       const step1Result = stepResults.value[1];
-      
+
       await scrollToBottom();
-      
+
       // 调用助手6，使用步骤1的结果作为query
       if (step1Result) {
         await sendMessage6(step1Result);
       } else {
-        ElMessage.warning('步骤1没有返回识别结果，将使用空输入继续');
-        await sendMessage6('');
+        ElMessage.warning("步骤1没有返回识别结果，将使用空输入继续");
+        await sendMessage6("");
       }
     };
 
@@ -1830,18 +1908,18 @@ export default defineComponent({
     const sendMessageWater = async () => {
       await sendRequest({
         apiKey: props.apiKeyFlowWater || props.apiKey,
-        logPrefix: '发送Water'
+        logPrefix: "发送Water",
       });
     };
 
     const sendDispatch = async () => {
-      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
       if (!sendType) {
-        ElMessage.warning('请选择发送类型');
+        ElMessage.warning("请选择发送类型");
         return;
       }
 
-      if (sendType.id === 'send2') {
+      if (sendType.id === "send2") {
         await sendMessage2();
       } else {
         await sendRequest(sendType.config);
@@ -1849,80 +1927,89 @@ export default defineComponent({
     };
 
     // 提交表单
-    const submitForm = async (formToken: string, inputs: Record<string, any>, action: string): Promise<any> => {
+    const submitForm = async (
+      formToken: string,
+      inputs: Record<string, any>,
+      action: string,
+    ): Promise<any> => {
       const submitUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
-      
+
       // 获取当前选择的发送类型对应的 API Key
-      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
       const usedApiKey = sendType?.config.apiKey || props.apiKey;
-      
+
       console.log(`📤 提交表单到: ${submitUrl}`);
-      console.log(`📤 使用 API Key: ${usedApiKey ? '***' + usedApiKey.slice(-4) : '未设置'}`);
-      console.log('📤 提交数据:', JSON.stringify({ inputs, action }, null, 2));
-      
+      console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
+      console.log("📤 提交数据:", JSON.stringify({ inputs, action }, null, 2));
+
       const response = await fetch(submitUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${usedApiKey}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${usedApiKey}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ inputs, action })
+        body: JSON.stringify({ inputs, action }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`表单提交失败 (${response.status})`);
       }
-      
+
       const result = await response.json();
-      console.log('✅ 表单提交成功');
-      console.log('📥 返回数据:', JSON.stringify(result, null, 2));
+      console.log("✅ 表单提交成功");
+      console.log("📥 返回数据:", JSON.stringify(result, null, 2));
       return result;
     };
 
     // 等待工作流完成
-    const waitForWorkflowCompletion = async (workflowRunId: string, formToken?: string, intervalMs: number = 10000, maxRetries: number = 30): Promise<any> => {
+    const waitForWorkflowCompletion = async (
+      workflowRunId: string,
+      formToken?: string,
+      intervalMs: number = 10000,
+      maxRetries: number = 30,
+    ): Promise<any> => {
       console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
-      
+
       // 获取当前选择的发送类型对应的 API Key
-      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
       const usedApiKey = sendType?.config.apiKey || props.apiKey;
-      console.log(`📤 使用 API Key: ${usedApiKey ? '***' + usedApiKey.slice(-4) : '未设置'}`);
-      
+      console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
+
       let retries = 0;
       let finalResult = null;
 
       while (retries < maxRetries) {
         retries++;
         const url = `${props.baseUrl}/v1/workflows/run/${workflowRunId}`;
-        
+
         try {
           const response = await fetch(url, {
-            method: 'GET',
+            method: "GET",
             headers: {
-              'Authorization': `Bearer ${usedApiKey}`
-            }
+              Authorization: `Bearer ${usedApiKey}`,
+            },
           });
-          
+
           if (!response.ok) {
             throw new Error(`查询失败 (${response.status})`);
           }
-          
+
           const result = await response.json();
           const status = result.status;
-          
+
           console.log(`   🔁 第 ${retries} 次查询: 状态 = ${status}`);
 
-          if (status === 'succeeded') {
-            console.log('   ✅ 工作流执行成功！');
+          if (status === "succeeded") {
+            console.log("   ✅ 工作流执行成功！");
             finalResult = result;
             break;
-          } else if (status === 'failed') {
-            console.error('   ❌ 工作流执行失败');
-            console.error('   错误信息:', result.error);
+          } else if (status === "failed") {
+            console.error("   ❌ 工作流执行失败");
+            console.error("   错误信息:", result.error);
             finalResult = result;
             break;
-          } else if (status === 'stopped') {
-            console.warn('   ⚠️ 工作流已停止');
+          } else if (status === "stopped") {
+            console.warn("   ⚠️ 工作流已停止");
             finalResult = result;
             break;
           }
@@ -1931,58 +2018,58 @@ export default defineComponent({
         }
 
         if (!finalResult) {
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
+          await new Promise((resolve) => setTimeout(resolve, intervalMs));
         }
       }
 
       // 如果轮询30次后仍未完成，且有formToken，则尝试调用human_input接口
       if (!finalResult && formToken) {
         console.log(`\n🔄 轮询超时，尝试调用 human_input 接口恢复工作流 (formToken: ${formToken})`);
-        
+
         const humanInputMaxRetries = 5;
         for (let hiRetry = 1; hiRetry <= humanInputMaxRetries; hiRetry++) {
           console.log(`   📤 第 ${hiRetry} 次调用 human_input 接口...`);
-          
+
           try {
             const humanInputUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
             const response = await fetch(humanInputUrl, {
-              method: 'POST',
+              method: "POST",
               headers: {
-                'Authorization': `Bearer ${usedApiKey}`,
-                'Content-Type': 'application/json'
+                Authorization: `Bearer ${usedApiKey}`,
+                "Content-Type": "application/json",
               },
-              body: JSON.stringify({ inputs: {}, action: 'approve' })
+              body: JSON.stringify({ inputs: {}, action: "approve" }),
             });
-            
+
             if (!response.ok) {
               throw new Error(`human_input 调用失败 (${response.status})`);
             }
-            
+
             const hiResult = await response.json();
             console.log(`   📥 human_input 返回:`, JSON.stringify(hiResult, null, 2));
-            
+
             // 等待一下再查询状态
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+
             // 查询工作流状态
             const statusUrl = `${props.baseUrl}/v1/workflows/run/${workflowRunId}`;
             const statusResponse = await fetch(statusUrl, {
-              method: 'GET',
+              method: "GET",
               headers: {
-                'Authorization': `Bearer ${usedApiKey}`
-              }
+                Authorization: `Bearer ${usedApiKey}`,
+              },
             });
-            
+
             if (statusResponse.ok) {
               const statusResult = await statusResponse.json();
               console.log(`   🔍 human_input 后查询状态: ${statusResult.status}`);
-              
-              if (statusResult.status === 'succeeded') {
-                console.log('   ✅ human_input 调用成功，工作流已完成！');
+
+              if (statusResult.status === "succeeded") {
+                console.log("   ✅ human_input 调用成功，工作流已完成！");
                 finalResult = statusResult;
                 break;
-              } else if (statusResult.status === 'failed') {
-                console.error('   ❌ human_input 后工作流执行失败');
+              } else if (statusResult.status === "failed") {
+                console.error("   ❌ human_input 后工作流执行失败");
                 finalResult = statusResult;
                 break;
               }
@@ -1990,10 +2077,10 @@ export default defineComponent({
           } catch (error) {
             console.error(`   ⚠️ human_input 调用出错: ${error.message}`);
           }
-          
+
           // 如果还没成功，等待一下再重试
           if (!finalResult && hiRetry < humanInputMaxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2000));
           }
         }
       }
@@ -2007,73 +2094,73 @@ export default defineComponent({
 
     // 提取助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
     const extractRecognitionResult = (content: string): string => {
-      console.log('助手5原始内容:', content);
-      
+      console.log("助手5原始内容:", content);
+
       // 支持中文全角冒号（：）和英文半角冒号（:），以及可能的Markdown格式（如**识别结果：**）
       const match = content.match(/识别结果[：:](?:\*\*)?[\s\S]*?(?=验证结果[：:])/);
       if (match && match[0]) {
         let result = match[0];
         // 移除开头的"识别结果："或"识别结果:"以及可能的**
-        result = result.replace(/^识别结果[：:](?:\*\*)?\s*/, '');
+        result = result.replace(/^识别结果[：:](?:\*\*)?\s*/, "");
         return result.trim();
       }
-      
-      return '';
+
+      return "";
     };
 
     // 处理人工介入 - Approve
     const handleHumanApprove = async (msgIndex: number) => {
       const message = messages.value[msgIndex];
       if (!message?.formToken) {
-        ElMessage.error('无法获取表单令牌');
+        ElMessage.error("无法获取表单令牌");
         return;
       }
-      
+
       isSubmitting.value = true;
       isLoading.value = true;
-      
+
       // 标记消息为已处理，防止重复提交
       message.isProcessed = true;
-      
+
       // 添加用户反馈消息
       messages.value.push({
-        role: 'user',
-        content: `✅ 确认 - ${message.humanInput || '确认继续'}`,
-        timestamp: Date.now()
+        role: "user",
+        content: `✅ 确认 - ${message.humanInput || "确认继续"}`,
+        timestamp: Date.now(),
       });
-      
+
       // 添加 AI 思考中消息
       const thinkingMsg: Message = {
-        role: 'assistant',
-        content: '',
+        role: "assistant",
+        content: "",
         timestamp: Date.now(),
-        isThinking: true
+        isThinking: true,
       };
       messages.value.push(thinkingMsg);
-      
+
       await scrollToBottom();
 
       try {
         // 提交表单
-        await submitForm(message.formToken, { usercomments: message.humanInput || '' }, 'approve');
-        
+        await submitForm(message.formToken, { usercomments: message.humanInput || "" }, "approve");
+
         // 等待工作流处理
-        console.log('⏳ 等待工作流处理完成...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
+        console.log("⏳ 等待工作流处理完成...");
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
         // 查询工作流运行结果
         if (message.workflowRunId) {
           const finalResult = await waitForWorkflowCompletion(message.workflowRunId);
-          console.log('\n🎉 流程执行完成！');
-          
+          console.log("\n🎉 流程执行完成！");
+
           const lastMsg = messages.value[messages.value.length - 1];
-          if (lastMsg?.role === 'assistant') {
+          if (lastMsg?.role === "assistant") {
             lastMsg.isThinking = false;
 
             // 从助手5的中间结果中提取识别结果
             const recognitionResult = extractRecognitionResult(message.content);
-            
-            if (finalResult.status === 'succeeded') {
+
+            if (finalResult.status === "succeeded") {
               // 当workflow成功时，显示助手5的识别结果（而不是接口返回的answer）
               if (recognitionResult) {
                 // 保存识别结果
@@ -2090,12 +2177,12 @@ export default defineComponent({
                 </div>`;
               } else {
                 // 如果没有提取到识别结果，显示默认提示
-                lastMsg.content = '工作流执行成功完成！';
+                lastMsg.content = "工作流执行成功完成！";
               }
             } else if (finalResult.error) {
               lastMsg.content = `工作流执行失败：${finalResult.error}`;
             } else {
-              lastMsg.content = '工作流已完成，但没有返回结果。';
+              lastMsg.content = "工作流已完成，但没有返回结果。";
             }
 
             // 显式触发响应式更新和持久化
@@ -2104,26 +2191,25 @@ export default defineComponent({
           }
 
           await scrollToBottom();
-          emit('message-received', lastMsg?.content || '');
+          emit("message-received", lastMsg?.content || "");
 
           // 步骤1完成后标记需要进入步骤2（在finally之后执行）
-          if (currentStep.value === 1 && finalResult.status === 'succeeded') {
+          if (currentStep.value === 1 && finalResult.status === "succeeded") {
             stepResults.value[1] = assistant5RecognitionResult.value;
             needAutoProceedToStep2.value = true;
           }
         } else {
           const lastMsg = messages.value[messages.value.length - 1];
-          if (lastMsg?.role === 'assistant') {
+          if (lastMsg?.role === "assistant") {
             lastMsg.isThinking = false;
-            lastMsg.content = '已确认，工作流继续执行中...';
+            lastMsg.content = "已确认，工作流继续执行中...";
           }
         }
-        
       } catch (error: any) {
-        console.error('人工介入 Approve 失败:', error);
+        console.error("人工介入 Approve 失败:", error);
 
         const lastMsg = messages.value[messages.value.length - 1];
-        if (lastMsg?.role === 'assistant') {
+        if (lastMsg?.role === "assistant") {
           lastMsg.isThinking = false;
           lastMsg.content = `提交失败：${error.message}`;
 
@@ -2132,7 +2218,7 @@ export default defineComponent({
           saveMessagesToStorage();
         }
 
-        ElMessage.error('提交失败：' + error.message);
+        ElMessage.error("提交失败：" + error.message);
       } finally {
         isSubmitting.value = false;
         isLoading.value = false;
@@ -2151,82 +2237,86 @@ export default defineComponent({
     // 处理人工介入 - Revise
     const handleHumanRevise = async (msgIndex: number) => {
       const message = messages.value[msgIndex];
-      
+
       // 获取当前选择的发送类型对应的 API Key
-      const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
       if (!message?.formToken) {
-        ElMessage.error('无法获取表单令牌');
+        ElMessage.error("无法获取表单令牌");
         return;
       }
-      
+
       isSubmitting.value = true;
       isLoading.value = true;
-      
+
       // 标记消息为已处理，防止重复提交
       message.isProcessed = true;
-      
+
       // 获取修改意见
-      const reviseQuery = message.humanInput || '继续';
-      
+      const reviseQuery = message.humanInput || "继续";
+
       // 添加用户反馈消息
       messages.value.push({
-        role: 'user',
+        role: "user",
         content: reviseQuery,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       await scrollToBottom();
       // 再次确保滚动（使用 setTimeout 确保 DOM 更新）
       setTimeout(() => scrollToBottom(), 50);
 
       try {
         // 提交表单
-        await submitForm(message.formToken, { usercomments: reviseQuery }, 'revise');
-        
+        await submitForm(message.formToken, { usercomments: reviseQuery }, "revise");
+
         // 继续对话，将用户反馈作为新的查询
-        console.log('🔄 用户选择 Revise，继续对话...');
-        
+        console.log("🔄 用户选择 Revise，继续对话...");
+
         // 添加 AI 思考中消息
         const thinkingMsg: Message = {
-          role: 'assistant',
-          content: '',
+          role: "assistant",
+          content: "",
           timestamp: Date.now(),
-          isThinking: true
+          isThinking: true,
         };
         messages.value.push(thinkingMsg);
-        
+
         await scrollToBottom();
         // 再次确保滚动
         setTimeout(() => scrollToBottom(), 50);
-        
+
         // 使用相同的 conversation_id 再次调用 chat-messages 接口
         const apiKey = sendType?.config.apiKey || props.apiKey;
-        
+
         // 创建 AbortController 用于取消请求
         abortController.value = new AbortController();
 
         // 构建 files 参数（如果有上传的图片）
-        const files = lastUploadedImage.value ? [{
-          type: 'image',
-          transfer_method: 'local_file',
-          upload_file_id: lastUploadedImage.value.id
-        }] : [];
-        
+        const files = lastUploadedImage.value
+          ? [
+              {
+                type: "image",
+                transfer_method: "local_file",
+                upload_file_id: lastUploadedImage.value.id,
+              },
+            ]
+          : [];
+
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             inputs: props.data || {},
             query: reviseQuery,
-            response_mode: 'streaming',
-            conversation_id: conversationId.value || '',
+            response_mode: "streaming",
+            conversation_id: conversationId.value || "",
             user: props.userId,
-            files: files
+            files: files,
           }),
-          signal: abortController.value.signal
+          signal: abortController.value.signal,
         });
 
         if (!response.ok) {
@@ -2237,85 +2327,90 @@ export default defineComponent({
 
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
-        
+
         if (!reader) {
-          throw new Error('无法读取响应流');
+          throw new Error("无法读取响应流");
         }
 
-        console.log('Revise 开始流式响应');
-        
-        let fullContent = '';
+        console.log("Revise 开始流式响应");
+
+        let fullContent = "";
         let isPaused = false;
         let pauseData: any = null;
-        let currentFormToken = '';
-        let currentWorkflowRunId = '';
-        let pendingData = '';
+        let currentFormToken = "";
+        let currentWorkflowRunId = "";
+        let pendingData = "";
 
         try {
           while (true) {
             const { done, value } = await reader.read();
-            
+
             if (done) {
-              console.log('Revise 流式响应完成');
+              console.log("Revise 流式响应完成");
               break;
             }
-            
+
             const chunk = pendingData + decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-            
+            const lines = chunk.split("\n");
+
             // 保留最后一行（可能是不完整的）
-            pendingData = lines.pop() || '';
-            
+            pendingData = lines.pop() || "";
+
             for (const line of lines) {
-              if (!line.trim() || line === 'data: [DONE]') {
+              if (!line.trim() || line === "data: [DONE]") {
                 continue;
               }
-              
-              if (line.startsWith('data: ')) {
+
+              if (line.startsWith("data: ")) {
                 try {
                   const data = JSON.parse(line.slice(6));
-                  
+
                   // 处理工作流暂停事件
-                  if (data.event === 'workflow_paused') {
+                  if (data.event === "workflow_paused") {
                     isPaused = true;
                     isAwaitingFeedback.value = true;
                     pauseData = data;
-                    
+
                     // 提取 form_token（使用专门的提取函数）
                     const formToken = extractFormToken(data);
                     if (formToken) {
                       currentFormToken = formToken;
-                      console.log('🔑 Form Token:', formToken);
+                      console.log("🔑 Form Token:", formToken);
                     } else {
                       // 如果提取失败，使用 task_id 作为备用
-                      currentFormToken = data.task_id || '';
-                      console.log('⚠️ 无法提取 form_token，使用 task_id:', currentFormToken);
+                      currentFormToken = data.task_id || "";
+                      console.log("⚠️ 无法提取 form_token，使用 task_id:", currentFormToken);
                     }
-                    
+
                     // 保存 workflow_run_id
                     if (data.data && data.data.workflow_run_id) {
                       currentWorkflowRunId = data.data.workflow_run_id;
                     } else {
-                      currentWorkflowRunId = data.workflow_run_id || '';
+                      currentWorkflowRunId = data.workflow_run_id || "";
                     }
-                    
-                    console.log('🔔 工作流暂停，需要人工介入:', pauseData);
-                    
+
+                    console.log("🔔 工作流暂停，需要人工介入:", pauseData);
+
                     // 提取暂停时的消息内容（form_content）
-                    let pauseContent = '';
-                    if (pauseData.data && pauseData.data.reasons && pauseData.data.reasons.length > 0) {
+                    let pauseContent = "";
+                    if (
+                      pauseData.data &&
+                      pauseData.data.reasons &&
+                      pauseData.data.reasons.length > 0
+                    ) {
                       const reason = pauseData.data.reasons[0];
                       if (reason.form_content) {
                         pauseContent = reason.form_content
-                          .replace(/\\n/g, '\n')
-                          .replace(/\*\*/g, '');
+                          .replace(/\\n/g, "\n")
+                          .replace(/\*\*/g, "");
                       }
                     }
-                    
+
                     // 更新当前消息内容
                     if (thinkingMsg) {
                       thinkingMsg.isThinking = false;
-                      thinkingMsg.content = pauseContent || fullContent || '工作流已暂停，等待人工介入';
+                      thinkingMsg.content =
+                        pauseContent || fullContent || "工作流已暂停，等待人工介入";
                       thinkingMsg.isHumanInteraction = true;
                       thinkingMsg.formToken = currentFormToken;
                       thinkingMsg.workflowRunId = currentWorkflowRunId;
@@ -2330,7 +2425,7 @@ export default defineComponent({
                     setTimeout(() => scrollToBottom(), 100);
                     break;
                   }
-                  
+
                   // 处理消息内容
                   if (data.answer) {
                     fullContent += data.answer;
@@ -2339,16 +2434,16 @@ export default defineComponent({
                     }
                     await scrollToBottom();
                   }
-                  
+
                   // 处理工作流完成事件
-                  if (data.event === 'workflow_finished' || data.event === 'message_end') {
+                  if (data.event === "workflow_finished" || data.event === "message_end") {
                     if (thinkingMsg) {
                       thinkingMsg.isThinking = false;
                       // 检查工作流是否失败
-                      if (data.data && data.data.status === 'failed') {
-                        const errorMsg = data.data.error || '工作流执行失败';
+                      if (data.data && data.data.status === "failed") {
+                        const errorMsg = data.data.error || "工作流执行失败";
                         thinkingMsg.content = `❌ ${errorMsg}`;
-                        ElMessage.error('工作流执行失败：' + errorMsg);
+                        ElMessage.error("工作流执行失败：" + errorMsg);
                       }
 
                       // 显式触发响应式更新和持久化
@@ -2356,9 +2451,8 @@ export default defineComponent({
                       saveMessagesToStorage();
                     }
                   }
-                  
                 } catch (parseError) {
-                  console.error('解析 SSE 数据失败:', parseError);
+                  console.error("解析 SSE 数据失败:", parseError);
                 }
               }
             }
@@ -2367,27 +2461,27 @@ export default defineComponent({
           reader.releaseLock();
           abortController.value = null;
         }
-        
+
         // 处理残留数据中的 workflow_finished 事件（处理分块传输导致的残留）
-        if (pendingData.trim() && pendingData.startsWith('data: ')) {
+        if (pendingData.trim() && pendingData.startsWith("data: ")) {
           try {
             const data = JSON.parse(pendingData.slice(6));
-            if (data.event === 'workflow_finished' && thinkingMsg) {
+            if (data.event === "workflow_finished" && thinkingMsg) {
               thinkingMsg.isThinking = false;
-              if (data.data && data.data.status === 'failed') {
-                const errorMsg = data.data.error || '工作流执行失败';
+              if (data.data && data.data.status === "failed") {
+                const errorMsg = data.data.error || "工作流执行失败";
                 thinkingMsg.content = `❌ ${errorMsg}`;
-                ElMessage.error('工作流执行失败：' + errorMsg);
+                ElMessage.error("工作流执行失败：" + errorMsg);
               }
             }
           } catch (e) {
-            console.warn('处理残留数据失败:', e);
+            console.warn("处理残留数据失败:", e);
           }
         }
-        
+
         // 如果工作流暂停，保持人工介入状态
         if (isPaused && pauseData) {
-          console.log('Revise 工作流暂停，等待用户操作');
+          console.log("Revise 工作流暂停，等待用户操作");
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
           saveMessagesToStorage();
@@ -2397,21 +2491,20 @@ export default defineComponent({
             thinkingMsg.isThinking = false;
             // 如果没有任何内容，提示超时
             if (!fullContent.trim()) {
-              thinkingMsg.content = '⏰ Dify响应超时';
-              ElMessage.warning('Dify响应超时');
+              thinkingMsg.content = "⏰ Dify响应超时";
+              ElMessage.warning("Dify响应超时");
             }
           }
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
           saveMessagesToStorage();
-          emit('message-received', fullContent);
+          emit("message-received", fullContent);
         }
-        
       } catch (error: any) {
-        console.error('人工介入 Revise 失败:', error);
+        console.error("人工介入 Revise 失败:", error);
 
         const lastMsg = messages.value[messages.value.length - 1];
-        if (lastMsg?.role === 'assistant') {
+        if (lastMsg?.role === "assistant") {
           lastMsg.isThinking = false;
           lastMsg.content = `提交失败：${error.message}`;
 
@@ -2420,7 +2513,7 @@ export default defineComponent({
           saveMessagesToStorage();
         }
 
-        ElMessage.error('提交失败：' + error.message);
+        ElMessage.error("提交失败：" + error.message);
       } finally {
         isSubmitting.value = false;
         isLoading.value = false;
@@ -2442,11 +2535,11 @@ export default defineComponent({
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.type.startsWith('image/')) {
+        if (item.type.startsWith("image/")) {
           e.preventDefault();
           const file = item.getAsFile();
           if (file) {
-            await uploadFile(file, 'paste');
+            await uploadFile(file, "paste");
           }
           break;
         }
@@ -2478,35 +2571,35 @@ export default defineComponent({
     };
 
     // 处理文件上传（支持文件输入和剪贴板粘贴）
-    const uploadFile = async (file: File, source: string = 'input') => {
-      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+    const uploadFile = async (file: File, source: string = "input") => {
+      const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
       if (!validTypes.includes(file.type)) {
-        ElMessage.error('请选择有效的图片格式（png/jpeg/jpg/webp/gif）');
+        ElMessage.error("请选择有效的图片格式（png/jpeg/jpg/webp/gif）");
         return;
       }
 
       const maxSize = 2 * 1024 * 1024;
       if (file.size > maxSize) {
-        ElMessage.error('图片大小不能超过2MB');
+        ElMessage.error("图片大小不能超过2MB");
         return;
       }
 
       isLoading.value = true;
 
       try {
-        const sendType = sendTypes.value.find(t => t.id === selectedSendType.value);
+        const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
         const apiKey = sendType?.config.apiKey || props.apiKey;
-        
+
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('user', props.userId || 'abc-123');
+        formData.append("file", file);
+        formData.append("user", props.userId || "abc-123");
 
         const response = await fetch(`${props.baseUrl}/v1/files/upload`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey}`
+            Authorization: `Bearer ${apiKey}`,
           },
-          body: formData
+          body: formData,
         });
 
         if (!response.ok) {
@@ -2514,14 +2607,14 @@ export default defineComponent({
         }
 
         const result = await response.json();
-        
+
         lastUploadedImage.value = {
           id: result.id,
           name: result.name,
           size: result.size,
           extension: result.extension,
           mime_type: result.mime_type,
-          created_at: result.created_at
+          created_at: result.created_at,
         };
 
         try {
@@ -2530,19 +2623,17 @@ export default defineComponent({
             const base64Data = e.target?.result as string;
             const imageData = {
               ...lastUploadedImage.value,
-              base64Data: base64Data
+              base64Data: base64Data,
             };
             localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageData));
             previewImageUrl.value = base64Data;
           };
           reader.readAsDataURL(file);
-        } catch (e) {
-        }
+        } catch (e) {}
 
         ElMessage.success(`图片 "${result.name}" 上传成功！点击旁边的链接查看预览`);
-
       } catch (error: any) {
-        ElMessage.error('图片上传失败：' + error.message);
+        ElMessage.error("图片上传失败：" + error.message);
       } finally {
         isLoading.value = false;
       }
@@ -2552,18 +2643,18 @@ export default defineComponent({
     const handleImageUpload = async (event: Event) => {
       const target = event.target as HTMLInputElement;
       const file = target.files?.[0];
-      
+
       if (!file) return;
-      
-      await uploadFile(file, 'input');
-      
-      target.value = '';
+
+      await uploadFile(file, "input");
+
+      target.value = "";
     };
 
     // 打开图片预览
     const openImagePreview = () => {
       if (!lastUploadedImage.value) {
-        ElMessage.warning('暂无已上传的图片');
+        ElMessage.warning("暂无已上传的图片");
         return;
       }
       imagePreviewVisible.value = true;
@@ -2572,7 +2663,7 @@ export default defineComponent({
     // CAD转JSON
     const cadToJson = async () => {
       if (!lastUploadedImage.value) {
-        ElMessage.warning('请先上传图片');
+        ElMessage.warning("请先上传图片");
         return;
       }
 
@@ -2580,18 +2671,18 @@ export default defineComponent({
 
       // 添加用户消息
       messages.value.push({
-        role: 'user',
+        role: "user",
         content: `📐 CAD转JSON (图片: ${lastUploadedImage.value.name})`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // 添加AI消息（思考中状态）
       const msgIndex = messages.value.length;
       messages.value.push({
-        role: 'assistant',
-        content: '',
+        role: "assistant",
+        content: "",
         isThinking: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       await scrollToBottom();
@@ -2601,32 +2692,32 @@ export default defineComponent({
 
       try {
         const apiKey = props.apiKeyFlow3 || props.apiKey;
-        
+
         const requestBody = {
           inputs: {},
-          query: 'cad转json',
-          response_mode: 'streaming',
-          conversation_id: '',
-          user: props.userId || 'abc-123',
+          query: "cad转json",
+          response_mode: "streaming",
+          conversation_id: "",
+          user: props.userId || "abc-123",
           files: [
             {
-              type: 'image',
-              transfer_method: 'local_file',
-              upload_file_id: lastUploadedImage.value.id
-            }
-          ]
+              type: "image",
+              transfer_method: "local_file",
+              upload_file_id: lastUploadedImage.value.id,
+            },
+          ],
         };
 
-        console.log('请求体:', JSON.stringify(requestBody, null, 2));
+        console.log("请求体:", JSON.stringify(requestBody, null, 2));
 
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
-          signal: abortController.value.signal
+          signal: abortController.value.signal,
         });
 
         if (!response.ok) {
@@ -2635,92 +2726,91 @@ export default defineComponent({
 
         const reader = response.body?.getReader();
         if (!reader) {
-          throw new Error('无法获取响应流');
+          throw new Error("无法获取响应流");
         }
 
-        const decoder = new TextDecoder('utf-8');
-        let fullContent = '';
+        const decoder = new TextDecoder("utf-8");
+        let fullContent = "";
 
-        console.log('=== CAD转JSON 开始流式响应 ===');
+        console.log("=== CAD转JSON 开始流式响应 ===");
 
         while (true) {
           const { done, value } = await reader.read();
-          
+
           if (done) {
-            console.log('=== CAD转JSON 流式响应结束 ===');
+            console.log("=== CAD转JSON 流式响应结束 ===");
             break;
           }
 
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(line => line.trim());
-          
+          const lines = chunk.split("\n").filter((line) => line.trim());
+
           for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            
+            if (!line.startsWith("data: ")) continue;
+
             try {
               const data = JSON.parse(line.substring(6));
-              
+
               // 保存 taskId 用于停止生成
               if (data.task_id) {
                 currentTaskId.value = data.task_id;
               }
-              
-              if (data.event === 'message') {
+
+              if (data.event === "message") {
                 if (data.answer) {
                   fullContent += data.answer;
                   messages.value[msgIndex] = {
                     ...messages.value[msgIndex],
                     content: fullContent,
-                    isThinking: false
+                    isThinking: false,
                   };
                   await scrollToBottom();
                 }
-              } else if (data.event === 'error') {
-                throw new Error(data.message || '转换失败');
-              } else if (data.event === 'end') {
-                console.log('=== CAD转JSON 找到 end 事件 ===');
+              } else if (data.event === "error") {
+                throw new Error(data.message || "转换失败");
+              } else if (data.event === "end") {
+                console.log("=== CAD转JSON 找到 end 事件 ===");
                 break;
               }
             } catch (jsonError) {
-              console.warn('解析JSON失败:', line, jsonError);
+              console.warn("解析JSON失败:", line, jsonError);
             }
           }
         }
 
-        console.log('=== CAD转JSON 完成 ===');
-        console.log('转换结果:', fullContent);
+        console.log("=== CAD转JSON 完成 ===");
+        console.log("转换结果:", fullContent);
 
         // 确保消息状态正确
         messages.value[msgIndex] = {
           ...messages.value[msgIndex],
           content: fullContent,
-          isThinking: false
+          isThinking: false,
         };
 
         await scrollToBottom();
 
-        ElMessage.success('CAD转JSON完成！');
-
+        ElMessage.success("CAD转JSON完成！");
       } catch (error: any) {
         // 如果是用户主动取消，不显示错误
-        if (error.name === 'AbortError') {
-          console.log('CAD转JSON已停止');
-          ElMessage.info('CAD转JSON已停止');
+        if (error.name === "AbortError") {
+          console.log("CAD转JSON已停止");
+          ElMessage.info("CAD转JSON已停止");
           return;
         }
 
-        console.error('CAD转JSON失败:', error);
-        
+        console.error("CAD转JSON失败:", error);
+
         // 更新消息显示错误
         messages.value[messages.value.length - 1] = {
           ...messages.value[messages.value.length - 1],
           content: `CAD转JSON失败：${error.message}`,
-          isThinking: false
+          isThinking: false,
         };
 
         await scrollToBottom();
 
-        ElMessage.error('CAD转JSON失败：' + error.message);
+        ElMessage.error("CAD转JSON失败：" + error.message);
       } finally {
         isCadConverting.value = false;
         abortController.value = null;
@@ -2734,74 +2824,79 @@ export default defineComponent({
         localStorage.removeItem(getStorageKey());
         localStorage.removeItem(getUploadImageStorageKey());
       } catch (e) {
-        console.error('清空 localStorage 失败:', e);
+        console.error("清空 localStorage 失败:", e);
       }
       messages.value = [];
       lastUploadedImage.value = null;
-      previewImageUrl.value = '';
-      ElMessage.success('对话已清空');
+      previewImageUrl.value = "";
+      ElMessage.success("对话已清空");
     };
 
     // 停止生成
     const stopGeneration = async (isTimeout: boolean = false) => {
       if (!isLoading.value && !isCadConverting.value) return;
-      
+
       // 先调用官方停止接口
       if (currentTaskId.value) {
         try {
-          const response = await fetch(`${props.baseUrl}/v1/chat-messages/${currentTaskId.value}/stop`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${props.apiKey}`,
-              'Content-Type': 'application/json'
+          const response = await fetch(
+            `${props.baseUrl}/v1/chat-messages/${currentTaskId.value}/stop`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${props.apiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                user: props.userId,
+              }),
             },
-            body: JSON.stringify({
-              user: props.userId
-            })
-          });
-          
+          );
+
           const result = await response.json();
-          if (result.result === 'success') {
-            console.log('停止请求成功');
+          if (result.result === "success") {
+            console.log("停止请求成功");
           }
         } catch (error) {
-          console.error('调用停止接口失败:', error);
+          console.error("调用停止接口失败:", error);
         }
       }
-      
+
       // 取消本地请求
       if (abortController.value) {
         abortController.value.abort();
       }
-      
+
       // 将最后一条 AI 消息的 isThinking 设置为 false
       if (messages.value.length > 0) {
         const lastMsg = messages.value[messages.value.length - 1];
-        if (lastMsg.role === 'assistant' && lastMsg.isThinking) {
+        if (lastMsg.role === "assistant" && lastMsg.isThinking) {
           messages.value[messages.value.length - 1] = {
             ...lastMsg,
             isThinking: false,
             // 如果是超时导致的停止，显示超时提示
-            content: isTimeout ? `⏱️ Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），自动断开` : (lastMsg.content || '已停止生成')
+            content: isTimeout
+              ? `⏱️ Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），自动断开`
+              : lastMsg.content || "已停止生成",
           };
-          
+
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
           saveMessagesToStorage();
         }
       }
-      
+
       // 如果是 CAD转JSON，清理状态
       if (isCadConverting.value) {
         isCadConverting.value = false;
         abortController.value = null;
         currentTaskId.value = null;
       }
-      
+
       if (isTimeout) {
         ElMessage.warning(`Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），请稍后重试`);
       } else {
-        ElMessage.info('已停止生成');
+        ElMessage.info("已停止生成");
       }
     };
 
@@ -2809,32 +2904,32 @@ export default defineComponent({
     // 返回true表示通过校验，false表示未通过
     const validateScreenJsonStructure = (jsonObj: any): boolean => {
       // 检查是否为对象
-      if (!jsonObj || typeof jsonObj !== 'object') {
-        ElMessage.warning('JSON结构无效：根对象不存在或不是有效对象');
+      if (!jsonObj || typeof jsonObj !== "object") {
+        ElMessage.warning("JSON结构无效：根对象不存在或不是有效对象");
         return false;
       }
 
       // 检查screen对象
-      if (!jsonObj.screen || typeof jsonObj.screen !== 'object') {
-        ElMessage.warning('JSON结构无效：缺少screen对象或screen不是有效对象');
+      if (!jsonObj.screen || typeof jsonObj.screen !== "object") {
+        ElMessage.warning("JSON结构无效：缺少screen对象或screen不是有效对象");
         return false;
       }
 
       // 检查screen.id
       if (jsonObj.screen.id === undefined || jsonObj.screen.id === null) {
-        ElMessage.warning('JSON结构无效：screen对象缺少id字段');
+        ElMessage.warning("JSON结构无效：screen对象缺少id字段");
         return false;
       }
 
       // 检查screen.name
       if (jsonObj.screen.name === undefined || jsonObj.screen.name === null) {
-        ElMessage.warning('JSON结构无效：screen对象缺少name字段');
+        ElMessage.warning("JSON结构无效：screen对象缺少name字段");
         return false;
       }
 
       // 检查coms数组
       if (!Array.isArray(jsonObj.coms)) {
-        ElMessage.warning('JSON结构无效：coms不是有效的数组');
+        ElMessage.warning("JSON结构无效：coms不是有效的数组");
         return false;
       }
 
@@ -2846,63 +2941,63 @@ export default defineComponent({
       try {
         await saveScreen(jsonObj);
         EditorModule.screenJsonSnapshot = JSON.stringify(jsonObj);
-        ElMessage.success('AI生成的屏幕数据保存成功');
+        ElMessage.success("AI生成的屏幕数据保存成功");
       } catch (error) {
-        console.error('保存AI生成的屏幕数据失败:', error);
-        ElMessage.error('保存失败，请稍后重试');
+        console.error("保存AI生成的屏幕数据失败:", error);
+        ElMessage.error("保存失败，请稍后重试");
         throw error;
       }
     };
 
     // 从URL读取JSON并保存屏幕数据
     const fetchAndSaveScreenAI = async () => {
-      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      const aiMessages = messages.value.filter(
+        (msg) => msg.role === "assistant" && !msg.isThinking,
+      );
       if (aiMessages.length === 0) {
-        ElMessage.warning('暂无 AI 回答');
+        ElMessage.warning("暂无 AI 回答");
         return;
       }
       try {
-        ElMessage.info('正在加载JSON数据...');
-        const response = await fetch('http://10.89.33.97:5000/data.json');
+        ElMessage.info("正在加载JSON数据...");
+        const response = await fetch("http://10.89.33.97:5000/data.json");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const jsonObj = await response.json();
 
-        if(EditorModule.screen)
-        {
-          if(EditorModule.screen.id)
-          {
-            jsonObj.screen.id = EditorModule.screen.id
-            
+        if (EditorModule.screen) {
+          if (EditorModule.screen.id) {
+            jsonObj.screen.id = EditorModule.screen.id;
+
             // 设置所有组件的 projectId 为当前屏幕 ID
             if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
-              jsonObj.coms.forEach(component => {
-                component.projectId = EditorModule.screen.id
-              })
+              jsonObj.coms.forEach((component) => {
+                component.projectId = EditorModule.screen.id;
+              });
             }
           }
-          if(EditorModule.screen.name)
-          {
-            jsonObj.screen.name = EditorModule.screen.name
+          if (EditorModule.screen.name) {
+            jsonObj.screen.name = EditorModule.screen.name;
           }
-          
         }
 
         await saveScreenAI(jsonObj);
-        console.log('从URL读取的 JSON 内容saveScreenAI:', jsonObj);
+        console.log("从URL读取的 JSON 内容saveScreenAI:", jsonObj);
       } catch (error) {
-        console.error('从URL读取JSON失败:', error);
-        ElMessage.error('读取JSON失败，请检查网络或URL是否正确');
+        console.error("从URL读取JSON失败:", error);
+        ElMessage.error("读取JSON失败，请检查网络或URL是否正确");
       }
     };
 
     // 将最后一条 AI 回答中的 JSON 输出到控制台
     const outputJsonToConsole = async () => {
       // 查找最后一条 AI 助手的消息
-      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      const aiMessages = messages.value.filter(
+        (msg) => msg.role === "assistant" && !msg.isThinking,
+      );
       if (aiMessages.length === 0) {
-        ElMessage.warning('暂无 AI 回答');
+        ElMessage.warning("暂无 AI 回答");
         return;
       }
 
@@ -2912,85 +3007,79 @@ export default defineComponent({
       // 尝试从内容中提取 JSON
       try {
         // 从浏览器缓存中获取 DataS-Project 值
-        const dataSProject = localStorage.getItem('DataS-Project');
+        const dataSProject = localStorage.getItem("DataS-Project");
         // console.log('DataS-Project:', dataSProject);
         // 查找 JSON 对象（以 { 开头，以 } 结尾）
         const jsonMatch = content.match(/\{[\s\S]*\}/);
-        
+
         if (jsonMatch) {
           let jsonStr = jsonMatch[0];
-          
+
           // 先进行基本的格式校准（处理markdown标记、引号问题等）
           let jsonObj = calibrateJsonString(jsonStr);
-          
+
           if (!jsonObj) {
             // 如果校准失败，尝试直接解析
             try {
               jsonObj = JSON.parse(jsonStr);
             } catch (parseError) {
-              console.warn('JSON校准失败且直接解析也失败:', parseError);
-              ElMessage.warning('无法解析JSON内容');
+              console.warn("JSON校准失败且直接解析也失败:", parseError);
+              ElMessage.warning("无法解析JSON内容");
               return;
             }
           }
-            
-            // if (dataSProject) {
-            //   // 将值添加到 JSON 对象中，键名为 projectid
-            //   jsonObj.projectid = dataSProject;
-            // }
-            // 添加 screen 数据（只包含id和name）
-            if(EditorModule.screen)
-            {
-              if(EditorModule.screen.id)
-              {
-                jsonObj.screen.id = EditorModule.screen.id
-                
-                // 设置所有组件的 projectId 为当前屏幕 ID
-                if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
-                  jsonObj.coms.forEach(component => {
-                    component.projectId = EditorModule.screen.id
-                  })
-                }
-                
-              }
-              if(EditorModule.screen.name)
-              {
-                jsonObj.screen.name = EditorModule.screen.name
-              }
-              
-            }
-            
-            // 使用JSONRepairTool修复大屏配置结构
-            const repairTool = new JSONRepairTool();
-            let repairedJson = repairTool.repairScreenConfig(jsonObj);
-            
-            // 根据模板修复组件配置（与校准JSON保持一致）
-            const template = comsTemplate as unknown as Record<string, any>;
-            if (repairedJson.coms && Array.isArray(repairedJson.coms)) {
-              repairedJson.coms = repairedJson.coms.map((component: any) => {
-                return refineComponentByTemplate(component, template);
-              });
-            }
 
-            // JSON结构校验（如果开启校验功能）
-            if (enableJsonValidation.value && !validateScreenJsonStructure(repairedJson)) {
-              console.warn('JSON结构校验未通过，拒绝保存');
-              return;
-            }
+          // if (dataSProject) {
+          //   // 将值添加到 JSON 对象中，键名为 projectid
+          //   jsonObj.projectid = dataSProject;
+          // }
+          // 添加 screen 数据（只包含id和name）
+          if (EditorModule.screen) {
+            if (EditorModule.screen.id) {
+              jsonObj.screen.id = EditorModule.screen.id;
 
-            // 调用saveScreenAI方法保存AI生成的屏幕数据
-            await saveScreenAI(repairedJson);
-            console.log('AI 回答中的 JSON 内容saveScreenAI:', repairedJson);
+              // 设置所有组件的 projectId 为当前屏幕 ID
+              if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
+                jsonObj.coms.forEach((component) => {
+                  component.projectId = EditorModule.screen.id;
+                });
+              }
+            }
+            if (EditorModule.screen.name) {
+              jsonObj.screen.name = EditorModule.screen.name;
+            }
+          }
+
+          // 使用JSONRepairTool修复大屏配置结构
+          const repairTool = new JSONRepairTool();
+          let repairedJson = repairTool.repairScreenConfig(jsonObj);
+
+          // 根据模板修复组件配置（与校准JSON保持一致）
+          const template = comsTemplate as unknown as Record<string, any>;
+          if (repairedJson.coms && Array.isArray(repairedJson.coms)) {
+            repairedJson.coms = repairedJson.coms.map((component: any) => {
+              return refineComponentByTemplate(component, template);
+            });
+          }
+
+          // JSON结构校验（如果开启校验功能）
+          if (enableJsonValidation.value && !validateScreenJsonStructure(repairedJson)) {
+            console.warn("JSON结构校验未通过，拒绝保存");
             return;
+          }
+
+          // 调用saveScreenAI方法保存AI生成的屏幕数据
+          await saveScreenAI(repairedJson);
+          console.log("AI 回答中的 JSON 内容saveScreenAI:", repairedJson);
+          return;
         }
 
         // 如果没有找到 JSON 格式，提示用户
-        ElMessage.warning('回答内容中未找到有效的 JSON 格式');
-        console.log('AI 回答内容（非 JSON）:', content);
-
+        ElMessage.warning("回答内容中未找到有效的 JSON 格式");
+        console.log("AI 回答内容（非 JSON）:", content);
       } catch (error) {
-        console.error('处理 JSON 时发生错误:', error);
-        ElMessage.warning('处理 JSON 时发生错误');
+        console.error("处理 JSON 时发生错误:", error);
+        ElMessage.warning("处理 JSON 时发生错误");
       }
     };
 
@@ -3004,10 +3093,10 @@ export default defineComponent({
       // 重置步骤状态
       currentStep.value = 1;
       stepResults.value = {};
-      selectedSendType.value = props.waterServiceMode ? 'sendWater' : 'send5';
+      selectedSendType.value = props.waterServiceMode ? "sendWater" : "send5";
       // 保留消息和会话ID，不移除
-      emit('close');
-      
+      emit("close");
+
       // 关闭弹窗后重新加载页面数据
       try {
         // 重新加载屏幕数据
@@ -3027,7 +3116,7 @@ export default defineComponent({
           }));
         }
       } catch (error) {
-        console.error('重新加载页面数据失败:', error);
+        console.error("重新加载页面数据失败:", error);
       }
     };
 
@@ -3039,22 +3128,22 @@ export default defineComponent({
 
     // 组件销毁时清理资源
     onUnmounted(() => {
-      console.log('=== DifyApiDialog 组件销毁 ===');
-      
+      console.log("=== DifyApiDialog 组件销毁 ===");
+
       if (abortController.value) {
         abortController.value.abort();
         abortController.value = null;
       }
-      
+
       if (timeoutTimer.value) {
         clearTimeout(timeoutTimer.value);
         timeoutTimer.value = null;
       }
-      
+
       currentTaskId.value = null;
 
       // 清理全局base64预览相关数据
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         delete (window as any).__previewBase64Image;
         delete (window as any).__base64PreviewData;
         delete (window as any).__toggleRecognitionJson;
@@ -3069,32 +3158,34 @@ export default defineComponent({
         if (USE_TEST_DATA) {
           // 测试模式：使用fetch读取本地测试数据（支持非法JSON自动校准）
           // 使用fetch而非import可以绕过编译时JSON校验
-          ElMessage.info('正在读取测试数据...');
+          ElMessage.info("正在读取测试数据...");
           try {
-            const response = await fetch('/src/components/dify-chatbot/test/testresponse.json');
+            const response = await fetch("/src/components/dify-chatbot/test/testresponse.json");
             const jsonStr = await response.text();
-            
+
             // 尝试直接解析，如果失败则进行校准
             try {
               jsonObj = JSON.parse(jsonStr);
             } catch (parseError) {
-              console.log('JSON解析失败，尝试校准...');
+              console.log("JSON解析失败，尝试校准...");
               jsonObj = calibrateJsonString(jsonStr);
-              
+
               if (!jsonObj) {
-                throw new Error('JSON校准失败: ' + parseError.message);
+                throw new Error("JSON校准失败: " + parseError.message);
               }
             }
           } catch (fetchError) {
-            console.error('读取测试数据失败:', fetchError);
-            throw new Error('无法读取测试数据: ' + fetchError.message);
+            console.error("读取测试数据失败:", fetchError);
+            throw new Error("无法读取测试数据: " + fetchError.message);
           }
         } else {
           // 正式模式：从AI回答中提取JSON
           // 查找最后一条 AI 助手的消息
-          const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+          const aiMessages = messages.value.filter(
+            (msg) => msg.role === "assistant" && !msg.isThinking,
+          );
           if (aiMessages.length === 0) {
-            ElMessage.warning('暂无 AI 回答');
+            ElMessage.warning("暂无 AI 回答");
             return;
           }
 
@@ -3104,7 +3195,7 @@ export default defineComponent({
           // 1. 提取JSON字符串
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (!jsonMatch) {
-            ElMessage.warning('未找到JSON格式内容');
+            ElMessage.warning("未找到JSON格式内容");
             return;
           }
 
@@ -3112,9 +3203,9 @@ export default defineComponent({
 
           // 2. 校准JSON（修复常见的JSON格式问题）
           jsonObj = calibrateJsonString(jsonStr);
-          
+
           if (!jsonObj) {
-            ElMessage.error('JSON校准失败');
+            ElMessage.error("JSON校准失败");
             return;
           }
         }
@@ -3131,42 +3222,41 @@ export default defineComponent({
         }
 
         // 5. 更新屏幕ID和名称
-        if(EditorModule.screen) {
-          if(EditorModule.screen.id) {
+        if (EditorModule.screen) {
+          if (EditorModule.screen.id) {
             refinedJson.screen.id = EditorModule.screen.id;
             if (refinedJson.coms && Array.isArray(refinedJson.coms)) {
-              refinedJson.coms.forEach(component => {
+              refinedJson.coms.forEach((component) => {
                 component.projectId = EditorModule.screen.id;
               });
             }
           }
-          if(EditorModule.screen.name) {
+          if (EditorModule.screen.name) {
             refinedJson.screen.name = EditorModule.screen.name;
           }
         }
 
         // JSON结构校验（如果开启校验功能）
         if (enableJsonValidation.value && !validateScreenJsonStructure(refinedJson)) {
-          console.warn('JSON结构校验未通过，拒绝保存');
+          console.warn("JSON结构校验未通过，拒绝保存");
           return;
         }
 
         // 6. 保存校准后的JSON
         await saveScreenAI(refinedJson);
-        ElMessage.success('JSON校准并保存成功');
-        console.log('校准后的JSON:', refinedJson);
-
+        ElMessage.success("JSON校准并保存成功");
+        console.log("校准后的JSON:", refinedJson);
       } catch (error) {
-        console.error('校准JSON时发生错误:', error);
-        ElMessage.error('校准失败: ' + error.message);
+        console.error("校准JSON时发生错误:", error);
+        ElMessage.error("校准失败: " + error.message);
       }
     };
 
     // 根据模板修复单个组件
     const refineComponentByTemplate = (component: any, template: Record<string, any>): any => {
-      const componentType = component.name || 'VMainTitle';
+      const componentType = component.name || "VMainTitle";
       const templateComponent = template[componentType];
-      
+
       if (!templateComponent) {
         console.warn(`组件类型 ${componentType} 不在模板中，使用默认配置`);
         return component;
@@ -3176,18 +3266,25 @@ export default defineComponent({
       const newComponent: any = { ...component };
 
       // 合并基础属性，优先使用原始值
-      newComponent.alias = component.alias !== undefined ? component.alias : templateComponent.alias;
+      newComponent.alias =
+        component.alias !== undefined ? component.alias : templateComponent.alias;
       newComponent.icon = component.icon !== undefined ? component.icon : templateComponent.icon;
       newComponent.img = component.img !== undefined ? component.img : templateComponent.img;
-      newComponent.locked = component.locked !== undefined ? component.locked : templateComponent.locked;
-      newComponent.hided = component.hided !== undefined ? component.hided : templateComponent.hided;
-      newComponent.eventhub = component.eventhub !== undefined ? component.eventhub : templateComponent.eventhub;
+      newComponent.locked =
+        component.locked !== undefined ? component.locked : templateComponent.locked;
+      newComponent.hided =
+        component.hided !== undefined ? component.hided : templateComponent.hided;
+      newComponent.eventhub =
+        component.eventhub !== undefined ? component.eventhub : templateComponent.eventhub;
       newComponent.handles = component.handles || templateComponent.handles || {};
       newComponent.ichandles = component.ichandles || templateComponent.ichandles || {};
       // 优先使用原始数据，只有在原始数据不存在时才使用模板值
-      newComponent.apis = component.apis !== undefined ? component.apis : (templateComponent.apis || {});
-      newComponent.events = component.events !== undefined ? component.events : (templateComponent.events || {});
-      newComponent.actions = component.actions !== undefined ? component.actions : (templateComponent.actions || {});
+      newComponent.apis =
+        component.apis !== undefined ? component.apis : templateComponent.apis || {};
+      newComponent.events =
+        component.events !== undefined ? component.events : templateComponent.events || {};
+      newComponent.actions =
+        component.actions !== undefined ? component.actions : templateComponent.actions || {};
 
       // 保留特殊字段
       if (component.subComs) {
@@ -3229,7 +3326,7 @@ export default defineComponent({
         deg: source?.deg !== undefined ? source.deg : template?.deg || 0,
         opacity: source?.opacity !== undefined ? source.opacity : template?.opacity || 1,
         filpV: source?.filpV !== undefined ? source.filpV : template?.filpV || false,
-        filpH: source?.filpH !== undefined ? source.filpH : template?.filpH || false
+        filpH: source?.filpH !== undefined ? source.filpH : template?.filpH || false,
       };
     };
 
@@ -3239,7 +3336,11 @@ export default defineComponent({
 
       // 遍历模板的所有键
       for (const key of Object.keys(template)) {
-        if (typeof template[key] === 'object' && template[key] !== null && !Array.isArray(template[key])) {
+        if (
+          typeof template[key] === "object" &&
+          template[key] !== null &&
+          !Array.isArray(template[key])
+        ) {
           // 如果源对象也有这个键且是对象，递归合并
           result[key] = mergeConfig(source[key] || {}, template[key]);
         } else if (Array.isArray(template[key])) {
@@ -3264,9 +3365,11 @@ export default defineComponent({
     // 复制最后一条AI回答内容
     const copyLastMessageContent = async () => {
       // 查找最后一条 AI 助手的消息
-      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      const aiMessages = messages.value.filter(
+        (msg) => msg.role === "assistant" && !msg.isThinking,
+      );
       if (aiMessages.length === 0) {
-        ElMessage.warning('暂无 AI 回答内容可复制');
+        ElMessage.warning("暂无 AI 回答内容可复制");
         return;
       }
 
@@ -3276,21 +3379,21 @@ export default defineComponent({
       try {
         // 使用 Clipboard API 复制内容
         await navigator.clipboard.writeText(content);
-        ElMessage.success('内容已复制到剪贴板');
+        ElMessage.success("内容已复制到剪贴板");
       } catch (error) {
-        console.error('复制失败:', error);
+        console.error("复制失败:", error);
         // 降级方案：创建临时文本区域
-        const textarea = document.createElement('textarea');
+        const textarea = document.createElement("textarea");
         textarea.value = content;
-        textarea.style.position = 'fixed';
-        textarea.style.left = '-9999px';
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
         document.body.appendChild(textarea);
         textarea.select();
         try {
-          document.execCommand('copy');
-          ElMessage.success('内容已复制到剪贴板');
+          document.execCommand("copy");
+          ElMessage.success("内容已复制到剪贴板");
         } catch (e) {
-          ElMessage.error('复制失败，请手动复制');
+          ElMessage.error("复制失败，请手动复制");
         }
         document.body.removeChild(textarea);
       }
@@ -3299,50 +3402,50 @@ export default defineComponent({
     // 临时保存payload数据
     const saveTempPayload = async () => {
       try {
-        let jsonObj = payloadJson.default as unknown as { screen: { id: number; name: string }, coms: any[] };
-        if(EditorModule.screen)
-        {
-          if(EditorModule.screen.id)
-          {
-            jsonObj.screen.id = EditorModule.screen.id
-            
+        let jsonObj = payloadJson.default as unknown as {
+          screen: { id: number; name: string };
+          coms: any[];
+        };
+        if (EditorModule.screen) {
+          if (EditorModule.screen.id) {
+            jsonObj.screen.id = EditorModule.screen.id;
+
             // 设置所有组件的 projectId 为当前屏幕 ID
             if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
-              jsonObj.coms.forEach(component => {
-                component.projectId = EditorModule.screen.id
-              })
+              jsonObj.coms.forEach((component) => {
+                component.projectId = EditorModule.screen.id;
+              });
             }
-            
           }
-          if(EditorModule.screen.name)
-          {
-            jsonObj.screen.name = EditorModule.screen.name
+          if (EditorModule.screen.name) {
+            jsonObj.screen.name = EditorModule.screen.name;
           }
-          
         }
         await saveScreenAI(jsonObj);
-        console.log('写死的 JSON 内容saveScreenAI:', jsonObj);
+        console.log("写死的 JSON 内容saveScreenAI:", jsonObj);
       } catch (error) {
-        console.error('保存payload失败:', error);
+        console.error("保存payload失败:", error);
       }
     };
 
     const validationResultImageVisible = ref(false);
-    const validationResultImageUrl = ref('');
+    const validationResultImageUrl = ref("");
     const validationResultJson = ref<any>(null);
 
     const extractValidationResult = () => {
-      const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+      const aiMessages = messages.value.filter(
+        (msg) => msg.role === "assistant" && !msg.isThinking,
+      );
       if (aiMessages.length === 0) {
-        ElMessage.warning('暂无 AI 回答');
+        ElMessage.warning("暂无 AI 回答");
         return;
       }
 
       const lastAiMessage = aiMessages[aiMessages.length - 1];
       const content = lastAiMessage.content;
 
-      const startMarker = '验证结果：';
-      const endMarker = '{{#$output.usercomments#}}';
+      const startMarker = "验证结果：";
+      const endMarker = "{{#$output.usercomments#}}";
 
       const startIndex = content.indexOf(startMarker);
       const endIndex = content.indexOf(endMarker);
@@ -3366,24 +3469,24 @@ export default defineComponent({
 
         if (jsonObj.image) {
           const base64Data = jsonObj.image;
-          let imageUrl = '';
-          
-          if (base64Data.startsWith('data:image')) {
+          let imageUrl = "";
+
+          if (base64Data.startsWith("data:image")) {
             imageUrl = base64Data;
           } else {
             imageUrl = `data:image/png;base64,${base64Data}`;
           }
-          
+
           validationResultImageUrl.value = imageUrl;
           validationResultImageVisible.value = true;
         } else {
-          ElMessage.warning('验证结果中没有包含图片数据');
+          ElMessage.warning("验证结果中没有包含图片数据");
         }
 
-        console.log('提取的验证结果JSON:', jsonObj);
+        console.log("提取的验证结果JSON:", jsonObj);
       } catch (e) {
-        console.error('解析验证结果JSON失败:', e);
-        ElMessage.error('解析验证结果JSON失败：' + (e as Error).message);
+        console.error("解析验证结果JSON失败:", e);
+        ElMessage.error("解析验证结果JSON失败：" + (e as Error).message);
       }
     };
 
@@ -3391,9 +3494,11 @@ export default defineComponent({
     const saveRawJson = async () => {
       try {
         // 查找最后一条 AI 助手的消息
-        const aiMessages = messages.value.filter(msg => msg.role === 'assistant' && !msg.isThinking);
+        const aiMessages = messages.value.filter(
+          (msg) => msg.role === "assistant" && !msg.isThinking,
+        );
         if (aiMessages.length === 0) {
-          ElMessage.warning('暂无 AI 回答');
+          ElMessage.warning("暂无 AI 回答");
           return;
         }
 
@@ -3403,7 +3508,7 @@ export default defineComponent({
         // 1. 提取JSON字符串
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-          ElMessage.warning('未找到JSON格式内容');
+          ElMessage.warning("未找到JSON格式内容");
           return;
         }
 
@@ -3411,41 +3516,40 @@ export default defineComponent({
 
         // 2. 只调用calibrateJsonString校准JSON格式（处理markdown等格式问题）
         const jsonObj = calibrateJsonString(jsonStr);
-        
+
         if (!jsonObj) {
-          ElMessage.error('JSON校准失败');
+          ElMessage.error("JSON校准失败");
           return;
         }
 
         // 3. 更新屏幕ID和名称
-        if(EditorModule.screen) {
-          if(EditorModule.screen.id) {
+        if (EditorModule.screen) {
+          if (EditorModule.screen.id) {
             jsonObj.screen.id = EditorModule.screen.id;
             if (jsonObj.coms && Array.isArray(jsonObj.coms)) {
-              jsonObj.coms.forEach(component => {
+              jsonObj.coms.forEach((component) => {
                 component.projectId = EditorModule.screen.id;
               });
             }
           }
-          if(EditorModule.screen.name) {
+          if (EditorModule.screen.name) {
             jsonObj.screen.name = EditorModule.screen.name;
           }
         }
 
         // JSON结构校验（如果开启校验功能）
         if (enableJsonValidation.value && !validateScreenJsonStructure(jsonObj)) {
-          console.warn('JSON结构校验未通过，拒绝保存');
+          console.warn("JSON结构校验未通过，拒绝保存");
           return;
         }
 
         // 4. 保存校准后的JSON（不进行后续组件修复和模板校对）
         await saveScreenAI(jsonObj);
-        ElMessage.success('原始保存成功');
-        console.log('原始保存的JSON:', jsonObj);
-
+        ElMessage.success("原始保存成功");
+        console.log("原始保存的JSON:", jsonObj);
       } catch (error) {
-        console.error('原始保存时发生错误:', error);
-        ElMessage.error('保存失败: ' + error.message);
+        console.error("原始保存时发生错误:", error);
+        ElMessage.error("保存失败: " + error.message);
       }
     };
 
@@ -3510,9 +3614,9 @@ export default defineComponent({
       handleMouseMove,
       handleMouseUp,
       resetImageScale,
-      handlePreviewClose
+      handlePreviewClose,
     };
-  }
+  },
 });
 </script>
 
@@ -3565,8 +3669,14 @@ export default defineComponent({
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .user-message {
@@ -3593,7 +3703,7 @@ export default defineComponent({
   justify-content: center;
   font-size: 16px;
   background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .avatar.user {
@@ -3629,7 +3739,7 @@ export default defineComponent({
   background-color: white;
   color: #333;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .message-time {
@@ -3661,12 +3771,22 @@ export default defineComponent({
   animation: bounce 1.4s ease-in-out infinite both;
 }
 
-.thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
-.thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+.thinking-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.thinking-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
 }
 
 .thinking-text {
@@ -3716,8 +3836,6 @@ export default defineComponent({
   gap: 8px;
   flex-wrap: wrap;
 }
-
-
 
 :deep(.el-textarea__inner) {
   border-radius: 8px;
@@ -4101,7 +4219,9 @@ export default defineComponent({
 .step-node.current .step-dot {
   background-color: #67c23a;
   border-color: #67c23a;
-  box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2), 0 0 12px rgba(103, 194, 58, 0.4);
+  box-shadow:
+    0 0 0 4px rgba(103, 194, 58, 0.2),
+    0 0 12px rgba(103, 194, 58, 0.4);
   animation: pulse-green 2s infinite;
 }
 
@@ -4156,14 +4276,19 @@ export default defineComponent({
 
 @keyframes pulse-green {
   0% {
-    box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2), 0 0 12px rgba(103, 194, 58, 0.4);
+    box-shadow:
+      0 0 0 4px rgba(103, 194, 58, 0.2),
+      0 0 12px rgba(103, 194, 58, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(103, 194, 58, 0.1), 0 0 20px rgba(103, 194, 58, 0.6);
+    box-shadow:
+      0 0 0 6px rgba(103, 194, 58, 0.1),
+      0 0 20px rgba(103, 194, 58, 0.6);
   }
   100% {
-    box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2), 0 0 12px rgba(103, 194, 58, 0.4);
+    box-shadow:
+      0 0 0 4px rgba(103, 194, 58, 0.2),
+      0 0 12px rgba(103, 194, 58, 0.4);
   }
 }
-
 </style>
