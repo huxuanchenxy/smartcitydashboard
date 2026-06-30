@@ -120,7 +120,7 @@
               <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
               <el-button type="primary" size="small" @click="copyLastMessageContent" :disabled="isLoading">复制回答内容</el-button>
               <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading">清空对话</el-button>
-              <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading || isAwaitingFeedback">上传图片</el-button>
+              <el-button type="info" size="small" @click="triggerImageUpload" :disabled="isLoading || isAwaitingFeedback">上传</el-button>
               <!-- 水务模式下隐藏：CAD转JSON -->
               <!-- <el-button 
               v-if="!waterServiceMode"
@@ -155,44 +155,64 @@
               :disabled="isLoading || isAwaitingFeedback"
               @keydown.enter.prevent="handleEnter"
             ></el-input>
-            <div class="input-actions">
-              <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
-              <!-- 水务模式下保留：停止生成 -->
-              <el-button 
-                v-if="isLoading || isCadConverting"
-                type="danger"
-                size="small"
-                @click="stopGeneration"
-                class="stop-button"
-              >
-                停止生成
-              </el-button>
-              <!-- 助手下拉框 -->
-              <select
-                v-model="selectedSendType"
-                :disabled="isLoading || isAwaitingFeedback"
-                class="send-type-select"
-                style="width:90px; margin-right: 8px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #dcdfe6; font-size: 13px; z-index: 1000;"
-              >
-                <option
-                  v-for="type in sendTypes"
-                  :key="type.id"
-                  :value="type.id"
-                  :disabled="type.isWaterOnly ? !waterServiceMode : waterServiceMode"
+            <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- 第一行：步骤提示 -->
+              <div class="step-indicator-container">
+                <span class="step-indicator" style="font-size: 13px; color: #606266;">
+                  当前步骤: <span style="color: #409eff; font-weight: bold;">{{ currentStep === 1 ? '步骤1 - 识别' : '步骤2 - 验证' }}</span>
+                </span>
+              </div>
+              <!-- 第二行：操作按钮 -->
+              <div class="actions-row" style="display: flex; align-items: center; gap: 8px;">
+                <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
+                <!-- 水务模式下保留：停止生成 -->
+                <el-button 
+                  v-if="isLoading || isCadConverting"
+                  type="danger"
+                  size="small"
+                  @click="stopGeneration"
+                  class="stop-button"
                 >
-                  {{ type.label }}
-                </option>
-              </select>
-              <el-button
-                type="success"
-                size="small"
-                @click="sendDispatch"
-                :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                class="send-button"
-                title="发送调度"
-              >
-                {{ isLoading ? '发送中' : '发送' }}
-              </el-button>
+                  停止生成
+                </el-button>
+                <!-- 助手下拉框 -->
+                <select
+                  v-model="selectedSendType"
+                  :disabled="isLoading || isAwaitingFeedback"
+                  class="send-type-select"
+                  style="width:90px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #dcdfe6; font-size: 13px; z-index: 1000;"
+                >
+                  <option
+                    v-for="type in sendTypes"
+                    :key="type.id"
+                    :value="type.id"
+                    :disabled="getSendTypeDisabled(type)"
+                  >
+                    {{ type.label }}
+                  </option>
+                </select>
+                <!-- 重置步骤按钮 -->
+                <el-button
+                  v-if="currentStep > 1"
+                  type="default"
+                  size="small"
+                  @click="resetSteps"
+                  :disabled="isLoading || isAwaitingFeedback"
+                  title="重置到步骤1"
+                >
+                  重置
+                </el-button>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="sendDispatch"
+                  :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
+                  class="send-button"
+                  title="发送调度"
+                >
+                  {{ isLoading ? '发送中' : '发送' }}
+                </el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -449,6 +469,11 @@ export default defineComponent({
     const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
     const isCadConverting = ref(false); // CAD转JSON转换状态
 
+    // 流程步骤管理
+    const currentStep = ref(1); // 当前步骤：1=助手5，2=助手6
+    const stepResults = ref<Record<number, string>>({}); // 保存各步骤的结果
+    const needAutoProceedToStep2 = ref(false); // 是否需要自动进入步骤2
+
     const imageScale = ref(1);
     const offsetX = ref(0);
     const offsetY = ref(0);
@@ -701,12 +726,43 @@ export default defineComponent({
     const selectedSendType = ref<string>(props.waterServiceMode ? 'sendWater' : 'send5');
 
     const selectOptions = computed(() => {
-      return sendTypes.value.map(t => ({
-        label: t.label,
-        value: t.id,
-        disabled: t.isWaterOnly && !props.waterServiceMode
-      }));
+      return sendTypes.value.map(t => {
+        let disabled = t.isWaterOnly && !props.waterServiceMode;
+        
+        // 根据当前步骤限制可选的助手
+        if (currentStep.value === 1) {
+          disabled = disabled || t.id !== 'send5';
+        } else if (currentStep.value === 2) {
+          disabled = disabled || t.id !== 'send6';
+        }
+        
+        return {
+          label: t.label,
+          value: t.id,
+          disabled
+        };
+      });
     });
+
+    const getSendTypeDisabled = (type: any) => {
+      let disabled = type.isWaterOnly ? !props.waterServiceMode : props.waterServiceMode;
+      
+      // 根据当前步骤限制可选的助手
+      if (currentStep.value === 1) {
+        disabled = disabled || type.id !== 'send5';
+      } else if (currentStep.value === 2) {
+        disabled = disabled || type.id !== 'send6';
+      }
+      
+      return disabled;
+    };
+
+    const resetSteps = () => {
+      currentStep.value = 1;
+      stepResults.value = {};
+      selectedSendType.value = props.waterServiceMode ? 'sendWater' : 'send5';
+      ElMessage.info('已重置到步骤1');
+    };
 
     // 监听推荐问题选择变化
     watch(selectedQuestion, (newVal) => {
@@ -753,7 +809,7 @@ export default defineComponent({
       }
       
       // 先处理换行
-      let result = content.replace(/\n/g, '<br>');
+      let result = content.replace(/\n/g, ' ');
       
       // 移除 {{#$output.usercomments#}} 标记
       result = result.replace(/\{\{#\$output\.usercomments#\}\}/g, '');
@@ -1085,6 +1141,12 @@ export default defineComponent({
                     lastMsg.content = fullContent;
                   }
                   await scrollToBottom();
+                  
+                  // 步骤1完成后标记需要进入步骤2（非人工介入场景）
+                  if (currentStep.value === 1 && !isPaused) {
+                    stepResults.value[1] = fullContent;
+                    needAutoProceedToStep2.value = true;
+                  }
                 } else if (lastMsg?.role === 'assistant') {
                   // 没有返回答案，结束思考状态
                   lastMsg.isThinking = false;
@@ -1196,6 +1258,12 @@ export default defineComponent({
           console.log(`=== ${logPrefix} 调用完成 ===`);
           console.log(`${logPrefix} 回答:`, fullContent);
           emit('message-received', fullContent);
+        }
+
+        // 在返回之前检查是否需要自动进入步骤2
+        if (needAutoProceedToStep2.value && !isPaused) {
+          needAutoProceedToStep2.value = false;
+          await autoProceedToStep2();
         }
 
         return fullContent;
@@ -1709,6 +1777,36 @@ export default defineComponent({
       });
     };
 
+    // 自动从步骤1进入步骤2
+    const autoProceedToStep2 = async () => {
+      console.log('=== 自动进入步骤2 ===');
+      
+      // 切换到助手6
+      selectedSendType.value = 'send6';
+      currentStep.value = 2;
+      
+      await nextTick();
+      
+      // 获取步骤1的结果作为步骤2的输入
+      const step1Result = stepResults.value[1];
+      if (!step1Result) {
+        ElMessage.warning('步骤1没有返回结果，无法继续');
+        return;
+      }
+      
+      // 添加系统提示消息
+      messages.value.push({
+        role: 'user',
+        content: `🔄 自动进入步骤2：使用步骤1结果作为输入`,
+        timestamp: Date.now()
+      });
+      
+      await scrollToBottom();
+      
+      // 调用助手6，使用步骤1的结果作为query
+      await sendMessage6(step1Result);
+    };
+
     // 发送消息Water - 使用水务专用 API Key
     const sendMessageWater = async () => {
       await sendRequest({
@@ -1954,6 +2052,12 @@ export default defineComponent({
 
           await scrollToBottom();
           emit('message-received', lastMsg?.content || '');
+
+          // 步骤1完成后标记需要进入步骤2（在finally之后执行）
+          if (currentStep.value === 1 && finalResult.status === 'succeeded') {
+            stepResults.value[1] = lastMsg?.content || '';
+            needAutoProceedToStep2.value = true;
+          }
         } else {
           const lastMsg = messages.value[messages.value.length - 1];
           if (lastMsg?.role === 'assistant') {
@@ -1982,6 +2086,12 @@ export default defineComponent({
         isAwaitingFeedback.value = false; // 重置等待反馈状态
         // 确保最后滚动到底部
         setTimeout(() => scrollToBottom(), 100);
+      }
+
+      // 在finally块之后执行自动进入步骤2
+      if (needAutoProceedToStep2.value) {
+        needAutoProceedToStep2.value = false;
+        await autoProceedToStep2();
       }
     };
 
@@ -2838,6 +2948,10 @@ export default defineComponent({
         abortController.value.abort();
       }
       dialogVisible.value = false;
+      // 重置步骤状态
+      currentStep.value = 1;
+      stepResults.value = {};
+      selectedSendType.value = props.waterServiceMode ? 'sendWater' : 'send5';
       // 保留消息和会话ID，不移除
       emit('close');
       
@@ -3299,6 +3413,9 @@ export default defineComponent({
       sendTypes,
       selectedSendType,
       selectOptions,
+      currentStep,
+      getSendTypeDisabled,
+      resetSteps,
       isSubmitting,
       isAwaitingFeedback,
       validationResultImageVisible,
@@ -3310,6 +3427,7 @@ export default defineComponent({
       sendMessage3,
       sendMessage4,
       sendMessage5,
+      sendMessage6,
       sendMessageWater,
       sendDispatch,
       handleHumanApprove,
