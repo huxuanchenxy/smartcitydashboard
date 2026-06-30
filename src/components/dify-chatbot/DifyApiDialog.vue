@@ -350,6 +350,7 @@ interface SendMessageConfig {
   clearQuery?: boolean;
   supportWorkflowPaused?: boolean;
   onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
+  skipUserMessage?: boolean;
 }
 
 interface SendType {
@@ -899,7 +900,8 @@ export default defineComponent({
         query: configQuery,
         clearQuery = true,
         supportWorkflowPaused = false,
-        onWorkflowPaused
+        onWorkflowPaused,
+        skipUserMessage = false
       } = config;
 
       const query = configQuery || userQuery.value.trim();
@@ -918,12 +920,14 @@ export default defineComponent({
       console.log(`=== ${logPrefix} 调用开始 ===`);
       console.log(`${logPrefix} query:`, query);
 
-      // 添加用户消息
-      messages.value.push({
-        role: 'user',
-        content: query,
-        timestamp: Date.now()
-      });
+      // 添加用户消息（可配置跳过）
+      if (!skipUserMessage) {
+        messages.value.push({
+          role: 'user',
+          content: query,
+          timestamp: Date.now()
+        });
+      }
 
       // 添加 AI 思考中的占位消息
       const thinkingMsg: Message = {
@@ -1776,7 +1780,8 @@ export default defineComponent({
         logPrefix: '发送6',
         query: queryText,
         clearQuery: !queryText,
-        supportWorkflowPaused: true
+        supportWorkflowPaused: true,
+        skipUserMessage: true
       });
     };
 
@@ -1792,13 +1797,6 @@ export default defineComponent({
       
       // 获取步骤1的结果作为步骤2的输入
       const step1Result = stepResults.value[1];
-      
-      // 添加系统提示消息
-      messages.value.push({
-        role: 'user',
-        content: `🔄 自动进入步骤2：使用步骤1结果作为输入`,
-        timestamp: Date.now()
-      });
       
       await scrollToBottom();
       
