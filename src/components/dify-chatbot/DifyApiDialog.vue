@@ -473,6 +473,9 @@ export default defineComponent({
     const currentStep = ref(1); // 当前步骤：1=助手5，2=助手6
     const stepResults = ref<Record<number, string>>({}); // 保存各步骤的结果
     const needAutoProceedToStep2 = ref(false); // 是否需要自动进入步骤2
+    
+    // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
+    const assistant5RecognitionResult = ref('');
 
     const imageScale = ref(1);
     const offsetX = ref(0);
@@ -1789,10 +1792,6 @@ export default defineComponent({
       
       // 获取步骤1的结果作为步骤2的输入
       const step1Result = stepResults.value[1];
-      if (!step1Result) {
-        ElMessage.warning('步骤1没有返回结果，无法继续');
-        return;
-      }
       
       // 添加系统提示消息
       messages.value.push({
@@ -1804,7 +1803,12 @@ export default defineComponent({
       await scrollToBottom();
       
       // 调用助手6，使用步骤1的结果作为query
-      await sendMessage6(step1Result);
+      if (step1Result) {
+        await sendMessage6(step1Result);
+      } else {
+        ElMessage.warning('步骤1没有返回识别结果，将使用空输入继续');
+        await sendMessage6('');
+      }
     };
 
     // 发送消息Water - 使用水务专用 API Key
@@ -1986,6 +1990,22 @@ export default defineComponent({
       return finalResult;
     };
 
+    // 提取助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
+    const extractRecognitionResult = (content: string): string => {
+      console.log('助手5原始内容:', content);
+      
+      // 支持中文全角冒号（：）和英文半角冒号（:），以及可能的Markdown格式（如**识别结果：**）
+      const match = content.match(/识别结果[：:](?:\*\*)?[\s\S]*?(?=验证结果[：:])/);
+      if (match && match[0]) {
+        let result = match[0];
+        // 移除开头的"识别结果："或"识别结果:"以及可能的**
+        result = result.replace(/^识别结果[：:](?:\*\*)?\s*/, '');
+        return result.trim();
+      }
+      
+      return '';
+    };
+
     // 处理人工介入 - Approve
     const handleHumanApprove = async (msgIndex: number) => {
       const message = messages.value[msgIndex];
@@ -2035,10 +2055,28 @@ export default defineComponent({
           if (lastMsg?.role === 'assistant') {
             lastMsg.isThinking = false;
 
-            if (finalResult.outputs && finalResult.outputs.answer) {
-              lastMsg.content = finalResult.outputs.answer;
-            } else if (finalResult.status === 'succeeded') {
-              lastMsg.content = '工作流执行成功完成！';
+            // 从助手5的中间结果中提取识别结果
+            const recognitionResult = extractRecognitionResult(message.content);
+            
+            if (finalResult.status === 'succeeded') {
+              // 当workflow成功时，显示助手5的识别结果（而不是接口返回的answer）
+              if (recognitionResult) {
+                // 保存识别结果
+                assistant5RecognitionResult.value = recognitionResult;
+                // 显示折叠内容提示
+                lastMsg.content = `<div class="recognition-result-wrapper">
+                  <div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';">
+                    <span class="collapse-icon">▶</span>
+                    <span class="collapse-text">已生成完毕，点击展开具体内容</span>
+                  </div>
+                  <div class="recognition-result-content" style="display: none;">
+                    ${recognitionResult}
+                  </div>
+                </div>`;
+              } else {
+                // 如果没有提取到识别结果，显示默认提示
+                lastMsg.content = '工作流执行成功完成！';
+              }
             } else if (finalResult.error) {
               lastMsg.content = `工作流执行失败：${finalResult.error}`;
             } else {
@@ -2055,7 +2093,7 @@ export default defineComponent({
 
           // 步骤1完成后标记需要进入步骤2（在finally之后执行）
           if (currentStep.value === 1 && finalResult.status === 'succeeded') {
-            stepResults.value[1] = lastMsg?.content || '';
+            stepResults.value[1] = assistant5RecognitionResult.value;
             needAutoProceedToStep2.value = true;
           }
         } else {
@@ -3958,4 +3996,57 @@ export default defineComponent({
   color: #909399;
   margin-top: 8px;
 }
+
+/* 识别结果折叠样式 - 使用:deep()确保v-html插入的内容能应用样式 */
+:deep(.recognition-result-wrapper) {
+  background-color: #f5f5f5;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:deep(.recognition-result-collapsed) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+}
+
+:deep(.recognition-result-collapsed:hover) {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+}
+
+:deep(.recognition-result-collapsed.expanded) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-bottom: 1px solid #e4e7ed;
+}
+
+:deep(.collapse-icon) {
+  font-size: 14px;
+  color: #409eff;
+  font-weight: bold;
+  transition: transform 0.3s;
+}
+
+:deep(.collapse-text) {
+  color: #409eff;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+:deep(.recognition-result-content) {
+  padding: 16px;
+  background-color: white;
+  line-height: 1.8;
+  font-size: 13px;
+  color: #333;
+  white-space: pre-wrap;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
 </style>
