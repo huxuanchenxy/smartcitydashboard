@@ -156,12 +156,7 @@
               @keydown.enter.prevent="handleEnter"
             ></el-input>
             <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px;">
-              <!-- 第一行：步骤提示 -->
-              <div class="step-indicator-container">
-                <span class="step-indicator" style="font-size: 13px; color: #606266;">
-                  当前步骤: <span style="color: #409eff; font-weight: bold;">{{ currentStep === 1 ? '步骤1 - 识别' : '步骤2 - 验证' }}</span>
-                </span>
-              </div>
+
               <!-- 第二行：操作按钮 -->
               <div class="actions-row" style="display: flex; align-items: center; gap: 8px;">
                 <span class="hint" v-if="isLoading || isCadConverting">AI 正在思考中，请稍候...</span>
@@ -217,6 +212,28 @@
           </div>
         </div>
       </div>
+                    <!-- 步骤路径指示器 -->
+              <div class="step-path-container">
+                <div class="step-path">
+                  <!-- 步骤1：识别 -->
+                  <div class="step-node" :class="{ 'current': currentStep === 1, 'completed': currentStep > 1 }">
+                    <div class="step-dot">
+                      <span v-if="currentStep > 1" class="step-check">✓</span>
+                      <span v-else class="step-number">1</span>
+                    </div>
+                    <span class="step-label">图纸识别</span>
+                  </div>
+                  <div class="step-connector" :class="{ 'active': currentStep > 1 }"></div>
+                  <!-- 步骤2：点位绑定 -->
+                  <div class="step-node" :class="{ 'current': currentStep === 2, 'completed': currentStep > 2 }">
+                    <div class="step-dot">
+                      <span v-if="currentStep > 2" class="step-check">✓</span>
+                      <span v-else class="step-number">2</span>
+                    </div>
+                    <span class="step-label">点位绑定</span>
+                  </div>
+                </div>
+              </div>
     </div>
 
     <!-- 上传图片输入框（隐藏） -->
@@ -4045,6 +4062,108 @@ export default defineComponent({
   white-space: pre-wrap;
   max-height: 500px;
   overflow-y: auto;
+}
+
+/* 步骤路径指示器样式 */
+.step-path-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.step-path {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+}
+
+.step-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #e4e7ed;
+  border: 2px solid #dcdfe6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.step-node.current .step-dot {
+  background-color: #67c23a;
+  border-color: #67c23a;
+  box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2), 0 0 12px rgba(103, 194, 58, 0.4);
+  animation: pulse-green 2s infinite;
+}
+
+.step-node.completed .step-dot {
+  background-color: #67c23a;
+  border-color: #67c23a;
+}
+
+.step-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: #909399;
+}
+
+.step-node.current .step-number {
+  color: white;
+}
+
+.step-check {
+  font-size: 16px;
+  color: white;
+  font-weight: bold;
+}
+
+.step-label {
+  font-size: 12px;
+  color: #909399;
+  transition: all 0.3s ease;
+}
+
+.step-node.current .step-label {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.step-node.completed .step-label {
+  color: #67c23a;
+}
+
+.step-connector {
+  width: 60px;
+  height: 3px;
+  background-color: #e4e7ed;
+  margin: 0 4px;
+  transition: all 0.3s ease;
+}
+
+.step-connector.active {
+  background-color: #67c23a;
+  box-shadow: 0 0 8px rgba(103, 194, 58, 0.4);
+}
+
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2), 0 0 12px rgba(103, 194, 58, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(103, 194, 58, 0.1), 0 0 20px rgba(103, 194, 58, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2), 0 0 12px rgba(103, 194, 58, 0.4);
+  }
 }
 
 </style>
