@@ -180,6 +180,34 @@
               @keydown.enter.prevent="handleEnter"
             ></el-input>
             <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px">
+              <!-- 步骤路径指示器 -->
+              <div class="step-path-container" v-if="!waterServiceMode">
+                <div class="step-path">
+                  <!-- 步骤1：识别 -->
+                  <div
+                    class="step-node"
+                    :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+                  >
+                    <div class="step-dot">
+                      <span v-if="currentStep > 1" class="step-check">✓</span>
+                      <span v-else class="step-number">1</span>
+                    </div>
+                    <span class="step-label">图纸识别</span>
+                  </div>
+                  <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+                  <!-- 步骤2：点位绑定 -->
+                  <div
+                    class="step-node"
+                    :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+                  >
+                    <div class="step-dot">
+                      <span v-if="currentStep > 2" class="step-check">✓</span>
+                      <span v-else class="step-number">2</span>
+                    </div>
+                    <span class="step-label">点位绑定</span>
+                  </div>
+                </div>
+              </div>
               <!-- 第二行：操作按钮 -->
               <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
                 <span class="hint" v-if="isLoading || isCadConverting"
@@ -242,34 +270,6 @@
                 </el-button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      <!-- 步骤路径指示器 -->
-      <div class="step-path-container" v-if="!waterServiceMode">
-        <div class="step-path">
-          <!-- 步骤1：识别 -->
-          <div
-            class="step-node"
-            :class="{ current: currentStep === 1, completed: currentStep > 1 }"
-          >
-            <div class="step-dot">
-              <span v-if="currentStep > 1" class="step-check">✓</span>
-              <span v-else class="step-number">1</span>
-            </div>
-            <span class="step-label">图纸识别</span>
-          </div>
-          <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
-          <!-- 步骤2：点位绑定 -->
-          <div
-            class="step-node"
-            :class="{ current: currentStep === 2, completed: currentStep > 2 }"
-          >
-            <div class="step-dot">
-              <span v-if="currentStep > 2" class="step-check">✓</span>
-              <span v-else class="step-number">2</span>
-            </div>
-            <span class="step-label">点位绑定</span>
           </div>
         </div>
       </div>
@@ -1910,9 +1910,9 @@ export default defineComponent({
           try {
             const apiKey = props.apiKeyFlowB2;
             console.log("=== 上传识别结果文件 ===");
-            
+
             const uploadResult = await uploadRecognitionResultAsFile(step1Result, apiKey);
-            
+
             // 构建files参数
             const files = [
               {
@@ -1921,7 +1921,7 @@ export default defineComponent({
                 upload_file_id: uploadResult.id,
               },
             ];
-            
+
             // 调用助手6，使用files参数
             await sendMessage6("请根据上传的识别结果文件进行验证", files);
           } catch (error: any) {
@@ -2683,11 +2683,13 @@ export default defineComponent({
 
     // 将识别结果上传为txt文件
     const uploadRecognitionResultAsFile = async (content: string, apiKey: string): Promise<any> => {
-      console.log('=== 上传识别结果为txt文件 ===');
-      
+      console.log("=== 上传识别结果为txt文件 ===");
+
       try {
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const file = new File([blob], `recognition_result_${Date.now()}.txt`, { type: 'text/plain' });
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const file = new File([blob], `recognition_result_${Date.now()}.txt`, {
+          type: "text/plain",
+        });
 
         const formData = new FormData();
         formData.append("file", file);
@@ -2706,11 +2708,11 @@ export default defineComponent({
         }
 
         const result = await response.json();
-        console.log('文件上传成功:', result);
-        
+        console.log("文件上传成功:", result);
+
         return result;
       } catch (error: any) {
-        console.error('文件上传失败:', error);
+        console.error("文件上传失败:", error);
         throw error;
       }
     };
