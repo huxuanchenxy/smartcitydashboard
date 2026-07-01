@@ -427,6 +427,7 @@ interface SendMessageConfig {
   supportWorkflowPaused?: boolean;
   onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
   skipUserMessage?: boolean;
+  files?: any[];
 }
 
 interface SendType {
@@ -993,6 +994,7 @@ export default defineComponent({
         supportWorkflowPaused = false,
         onWorkflowPaused,
         skipUserMessage = false,
+        files: configFiles,
       } = config;
 
       const query = configQuery || userQuery.value.trim();
@@ -1003,13 +1005,14 @@ export default defineComponent({
         return "";
       }
 
-      if (!query) {
+      if (!query && !configFiles) {
         ElMessage.warning("请输入查询内容");
         return "";
       }
 
       console.log(`=== ${logPrefix} 调用开始 ===`);
       console.log(`${logPrefix} query:`, query);
+      console.log(`${logPrefix} files:`, configFiles);
 
       // 添加用户消息（可配置跳过）
       if (!skipUserMessage) {
@@ -1063,16 +1066,17 @@ export default defineComponent({
       let currentWorkflowRunId = "";
 
       try {
-        // 构建 files 参数（如果有上传的图片）
-        const files = lastUploadedImage.value
-          ? [
-              {
-                type: "image",
-                transfer_method: "local_file",
-                upload_file_id: lastUploadedImage.value.id,
-              },
-            ]
-          : undefined;
+        // 构建 files 参数（优先使用config中的files，否则使用上传的图片）
+        let files = configFiles;
+        if (!files && lastUploadedImage.value) {
+          files = [
+            {
+              type: "image",
+              transfer_method: "local_file",
+              upload_file_id: lastUploadedImage.value.id,
+            },
+          ];
+        }
 
         const requestBody = {
           inputs: props.data,
@@ -1869,7 +1873,7 @@ export default defineComponent({
       });
     };
 
-    const sendMessage6 = async (queryText?: string) => {
+    const sendMessage6 = async (queryText?: string, files?: any[]) => {
       await sendRequest({
         apiKey: props.apiKeyFlowB2 || "",
         logPrefix: "发送6",
@@ -1877,6 +1881,7 @@ export default defineComponent({
         clearQuery: !queryText,
         supportWorkflowPaused: true,
         skipUserMessage: true,
+        files: files,
       });
     };
 
@@ -1895,12 +1900,47 @@ export default defineComponent({
 
       await scrollToBottom();
 
-      // 调用助手6，使用步骤1的结果作为query
-      if (step1Result) {
-        await sendMessage6(step1Result);
+      // 获取传输模式配置
+      const transferMode = import.meta.env.VITE_APP_DIFY_STEP2_TRANSFER_MODE || "query";
+      console.log(`=== 步骤2传输模式: ${transferMode} ===`);
+
+      if (transferMode === "file") {
+        // 传file方式：先上传识别结果为txt文件，然后使用files参数调用sendMessage6
+        if (step1Result) {
+          try {
+            const apiKey = props.apiKeyFlowB2;
+            console.log("=== 上传识别结果文件 ===");
+            
+            const uploadResult = await uploadRecognitionResultAsFile(step1Result, apiKey);
+            
+            // 构建files参数
+            const files = [
+              {
+                type: "document",
+                transfer_method: "local_file",
+                upload_file_id: uploadResult.id,
+              },
+            ];
+            
+            // 调用助手6，使用files参数
+            await sendMessage6("请根据上传的识别结果文件进行验证", files);
+          } catch (error: any) {
+            console.error("文件上传失败:", error);
+            ElMessage.error("文件上传失败，将使用query方式继续");
+            await sendMessage6(step1Result);
+          }
+        } else {
+          ElMessage.warning("步骤1没有返回识别结果，将使用空输入继续");
+          await sendMessage6("");
+        }
       } else {
-        ElMessage.warning("步骤1没有返回识别结果，将使用空输入继续");
-        await sendMessage6("");
+        // 传query方式：直接将识别结果作为query传入sendMessage6（默认方式）
+        if (step1Result) {
+          await sendMessage6(step1Result);
+        } else {
+          ElMessage.warning("步骤1没有返回识别结果，将使用空输入继续");
+          await sendMessage6("");
+        }
       }
     };
 
@@ -2169,7 +2209,7 @@ export default defineComponent({
                 lastMsg.content = `<div class="recognition-result-wrapper">
                   <div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';">
                     <span class="collapse-icon">▶</span>
-                    <span class="collapse-text">已生成完毕，点击展开具体内容</span>
+                    <span class="collapse-text">图片识别完毕，点击展开具体内容</span>
                   </div>
                   <div class="recognition-result-content" style="display: none;">
                     ${recognitionResult}
@@ -2636,6 +2676,40 @@ export default defineComponent({
         ElMessage.error("图片上传失败：" + error.message);
       } finally {
         isLoading.value = false;
+      }
+    };
+
+    // 将识别结果上传为txt文件
+    const uploadRecognitionResultAsFile = async (content: string, apiKey: string): Promise<any> => {
+      console.log('=== 上传识别结果为txt文件 ===');
+      
+      try {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const file = new File([blob], `recognition_result_${Date.now()}.txt`, { type: 'text/plain' });
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("user", props.userId || "abc-123");
+
+        const response = await fetch(`${props.baseUrl}/v1/files/upload`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`上传失败 HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('文件上传成功:', result);
+        
+        return result;
+      } catch (error: any) {
+        console.error('文件上传失败:', error);
+        throw error;
       }
     };
 
