@@ -2205,11 +2205,13 @@ export default defineComponent({
               if (recognitionResult) {
                 // 保存识别结果
                 assistant5RecognitionResult.value = recognitionResult;
+                // 根据当前步骤显示不同的提示文字
+                const completeText = currentStep.value === 1 ? "图片识别完毕" : "点位绑定完毕";
                 // 显示折叠内容提示
                 lastMsg.content = `<div class="recognition-result-wrapper">
                   <div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';">
                     <span class="collapse-icon">▶</span>
-                    <span class="collapse-text">图片识别完毕，点击展开具体内容</span>
+                    <span class="collapse-text">${completeText}，点击展开具体内容</span>
                   </div>
                   <div class="recognition-result-content" style="display: none;">
                     ${recognitionResult}
