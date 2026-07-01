@@ -246,7 +246,7 @@
         </div>
       </div>
       <!-- 步骤路径指示器 -->
-      <div class="step-path-container">
+      <div class="step-path-container" v-if="!waterServiceMode">
         <div class="step-path">
           <!-- 步骤1：识别 -->
           <div
