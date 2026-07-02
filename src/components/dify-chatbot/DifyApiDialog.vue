@@ -183,7 +183,7 @@
               <!-- 步骤路径指示器 -->
               <div class="step-path-container" v-if="!waterServiceMode">
                 <div class="step-path">
-                  <!-- 步骤1：识别 -->
+                  <!-- 步骤1：图纸识别 -->
                   <div
                     class="step-node"
                     :class="{ current: currentStep === 1, completed: currentStep > 1 }"
@@ -205,6 +205,18 @@
                       <span v-else class="step-number">2</span>
                     </div>
                     <span class="step-label">点位绑定</span>
+                  </div>
+                  <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
+                  <!-- 步骤3：生成DSL -->
+                  <div
+                    class="step-node"
+                    :class="{ current: currentStep === 3, completed: currentStep > 3 }"
+                  >
+                    <div class="step-dot">
+                      <span v-if="currentStep > 3" class="step-check">✓</span>
+                      <span v-else class="step-number">3</span>
+                    </div>
+                    <span class="step-label">生成DSL</span>
                   </div>
                 </div>
               </div>
@@ -492,6 +504,11 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb2 || "",
     },
+        // difyapidialog 专用 API Key (FLOWb3)
+    apiKeyFlowB3: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb3 || "",
+    },
     // 水务专用 API Key
     apiKeyFlowWater: {
       type: String,
@@ -554,9 +571,10 @@ export default defineComponent({
     const isCadConverting = ref(false); // CAD转JSON转换状态
 
     // 流程步骤管理
-    const currentStep = ref(1); // 当前步骤：1=助手5，2=助手6
+    const currentStep = ref(1); // 当前步骤：1=助手5，2=助手6，3=助手7
     const stepResults = ref<Record<number, string>>({}); // 保存各步骤的结果
     const needAutoProceedToStep2 = ref(false); // 是否需要自动进入步骤2
+    const needAutoProceedToStep3 = ref(false); // 是否需要自动进入步骤3
 
     // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
     const assistant5RecognitionResult = ref("");
@@ -780,8 +798,8 @@ export default defineComponent({
       // },
       {
         id: "send5",
-        label: "助手5",
-        title: "反复图片转换",
+        label: "图纸识别",
+        title: "图纸识别",
         config: {
           apiKey: props.apiKeyFlowB1 || "",
           logPrefix: "发送5",
@@ -790,11 +808,21 @@ export default defineComponent({
       },
       {
         id: "send6",
-        label: "助手6",
-        title: "FLOWb2专用",
+        label: "点位绑定",
+        title: "点位绑定",
         config: {
           apiKey: props.apiKeyFlowB2 || "",
           logPrefix: "发送6",
+          supportWorkflowPaused: true,
+        },
+      },
+      {
+        id: "send7",
+        label: "生成DSL",
+        title: "生成DSL",
+        config: {
+          apiKey: props.apiKeyFlowB3 || "",
+          logPrefix: "发送7",
           supportWorkflowPaused: true,
         },
       },
@@ -821,6 +849,8 @@ export default defineComponent({
           disabled = disabled || t.id !== "send5";
         } else if (currentStep.value === 2) {
           disabled = disabled || t.id !== "send6";
+        } else if (currentStep.value === 3) {
+          disabled = disabled || t.id !== "send7";
         }
 
         return {
@@ -839,6 +869,8 @@ export default defineComponent({
         disabled = disabled || type.id !== "send5";
       } else if (currentStep.value === 2) {
         disabled = disabled || type.id !== "send6";
+      } else if (currentStep.value === 3) {
+        disabled = disabled || type.id !== "send7";
       }
 
       return disabled;
@@ -1364,10 +1396,13 @@ export default defineComponent({
           emit("message-received", fullContent);
         }
 
-        // 在返回之前检查是否需要自动进入步骤2
+        // 在返回之前检查是否需要自动进入步骤2或步骤3
         if (needAutoProceedToStep2.value && !isPaused) {
           needAutoProceedToStep2.value = false;
           await autoProceedToStep2();
+        } else if (needAutoProceedToStep3.value && !isPaused) {
+          needAutoProceedToStep3.value = false;
+          await autoProceedToStep3();
         }
 
         return fullContent;
@@ -1885,6 +1920,18 @@ export default defineComponent({
       });
     };
 
+    const sendMessage7 = async (queryText?: string, files?: any[]) => {
+      await sendRequest({
+        apiKey: props.apiKeyFlowB3 || "",
+        logPrefix: "发送7",
+        query: queryText,
+        clearQuery: !queryText,
+        supportWorkflowPaused: true,
+        skipUserMessage: true,
+        files: files,
+      });
+    };
+
     // 自动从步骤1进入步骤2
     const autoProceedToStep2 = async () => {
       console.log("=== 自动进入步骤2 ===");
@@ -1940,6 +1987,65 @@ export default defineComponent({
         } else {
           ElMessage.warning("步骤1没有返回识别结果，将使用空输入继续");
           await sendMessage6("");
+        }
+      }
+    };
+
+    // 自动从步骤2进入步骤3
+    const autoProceedToStep3 = async () => {
+      console.log("=== 自动进入步骤3 ===");
+
+      // 切换到助手7
+      selectedSendType.value = "send7";
+      currentStep.value = 3;
+
+      await nextTick();
+
+      // 获取步骤2的结果作为步骤3的输入
+      const step2Result = stepResults.value[2];
+
+      await scrollToBottom();
+
+      // 获取传输模式配置
+      const transferMode = import.meta.env.VITE_APP_DIFY_STEP2_TRANSFER_MODE || "query";
+      console.log(`=== 步骤3传输模式: ${transferMode} ===`);
+
+      if (transferMode === "file") {
+        // 传file方式：先上传识别结果为txt文件，然后使用files参数调用sendMessage7
+        if (step2Result) {
+          try {
+            const apiKey = props.apiKeyFlowB3;
+            console.log("=== 上传识别结果文件 ===");
+
+            const uploadResult = await uploadRecognitionResultAsFile(step2Result, apiKey);
+
+            // 构建files参数
+            const files = [
+              {
+                type: "document",
+                transfer_method: "local_file",
+                upload_file_id: uploadResult.id,
+              },
+            ];
+
+            // 调用助手7，使用files参数
+            await sendMessage7("请根据上传的识别结果文件生成DSL", files);
+          } catch (error: any) {
+            console.error("文件上传失败:", error);
+            ElMessage.error("文件上传失败，将使用query方式继续");
+            await sendMessage7(step2Result);
+          }
+        } else {
+          ElMessage.warning("步骤2没有返回识别结果，将使用空输入继续");
+          await sendMessage7("");
+        }
+      } else {
+        // 传query方式：直接将识别结果作为query传入sendMessage7（默认方式）
+        if (step2Result) {
+          await sendMessage7(step2Result);
+        } else {
+          ElMessage.warning("步骤2没有返回识别结果，将使用空输入继续");
+          await sendMessage7("");
         }
       }
     };
@@ -2206,7 +2312,7 @@ export default defineComponent({
                 // 保存识别结果
                 assistant5RecognitionResult.value = recognitionResult;
                 // 根据当前步骤显示不同的提示文字
-                const completeText = currentStep.value === 1 ? "图片识别完毕" : "点位绑定完毕";
+                const completeText = currentStep.value === 1 ? "图片识别完毕" : currentStep.value === 2 ? "点位绑定完毕" : "生成DSL完毕";
                 // 显示折叠内容提示
                 lastMsg.content = `<div class="recognition-result-wrapper">
                   <div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';">
@@ -2235,10 +2341,13 @@ export default defineComponent({
           await scrollToBottom();
           emit("message-received", lastMsg?.content || "");
 
-          // 步骤1完成后标记需要进入步骤2（在finally之后执行）
+          // 步骤完成后标记需要进入下一步
           if (currentStep.value === 1 && finalResult.status === "succeeded") {
             stepResults.value[1] = assistant5RecognitionResult.value;
             needAutoProceedToStep2.value = true;
+          } else if (currentStep.value === 2 && finalResult.status === "succeeded") {
+            stepResults.value[2] = assistant5RecognitionResult.value;
+            needAutoProceedToStep3.value = true;
           }
         } else {
           const lastMsg = messages.value[messages.value.length - 1];
@@ -2269,10 +2378,13 @@ export default defineComponent({
         setTimeout(() => scrollToBottom(), 100);
       }
 
-      // 在finally块之后执行自动进入步骤2
+      // 在finally块之后执行自动进入步骤2或步骤3
       if (needAutoProceedToStep2.value) {
         needAutoProceedToStep2.value = false;
         await autoProceedToStep2();
+      } else if (needAutoProceedToStep3.value) {
+        needAutoProceedToStep3.value = false;
+        await autoProceedToStep3();
       }
     };
 
@@ -3663,6 +3775,7 @@ export default defineComponent({
       sendMessage4,
       sendMessage5,
       sendMessage6,
+      sendMessage7,
       sendMessageWater,
       sendDispatch,
       handleHumanApprove,
