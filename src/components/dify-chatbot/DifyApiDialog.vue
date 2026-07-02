@@ -139,11 +139,11 @@
                 >清空对话</el-button
               >
               <el-button
-                type="info"
+                type="success"
                 size="small"
                 @click="triggerImageUpload"
                 :disabled="isLoading || isAwaitingFeedback"
-                >上传</el-button
+                >上传文件</el-button
               >
               <!-- 水务模式下隐藏：CAD转JSON -->
               <!-- <el-button 
@@ -659,6 +659,11 @@ export default defineComponent({
       return STORAGE_KEY_PREFIX + screenId;
     };
 
+    const getStepStorageKey = () => {
+      const screenId = EditorModule.screen?.id || "default";
+      return STORAGE_KEY_PREFIX + screenId + "-steps";
+    };
+
     const getUploadImageStorageKey = () => {
       const screenId = EditorModule.screen?.id || "default";
       return "dify_uploaded_image-" + screenId;
@@ -670,6 +675,21 @@ export default defineComponent({
         localStorage.setItem(getStorageKey(), JSON.stringify(messages.value));
       } catch (e) {
         console.error("保存消息到 localStorage 失败:", e);
+      }
+    };
+
+    const saveStepStateToStorage = () => {
+      if (isHydrating.value) return;
+      try {
+        const stepState = {
+          currentStep: currentStep.value,
+          stepResults: stepResults.value,
+          assistant5RecognitionResult: assistant5RecognitionResult.value,
+        };
+        localStorage.setItem(getStepStorageKey(), JSON.stringify(stepState));
+        console.log("步骤状态已保存:", stepState);
+      } catch (e) {
+        console.error("保存步骤状态到 localStorage 失败:", e);
       }
     };
 
@@ -687,10 +707,41 @@ export default defineComponent({
       }
     };
 
+    const loadStepStateFromStorage = () => {
+      try {
+        const saved = localStorage.getItem(getStepStorageKey());
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed) {
+            if (parsed.currentStep) {
+              currentStep.value = parsed.currentStep;
+            }
+            if (parsed.stepResults) {
+              stepResults.value = parsed.stepResults;
+            }
+            if (parsed.assistant5RecognitionResult) {
+              assistant5RecognitionResult.value = parsed.assistant5RecognitionResult;
+            }
+            console.log("步骤状态已恢复:", parsed);
+          }
+        }
+      } catch (e) {
+        console.error("从 localStorage 恢复步骤状态失败:", e);
+      }
+    };
+
     watch(
       () => messages.value,
       () => {
         saveMessagesToStorage();
+      },
+      { deep: true },
+    );
+
+    watch(
+      [currentStep, stepResults, assistant5RecognitionResult],
+      () => {
+        saveStepStateToStorage();
       },
       { deep: true },
     );
@@ -707,7 +758,17 @@ export default defineComponent({
     onMounted(() => {
       isHydrating.value = true;
       loadMessagesFromStorage();
+      loadStepStateFromStorage();
       isHydrating.value = false;
+
+      // 根据恢复的步骤状态更新选中的发送类型
+      if (currentStep.value === 1) {
+        selectedSendType.value = "send5";
+      } else if (currentStep.value === 2) {
+        selectedSendType.value = "send6";
+      } else if (currentStep.value === 3) {
+        selectedSendType.value = "send7";
+      }
 
       // 设置全局base64图片预览函数
       (window as any).__previewBase64Image = (id: string) => {
@@ -879,7 +940,9 @@ export default defineComponent({
     const resetSteps = () => {
       currentStep.value = 1;
       stepResults.value = {};
+      assistant5RecognitionResult.value = "";
       selectedSendType.value = props.waterServiceMode ? "sendWater" : "send5";
+      localStorage.removeItem(getStepStorageKey());
       ElMessage.info("已重置到步骤1");
     };
 
@@ -3013,12 +3076,14 @@ export default defineComponent({
       try {
         localStorage.removeItem(getStorageKey());
         localStorage.removeItem(getUploadImageStorageKey());
+        localStorage.removeItem(getStepStorageKey());
       } catch (e) {
         console.error("清空 localStorage 失败:", e);
       }
       messages.value = [];
       lastUploadedImage.value = null;
       previewImageUrl.value = "";
+      resetSteps();
       ElMessage.success("对话已清空");
     };
 
