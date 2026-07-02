@@ -1,5 +1,5 @@
 import type { App } from 'vue'
-import type { SFCWithInstall } from '@/utils/types.ts'
+import type { SFCWithInstall } from '@/utils/types'
 import { loadAsyncComponent } from '@/utils/async-component'
 import AiDify from './src/index.vue'
 

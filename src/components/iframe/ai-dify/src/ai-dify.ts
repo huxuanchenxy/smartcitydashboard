@@ -1,11 +1,11 @@
-import { DatavComponent } from '@/components/datav-component.ts'
+import { DatavComponent } from '@/components/datav-component'
 import {
   ApiConfigMap, ApiDataConfigMap,
   initApiConfig, initApiData,
-} from '@/components/data-source.ts'
-import { createField } from '@/components/data-field.ts'
-import { DataEventConfig } from '@/components/data-event.ts'
-import { getStaticData } from '@/api/data.ts'
+} from '@/components/data-source'
+import { createField } from '@/components/data-field'
+import { DataEventConfig } from '@/components/data-event'
+import { getStaticData } from '@/api/data'
 
 export class AiDify extends DatavComponent {
   config = {

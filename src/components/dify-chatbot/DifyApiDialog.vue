@@ -1147,7 +1147,7 @@ export default defineComponent({
           console.error(`${logPrefix} SSE 连接超时，自动断开`);
           isTimeoutAbort = true;
           if (abortController.value) {
-            abortController.value.abort(new Error("SSE_TIMEOUT"));
+            abortController.value.abort();
           }
         }, SSE_TIMEOUT_MS);
       };
