@@ -2411,6 +2411,9 @@ export default defineComponent({
           } else if (currentStep.value === 2 && finalResult.status === "succeeded") {
             stepResults.value[2] = assistant5RecognitionResult.value;
             needAutoProceedToStep3.value = true;
+          } else if (currentStep.value === 3 && finalResult.status === "succeeded") {
+            stepResults.value[3] = assistant5RecognitionResult.value;
+            currentStep.value = 4;
           }
         } else {
           const lastMsg = messages.value[messages.value.length - 1];
