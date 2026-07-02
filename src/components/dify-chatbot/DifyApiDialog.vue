@@ -237,6 +237,7 @@
                 </el-button>
                 <!-- 助手下拉框 -->
                 <select
+                  v-show="false"
                   v-model="selectedSendType"
                   :disabled="isLoading || isAwaitingFeedback"
                   class="send-type-select"
@@ -810,6 +811,7 @@ export default defineComponent({
 
     // 推荐问题相关
     const recommendQuestions = [
+      "请帮我识别我上传的图片",
       "城市数据大屏",
       "水务智能监控",
       "医疗健康平台",
