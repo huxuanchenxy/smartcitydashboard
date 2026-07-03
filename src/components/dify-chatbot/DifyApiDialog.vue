@@ -383,7 +383,7 @@
         <!-- <el-button v-if="!waterServiceMode" type="success" @click="saveRawJson" :disabled="isLoading || isAwaitingFeedback">原始保存</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="info" @click="saveTempPayload" :disabled="isAwaitingFeedback">临时保存payload</el-button> -->
         <!-- 水务模式下隐藏：AI生成画布 -->
-        <!-- <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button> -->
+        <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
         <!-- <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button> -->
 
