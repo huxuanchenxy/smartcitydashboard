@@ -989,53 +989,7 @@ export default defineComponent({
       }
     };
 
-    const tryFormatJson = (text: string): string => {
-      let workingText = text;
-      workingText = workingText.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\\"/g, "\"").replace(/\\\\/g, "\\");
-
-      try {
-        const trimmed = workingText.trim();
-        if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || 
-            (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
-          const parsed = JSON.parse(trimmed);
-          return JSON.stringify(parsed, null, 2);
-        }
-        const firstBrace = trimmed.indexOf("{");
-        const lastBrace = trimmed.lastIndexOf("}");
-        if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
-          const jsonPart = trimmed.substring(firstBrace, lastBrace + 1);
-          const parsed = JSON.parse(jsonPart);
-          return JSON.stringify(parsed, null, 2);
-        }
-        const firstBracket = trimmed.indexOf("[");
-        const lastBracket = trimmed.lastIndexOf("]");
-        if (firstBracket !== -1 && lastBracket !== -1 && firstBracket < lastBracket) {
-          const jsonPart = trimmed.substring(firstBracket, lastBracket + 1);
-          const parsed = JSON.parse(jsonPart);
-          return JSON.stringify(parsed, null, 2);
-        }
-      } catch (e) {
-        console.warn("JSON格式化失败:", e);
-      }
-      return workingText;
-    };
-
-    const highlightJson = (jsonStr: string): string => {
-      let result = jsonStr
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-      result = result
-        .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
-        .replace(/: "([^"]+)"/g, ': <span class="json-string">"$1"</span>')
-        .replace(/: (\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-        .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>')
-        .replace(/: null/g, ': <span class="json-null">null</span>');
-
-      return result;
-    };
-
+    // 格式化内容（支持简单的换行）
     const formatContent = (content: any) => {
       if (content === null || content === undefined) {
         return "";
@@ -1044,25 +998,30 @@ export default defineComponent({
         return String(content);
       }
 
-      if (content.includes("recognition-result-wrapper") || content.includes("<span class=\"json-key\">")) {
-        return content;
-      }
-
+      // 先处理换行
       let result = content.replace(/\n/g, " ");
 
+      // 移除 {{#$output.usercomments#}} 标记
       result = result.replace(/\{\{#\$output\.usercomments#\}\}/g, "");
 
+      // 隐藏识别结果到验证结果之间的JSON字符串
       const recognitionToValidationPattern = /识别结果:([\s\S]*?)(?=验证结果：|$)/g;
       result = result.replace(recognitionToValidationPattern, (match, jsonContent) => {
         const id = "recognition-json-" + Math.random().toString(36).substring(2, 9);
-        const formattedJson = tryFormatJson(jsonContent);
-        const highlightedJson = highlightJson(formattedJson);
-        return `识别结果：<a href="#" id="${id}" class="hidden-content-link" onclick="window.__toggleRecognitionJson('${id}'); return false;">展开</a><div id="${id}-content" class="hidden-content json-content" style="display:none;">${highlightedJson}</div>`;
+        const escapedContent = jsonContent
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+        return `识别结果：<a href="#" id="${id}" class="hidden-content-link" onclick="window.__toggleRecognitionJson('${id}'); return false;">展开</a><div id="${id}-content" class="hidden-content" style="display:none;white-space:pre-wrap;word-break:break-all;">${escapedContent}</div>`;
       });
 
+      // 检测并替换base64字符串为预览链接
+      // 匹配 "image": "xxxxx" 格式的base64字符串（在JSON中）
       const base64Pattern = /"image"\s*:\s*"([A-Za-z0-9+/=]{50,})"/g;
       result = result.replace(base64Pattern, (match, base64Data) => {
+        // 生成一个唯一ID用于点击事件
         const id = "base64-preview-" + Math.random().toString(36).substring(2, 9);
+        // 将base64数据存储到全局对象中
         if (typeof window !== "undefined") {
           (window as any).__base64PreviewData = (window as any).__base64PreviewData || {};
           (window as any).__base64PreviewData[id] = base64Data;
@@ -1070,8 +1029,10 @@ export default defineComponent({
         return `"image": "<a href="#" id="${id}" class="base64-preview-link" onclick="window.__previewBase64Image('${id}'); return false;">预览图片</a>"`;
       });
 
+      // 也处理直接出现的长base64字符串（不在JSON中的情况）
       const standaloneBase64Pattern = /(?:"|')?([A-Za-z0-9+/=]{100,})(?:"|')?/g;
       result = result.replace(standaloneBase64Pattern, (match, base64Data) => {
+        // 只处理看起来像base64的字符串（长度足够长且不是普通文本）
         if (base64Data.length >= 100 && /^[A-Za-z0-9+/=]+$/.test(base64Data)) {
           const id = "base64-preview-" + Math.random().toString(36).substring(2, 9);
           if (typeof window !== "undefined") {
@@ -2417,8 +2378,6 @@ export default defineComponent({
                 assistant5RecognitionResult.value = recognitionResult;
                 // 根据当前步骤显示不同的提示文字
                 const completeText = currentStep.value === 1 ? "图片识别完毕" : currentStep.value === 2 ? "点位绑定完毕" : "生成DSL完毕";
-                // 格式化识别结果中的JSON
-                const formattedResult = highlightJson(tryFormatJson(recognitionResult));
                 // 显示折叠内容提示
                 lastMsg.content = `<div class="recognition-result-wrapper">
                   <div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';">
@@ -2426,7 +2385,7 @@ export default defineComponent({
                     <span class="collapse-text">${completeText}，点击展开具体内容</span>
                   </div>
                   <div class="recognition-result-content" style="display: none;">
-                    ${formattedResult}
+                    ${recognitionResult}
                   </div>
                 </div>`;
               } else {
@@ -4475,17 +4434,13 @@ export default defineComponent({
 
 :deep(.recognition-result-content) {
   padding: 16px;
-  background-color: #f8fafc;
+  background-color: white;
   line-height: 1.8;
   font-size: 13px;
-  color: #1e293b;
+  color: #333;
   white-space: pre-wrap;
-  word-break: break-all;
   max-height: 500px;
   overflow-y: auto;
-  font-family: "Consolas", "Monaco", "Courier New", monospace;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
 }
 
 /* 步骤路径指示器样式 */
@@ -4596,56 +4551,5 @@ export default defineComponent({
       0 0 0 4px rgba(103, 194, 58, 0.2),
       0 0 12px rgba(103, 194, 58, 0.4);
   }
-}
-
-:deep(.json-pre) {
-  background-color: #f8fafc;
-  color: #1e293b;
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-family: "Consolas", "Monaco", "Courier New", monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 8px 0;
-  white-space: pre;
-  border: 1px solid #e2e8f0;
-}
-
-:deep(.json-code) {
-  display: block;
-}
-
-:deep(.json-content) {
-  background-color: #f8fafc;
-  color: #1e293b;
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-family: "Consolas", "Monaco", "Courier New", monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre;
-  border: 1px solid #e2e8f0;
-}
-
-:deep(.json-key) {
-  color: #2563eb;
-}
-
-:deep(.json-string) {
-  color: #dc2626;
-}
-
-:deep(.json-number) {
-  color: #059669;
-}
-
-:deep(.json-boolean) {
-  color: #7c3aed;
-}
-
-:deep(.json-null) {
-  color: #64748b;
 }
 </style>
