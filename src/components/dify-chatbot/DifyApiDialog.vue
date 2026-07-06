@@ -180,46 +180,7 @@
               @keydown.enter.prevent="handleEnter"
             ></el-input>
             <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px">
-              <!-- 步骤路径指示器 -->
-              <div class="step-path-container" v-if="!waterServiceMode">
-                <div class="step-path">
-                  <!-- 步骤1：图纸识别 -->
-                  <div
-                    class="step-node"
-                    :class="{ current: currentStep === 1, completed: currentStep > 1 }"
-                  >
-                    <div class="step-dot">
-                      <span v-if="currentStep > 1" class="step-check">✓</span>
-                      <span v-else class="step-number">1</span>
-                    </div>
-                    <span class="step-label">图纸识别</span>
-                  </div>
-                  <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
-                  <!-- 步骤2：点位绑定 -->
-                  <div
-                    class="step-node"
-                    :class="{ current: currentStep === 2, completed: currentStep > 2 }"
-                  >
-                    <div class="step-dot">
-                      <span v-if="currentStep > 2" class="step-check">✓</span>
-                      <span v-else class="step-number">2</span>
-                    </div>
-                    <span class="step-label">点位绑定</span>
-                  </div>
-                  <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
-                  <!-- 步骤3：生成DSL -->
-                  <div
-                    class="step-node"
-                    :class="{ current: currentStep === 3, completed: currentStep > 3 }"
-                  >
-                    <div class="step-dot">
-                      <span v-if="currentStep > 3" class="step-check">✓</span>
-                      <span v-else class="step-number">3</span>
-                    </div>
-                    <span class="step-label">生成DSL</span>
-                  </div>
-                </div>
-              </div>
+              
               <!-- 第二行：操作按钮 -->
               <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
                 <span class="hint" v-if="isLoading || isCadConverting"
@@ -230,7 +191,7 @@
                   v-if="isLoading || isCadConverting"
                   type="danger"
                   size="small"
-                  @click="stopGeneration"
+                  @click="stopGeneration()"
                   class="stop-button"
                 >
                   停止生成
@@ -260,17 +221,7 @@
                     {{ type.label }}
                   </option>
                 </select>
-                <!-- 重置步骤按钮 -->
-                <el-button
-                  v-if="currentStep > 1"
-                  type="default"
-                  size="small"
-                  @click="resetSteps"
-                  :disabled="isLoading || isAwaitingFeedback"
-                  title="重置到步骤1"
-                >
-                  重置
-                </el-button>
+
                 <el-button
                   type="success"
                   size="small"
@@ -279,7 +230,8 @@
                   class="send-button"
                   title="发送调度"
                 >
-                  {{ isLoading ? "发送中" : "发送" }}
+                  <template v-if="isLoading">发送中</template>
+                  <svg v-else t="1783304326600" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="28" height="28"><path d="M512 981.333333q11.52 0 23.04-0.554666t22.954667-1.706667q11.477333-1.109333 22.869333-2.816 11.392-1.706667 22.698667-3.925333 11.306667-2.261333 22.485333-5.077334 11.178667-2.773333 22.186667-6.144 11.008-3.328 21.888-7.210666 10.837333-3.882667 21.461333-8.277334 10.666667-4.437333 21.077333-9.386666 10.410667-4.906667 20.565334-10.325334 10.197333-5.418667 20.053333-11.349333 9.898667-5.930667 19.456-12.330667 9.6-6.4 18.858667-13.226666 9.258667-6.912 18.133333-14.208 8.96-7.296 17.493333-15.018667 8.533333-7.765333 16.64-15.914667 8.149333-8.106667 15.914667-16.64 7.68-8.533333 15.018667-17.493333 7.296-8.874667 14.165333-18.133333t13.269333-18.858667q6.4-9.557333 12.330667-19.456 5.930667-9.898667 11.349333-20.053333 5.418667-10.154667 10.368-20.565334 4.906667-10.410667 9.344-21.077333 4.394667-10.666667 8.277334-21.504 3.882667-10.837333 7.253333-21.888 3.328-11.008 6.101333-22.186667 2.816-11.178667 5.077334-22.485333 2.218667-11.306667 3.925333-22.698667t2.816-22.869333q1.152-11.434667 1.706667-22.954667Q981.333333 523.52 981.333333 512t-0.554666-23.04q-0.554667-11.52-1.706667-22.954667-1.109333-11.477333-2.816-22.869333-1.706667-11.392-3.925333-22.698667-2.261333-11.306667-5.077334-22.485333-2.773333-11.178667-6.144-22.186667-3.328-11.050667-7.210666-21.888-3.882667-10.837333-8.277334-21.504-4.437333-10.624-9.386666-21.034666-4.906667-10.410667-10.325334-20.565334-5.418667-10.197333-11.349333-20.053333-5.930667-9.898667-12.330667-19.456-6.4-9.6-13.226666-18.858667-6.912-9.258667-14.208-18.133333-7.296-8.96-15.018667-17.493333-7.765333-8.533333-15.914667-16.64-8.106667-8.149333-16.64-15.872-8.533333-7.765333-17.493333-15.061334-8.874667-7.296-18.133333-14.165333t-18.858667-13.269333q-9.557333-6.4-19.456-12.330667-9.898667-5.930667-20.053333-11.349333-10.154667-5.418667-20.565334-10.368-10.410667-4.906667-21.077333-9.344-10.624-4.394667-21.461333-8.277334-10.88-3.882667-21.888-7.253333-11.008-3.328-22.186667-6.101333-11.178667-2.816-22.485333-5.077334-11.306667-2.218667-22.698667-3.925333t-22.869333-2.816q-11.434667-1.109333-22.954667-1.706667Q523.52 42.666667 512 42.666667t-23.04 0.554666q-11.52 0.597333-22.954667 1.706667-11.477333 1.109333-22.869333 2.816-11.392 1.706667-22.698667 3.925333-11.306667 2.261333-22.485333 5.077334-11.178667 2.773333-22.186667 6.144-11.050667 3.328-21.888 7.210666-10.837333 3.882667-21.504 8.277334-10.624 4.437333-21.034666 9.386666-10.410667 4.906667-20.565334 10.325334-10.197333 5.418667-20.053333 11.349333-9.898667 5.930667-19.456 12.330667-9.6 6.4-18.858667 13.226666-9.258667 6.912-18.133333 14.208-8.96 7.296-17.493333 15.061334-8.533333 7.68-16.64 15.872-8.149333 8.106667-15.872 16.64-7.765333 8.533333-15.061334 17.493333-7.296 8.874667-14.165333 18.133333t-13.269333 18.858667q-6.4 9.557333-12.330667 19.456-5.930667 9.856-11.349333 20.053333-5.418667 10.154667-10.368 20.565334-4.906667 10.410667-9.344 21.034666-4.394667 10.666667-8.277334 21.504-3.882667 10.837333-7.253333 21.888-3.328 11.008-6.101333 22.186667-2.816 11.178667-5.077334 22.485333-2.218667 11.306667-3.925333 22.698667t-2.816 22.869333q-1.109333 11.434667-1.706667 22.954667Q42.666667 500.48 42.666667 512t0.554666 23.04q0.597333 11.52 1.706667 22.954667 1.109333 11.477333 2.816 22.869333 1.706667 11.392 3.925333 22.698667 2.261333 11.306667 5.077334 22.485333 2.773333 11.178667 6.144 22.186667 3.328 11.008 7.210666 21.888 3.882667 10.837333 8.277334 21.461333 4.437333 10.666667 9.386666 21.077333 4.906667 10.410667 10.325334 20.565334 5.418667 10.197333 11.349333 20.053333 5.930667 9.898667 12.330667 19.456 6.4 9.6 13.226666 18.858667 6.912 9.258667 14.208 18.133333 7.296 8.96 15.061334 17.493333 7.68 8.533333 15.872 16.64 8.106667 8.149333 16.64 15.914667 8.533333 7.68 17.493333 15.018667 8.874667 7.296 18.133333 14.165333t18.858667 13.269333q9.557333 6.4 19.456 12.330667 9.856 5.930667 20.053333 11.349333 10.154667 5.418667 20.565334 10.368 10.410667 4.906667 21.034666 9.344 10.666667 4.394667 21.504 8.277334 10.837333 3.882667 21.888 7.253333 11.008 3.328 22.186667 6.101333 11.178667 2.816 22.485333 5.077334 11.306667 2.218667 22.698667 3.925333t22.869333 2.816q11.434667 1.152 22.954667 1.706667 11.52 0.554667 23.04 0.554666z m-10.666667-673.322666a32 32 0 0 1 45.226667 0l150.613333 150.186666a32 32 0 1 1-45.226666 45.312l-96-95.744V725.333333a32 32 0 0 1-64 0V407.765333L395.946667 503.466667a32 32 0 1 1-45.226667-45.312l150.613333-150.186667z" fill="#ffffff"></path></svg>
                 </el-button>
               </div>
             </div>
@@ -377,13 +329,66 @@
 
     <template #footer>
       <div class="dialog-footer">
+        <!-- 步骤路径指示器 -->
+              <div class="step-path-container" v-if="!waterServiceMode">
+                <div class="step-path">
+                  <!-- 步骤1：图纸识别 -->
+                  <div
+                    class="step-node"
+                    :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+                  >
+                    <div class="step-dot">
+                      <span v-if="currentStep > 1" class="step-check">✓</span>
+                      <span v-else class="step-number">1</span>
+                    </div>
+                    <span class="step-label">图纸识别</span>
+                  </div>
+                  <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+                  <!-- 步骤2：点位绑定 -->
+                  <div
+                    class="step-node"
+                    :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+                  >
+                    <div class="step-dot">
+                      <span v-if="currentStep > 2" class="step-check">✓</span>
+                      <span v-else class="step-number">2</span>
+                    </div>
+                    <span class="step-label">点位绑定</span>
+                  </div>
+                  <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
+                  <!-- 步骤3：生成DSL -->
+                  <div
+                    class="step-node"
+                    :class="{ current: currentStep === 3, completed: currentStep > 3 }"
+                  >
+                    <div class="step-dot">
+                      <span v-if="currentStep > 3" class="step-check">✓</span>
+                      <span v-else class="step-number">3</span>
+                    </div>
+                    <span class="step-label">生成DSL</span>
+                  </div>
+                </div>
+                                <!-- 重置步骤按钮 -->
+                <el-button
+                  v-if="currentStep > 1"
+                  type="default"
+                  size="small"
+                  @click="resetSteps"
+                  :disabled="isLoading || isAwaitingFeedback"
+                  title="重置到步骤1"
+                  class="reset-button"
+                >
+                  重置
+                </el-button>
+<el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
+              </div>
         <!-- <el-button @click="handleClose">关闭</el-button> -->
 
         <!-- <el-button v-if="!waterServiceMode" type="primary" @click="outputJsonToConsole" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="success" @click="saveRawJson" :disabled="isLoading || isAwaitingFeedback">原始保存</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="info" @click="saveTempPayload" :disabled="isAwaitingFeedback">临时保存payload</el-button> -->
         <!-- 水务模式下隐藏：AI生成画布 -->
-        <el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
+        
         <!-- <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button> -->
         <!-- <el-button v-if="!waterServiceMode" type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button> -->
 
@@ -552,6 +557,8 @@ export default defineComponent({
     const timeoutTimer = ref<number | null>(null);
     // SSE 超时时间，从环境变量读取，默认 90 秒
     const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 90000;
+    // 标记用户是否手动停止
+    const isUserManualStop = ref(false);
 
     // 调试日志：验证 waterServiceMode 和 SSE 超时的值
     console.log("=== DifyApiDialog 初始化 ===");
@@ -1174,6 +1181,8 @@ export default defineComponent({
         userQuery.value = "";
       }
       isLoading.value = true;
+      // 重置手动停止标记
+      isUserManualStop.value = false;
 
       // 创建 AbortController 用于取消请求
       abortController.value = new AbortController();
@@ -1531,7 +1540,7 @@ export default defineComponent({
 
             if (!lastMsg.content.trim()) {
               // 用户手动停止
-              lastMsg.content = "已停止生成";
+              lastMsg.content = "已手动停止";
             }
 
             // 显式触发响应式更新和持久化
@@ -1959,10 +1968,10 @@ export default defineComponent({
             messages.value[msgIndex] = {
               ...messages.value[msgIndex],
               isThinking: false,
-              content: messages.value[msgIndex].content.trim() || "Dify响应超时",
+              content: messages.value[msgIndex].content.trim() || "已手动停止",
             };
           }
-          ElMessage.info("已停止生成");
+          ElMessage.info("已手动停止");
           return;
         }
 
@@ -2368,6 +2377,8 @@ export default defineComponent({
 
       isSubmitting.value = true;
       isLoading.value = true;
+      // 重置手动停止标记
+      isUserManualStop.value = false;
 
       // 标记消息为已处理，防止重复提交
       message.isProcessed = true;
@@ -2463,14 +2474,20 @@ export default defineComponent({
         const lastMsg = messages.value[messages.value.length - 1];
         if (lastMsg?.role === "assistant") {
           lastMsg.isThinking = false;
-          lastMsg.content = `提交失败：${error.message}`;
+
+          // 如果是用户手动停止，显示"已手动停止"
+          if (error.name === "AbortError" && isUserManualStop.value) {
+            lastMsg.content = "已手动停止";
+            ElMessage.info("已手动停止");
+          } else {
+            lastMsg.content = `提交失败：${error.message}`;
+            ElMessage.error("提交失败：" + error.message);
+          }
 
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
           saveMessagesToStorage();
         }
-
-        ElMessage.error("提交失败：" + error.message);
       } finally {
         isSubmitting.value = false;
         isLoading.value = false;
@@ -2502,6 +2519,8 @@ export default defineComponent({
 
       isSubmitting.value = true;
       isLoading.value = true;
+      // 重置手动停止标记
+      isUserManualStop.value = false;
 
       // 标记消息为已处理，防止重复提交
       message.isProcessed = true;
@@ -2619,6 +2638,11 @@ export default defineComponent({
               if (line.startsWith("data: ")) {
                 try {
                   const data = JSON.parse(line.slice(6));
+
+                  // 保存 task_id 用于停止请求
+                  if (data.task_id) {
+                    currentTaskId.value = data.task_id;
+                  }
 
                   // 处理工作流暂停事件
                   if (data.event === "workflow_paused") {
@@ -2744,10 +2768,15 @@ export default defineComponent({
           // 正常完成
           if (thinkingMsg) {
             thinkingMsg.isThinking = false;
-            // 如果没有任何内容，提示超时
+            // 如果没有任何内容，根据情况显示不同提示
             if (!fullContent.trim()) {
-              thinkingMsg.content = "⏰ Dify响应超时";
-              ElMessage.warning("Dify响应超时");
+              if (isUserManualStop.value) {
+                thinkingMsg.content = "已手动停止";
+                ElMessage.info("已手动停止");
+              } else {
+                thinkingMsg.content = "⏰ Dify响应超时";
+                ElMessage.warning("Dify响应超时");
+              }
             }
           }
           // 显式触发响应式更新和持久化
@@ -2761,14 +2790,20 @@ export default defineComponent({
         const lastMsg = messages.value[messages.value.length - 1];
         if (lastMsg?.role === "assistant") {
           lastMsg.isThinking = false;
-          lastMsg.content = `提交失败：${error.message}`;
+
+          // 如果是用户手动停止，显示"已手动停止"
+          if (error.name === "AbortError" && isUserManualStop.value) {
+            lastMsg.content = "已手动停止";
+            ElMessage.info("已手动停止");
+          } else {
+            lastMsg.content = `提交失败：${error.message}`;
+            ElMessage.error("提交失败：" + error.message);
+          }
 
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
           saveMessagesToStorage();
         }
-
-        ElMessage.error("提交失败：" + error.message);
       } finally {
         isSubmitting.value = false;
         isLoading.value = false;
@@ -3128,7 +3163,14 @@ export default defineComponent({
     // 停止生成
     const stopGeneration = async (isTimeout: boolean = false) => {
       if (!isLoading.value && !isCadConverting.value) return;
+      
+      // 设置手动停止标记（非超时情况）
+      if (!isTimeout) {
+        isUserManualStop.value = true;
+      }
+      
 
+      console.log("currentTaskId.value ",currentTaskId.value);
       // 先调用官方停止接口
       if (currentTaskId.value) {
         try {
@@ -3170,7 +3212,7 @@ export default defineComponent({
             // 如果是超时导致的停止，显示超时提示
             content: isTimeout
               ? `⏱️ Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），自动断开`
-              : lastMsg.content || "已停止生成",
+              : lastMsg.content || "已手动停止",
           };
 
           // 显式触发响应式更新和持久化
@@ -3189,7 +3231,7 @@ export default defineComponent({
       if (isTimeout) {
         ElMessage.warning(`Dify响应超时（超过${SSE_TIMEOUT_MS / 1000}秒），请稍后重试`);
       } else {
-        ElMessage.info("已停止生成");
+        ElMessage.info("已手动停止");
       }
     };
 
@@ -4182,7 +4224,20 @@ export default defineComponent({
 }
 
 .send-button {
-  min-width: 80px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reset-button {
+  font-size: 12px;
+  padding: 4px 12px;
+  min-width: auto;
 }
 
 .send-type-select {
@@ -4486,6 +4541,7 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   padding: 8px 0;
+  gap:20px;
 }
 
 .step-path {
