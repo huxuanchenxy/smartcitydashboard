@@ -2420,15 +2420,7 @@ export default defineComponent({
                 // 格式化识别结果中的JSON
                 const formattedResult = highlightJson(tryFormatJson(recognitionResult));
                 // 显示折叠内容提示
-                lastMsg.content = `<div class="recognition-result-wrapper">
-                  <div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';">
-                    <span class="collapse-icon">▶</span>
-                    <span class="collapse-text">${completeText}，点击展开具体内容</span>
-                  </div>
-                  <div class="recognition-result-content" style="display: none;">
-                    ${formattedResult}
-                  </div>
-                </div>`;
+                lastMsg.content = `<div class="recognition-result-wrapper"><div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">${completeText}，点击展开具体内容</span></div><div class="recognition-result-content" style="display: none;">${formattedResult}</div></div>`;
               } else {
                 // 如果没有提取到识别结果，显示默认提示
                 lastMsg.content = "工作流执行成功完成！";
