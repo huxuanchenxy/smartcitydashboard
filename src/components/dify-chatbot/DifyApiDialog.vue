@@ -1279,6 +1279,11 @@ export default defineComponent({
             try {
               const data = JSON.parse(line.slice(6));
 
+              // 保存 task_id 用于停止请求（所有事件类型都可能包含 task_id）
+              if (data.task_id) {
+                currentTaskId.value = data.task_id;
+              }
+
               // 处理 error 事件
               if (data.event === "error") {
                 hasError = true;
@@ -1680,6 +1685,11 @@ export default defineComponent({
             try {
               const data = JSON.parse(line.slice(6));
 
+              // 保存 task_id 用于停止请求（所有事件类型都可能包含 task_id）
+              if (data.task_id) {
+                currentTaskId.value = data.task_id;
+              }
+
               if (data.event === "error") {
                 console.error("发送2 第一次调用错误:", data.message || "未知错误");
                 continue;
@@ -1850,6 +1860,11 @@ export default defineComponent({
 
             try {
               const data = JSON.parse(line.slice(6));
+
+              // 保存 task_id 用于停止请求（所有事件类型都可能包含 task_id）
+              if (data.task_id) {
+                currentTaskId.value = data.task_id;
+              }
 
               if (data.event === "error") {
                 hasError = true;
