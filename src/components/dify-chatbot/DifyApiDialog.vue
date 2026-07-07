@@ -414,6 +414,7 @@ import {
   PropType,
   computed,
 } from "vue";
+
 import { ElMessage } from "element-plus";
 import { EditorModule } from "@/store/modules/editor";
 import { FilterModule } from "@/store/modules/filter";
@@ -662,18 +663,33 @@ export default defineComponent({
     const isHydrating = ref(false);
     const STORAGE_KEY_PREFIX = "dify-chat-messages-";
 
+    const getScreenId = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const parts = hash.replace('#', '').split('/').filter(p => p);
+        if (parts.length > 0) {
+          const lastPart = parts[parts.length - 1];
+          if (/^\d+$/.test(lastPart)) {
+            return lastPart;
+          }
+        }
+      }
+      return EditorModule.screen?.id || "default";
+    };
+
     const getStorageKey = () => {
-      const screenId = EditorModule.screen?.id || "default";
+      const screenId = getScreenId();
+      console.log("拿到的screeid",screenId);
       return STORAGE_KEY_PREFIX + screenId;
     };
 
     const getStepStorageKey = () => {
-      const screenId = EditorModule.screen?.id || "default";
+      const screenId = getScreenId();
       return STORAGE_KEY_PREFIX + screenId + "-steps";
     };
 
     const getUploadImageStorageKey = () => {
-      const screenId = EditorModule.screen?.id || "default";
+      const screenId = getScreenId();
       return "dify_uploaded_image-" + screenId;
     };
 
