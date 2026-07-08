@@ -39,6 +39,13 @@
               <!-- AI 消息内容 -->
               <div class="ai-message-content">
                 <div v-html="formatContent(message.content)"></div>
+                <button 
+                  class="copy-btn human-copy-btn" 
+                  @click="copyMessageContent(message)"
+                  :title="'复制内容'"
+                >
+                  <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
+                </button>
               </div>
 
               <!-- 用户反馈输入区域 -->
@@ -93,6 +100,16 @@
                 <!-- 正常内容 -->
                 <div v-else class="content-text" v-html="formatContent(message.content)"></div>
               </div>
+              <div class="message-actions">
+                <button 
+                  class="copy-btn" 
+                  @click="copyMessageContent(message)"
+                  :title="'复制内容'"
+                  v-if="!message.isThinking"
+                >
+                  <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
+                </button>
+              </div>
               <div class="message-time" v-if="!message.isThinking">
                 {{ formatTime(message.timestamp) }}
               </div>
@@ -128,13 +145,13 @@
             </select>
             <div class="top-bar-actions">
               <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
-              <el-button
+              <!-- <el-button
                 type="primary"
                 size="small"
                 @click="copyLastMessageContent"
                 :disabled="isLoading"
                 >复制回答内容</el-button
-              >
+              > -->
               <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading"
                 >清空对话</el-button
               >
@@ -3877,17 +3894,30 @@ export default defineComponent({
       }
 
       const lastAiMessage = aiMessages[aiMessages.length - 1];
-      const content = lastAiMessage.content;
+      await copyMessageContent(lastAiMessage);
+    };
+
+    // 复制指定消息内容
+    const copyMessageContent = async (message: Message) => {
+      if (!message.content || message.isThinking) {
+        ElMessage.warning("暂无内容可复制");
+        return;
+      }
+
+      // 清理HTML标签，只保留纯文本
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = message.content;
+      const plainText = tempDiv.textContent || tempDiv.innerText || message.content;
 
       try {
         // 使用 Clipboard API 复制内容
-        await navigator.clipboard.writeText(content);
+        await navigator.clipboard.writeText(plainText);
         ElMessage.success("内容已复制到剪贴板");
       } catch (error) {
         console.error("复制失败:", error);
         // 降级方案：创建临时文本区域
         const textarea = document.createElement("textarea");
-        textarea.value = content;
+        textarea.value = plainText;
         textarea.style.position = "fixed";
         textarea.style.left = "-9999px";
         document.body.appendChild(textarea);
@@ -4100,6 +4130,7 @@ export default defineComponent({
       fetchAndSaveScreenAI,
       calibrateJson,
       copyLastMessageContent,
+      copyMessageContent,
       saveRawJson,
       extractValidationResult,
       handleEnter,
@@ -4231,6 +4262,17 @@ export default defineComponent({
   font-size: 14px;
   word-wrap: break-word;
   white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+.content-text {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 .user-message .message-content {
@@ -4251,6 +4293,105 @@ export default defineComponent({
   color: #999;
   margin-top: 4px;
   align-self: flex-end;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.copy-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+}
+
+.copy-icon {
+  transition: all 0.2s;
+}
+
+.copy-btn:hover .copy-icon {
+  fill: #409eff;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.copy-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+}
+
+.copy-icon {
+  transition: all 0.2s;
+}
+
+.copy-btn:hover .copy-icon {
+  fill: #409eff;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.copy-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+}
+
+.copy-icon {
+  transition: all 0.2s;
+}
+
+.copy-btn:hover .copy-icon {
+  fill: #409eff;
 }
 
 /* 思考中动画 */
@@ -4537,6 +4678,17 @@ export default defineComponent({
   color: #334155;
   white-space: pre-wrap;
   border: 1px solid #e5e7eb;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  position: relative;
+}
+
+.human-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 .human-feedback-section {
