@@ -4687,7 +4687,7 @@ export default defineComponent({
 
 .human-copy-btn {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   right: 8px;
 }
 
