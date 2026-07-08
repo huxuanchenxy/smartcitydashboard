@@ -88,7 +88,7 @@
                     <span></span>
                     <span></span>
                   </span>
-                  <span class="thinking-text">思考中</span>
+                  <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
                 </div>
                 <!-- 正常内容 -->
                 <div v-else class="content-text" v-html="formatContent(message.content)"></div>
@@ -414,7 +414,6 @@ import {
   PropType,
   computed,
 } from "vue";
-
 import { ElMessage } from "element-plus";
 import { EditorModule } from "@/store/modules/editor";
 import { FilterModule } from "@/store/modules/filter";
@@ -431,6 +430,7 @@ interface Message {
   content: string;
   timestamp: number;
   isThinking?: boolean;
+  thinkingContent?: string;
   isHumanInteraction?: boolean;
   formToken?: string;
   workflowRunId?: string;
@@ -561,6 +561,50 @@ export default defineComponent({
     // 标记用户是否手动停止
     const isUserManualStop = ref(false);
 
+    const getEventDisplayName = (event: string, data: any): string => {
+      if (!event) return "处理中";
+
+      const eventMap: Record<string, string> = {
+        loop_started: "循环开始",
+        loop_ended: "循环结束",
+        node_started: "节点开始",
+        node_ended: "节点结束",
+        tool_calling: "工具调用中",
+        tool_called: "工具调用完成",
+        agent_thinking: "思考中",
+        agent_planning: "规划中",
+        agent_executing: "执行中",
+        agent_reviewing: "回顾中",
+      };
+
+      let displayName = eventMap[event] || event.replace(/_/g, " ");
+
+      if (data) {
+        if (data.title) {
+          displayName += ` - ${data.title}`;
+        } else if (data.node_type) {
+          const nodeTypeMap: Record<string, string> = {
+            loop: "循环",
+            tool: "工具",
+            llm: "LLM",
+            condition: "条件判断",
+            delay: "延迟",
+            webhook: "Webhook",
+            code: "代码",
+          };
+          displayName += ` - ${nodeTypeMap[data.node_type] || data.node_type}`;
+        }
+        if (data.metadata && data.metadata.loop_length) {
+          displayName += ` (共${data.metadata.loop_length}次)`;
+        }
+        if (data.inputs && data.inputs.loop_count !== undefined) {
+          displayName += ` #${data.inputs.loop_count}`;
+        }
+      }
+
+      return displayName;
+    };
+
     // 调试日志：验证 waterServiceMode 和 SSE 超时的值
     console.log("=== DifyApiDialog 初始化 ===");
     console.log("waterServiceMode prop:", props.waterServiceMode);
@@ -662,7 +706,6 @@ export default defineComponent({
     // 消息持久化相关
     const isHydrating = ref(false);
     const STORAGE_KEY_PREFIX = "dify-chat-messages-";
-
     const getScreenId = () => {
       const hash = window.location.hash;
       if (hash) {
@@ -676,7 +719,6 @@ export default defineComponent({
       }
       return EditorModule.screen?.id || "default";
     };
-
     const getStorageKey = () => {
       const screenId = getScreenId();
       console.log("拿到的screeid",screenId);
@@ -693,13 +735,23 @@ export default defineComponent({
       return "dify_uploaded_image-" + screenId;
     };
 
+    let saveMessagesTimer: number | null = null;
     const saveMessagesToStorage = () => {
       if (isHydrating.value) return;
-      try {
-        localStorage.setItem(getStorageKey(), JSON.stringify(messages.value));
-      } catch (e) {
-        console.error("保存消息到 localStorage 失败:", e);
+      if (saveMessagesTimer) {
+        clearTimeout(saveMessagesTimer);
       }
+      saveMessagesTimer = window.setTimeout(() => {
+        try {
+          const messagesToSave = messages.value.map(msg => {
+            const { thinkingContent, ...rest } = msg;
+            return rest;
+          });
+          localStorage.setItem(getStorageKey(), JSON.stringify(messagesToSave));
+        } catch (e) {
+          console.error("保存消息到 localStorage 失败:", e);
+        }
+      }, 5000);
     };
 
     const saveStepStateToStorage = () => {
@@ -711,7 +763,6 @@ export default defineComponent({
           assistant5RecognitionResult: assistant5RecognitionResult.value,
         };
         localStorage.setItem(getStepStorageKey(), JSON.stringify(stepState));
-        console.log("步骤状态已保存:", stepState);
       } catch (e) {
         console.error("保存步骤状态到 localStorage 失败:", e);
       }
@@ -757,7 +808,10 @@ export default defineComponent({
     watch(
       () => messages.value,
       () => {
-        saveMessagesToStorage();
+        const lastMsg = messages.value[messages.value.length - 1];
+        if (!lastMsg || !lastMsg.isThinking) {
+          saveMessagesToStorage();
+        }
       },
       { deep: true },
     );
@@ -830,6 +884,9 @@ export default defineComponent({
 
     onUnmounted(() => {
       document.removeEventListener("paste", handlePaste);
+      if (saveMessagesTimer) {
+        clearTimeout(saveMessagesTimer);
+      }
     });
 
     // 推荐问题相关
@@ -1370,6 +1427,15 @@ export default defineComponent({
                 break;
               }
 
+              // 处理其他事件类型 - 更新思考过程
+              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) === -1) {
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg?.role === "assistant" && lastMsg.isThinking) {
+                  const eventDisplayName = getEventDisplayName(data.event, data.data);
+                  lastMsg.thinkingContent = eventDisplayName;
+                }
+              }
+
               // 处理普通消息 - 实时更新
               if (data.event === "message" && data.answer) {
                 // 保存 task_id 用于停止请求
@@ -1711,6 +1777,14 @@ export default defineComponent({
                 continue;
               }
 
+              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) === -1) {
+                const msgIndex = messages.value.length - 1;
+                if (messages.value[msgIndex]?.role === "assistant" && messages.value[msgIndex].isThinking) {
+                  const eventDisplayName = getEventDisplayName(data.event, data.data);
+                  messages.value[msgIndex].thinkingContent = eventDisplayName;
+                }
+              }
+
               if (data.event === "message" && data.answer) {
                 fullContent1 += data.answer;
                 const msgIndex = messages.value.length - 1;
@@ -1898,6 +1972,14 @@ export default defineComponent({
               }
 
               if (hasError) continue;
+
+              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) === -1) {
+                const msgIndex = messages.value.length - 1;
+                if (messages.value[msgIndex]?.role === "assistant" && messages.value[msgIndex].isThinking) {
+                  const eventDisplayName = getEventDisplayName(data.event, data.data);
+                  messages.value[msgIndex].thinkingContent = eventDisplayName;
+                }
+              }
 
               if (data.event === "message" && data.answer) {
                 if (data.task_id) {
@@ -2717,16 +2799,17 @@ export default defineComponent({
                     }
 
                     // 更新当前消息内容
-                    if (thinkingMsg) {
-                      thinkingMsg.isThinking = false;
-                      thinkingMsg.content =
-                        pauseContent || fullContent || "工作流已暂停，等待人工介入";
-                      thinkingMsg.isHumanInteraction = true;
-                      thinkingMsg.formToken = currentFormToken;
-                      thinkingMsg.workflowRunId = currentWorkflowRunId;
-
-                      // 显式触发响应式更新和持久化
-                      messages.value = [...messages.value];
+                    const msgIndex = messages.value.length - 1;
+                    const lastMsg = messages.value[msgIndex];
+                    if (lastMsg?.role === "assistant") {
+                      messages.value[msgIndex] = {
+                        ...lastMsg,
+                        isThinking: false,
+                        content: pauseContent || fullContent || "工作流已暂停，等待人工介入",
+                        isHumanInteraction: true,
+                        formToken: currentFormToken,
+                        workflowRunId: currentWorkflowRunId,
+                      };
                       saveMessagesToStorage();
                     }
 
@@ -2736,28 +2819,53 @@ export default defineComponent({
                     break;
                   }
 
+                  // 处理其他事件类型 - 更新思考过程
+                  if (data.event && ["message", "workflow_finished", "workflow_paused", "error", "message_end"].indexOf(data.event) === -1) {
+                    const msgIndex = messages.value.length - 1;
+                    const lastMsg = messages.value[msgIndex];
+                    if (lastMsg?.role === "assistant" && lastMsg.isThinking) {
+                      const eventDisplayName = getEventDisplayName(data.event, data.data);
+                      messages.value[msgIndex] = {
+                        ...lastMsg,
+                        thinkingContent: eventDisplayName,
+                      };
+                    }
+                  }
+
                   // 处理消息内容
                   if (data.answer) {
                     fullContent += data.answer;
-                    if (thinkingMsg) {
-                      thinkingMsg.content = fullContent;
+                    const msgIndex = messages.value.length - 1;
+                    const lastMsg = messages.value[msgIndex];
+                    if (lastMsg?.role === "assistant") {
+                      messages.value[msgIndex] = {
+                        ...lastMsg,
+                        content: fullContent,
+                        isThinking: false,
+                      };
                     }
                     await scrollToBottom();
                   }
 
                   // 处理工作流完成事件
                   if (data.event === "workflow_finished" || data.event === "message_end") {
-                    if (thinkingMsg) {
-                      thinkingMsg.isThinking = false;
+                    const msgIndex = messages.value.length - 1;
+                    const lastMsg = messages.value[msgIndex];
+                    if (lastMsg?.role === "assistant") {
+                      let newContent = lastMsg.content;
                       // 检查工作流是否失败
                       if (data.data && data.data.status === "failed") {
                         const errorMsg = data.data.error || "工作流执行失败";
-                        thinkingMsg.content = `❌ ${errorMsg}`;
+                        newContent = `❌ ${errorMsg}`;
                         ElMessage.error("工作流执行失败：" + errorMsg);
+                        fullContent = newContent;
                       }
 
-                      // 显式触发响应式更新和持久化
-                      messages.value = [...messages.value];
+                      messages.value[msgIndex] = {
+                        ...lastMsg,
+                        isThinking: false,
+                        content: newContent,
+                      };
                       saveMessagesToStorage();
                     }
                   }
@@ -2776,12 +2884,22 @@ export default defineComponent({
         if (pendingData.trim() && pendingData.startsWith("data: ")) {
           try {
             const data = JSON.parse(pendingData.slice(6));
-            if (data.event === "workflow_finished" && thinkingMsg) {
-              thinkingMsg.isThinking = false;
-              if (data.data && data.data.status === "failed") {
-                const errorMsg = data.data.error || "工作流执行失败";
-                thinkingMsg.content = `❌ ${errorMsg}`;
-                ElMessage.error("工作流执行失败：" + errorMsg);
+            if (data.event === "workflow_finished") {
+              const msgIndex = messages.value.length - 1;
+              const lastMsg = messages.value[msgIndex];
+              if (lastMsg?.role === "assistant") {
+                let newContent = lastMsg.content;
+                if (data.data && data.data.status === "failed") {
+                  const errorMsg = data.data.error || "工作流执行失败";
+                  newContent = `❌ ${errorMsg}`;
+                  ElMessage.error("工作流执行失败：" + errorMsg);
+                  fullContent = newContent;
+                }
+                messages.value[msgIndex] = {
+                  ...lastMsg,
+                  isThinking: false,
+                  content: newContent,
+                };
               }
             }
           } catch (e) {
@@ -2792,23 +2910,28 @@ export default defineComponent({
         // 如果工作流暂停，保持人工介入状态
         if (isPaused && pauseData) {
           console.log("Revise 工作流暂停，等待用户操作");
-          // 显式触发响应式更新和持久化
-          messages.value = [...messages.value];
           saveMessagesToStorage();
         } else {
           // 正常完成
-          if (thinkingMsg) {
-            thinkingMsg.isThinking = false;
+          const msgIndex = messages.value.length - 1;
+          const lastMsg = messages.value[msgIndex];
+          if (lastMsg?.role === "assistant") {
+            let newContent = lastMsg.content;
             // 如果没有任何内容，根据情况显示不同提示
             if (!fullContent.trim()) {
               if (isUserManualStop.value) {
-                thinkingMsg.content = "已手动停止";
+                newContent = "已手动停止";
                 ElMessage.info("已手动停止");
               } else {
-                thinkingMsg.content = "⏰ Dify响应超时";
+                newContent = "⏰ Dify响应超时";
                 ElMessage.warning("Dify响应超时");
               }
             }
+            messages.value[msgIndex] = {
+              ...lastMsg,
+              isThinking: false,
+              content: newContent,
+            };
           }
           // 显式触发响应式更新和持久化
           messages.value = [...messages.value];
@@ -2881,9 +3004,6 @@ export default defineComponent({
 
         if (base64Data) {
           previewImageUrl.value = base64Data;
-        } else {
-          localStorage.removeItem(getUploadImageStorageKey());
-          lastUploadedImage.value = null;
         }
       } catch (error) {
         localStorage.removeItem(getUploadImageStorageKey());
@@ -2942,12 +3062,22 @@ export default defineComponent({
           const reader = new FileReader();
           reader.onload = (e) => {
             const base64Data = e.target?.result as string;
+            previewImageUrl.value = base64Data;
             const imageData = {
               ...lastUploadedImage.value,
               base64Data: base64Data,
             };
-            localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageData));
-            previewImageUrl.value = base64Data;
+            try {
+              localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageData));
+            } catch (storageError: any) {
+              if (storageError.name === "QuotaExceededError") {
+                console.warn("localStorage 配额不足，仅保存图片元信息");
+                const imageMeta = { ...lastUploadedImage.value };
+                localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageMeta));
+              } else {
+                console.error("保存图片信息到 localStorage 失败:", storageError);
+              }
+            }
           };
           reader.readAsDataURL(file);
         } catch (e) {}
@@ -3111,6 +3241,13 @@ export default defineComponent({
               // 保存 taskId 用于停止生成
               if (data.task_id) {
                 currentTaskId.value = data.task_id;
+              }
+
+              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error", "end"].indexOf(data.event) === -1) {
+                if (messages.value[msgIndex]?.role === "assistant" && messages.value[msgIndex].isThinking) {
+                  const eventDisplayName = getEventDisplayName(data.event, data.data);
+                  messages.value[msgIndex].thinkingContent = eventDisplayName;
+                }
               }
 
               if (data.event === "message") {
