@@ -173,20 +173,20 @@
               type="success" 
               size="small"
               @click="cadToJson" 
-              :disabled="isLoading || isAwaitingFeedback || !lastUploadedImage"
+              :disabled="isLoading || isAwaitingFeedback || uploadedImages.length === 0"
               :loading="isCadConverting"
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button> -->
               <!-- 水务模式下保留：图片预览链接 -->
               <el-link
-                v-if="lastUploadedImage"
+                v-if="uploadedImages.length > 0"
                 type="primary"
                 :underline="false"
                 @click="openImagePreview"
                 class="image-preview-link"
               >
-                🖼️ 查看
+                🖼️ 查看 ({{ uploadedImages.length }})
               </el-link>
             </div>
           </div>
@@ -269,6 +269,7 @@
       ref="fileInput"
       type="file"
       accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+      multiple
       style="display: none"
       @change="handleImageUpload"
     />
@@ -276,31 +277,66 @@
     <!-- 图片预览弹窗 -->
     <el-dialog
       v-model="imagePreviewVisible"
-      title="图片预览"
+      :title="`图片预览 (${isNaN(currentPreviewIndex) ? 1 : currentPreviewIndex + 1} / ${Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
       width="1000px"
       append-to-body
       @open="resetImageScale"
       @close="handlePreviewClose"
     >
-      <div
-        class="image-preview-container"
-        @wheel.prevent="handleImageWheel"
-        @mousedown="handleMouseDown"
-        @mousemove="handleMouseMove"
-        @mouseup="handleMouseUp"
-        @mouseleave="handleMouseUp"
-      >
-        <img
-          ref="imageRef"
-          :src="previewImageUrl"
-          alt="预览图片"
-          class="preview-image"
-          :class="{ 'is-dragging': isDragging }"
-          :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
-          @click.stop="resetImageScale"
-        />
+      <div class="multi-image-preview-wrapper">
+        <!-- 导航按钮 -->
+        <button
+          class="nav-btn nav-prev"
+          @click="prevImage"
+          :disabled="isNaN(currentPreviewIndex) || currentPreviewIndex === 0"
+          title="上一张"
+        >
+          ◀
+        </button>
+        <button
+          class="nav-btn nav-next"
+          @click="nextImage"
+          :disabled="isNaN(currentPreviewIndex) || currentPreviewIndex >= uploadedImages.length - 1"
+          title="下一张"
+        >
+          ▶
+        </button>
+
+        <!-- 主图片区域 -->
+        <div
+          class="image-preview-container"
+          @wheel.prevent="handleImageWheel"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
+          @mouseup="handleMouseUp"
+          @mouseleave="handleMouseUp"
+        >
+          <img
+            ref="imageRef"
+            :src="previewImageUrl"
+            :alt="`图片 ${currentPreviewIndex + 1}`"
+            class="preview-image"
+            :class="{ 'is-dragging': isDragging }"
+            :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
+            @click.stop="resetImageScale"
+          />
+        </div>
+
+        <!-- 缩略图列表 -->
+        <div class="thumbnail-list" v-if="uploadedImages.length > 1">
+          <div
+            v-for="(image, index) in uploadedImages"
+            :key="image.id"
+            class="thumbnail-item"
+            :class="{ active: index === currentPreviewIndex }"
+            @click="selectImage(index)"
+          >
+            <img :src="image.base64Data" :alt="image.name" class="thumbnail-img" />
+            <span class="thumbnail-name">{{ image.name }}</span>
+          </div>
+        </div>
       </div>
-      <div class="image-preview-hint">滚轮缩放图片，右键拖动查看细节，点击图片重置</div>
+      <div class="image-preview-hint">滚轮缩放图片，右键拖动查看细节，点击图片重置，点击缩略图切换</div>
     </el-dialog>
 
     <!-- 验证结果图片预览弹窗 -->
@@ -349,6 +385,29 @@
           }}</span>
         </p>
       </div>
+    </el-dialog>
+
+    <!-- 确认清空对话框 -->
+    <el-dialog
+      v-model="confirmDialogVisible"
+      title="确认清空"
+      width="400px"
+      append-to-body
+      :show-close="false"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+    >
+      <div class="confirm-dialog-content">
+        <div class="confirm-icon">⚠️</div>
+        <p>确定要清空所有对话内容吗？</p>
+        <p class="confirm-hint">此操作将删除所有消息和已上传的图片，且无法恢复。</p>
+      </div>
+      <template #footer>
+        <div class="confirm-dialog-footer">
+          <el-button type="primary" @click="confirmClear">确定</el-button>
+          <el-button @click="cancelClear">取消</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <template #footer>
@@ -643,9 +702,12 @@ export default defineComponent({
     // 图片上传相关
     const fileInput = ref<HTMLInputElement | null>(null);
     const imagePreviewVisible = ref(false);
-    const previewImageUrl = ref("");
-    const lastUploadedImage = ref<any>(null); // 保存最后一次上传的图片信息
+    const uploadedImages = ref<any[]>([]); // 保存所有上传的图片信息
+    const currentPreviewIndex = ref(0); // 当前预览图片索引
     const isCadConverting = ref(false); // CAD转JSON转换状态
+
+    // 确认对话框
+    const confirmDialogVisible = ref(false);
 
     // 流程步骤管理
     const currentStep = ref(1); // 当前步骤：1=助手5，2=助手6，3=助手7
@@ -851,8 +913,7 @@ export default defineComponent({
     watch(
       () => EditorModule.screen?.id,
       () => {
-        lastUploadedImage.value = null;
-        previewImageUrl.value = "";
+        uploadedImages.value = [];
         restoreUploadedImage();
       },
     );
@@ -1006,6 +1067,14 @@ export default defineComponent({
     ]);
 
     const selectedSendType = ref<string>(props.waterServiceMode ? "sendWater" : "send5");
+
+    const previewImageUrl = computed(() => {
+      if (!Array.isArray(uploadedImages.value) || uploadedImages.value.length === 0) return "";
+      const maxIndex = uploadedImages.value.length - 1;
+      const index = isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value;
+      const validIndex = Math.max(0, Math.min(index, maxIndex));
+      return uploadedImages.value[validIndex]?.base64Data || "";
+    });
 
     const selectOptions = computed(() => {
       return sendTypes.value.map((t) => {
@@ -1310,14 +1379,12 @@ export default defineComponent({
       try {
         // 构建 files 参数（优先使用config中的files，否则使用上传的图片）
         let files = configFiles;
-        if (!files && lastUploadedImage.value) {
-          files = [
-            {
-              type: "image",
-              transfer_method: "local_file",
-              upload_file_id: lastUploadedImage.value.id,
-            },
-          ];
+        if (!files && uploadedImages.value.length > 0) {
+          files = uploadedImages.value.map((img) => ({
+            type: "image",
+            transfer_method: "local_file",
+            upload_file_id: img.id,
+          }));
         }
 
         const requestBody = {
@@ -1732,14 +1799,12 @@ export default defineComponent({
         const apiKey1 = props.apiKeyFlow1 || props.apiKey;
 
         // 构建 files 参数（如果有上传的图片）
-        const files = lastUploadedImage.value
-          ? [
-              {
-                type: "image",
-                transfer_method: "local_file",
-                upload_file_id: lastUploadedImage.value.id,
-              },
-            ]
+        const files = uploadedImages.value.length > 0
+          ? uploadedImages.value.map((img) => ({
+              type: "image",
+              transfer_method: "local_file",
+              upload_file_id: img.id,
+            }))
           : undefined;
 
         const requestBody = {
@@ -2703,14 +2768,12 @@ export default defineComponent({
         abortController.value = new AbortController();
 
         // 构建 files 参数（如果有上传的图片）
-        const files = lastUploadedImage.value
-          ? [
-              {
-                type: "image",
-                transfer_method: "local_file",
-                upload_file_id: lastUploadedImage.value.id,
-              },
-            ]
+        const files = uploadedImages.value.length > 0
+          ? uploadedImages.value.map((img) => ({
+              type: "image",
+              transfer_method: "local_file",
+              upload_file_id: img.id,
+            }))
           : [];
 
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
@@ -3017,21 +3080,16 @@ export default defineComponent({
     // 从localStorage恢复上传的图片信息
     const restoreUploadedImage = () => {
       try {
-        const savedImageStr = localStorage.getItem(getUploadImageStorageKey());
-        if (!savedImageStr) return;
+        const savedImagesStr = localStorage.getItem(getUploadImageStorageKey());
+        if (!savedImagesStr) return;
 
-        const savedImage = JSON.parse(savedImageStr);
-        if (!savedImage.id) return;
+        const savedImages = JSON.parse(savedImagesStr);
+        if (!Array.isArray(savedImages)) return;
 
-        const { base64Data, ...imageInfo } = savedImage;
-        lastUploadedImage.value = imageInfo;
-
-        if (base64Data) {
-          previewImageUrl.value = base64Data;
-        }
+        uploadedImages.value = savedImages;
       } catch (error) {
         localStorage.removeItem(getUploadImageStorageKey());
-        lastUploadedImage.value = null;
+        uploadedImages.value = [];
       }
     };
 
@@ -3073,40 +3131,51 @@ export default defineComponent({
 
         const result = await response.json();
 
-        lastUploadedImage.value = {
+        let imageInfo = {
           id: result.id,
           name: result.name,
           size: result.size,
           extension: result.extension,
           mime_type: result.mime_type,
           created_at: result.created_at,
+          base64Data: "",
         };
 
         try {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const base64Data = e.target?.result as string;
-            previewImageUrl.value = base64Data;
-            const imageData = {
-              ...lastUploadedImage.value,
-              base64Data: base64Data,
+          const base64Data = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              resolve(e.target?.result as string || "");
             };
-            try {
-              localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageData));
-            } catch (storageError: any) {
-              if (storageError.name === "QuotaExceededError") {
-                console.warn("localStorage 配额不足，仅保存图片元信息");
-                const imageMeta = { ...lastUploadedImage.value };
-                localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(imageMeta));
-              } else {
-                console.error("保存图片信息到 localStorage 失败:", storageError);
-              }
-            }
-          };
-          reader.readAsDataURL(file);
+            reader.onerror = () => {
+              resolve("");
+            };
+            reader.readAsDataURL(file);
+          });
+          imageInfo = { ...imageInfo, base64Data };
         } catch (e) {}
 
-        ElMessage.success(`图片 "${result.name}" 上传成功！点击旁边的链接查看预览`);
+        uploadedImages.value.push(imageInfo);
+
+        try {
+          const allImagesData = uploadedImages.value.map((img, index) => {
+            const stored = JSON.parse(localStorage.getItem(getUploadImageStorageKey()) || "[]");
+            return index === uploadedImages.value.length - 1 ? imageInfo : stored[index] || img;
+          });
+          localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(allImagesData));
+        } catch (storageError: any) {
+          if (storageError.name === "QuotaExceededError") {
+            console.warn("localStorage 配额不足，仅保存图片元信息");
+            localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(uploadedImages.value.map((img) => {
+              const { base64Data, ...meta } = img;
+              return meta;
+            })));
+          } else {
+            console.error("保存图片信息到 localStorage 失败:", storageError);
+          }
+        }
+
+        ElMessage.success(`图片 "${result.name}" 上传成功！当前共 ${uploadedImages.value.length} 张图片`);
       } catch (error: any) {
         ElMessage.error("图片上传失败：" + error.message);
       } finally {
@@ -3153,27 +3222,56 @@ export default defineComponent({
     // 处理图片上传（文件输入）
     const handleImageUpload = async (event: Event) => {
       const target = event.target as HTMLInputElement;
-      const file = target.files?.[0];
+      const files = target.files;
 
-      if (!file) return;
+      if (!files || files.length === 0) return;
 
-      await uploadFile(file, "input");
+      for (let i = 0; i < files.length; i++) {
+        await uploadFile(files[i], "input");
+      }
 
       target.value = "";
     };
 
     // 打开图片预览
-    const openImagePreview = () => {
-      if (!lastUploadedImage.value) {
+    const openImagePreview = (index: number = 0) => {
+      if (!Array.isArray(uploadedImages.value) || uploadedImages.value.length === 0) {
         ElMessage.warning("暂无已上传的图片");
         return;
       }
+      const maxIndex = uploadedImages.value.length - 1;
+      const validIndex = isNaN(index) ? 0 : Math.max(0, Math.min(index, maxIndex));
+      currentPreviewIndex.value = validIndex;
       imagePreviewVisible.value = true;
+    };
+
+    // 上一张
+    const prevImage = () => {
+      if (currentPreviewIndex.value > 0) {
+        currentPreviewIndex.value--;
+        resetImageScale();
+      }
+    };
+
+    // 下一张
+    const nextImage = () => {
+      if (currentPreviewIndex.value < uploadedImages.value.length - 1) {
+        currentPreviewIndex.value++;
+        resetImageScale();
+      }
+    };
+
+    // 选择指定图片
+    const selectImage = (index: number) => {
+      if (index >= 0 && index < uploadedImages.value.length) {
+        currentPreviewIndex.value = index;
+        resetImageScale();
+      }
     };
 
     // CAD转JSON
     const cadToJson = async () => {
-      if (!lastUploadedImage.value) {
+      if (uploadedImages.value.length === 0) {
         ElMessage.warning("请先上传图片");
         return;
       }
@@ -3181,9 +3279,10 @@ export default defineComponent({
       isCadConverting.value = true;
 
       // 添加用户消息
+      const imageNames = uploadedImages.value.map((img) => img.name).join(", ");
       messages.value.push({
         role: "user",
-        content: `📐 CAD转JSON (图片: ${lastUploadedImage.value.name})`,
+        content: `📐 CAD转JSON (图片: ${imageNames})`,
         timestamp: Date.now(),
       });
 
@@ -3210,13 +3309,11 @@ export default defineComponent({
           response_mode: "streaming",
           conversation_id: "",
           user: props.userId || "abc-123",
-          files: [
-            {
-              type: "image",
-              transfer_method: "local_file",
-              upload_file_id: lastUploadedImage.value.id,
-            },
-          ],
+          files: uploadedImages.value.map((img) => ({
+            type: "image",
+            transfer_method: "local_file",
+            upload_file_id: img.id,
+          })),
         };
 
         console.log("请求体:", JSON.stringify(requestBody, null, 2));
@@ -3338,6 +3435,12 @@ export default defineComponent({
 
     // 清空消息
     const clearMessages = () => {
+      confirmDialogVisible.value = true;
+    };
+
+    // 确认清空
+    const confirmClear = () => {
+      confirmDialogVisible.value = false;
       try {
         localStorage.removeItem(getStorageKey());
         localStorage.removeItem(getUploadImageStorageKey());
@@ -3346,10 +3449,14 @@ export default defineComponent({
         console.error("清空 localStorage 失败:", e);
       }
       messages.value = [];
-      lastUploadedImage.value = null;
-      previewImageUrl.value = "";
+      uploadedImages.value = [];
       resetSteps();
       ElMessage.success("对话已清空");
+    };
+
+    // 取消清空
+    const cancelClear = () => {
+      confirmDialogVisible.value = false;
     };
 
     // 停止生成
@@ -4103,7 +4210,7 @@ export default defineComponent({
       fileInput,
       imagePreviewVisible,
       previewImageUrl,
-      lastUploadedImage,
+      uploadedImages,
       isCadConverting,
       recommendQuestions,
       selectedQuestion,
@@ -4131,6 +4238,9 @@ export default defineComponent({
       handleHumanApprove,
       handleHumanRevise,
       clearMessages,
+      confirmClear,
+      cancelClear,
+      confirmDialogVisible,
       stopGeneration,
       outputJsonToConsole,
       saveTempPayload,
@@ -4146,6 +4256,10 @@ export default defineComponent({
       triggerImageUpload,
       handleImageUpload,
       openImagePreview,
+      prevImage,
+      nextImage,
+      selectImage,
+      currentPreviewIndex,
       cadToJson,
       imageScale,
       offsetX,
@@ -4827,6 +4941,102 @@ export default defineComponent({
   margin-top: 8px;
 }
 
+.multi-image-preview-wrapper {
+  position: relative;
+}
+
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nav-prev {
+  left: 10px;
+}
+
+.nav-next {
+  right: 10px;
+}
+
+.thumbnail-list {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.thumbnail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.thumbnail-item:hover {
+  background-color: #e4e7ed;
+}
+
+.thumbnail-item.active {
+  background-color: #409eff;
+}
+
+.thumbnail-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 2px solid transparent;
+}
+
+.thumbnail-item.active .thumbnail-img {
+  border-color: #ffffff;
+}
+
+.thumbnail-name {
+  font-size: 11px;
+  color: #606266;
+  margin-top: 4px;
+  text-align: center;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbnail-item.active .thumbnail-name {
+  color: #ffffff;
+}
+
 /* 识别结果折叠样式 - 使用:deep()确保v-html插入的内容能应用样式 */
 :deep(.recognition-result-wrapper) {
   background-color: #f5f5f5;
@@ -5043,5 +5253,33 @@ export default defineComponent({
 
 :deep(.json-null) {
   color: #64748b;
+}
+
+/* 确认清空对话框样式 */
+.confirm-dialog-content {
+  text-align: center;
+  padding: 24px;
+}
+
+.confirm-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.confirm-dialog-content p {
+  font-size: 16px;
+  color: #303133;
+  margin: 0 0 8px 0;
+}
+
+.confirm-hint {
+  font-size: 13px !important;
+  color: #909399 !important;
+}
+
+.confirm-dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
 }
 </style>
