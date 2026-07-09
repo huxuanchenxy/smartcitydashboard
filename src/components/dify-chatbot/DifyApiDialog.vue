@@ -152,16 +152,21 @@
                 :disabled="isLoading"
                 >复制回答内容</el-button
               > -->
-              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading"
-                >清空对话</el-button
+              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话"
+              class="upload-button"
+                ><svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8032" width="20" height="20"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" p-id="8033" fill="#ffffff"></path></svg>
+                </el-button
               >
               <el-button
                 type="success"
                 size="small"
                 @click="triggerImageUpload"
                 :disabled="isLoading || isAwaitingFeedback"
-                >上传文件</el-button
+                class="upload-button"
+                title="上传文件"
               >
+                <svg t="1783558047774" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M519.168 495.904L316.736 708.512l58.4 55.152L480 653.984V896h80V653.984l103.936 109.68 57.696-55.152-202.464-212.608zM470.336 240l-36.4-80H80v736h288v-80H160V240h222.432l36.416 80H880v496H672v80h288V240H470.336z" fill="#ffffff"></path></svg>
+              </el-button>
               <!-- 水务模式下隐藏：CAD转JSON -->
               <!-- <el-button 
               v-if="!waterServiceMode"
@@ -4539,6 +4544,16 @@ export default defineComponent({
   height: 36px;
   min-width: 36px;
   border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-button {
+  width: 20px;
+  height: 20px;
+  min-width: 35px;
   padding: 0;
   display: flex;
   align-items: center;
