@@ -25,5 +25,15 @@ interface ImportMetaEnv {
   VITE_APP_DIFY_API_KEY_FLOW1: string; // 发送2功能的第一次调用 API Key
   VITE_APP_DIFY_API_KEY_FLOW2: string; // 发送2功能的第二次调用 API Key
   VITE_APP_DIFY_API_KEY_FLOW3: string; // 新程序专用 API Key
+  VITE_APP_DIFY_API_KEY_FLOW4: string; // difyapidialog 专用 API Key 演示专用一次生成环保
+  VITE_APP_DIFY_API_KEY_FLOWa1: string; // difyapidialog 专用 API Key (sendMessage4 FLOWa1)
+  VITE_APP_DIFY_API_KEY_FLOWb1: string; // difyapidialog 专用 API Key (sendMessage5v1 FLOWb1)
+  VITE_APP_DIFY_API_KEY_FLOWb2: string; // difyapidialog 专用 API Key (sendMessage5v2 FLOWb2)
+  VITE_APP_DIFY_API_KEY_FLOWb3: string; // difyapidialog 专用 API Key (sendMessage5v2 FLOWb3)
+  VITE_APP_DIFY_API_KEY_FLOW_getway: string; // difyapidialog 专用 API Key (getway)
+  VITE_APP_DIFY_API_KEY_FLOW_WATER: string; // 水务专用 API Key
+  VITE_APP_DIFY_WATER_SERVICE_MODE: string; // 水务业务模式开关
+  VITE_APP_DIFY_SSE_TIMEOUT_MS: string; // SSE 连接超时时间
+  VITE_APP_DIFY_STEP2_TRANSFER_MODE: string; // 步骤2传输模式
   VITE_APP_DIFY_BASE_URL: string;
 }

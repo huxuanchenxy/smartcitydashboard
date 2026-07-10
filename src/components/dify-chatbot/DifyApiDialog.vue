@@ -599,6 +599,11 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb3 || "",
     },
+    // difyapidialog 专用 API Key (FLOW_getway)
+    apiKeyFlowGetway: {
+      type: String,
+      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW_getway || "",
+    },
     // 水务专用 API Key
     apiKeyFlowWater: {
       type: String,
@@ -1051,6 +1056,16 @@ export default defineComponent({
         config: {
           apiKey: props.apiKeyFlowB3 || "",
           logPrefix: "发送7",
+          supportWorkflowPaused: true,
+        },
+      },
+      {
+        id: "sendGetway",
+        label: "网关助手",
+        title: "网关专用",
+        config: {
+          apiKey: props.apiKeyFlowGetway || "",
+          logPrefix: "发送Getway",
           supportWorkflowPaused: true,
         },
       },
@@ -2370,6 +2385,17 @@ export default defineComponent({
       await sendRequest({
         apiKey: props.apiKeyFlowWater || props.apiKey,
         logPrefix: "发送Water",
+      });
+    };
+
+    // 发送消息Getway - 使用网关专用 API Key
+    const sendMessageGetway = async (queryText?: string) => {
+      await sendRequest({
+        apiKey: props.apiKeyFlowGetway || "",
+        logPrefix: "发送Getway",
+        query: queryText,
+        clearQuery: !queryText,
+        supportWorkflowPaused: true,
       });
     };
 
