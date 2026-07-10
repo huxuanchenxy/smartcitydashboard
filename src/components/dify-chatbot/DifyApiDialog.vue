@@ -3470,6 +3470,16 @@ export default defineComponent({
       
 
       console.log("currentTaskId.value ",currentTaskId.value);
+      // 根据当前步骤获取对应的 API Key
+      let usedApiKey = props.apiKey;
+      if (currentStep.value === 1) {
+        usedApiKey = props.apiKeyFlowB1 || props.apiKey;
+      } else if (currentStep.value === 2) {
+        usedApiKey = props.apiKeyFlowB2 || props.apiKey;
+      } else if (currentStep.value === 3) {
+        usedApiKey = props.apiKeyFlowB3 || props.apiKey;
+      }
+
       // 先调用官方停止接口
       if (currentTaskId.value) {
         try {
@@ -3478,7 +3488,7 @@ export default defineComponent({
             {
               method: "POST",
               headers: {
-                Authorization: `Bearer ${props.apiKey}`,
+                Authorization: `Bearer ${usedApiKey}`,
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
