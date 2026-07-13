@@ -1601,7 +1601,7 @@ export default defineComponent({
                       displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
                     }
                     console.log(`处理后的 displayContent：`, displayContent);
-                    answerContent = displayContent;
+                    answerContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div></div>`;
                     
                     // 更新 lasttask 和 lastquerytask（使用 nextstep 的值）
                     if (gatewayData.nextstep !== undefined) {
@@ -1672,7 +1672,7 @@ export default defineComponent({
                         const highlightedContent = highlightJson(formattedContent);
                         displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
                       }
-                      fullContent = displayContent;
+                      fullContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div></div>`;
                     } catch (e) {
                       console.warn(`${logPrefix} workflow_finished 网关模式解析失败`, e);
                     }
@@ -5040,6 +5040,56 @@ export default defineComponent({
 .error-tag {
   background-color: #fef2f2;
   color: #dc2626;
+}
+
+/* 网关消息样式 */
+.gateway-message-wrapper {
+  width: 100%;
+}
+
+.gateway-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border-left: 4px solid #3b82f6;
+}
+
+.gateway-icon {
+  font-size: 16px;
+}
+
+.gateway-text {
+  font-weight: 600;
+  color: #1d4ed8;
+  font-size: 13px;
+}
+
+.gateway-message-content {
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+  white-space: pre-wrap;
+  border: 1px solid #e0e7ff;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  position: relative;
+}
+
+.gateway-content {
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
 }
 
 .image-preview-container {
