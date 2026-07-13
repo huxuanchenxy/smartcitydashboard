@@ -812,11 +812,19 @@ export default defineComponent({
       }
       
       currentStep.value = nextStep;
-      selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
+      const stepSendTypeMap: Record<number, string> = {
+        1: "send5",
+        2: "send6",
+        3: "send7",
+      };
+      selectedSendType.value = stepSendTypeMap[nextStep] || "send5";
+      
+      const stepLabel = getStepLabel(nextStep);
       
       await sendRequest({
         apiKey: stepConfig.apiKey,
         logPrefix: stepConfig.logPrefix,
+        query: `请帮我${stepLabel}`,
         supportWorkflowPaused: true,
         isGateway: false,
         files: (msg.gatewayImages || []).map((img: any) => ({
