@@ -26,6 +26,7 @@
               'message-item',
               message.role === 'user' ? 'user-message' : 'assistant-message',
               { 'human-interaction-message': message.isHumanInteraction },
+              { 'gateway-message': message.isGateway },
             ]"
           >
             <!-- 人工介入消息 -->
@@ -77,6 +78,51 @@
                 </div>
                 <div class="expiry-note">⚠️ 此操作将在1小时内过期。</div>
               </div>
+            </div>
+
+            <!-- 网关消息 -->
+            <div v-else-if="message.isGateway" class="gateway-message-wrapper">
+              <!-- AI提示标签 -->
+              <div class="gateway-indicator">
+                <span class="gateway-icon">🌐</span>
+                <span class="gateway-text">AI提示</span>
+              </div>
+
+              <!-- AI 消息内容 -->
+              <div class="gateway-message-content">
+                <div v-html="formatContent(message.content)"></div>
+              </div>
+
+              <!-- 操作区域 -->
+              <div class="gateway-action-area" v-if="message.gatewayNextStep && message.gatewayNextStep >= 1 && message.gatewayNextStep <= 3">
+                <div class="gateway-upload-section">
+                  <label class="gateway-upload-btn">
+                    <input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" @change="(e) => handleGatewayUpload(e, message.conversationId || '')" />
+                    <span>📁 上传文件</span>
+                  </label>
+                </div>
+                <div class="gateway-view-section">
+                  <button class="gateway-view-btn" @click="viewGatewayImages(message.conversationId || '')" :disabled="!message.gatewayImages || message.gatewayImages.length === 0">
+                    🖼️ 查看 ({{ message.gatewayImages?.length || 0 }})
+                  </button>
+                </div>
+                <div class="gateway-next-step">
+                  <button class="gateway-next-btn" @click="proceedToNextStep(message.conversationId || '', message.gatewayNextStep)">
+                    🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 复制按钮 -->
+              <button 
+                class="copy-btn gateway-copy-btn" 
+                @click="copyMessageContent(message)"
+                :title="'复制内容'"
+              >
+                <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
+              </button>
+
+              <div class="message-time">{{ formatTime(message.timestamp) }}</div>
             </div>
 
             <!-- 普通消息 -->
@@ -165,7 +211,7 @@
                 class="upload-button"
                 title="上传文件"
               >
-                <svg t="1783558047774" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M519.168 495.904L316.736 708.512l58.4 55.152L480 653.984V896h80V653.984l103.936 109.68 57.696-55.152-202.464-212.608zM470.336 240l-36.4-80H80v736h288v-80H160V240h222.432l36.416 80H880v496H672v80h288V240H470.336z" fill="#ffffff"></path></svg>
+              <svg t="1783924879903" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2350" width="20" height="20"><path d="M770.609824 1023.841829a142.354032 142.354032 0 0 1-104.86747-239.787458 14.235403 14.235403 0 0 1 20.878591 19.455051A113.883225 113.883225 0 1 0 727.429101 775.038616a14.235403 14.235403 0 1 1-10.597467-26.414581 142.354032 142.354032 0 1 1 53.145505 275.375965zM444.935434 292.932963H276.957677a16.766141 16.766141 0 0 1 0-33.532283h167.977757a16.766141 16.766141 0 0 1 0 33.532283zM344.180414 360.1557h-67.222737a16.766141 16.766141 0 0 1 0-33.532283h67.222737a16.766141 16.766141 0 0 1 0 33.532283zM679.977757 494.601174H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 561.823911H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 629.046648H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM411.086809 695.953043h-134.445474a16.924313 16.924313 0 0 1 0-33.690454H411.086809A16.924313 16.924313 0 0 1 411.086809 695.953043z" fill="#ffffff" p-id="2351"></path><path d="M699.116466 207.204201m0-3.796107l0-25.307383q0-3.796108 3.796107-3.796108l194.075997 0q3.796108 0 3.796107 3.796108l0 25.307383q0 3.796108-3.796107 3.796107l-194.075997 0q-3.796108 0-3.796107-3.796107Z" fill="#ffffff" p-id="2352"></path><path d="M731.857893 207.04603m-3.796107 0l-25.307384 0q-3.796108 0-3.796107-3.796107l0-110.087118q0-3.796108 3.796107-3.796107l25.307384 0q3.796108 0 3.796107 3.796107l0 110.087118q0 3.796108-3.796107 3.796107Z" fill="#ffffff" p-id="2353"></path><path d="M907.514349 190.194241m-2.684253 2.684254l-17.895023 17.895022q-2.684253 2.684253-5.368506 0l-186.331921-186.331921q-2.684253-2.684253 0-5.368507l17.895022-17.895022q2.684253-2.684253 5.368507 0l186.331921 186.331921q2.684253 2.684253 0 5.368507Z" fill="#ffffff" p-id="2354"></path><path d="M429.434662 997.427247m-16.449799 0a16.449799 16.449799 0 1 0 32.899598 0 16.449799 16.449799 0 1 0-32.899598 0Z" fill="#ffffff" p-id="2355"></path><path d="M363.635465 980.661106H176.67717a33.215941 33.215941 0 0 1-33.21594-33.215941V71.335187a33.374112 33.374112 0 0 1 33.21594-33.374112h540.628978V5.219648H176.67717A66.115539 66.115539 0 0 0 110.561631 71.335187v876.426321a66.115539 66.115539 0 0 0 66.115539 66.115539H363.635465a15.817115 15.817115 0 1 0 0-33.215941zM594.248996 980.661106H494.917516a15.817115 15.817115 0 0 0 0 32.899598h99.33148a15.817115 15.817115 0 0 0 0-32.899598zM901.417362 714.617238V272.845227a15.817115 15.817115 0 0 0-32.899599 0v441.772011a15.817115 15.817115 0 1 0 32.899599 0z" fill="#ffffff" p-id="2356"></path><path d="M754.160025 826.127896m3.796107 0l25.307384 0q3.796108 0 3.796107 3.796108l0 129.858511q0 3.796108-3.796107 3.796107l-25.307384 0q-3.796108 0-3.796107-3.796107l0-129.858511q0-3.796108 3.796107-3.796108Z" fill="#ffffff" p-id="2357"></path><path d="M747.422242 817.383321m2.684253-2.684253l17.895023-17.895023q2.684253-2.684253 5.368507 0l72.139309 72.139309q2.684253 2.684253 0 5.368507l-17.895023 17.895023q-2.684253 2.684253-5.368507 0l-72.139309-72.13931q-2.684253-2.684253 0-5.368506Z" fill="#ffffff" p-id="2358"></path><path d="M716.242933 895.111782m-2.684253-2.684254l-17.895022-17.895022q-2.684253-2.684253 0-5.368507l72.139309-72.139309q2.684253-2.684253 5.368506 0l17.895023 17.895023q2.684253 2.684253 0 5.368506l-72.139309 72.139309q-2.684253 2.684253-5.368507 0Z" fill="#ffffff" p-id="2359"></path></svg>
               </el-button>
               <!-- 水务模式下隐藏：CAD转JSON -->
               <!-- <el-button 
@@ -515,6 +561,7 @@ interface Message {
   isThinking?: boolean;
   thinkingContent?: string;
   isHumanInteraction?: boolean;
+  isGateway?: boolean;
   formToken?: string;
   workflowRunId?: string;
   isProcessed?: boolean;
@@ -726,6 +773,61 @@ export default defineComponent({
       1: { apiKey: props.apiKeyFlowB1 || "", logPrefix: "发送5", label: "图纸识别" },
       2: { apiKey: props.apiKeyFlowB2 || "", logPrefix: "发送6", label: "点位绑定" },
       3: { apiKey: props.apiKeyFlowB3 || "", logPrefix: "发送7", label: "生成DSL" },
+    };
+
+    const getStepLabel = (nextStep: number) => {
+      const stepConfig = stepApiKeyMap[nextStep];
+      return stepConfig?.label || "";
+    };
+
+    const handleGatewayUpload = async (event: Event, conversationId: string) => {
+      const target = event.target as HTMLInputElement;
+      const files = target.files;
+      if (!files || files.length === 0) return;
+      
+      for (let i = 0; i < files.length; i++) {
+        await uploadFile(files[i], "gateway", undefined, conversationId);
+      }
+      target.value = "";
+    };
+
+    const viewGatewayImages = (conversationId: string) => {
+      const msg = messages.value.find((m) => m.conversationId === conversationId);
+      if (!msg || !msg.gatewayImages || msg.gatewayImages.length === 0) return;
+      isGatewayPreview.value = true;
+      uploadedImages.value = [...msg.gatewayImages];
+      currentPreviewIndex.value = 0;
+      imagePreviewVisible.value = true;
+    };
+
+    const proceedToNextStep = async (conversationId: string, nextStep: number) => {
+      const msg = messages.value.find((m) => m.conversationId === conversationId);
+      if (!msg) return;
+      
+      const stepConfig = stepApiKeyMap[nextStep];
+      if (!stepConfig || !stepConfig.apiKey) {
+        ElMessage.warning("未配置该步骤的 API Key");
+        return;
+      }
+      
+      currentStep.value = nextStep;
+      selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
+      
+      await sendRequest({
+        apiKey: stepConfig.apiKey,
+        logPrefix: stepConfig.logPrefix,
+        supportWorkflowPaused: true,
+        isGateway: false,
+        files: (msg.gatewayImages || []).map((img: any) => ({
+          type: "image",
+          transfer_method: "local_file",
+          upload_file_id: img.id,
+        })),
+      });
+      
+      if (msg.gatewayImages) {
+        msg.gatewayImages = [];
+      }
     };
 
     // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
@@ -1712,20 +1814,15 @@ export default defineComponent({
                     // 获取 conversation_id
                     const convId = data.conversation_id || `conv-${Date.now()}`;
                     
-                    // 构建操作区域（使用占位符标记）
-                    let actionArea = "";
-                    const nextStepConfig = stepApiKeyMap[gatewayNextStep.value];
-                    if (gatewayNextStep.value >= 1 && gatewayNextStep.value <= 3 && nextStepConfig) {
-                      actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${convId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${convId}')" disabled>🖼️ 查看 (0)</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${convId}', ${gatewayNextStep.value})">🚀 开始${nextStepConfig.label}</button></div></div>`;
-                    }
-                    
-                    answerContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div><!-- GATEWAY_ACTION_PLACEHOLDER -->${actionArea}</div>`;
+                    // 设置消息为网关模式，由模板的v-if控制显示
+                    answerContent = displayContent;
                     
                     // 将 conversation_id、nextstep 和空的文件列表添加到消息中
                     const msgIndex = messages.value.length - 1;
                     const currentMsg = messages.value[msgIndex];
                     messages.value[msgIndex] = {
                       ...currentMsg,
+                      isGateway: true,
                       gatewayNextStep: gatewayNextStep.value,
                       gatewayImages: currentMsg.gatewayImages || [],
                       conversationId: currentMsg.conversationId || convId,
@@ -1805,17 +1902,12 @@ export default defineComponent({
                       // 使用消息已有的 conversationId，或者从 workflow_finished 事件中获取
                       const convId = lastMsg?.conversationId || data.conversation_id || `conv-${Date.now()}`;
                       
-                      // 构建操作区域（使用占位符标记，使用 conversation_id）
-                      let actionArea = "";
-                      const nextStepConfig = stepApiKeyMap[gatewayNextStep.value];
-                      if (gatewayNextStep.value >= 1 && gatewayNextStep.value <= 3 && nextStepConfig) {
-                        actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${convId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${convId}')" disabled>🖼️ 查看 (0)</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${convId}', ${gatewayNextStep.value})">🚀 开始${nextStepConfig.label}</button></div></div>`;
-                      }
-                      
-                      fullContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div><!-- GATEWAY_ACTION_PLACEHOLDER -->${actionArea}</div>`;
+                      // 设置消息为网关模式，由模板的v-if控制显示
+                      fullContent = displayContent;
                       
                       // 将 conversation_id、nextstep 和空的文件列表添加到消息中
                       if (lastMsg?.role === "assistant") {
+                        lastMsg.isGateway = true;
                         lastMsg.conversationId = lastMsg.conversationId || convId;
                         lastMsg.gatewayNextStep = gatewayNextStep.value;
                         lastMsg.gatewayImages = lastMsg.gatewayImages || [];
@@ -1828,6 +1920,9 @@ export default defineComponent({
                   if (lastMsg?.role === "assistant") {
                     lastMsg.isThinking = false;
                     lastMsg.content = fullContent;
+                    if (!lastMsg.isGateway && isGateway) {
+                      lastMsg.isGateway = true;
+                    }
                     if (!lastMsg.conversationId) {
                       lastMsg.gatewayNextStep = gatewayNextStep.value;
                       lastMsg.gatewayImages = [];
@@ -4151,6 +4246,10 @@ export default defineComponent({
       copyLastMessageContent,
       copyMessageContent,
       saveRawJson,
+      getStepLabel,
+      handleGatewayUpload,
+      viewGatewayImages,
+      proceedToNextStep,
       extractValidationResult,
       handleEnter,
       formatContent,
