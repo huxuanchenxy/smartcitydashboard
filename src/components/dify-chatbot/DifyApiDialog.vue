@@ -95,7 +95,7 @@
 
               <!-- 操作区域 -->
               <div class="gateway-action-area" v-if="message.gatewayNextStep && message.gatewayNextStep >= 1 && message.gatewayNextStep <= 3">
-                <div class="gateway-upload-section">
+                <div class="gateway-upload-section" v-if="!message.isGatewayActionDisabled">
                   <label class="gateway-upload-btn">
                     <input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" @change="(e) => handleGatewayUpload(e, message.conversationId || '')" />
                     <span>📁 上传文件</span>
@@ -106,7 +106,7 @@
                     🖼️ 查看 ({{ message.gatewayImages?.length || 0 }})
                   </button>
                 </div>
-                <div class="gateway-next-step">
+                <div class="gateway-next-step" v-if="!message.isGatewayActionDisabled">
                   <button class="gateway-next-btn" @click="proceedToNextStep(message.conversationId || '', message.gatewayNextStep)">
                     🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
                   </button>
@@ -562,6 +562,7 @@ interface Message {
   thinkingContent?: string;
   isHumanInteraction?: boolean;
   isGateway?: boolean;
+  isGatewayActionDisabled?: boolean;
   formToken?: string;
   workflowRunId?: string;
   isProcessed?: boolean;
@@ -2302,6 +2303,11 @@ export default defineComponent({
 
     // 发送消息Getway - 使用网关专用 API Key
     const sendMessageGetway = async (queryText?: string) => {
+      messages.value.forEach((msg) => {
+        if (msg.isGateway) {
+          msg.isGatewayActionDisabled = true;
+        }
+      });
       await sendRequest({
         apiKey: props.apiKeyFlowGetway || "",
         logPrefix: "发送Getway",
