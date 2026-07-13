@@ -519,6 +519,9 @@ interface Message {
   workflowRunId?: string;
   isProcessed?: boolean;
   humanInput?: string;
+  gatewayImages?: any[];
+  gatewayNextStep?: number;
+  conversationId?: string;
 }
 
 interface SendMessageConfig {
@@ -559,16 +562,6 @@ export default defineComponent({
     apiKey: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY,
-    },
-    // 发送2功能的第一次调用 API Key（对应第一个 chatflow）
-    apiKeyFlow1: {
-      type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW1 || "",
-    },
-    // 发送2功能的第二次调用 API Key（对应第二个 chatflow）
-    apiKeyFlow2: {
-      type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOW2 || "",
     },
     // 新程序专用 API Key
     apiKeyFlow3: {
@@ -711,6 +704,7 @@ export default defineComponent({
     const uploadedImages = ref<any[]>([]); // 保存所有上传的图片信息
     const currentPreviewIndex = ref(0); // 当前预览图片索引
     const isCadConverting = ref(false); // CAD转JSON转换状态
+    const isGatewayPreview = ref(false); // 是否正在预览网关上传的图片
 
     // 确认对话框
     const confirmDialogVisible = ref(false);
@@ -724,6 +718,15 @@ export default defineComponent({
     // 网关模式相关状态
     const lasttask = ref(-1); // 上一次任务标识
     const lastquerytask = ref(-1); // 上一次查询任务标识
+    const gatewayNextStep = ref(-1); // 当前网关返回的下一步
+    const gatewayUploadedImages = ref<any[]>([]); // 网关模式下当前步骤上传的文件
+
+    // nextstep 与 API Key 的映射关系
+    const stepApiKeyMap: Record<number, { apiKey: string; logPrefix: string; label: string }> = {
+      1: { apiKey: props.apiKeyFlowB1 || "", logPrefix: "发送5", label: "图纸识别" },
+      2: { apiKey: props.apiKeyFlowB2 || "", logPrefix: "发送6", label: "点位绑定" },
+      3: { apiKey: props.apiKeyFlowB3 || "", logPrefix: "发送7", label: "生成DSL" },
+    };
 
     // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
     const assistant5RecognitionResult = ref("");
@@ -793,6 +796,11 @@ export default defineComponent({
 
     const handlePreviewClose = () => {
       resetImageScale();
+      // 如果是网关预览，关闭后清空上传图片列表
+      if (isGatewayPreview.value) {
+        uploadedImages.value = [];
+        isGatewayPreview.value = false;
+      }
     };
 
     // 人工介入相关
@@ -967,6 +975,98 @@ export default defineComponent({
             contentElement.style.display = "none";
             element.textContent = "展开";
           }
+        }
+      };
+
+      // 通过 conversationId 查找消息
+      const findMessageByConversationId = (conversationId: string) => {
+        return messages.value.find((msg) => msg.conversationId === conversationId);
+      };
+
+      // 网关上传文件函数
+      (window as any).__gatewayUploadFiles = async (input: HTMLInputElement, conversationId: string) => {
+        const files = input.files;
+        if (!files || files.length === 0) return;
+        
+        for (let i = 0; i < files.length; i++) {
+          await uploadFile(files[i], "gateway", undefined, conversationId);
+        }
+        input.value = "";
+        
+        // 更新对应消息中的操作区域
+        updateGatewayActionArea(conversationId);
+      };
+
+      // 更新网关消息中的操作区域
+      const updateGatewayActionArea = (conversationId?: string) => {
+        let targetMsg;
+        if (conversationId) {
+          targetMsg = findMessageByConversationId(conversationId);
+        } else {
+          targetMsg = messages.value[messages.value.length - 1];
+        }
+        
+        if (!targetMsg || targetMsg.role !== "assistant") return;
+        
+        const nextStep = targetMsg.gatewayNextStep;
+        const nextStepConfig = stepApiKeyMap[nextStep || 0];
+        if (nextStep && nextStep >= 1 && nextStep <= 3 && nextStepConfig) {
+          const hasImages = (targetMsg.gatewayImages || []).length > 0;
+          const actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${targetMsg.conversationId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${targetMsg.conversationId}')" ${!hasImages ? 'disabled' : ''}>🖼️ 查看 (${(targetMsg.gatewayImages || []).length})</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${targetMsg.conversationId}', ${nextStep})">🚀 开始${nextStepConfig.label}</button></div></div>`;
+          
+          let content = targetMsg.content;
+          if (content.includes('GATEWAY_ACTION_PLACEHOLDER')) {
+            // 删除占位符后面的所有内容（包括旧的操作区域）
+            const placeholderIndex = content.indexOf('<!-- GATEWAY_ACTION_PLACEHOLDER -->');
+            if (placeholderIndex !== -1) {
+              content = content.substring(0, placeholderIndex + '<!-- GATEWAY_ACTION_PLACEHOLDER -->'.length);
+              // 添加新的操作区域和结束标签
+              content = content + actionArea + '</div>';
+              targetMsg.content = content;
+            }
+          }
+        }
+      };
+
+      // 查看网关上传的文件
+      (window as any).__viewGatewayImages = (conversationId: string) => {
+        const msg = findMessageByConversationId(conversationId);
+        if (!msg || !msg.gatewayImages || msg.gatewayImages.length === 0) return;
+        isGatewayPreview.value = true;
+        uploadedImages.value = [...msg.gatewayImages];
+        currentPreviewIndex.value = 0;
+        imagePreviewVisible.value = true;
+      };
+
+      // 网关下一步操作函数
+      (window as any).__proceedToNextStep = async (conversationId: string, nextStep: number) => {
+        const msg = findMessageByConversationId(conversationId);
+        if (!msg) return;
+        
+        const stepConfig = stepApiKeyMap[nextStep];
+        if (!stepConfig || !stepConfig.apiKey) {
+          ElMessage.warning("未配置该步骤的 API Key");
+          return;
+        }
+        
+        currentStep.value = nextStep;
+        selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
+        
+        await sendRequest({
+          apiKey: stepConfig.apiKey,
+          logPrefix: stepConfig.logPrefix,
+          supportWorkflowPaused: true,
+          isGateway: false,
+          files: (msg.gatewayImages || []).map((img: any) => ({
+            type: "image",
+            transfer_method: "local_file",
+            upload_file_id: img.id,
+          })),
+        });
+        
+        // 清空该消息的网关上传文件
+        if (msg.gatewayImages) {
+          msg.gatewayImages = [];
         }
       };
 
@@ -1423,7 +1523,7 @@ export default defineComponent({
           inputs: inputs,
           query: query,
           response_mode: "streaming",
-          conversation_id: conversationId.value || "",
+          conversation_id: isGateway ? "" : (conversationId.value || ""),
           user: props.userId,
           files: files,
         };
@@ -1601,13 +1701,35 @@ export default defineComponent({
                       displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
                     }
                     console.log(`处理后的 displayContent：`, displayContent);
-                    answerContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div></div>`;
                     
-                    // 更新 lasttask 和 lastquerytask（使用 nextstep 的值）
+                    // 更新网关状态
                     if (gatewayData.nextstep !== undefined) {
                       lasttask.value = gatewayData.nextstep;
                       lastquerytask.value = gatewayData.nextstep;
+                      gatewayNextStep.value = gatewayData.nextstep;
                     }
+                    
+                    // 获取 conversation_id
+                    const convId = data.conversation_id || `conv-${Date.now()}`;
+                    
+                    // 构建操作区域（使用占位符标记）
+                    let actionArea = "";
+                    const nextStepConfig = stepApiKeyMap[gatewayNextStep.value];
+                    if (gatewayNextStep.value >= 1 && gatewayNextStep.value <= 3 && nextStepConfig) {
+                      actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${convId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${convId}')" disabled>🖼️ 查看 (0)</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${convId}', ${gatewayNextStep.value})">🚀 开始${nextStepConfig.label}</button></div></div>`;
+                    }
+                    
+                    answerContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div><!-- GATEWAY_ACTION_PLACEHOLDER -->${actionArea}</div>`;
+                    
+                    // 将 conversation_id、nextstep 和空的文件列表添加到消息中
+                    const msgIndex = messages.value.length - 1;
+                    const currentMsg = messages.value[msgIndex];
+                    messages.value[msgIndex] = {
+                      ...currentMsg,
+                      gatewayNextStep: gatewayNextStep.value,
+                      gatewayImages: currentMsg.gatewayImages || [],
+                      conversationId: currentMsg.conversationId || convId,
+                    };
                   } catch (e) {
                     console.warn(`${logPrefix} 网关模式解析 answer 失败，使用原始内容`, e);
                     console.warn(`原始 answer：`, data.answer);
@@ -1672,7 +1794,32 @@ export default defineComponent({
                         const highlightedContent = highlightJson(formattedContent);
                         displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
                       }
-                      fullContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div></div>`;
+                      
+                      // 更新网关状态
+                      if (gatewayData.nextstep !== undefined) {
+                        lasttask.value = gatewayData.nextstep;
+                        lastquerytask.value = gatewayData.nextstep;
+                        gatewayNextStep.value = gatewayData.nextstep;
+                      }
+                      
+                      // 使用消息已有的 conversationId，或者从 workflow_finished 事件中获取
+                      const convId = lastMsg?.conversationId || data.conversation_id || `conv-${Date.now()}`;
+                      
+                      // 构建操作区域（使用占位符标记，使用 conversation_id）
+                      let actionArea = "";
+                      const nextStepConfig = stepApiKeyMap[gatewayNextStep.value];
+                      if (gatewayNextStep.value >= 1 && gatewayNextStep.value <= 3 && nextStepConfig) {
+                        actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${convId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${convId}')" disabled>🖼️ 查看 (0)</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${convId}', ${gatewayNextStep.value})">🚀 开始${nextStepConfig.label}</button></div></div>`;
+                      }
+                      
+                      fullContent = `<div class="gateway-message-wrapper"><div class="gateway-indicator"><span class="gateway-icon">🌐</span><span class="gateway-text">AI提示</span></div><div class="gateway-message-content">${displayContent}</div><!-- GATEWAY_ACTION_PLACEHOLDER -->${actionArea}</div>`;
+                      
+                      // 将 conversation_id、nextstep 和空的文件列表添加到消息中
+                      if (lastMsg?.role === "assistant") {
+                        lastMsg.conversationId = lastMsg.conversationId || convId;
+                        lastMsg.gatewayNextStep = gatewayNextStep.value;
+                        lastMsg.gatewayImages = lastMsg.gatewayImages || [];
+                      }
                     } catch (e) {
                       console.warn(`${logPrefix} workflow_finished 网关模式解析失败`, e);
                     }
@@ -1681,6 +1828,10 @@ export default defineComponent({
                   if (lastMsg?.role === "assistant") {
                     lastMsg.isThinking = false;
                     lastMsg.content = fullContent;
+                    if (!lastMsg.conversationId) {
+                      lastMsg.gatewayNextStep = gatewayNextStep.value;
+                      lastMsg.gatewayImages = [];
+                    }
                   }
                   await scrollToBottom();
 
@@ -1787,8 +1938,8 @@ export default defineComponent({
           }
         }
 
-        // 更新会话 ID
-        if (newConversationId && !conversationId.value) {
+        // 更新会话 ID（网关模式下不更新全局 conversationId，保持每次调用都是新会话）
+        if (newConversationId && !conversationId.value && !isGateway) {
           conversationId.value = newConversationId;
           emit("conversation-created", newConversationId);
         }
@@ -1873,438 +2024,6 @@ export default defineComponent({
         apiKey: props.apiKey,
         logPrefix: "发送",
       });
-    };
-
-    // 发送消息2 - 连续调用两次接口，第一次的回答作为第二次的query
-    const sendMessage2 = async () => {
-      if (!userQuery.value.trim() || isLoading.value) return;
-
-      const query = userQuery.value.trim();
-
-      console.log("=== 发送2 第一次调用开始 ===");
-      console.log("发送2 query:", query);
-
-      // 添加用户消息
-      messages.value.push({
-        role: "user",
-        content: query,
-        timestamp: Date.now(),
-      });
-
-      // 添加第一次调用的 AI 消息（显示思考中状态）
-      messages.value.push({
-        role: "assistant",
-        content: "",
-        timestamp: Date.now(),
-        isThinking: true,
-      });
-
-      await scrollToBottom();
-
-      userQuery.value = "";
-      isLoading.value = true;
-      abortController.value = new AbortController();
-
-      let firstCallAnswer = "";
-
-      try {
-        // 使用 apiKeyFlow1，如果未配置则回退到 apiKey
-        const apiKey1 = props.apiKeyFlow1 || props.apiKey;
-
-        // 构建 files 参数（如果有上传的图片）
-        const files = uploadedImages.value.length > 0
-          ? uploadedImages.value.map((img) => ({
-              type: "image",
-              transfer_method: "local_file",
-              upload_file_id: img.id,
-            }))
-          : undefined;
-
-        const requestBody = {
-          inputs: props.data,
-          query: query,
-          response_mode: "streaming",
-          conversation_id: conversationId.value || "",
-          user: props.userId,
-          files: files,
-        };
-
-        const response1 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey1}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-          signal: abortController.value.signal,
-        });
-
-        if (!response1.ok) {
-          throw new Error(`第一次调用 HTTP error! status: ${response1.status}`);
-        }
-
-        const reader1 = response1.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader1) {
-          throw new Error("第一次调用无法读取响应流");
-        }
-
-        console.log("发送2 第一次调用开始流式响应");
-
-        let fullContent1 = "";
-        let pendingData = "";
-
-        while (true) {
-          const { done, value } = await reader1.read();
-          if (done) break;
-
-          const chunk = pendingData + decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-          pendingData = lines.pop() || "";
-
-          for (const line of lines) {
-            if (line.trim() === "" || !line.startsWith("data: ")) continue;
-
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              // 保存 task_id 用于停止请求（所有事件类型都可能包含 task_id）
-              if (data.task_id) {
-                currentTaskId.value = data.task_id;
-              }
-
-              if (data.event === "error") {
-                console.error("发送2 第一次调用错误:", data.message || "未知错误");
-                continue;
-              }
-
-              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) === -1) {
-                const msgIndex = messages.value.length - 1;
-                if (messages.value[msgIndex]?.role === "assistant" && messages.value[msgIndex].isThinking) {
-                  const eventDisplayName = getEventDisplayName(data.event, data.data);
-                  messages.value[msgIndex].thinkingContent = eventDisplayName;
-                }
-              }
-
-              if (data.event === "message" && data.answer) {
-                fullContent1 += data.answer;
-                const msgIndex = messages.value.length - 1;
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: fullContent1,
-                  isThinking: false,
-                };
-                await scrollToBottom();
-              }
-
-              if (data.event === "workflow_finished" && data.data) {
-                console.log("发送2 第一次调用找到 workflow_finished 事件");
-                console.log("发送2 workflow_finished 数据:", JSON.stringify(data.data));
-
-                const msgIndex = messages.value.length - 1;
-
-                if (data.data.status === "failed") {
-                  const errorMsg = data.data.error
-                    ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
-                    : "工作流执行失败";
-                  console.error("发送2 工作流执行失败:", errorMsg);
-
-                  messages.value[msgIndex] = {
-                    ...messages.value[msgIndex],
-                    content: `❌ 工作流执行失败：${errorMsg}`,
-                    isThinking: false,
-                  };
-                  ElMessage.error(`工作流执行失败：${errorMsg}`);
-                } else if (data.data.outputs && data.data.outputs.answer) {
-                  fullContent1 = data.data.outputs.answer;
-                  messages.value[msgIndex] = {
-                    ...messages.value[msgIndex],
-                    content: fullContent1,
-                    isThinking: false,
-                  };
-                  await scrollToBottom();
-                } else {
-                  messages.value[msgIndex] = {
-                    ...messages.value[msgIndex],
-                    isThinking: false,
-                    content: messages.value[msgIndex].content || "工作流已完成，但未返回答案",
-                  };
-                }
-              }
-            } catch (e) {
-              console.warn("发送2 第一次调用解析数据失败:", e);
-            }
-          }
-        }
-
-        if (pendingData.trim() && pendingData.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(pendingData.slice(6));
-            if (data.event === "message" && data.answer) {
-              fullContent1 += data.answer;
-              const msgIndex = messages.value.length - 1;
-              messages.value[msgIndex] = {
-                ...messages.value[msgIndex],
-                content: fullContent1,
-                isThinking: false,
-              };
-              await scrollToBottom();
-            }
-            if (data.event === "workflow_finished" && data.data) {
-              const msgIndex = messages.value.length - 1;
-
-              if (data.data.status === "failed") {
-                const errorMsg = data.data.error
-                  ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
-                  : "工作流执行失败";
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: `❌ 工作流执行失败：${errorMsg}`,
-                  isThinking: false,
-                };
-                ElMessage.error(`工作流执行失败：${errorMsg}`);
-              } else if (data.data.outputs && data.data.outputs.answer) {
-                fullContent1 = data.data.outputs.answer;
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: fullContent1,
-                  isThinking: false,
-                };
-                await scrollToBottom();
-              } else {
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  isThinking: false,
-                  content: messages.value[msgIndex].content || "工作流已完成，但未返回答案",
-                };
-              }
-            }
-          } catch (e) {
-            console.warn("发送2 第一次调用解析残留数据失败:", e);
-          }
-        }
-
-        firstCallAnswer = fullContent1;
-        console.log("=== 发送2 第一次调用完成 ===");
-        console.log("发送2 第一次回答:", firstCallAnswer);
-
-        // 添加第二次调用的 AI 消息
-        messages.value.push({
-          role: "assistant",
-          content: "",
-          timestamp: Date.now(),
-          isThinking: true,
-        });
-
-        console.log("=== 发送2 第二次调用开始 ===");
-        console.log("发送2 第二次 query (来自第一次回答):", firstCallAnswer);
-
-        // 使用 apiKeyFlow2，如果未配置则回退到 apiKey
-        const apiKey2 = props.apiKeyFlow2 || props.apiKey;
-
-        // 复用第一次调用的 files 参数（上传的图片在两次调用之间不会改变）
-        const requestBody2 = {
-          inputs: props.data,
-          query: firstCallAnswer,
-          response_mode: "streaming",
-          conversation_id: conversationId.value || "",
-          user: props.userId,
-          files: files,
-        };
-
-        const response2 = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey2}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody2),
-          signal: abortController.value.signal,
-        });
-
-        if (!response2.ok) {
-          throw new Error(`第二次调用 HTTP error! status: ${response2.status}`);
-        }
-
-        const reader2 = response2.body?.getReader();
-
-        if (!reader2) {
-          throw new Error("第二次调用无法读取响应流");
-        }
-
-        console.log("发送2 第二次调用开始流式响应");
-
-        let fullContent2 = "";
-        pendingData = "";
-        let hasError = false;
-
-        while (true) {
-          const { done, value } = await reader2.read();
-          if (done) break;
-
-          const chunk = pendingData + decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-          pendingData = lines.pop() || "";
-
-          for (const line of lines) {
-            if (line.trim() === "" || !line.startsWith("data: ")) continue;
-
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              // 保存 task_id 用于停止请求（所有事件类型都可能包含 task_id）
-              if (data.task_id) {
-                currentTaskId.value = data.task_id;
-              }
-
-              if (data.event === "error") {
-                hasError = true;
-                const errorMsg = data.message || "服务发生未知错误";
-                const errorDetail = `[Dify Error] ${errorMsg}`;
-                console.error("发送2 第二次调用错误:", errorDetail);
-                const msgIndex = messages.value.length - 1;
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: `请求失败：${errorMsg}`,
-                  isThinking: false,
-                };
-                ElMessage.error(errorDetail);
-                continue;
-              }
-
-              if (hasError) continue;
-
-              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) === -1) {
-                const msgIndex = messages.value.length - 1;
-                if (messages.value[msgIndex]?.role === "assistant" && messages.value[msgIndex].isThinking) {
-                  const eventDisplayName = getEventDisplayName(data.event, data.data);
-                  messages.value[msgIndex].thinkingContent = eventDisplayName;
-                }
-              }
-
-              if (data.event === "message" && data.answer) {
-                if (data.task_id) {
-                  currentTaskId.value = data.task_id;
-                }
-                fullContent2 += data.answer;
-                const msgIndex = messages.value.length - 1;
-                messages.value[msgIndex] = {
-                  ...messages.value[msgIndex],
-                  content: fullContent2,
-                  isThinking: false,
-                };
-                await scrollToBottom();
-              }
-
-              if (data.event === "workflow_finished" && data.data) {
-                console.log("发送2 第二次调用找到 workflow_finished 事件");
-                console.log("发送2 第二次调用 workflow_finished 数据:", JSON.stringify(data.data));
-
-                const msgIndex = messages.value.length - 1;
-
-                if (data.data.status === "failed") {
-                  const errorMsg = data.data.error
-                    ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
-                    : "工作流执行失败";
-                  console.error("发送2 第二次调用工作流执行失败:", errorMsg);
-
-                  messages.value[msgIndex] = {
-                    ...messages.value[msgIndex],
-                    content: `❌ 工作流执行失败：${errorMsg}`,
-                    isThinking: false,
-                  };
-                  ElMessage.error(`工作流执行失败：${errorMsg}`);
-                } else if (data.data.outputs && data.data.outputs.answer) {
-                  fullContent2 = data.data.outputs.answer;
-                  messages.value[msgIndex] = {
-                    ...messages.value[msgIndex],
-                    content: fullContent2,
-                    isThinking: false,
-                  };
-                  await scrollToBottom();
-                } else {
-                  messages.value[msgIndex] = {
-                    ...messages.value[msgIndex],
-                    isThinking: false,
-                    content: messages.value[msgIndex].content || "工作流已完成，但未返回答案",
-                  };
-                }
-              }
-            } catch (e) {
-              console.warn("发送2 第二次调用解析数据失败:", e);
-            }
-          }
-        }
-
-        if (pendingData.trim() && pendingData.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(pendingData.slice(6));
-
-            if (data.event === "error") {
-              hasError = true;
-              const errorMsg = data.message || "服务发生未知错误";
-              ElMessage.error(errorMsg);
-              const msgIndex = messages.value.length - 1;
-              messages.value[msgIndex] = {
-                ...messages.value[msgIndex],
-                content: `请求失败：${errorMsg}`,
-                isThinking: false,
-              };
-            }
-
-            if (!hasError && data.event === "message" && data.answer) {
-              fullContent2 += data.answer;
-              const msgIndex = messages.value.length - 1;
-              messages.value[msgIndex] = {
-                ...messages.value[msgIndex],
-                content: fullContent2,
-                isThinking: false,
-              };
-              await scrollToBottom();
-            }
-          } catch (e) {
-            console.warn("发送2 第二次调用解析残留数据失败:", e);
-          }
-        }
-
-        console.log("=== 发送2 第二次调用完成 ===");
-        console.log("发送2 最终回答:", fullContent2);
-
-        if (!hasError) {
-          emit("message-received", fullContent2);
-        }
-      } catch (error: any) {
-        console.error("发送2 发送消息失败:", error);
-
-        if (error.name === "AbortError") {
-          const msgIndex = messages.value.length - 1;
-          if (msgIndex >= 0 && messages.value[msgIndex]?.role === "assistant") {
-            messages.value[msgIndex] = {
-              ...messages.value[msgIndex],
-              isThinking: false,
-              content: messages.value[msgIndex].content.trim() || "已手动停止",
-            };
-          }
-          ElMessage.info("已手动停止");
-          return;
-        }
-
-        const msgIndex = messages.value.length - 1;
-        if (msgIndex >= 0 && messages.value[msgIndex]?.role === "assistant") {
-          messages.value[msgIndex] = {
-            ...messages.value[msgIndex],
-            isThinking: false,
-            content: "抱歉，服务暂时不可用，请稍后重试。",
-          };
-        }
-
-        ElMessage.error("发送2 发送消息失败: " + error.message);
-      } finally {
-        isLoading.value = false;
-        abortController.value = null;
-        currentTaskId.value = null;
-      }
     };
 
     // 发送消息3 - 使用 FLOW4 的 API Key
@@ -2505,9 +2224,7 @@ export default defineComponent({
         return;
       }
 
-      if (sendType.id === "send2") {
-        await sendMessage2();
-      } else if (sendType.id === "sendGetway") {
+      if (sendType.id === "sendGetway") {
         await sendMessageGetway();
       } else {
         await sendRequest(sendType.config);
@@ -3221,7 +2938,7 @@ export default defineComponent({
     };
 
     // 处理文件上传（支持文件输入和剪贴板粘贴）
-    const uploadFile = async (file: File, source: string = "input") => {
+    const uploadFile = async (file: File, source: string = "input", msgIndex?: number, conversationId?: string) => {
       const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
       if (!validTypes.includes(file.type)) {
         ElMessage.error("请选择有效的图片格式（png/jpeg/jpg/webp/gif）");
@@ -3237,8 +2954,31 @@ export default defineComponent({
       isLoading.value = true;
 
       try {
-        const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
-        const apiKey = sendType?.config.apiKey || props.apiKey;
+        let apiKey = "";
+        // 获取消息的 nextstep（优先使用 conversationId，其次是 msgIndex，最后是全局 gatewayNextStep）
+        let nextStep = gatewayNextStep.value;
+        let targetMsg: any = null;
+        
+        if (conversationId) {
+          targetMsg = messages.value.find((msg) => msg.conversationId === conversationId);
+          if (targetMsg) {
+            nextStep = targetMsg.gatewayNextStep || nextStep;
+          }
+        } else if (msgIndex !== undefined && messages.value[msgIndex]) {
+          targetMsg = messages.value[msgIndex];
+          nextStep = targetMsg.gatewayNextStep || nextStep;
+        }
+        
+        // 网关模式下，根据 nextstep 使用对应步骤的 API Key
+        if (selectedSendType.value === "sendGetway" && nextStep >= 1 && nextStep <= 3) {
+          const stepConfig = stepApiKeyMap[nextStep];
+          apiKey = stepConfig?.apiKey || "";
+        }
+        // 非网关模式或未设置 nextstep，使用选中的发送类型的 API Key
+        if (!apiKey) {
+          const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
+          apiKey = sendType?.config.apiKey || props.apiKey;
+        }
 
         const formData = new FormData();
         formData.append("file", file);
@@ -3282,27 +3022,50 @@ export default defineComponent({
           imageInfo = { ...imageInfo, base64Data };
         } catch (e) {}
 
-        uploadedImages.value.push(imageInfo);
-
-        try {
-          const allImagesData = uploadedImages.value.map((img, index) => {
-            const stored = JSON.parse(localStorage.getItem(getUploadImageStorageKey()) || "[]");
-            return index === uploadedImages.value.length - 1 ? imageInfo : stored[index] || img;
-          });
-          localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(allImagesData));
-        } catch (storageError: any) {
-          if (storageError.name === "QuotaExceededError") {
-            console.warn("localStorage 配额不足，仅保存图片元信息");
-            localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(uploadedImages.value.map((img) => {
-              const { base64Data, ...meta } = img;
-              return meta;
-            })));
-          } else {
-            console.error("保存图片信息到 localStorage 失败:", storageError);
+        // 网关模式下保存到对应消息的 gatewayImages，否则保存到全局数组
+        if (selectedSendType.value === "sendGetway" && nextStep >= 1 && nextStep <= 3) {
+          // 使用 targetMsg（已通过 conversationId 或 msgIndex 找到）
+          if (!targetMsg) {
+            // 如果没有找到对应消息，尝试通过 conversationId 查找
+            if (conversationId) {
+              targetMsg = messages.value.find((msg) => msg.conversationId === conversationId);
+            }
           }
-        }
+          
+          if (targetMsg && targetMsg.role === "assistant") {
+            if (!targetMsg.gatewayImages) {
+              targetMsg.gatewayImages = [];
+            }
+            targetMsg.gatewayImages.push(imageInfo);
+            ElMessage.success(`图片 "${result.name}" 上传成功！当前步骤共 ${targetMsg.gatewayImages.length} 张图片`);
+          } else {
+            // 回退到全局数组
+            gatewayUploadedImages.value.push(imageInfo);
+            ElMessage.success(`图片 "${result.name}" 上传成功！当前步骤共 ${gatewayUploadedImages.value.length} 张图片`);
+          }
+        } else {
+          uploadedImages.value.push(imageInfo);
 
-        ElMessage.success(`图片 "${result.name}" 上传成功！当前共 ${uploadedImages.value.length} 张图片`);
+          try {
+            const allImagesData = uploadedImages.value.map((img, index) => {
+              const stored = JSON.parse(localStorage.getItem(getUploadImageStorageKey()) || "[]");
+              return index === uploadedImages.value.length - 1 ? imageInfo : stored[index] || img;
+            });
+            localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(allImagesData));
+          } catch (storageError: any) {
+            if (storageError.name === "QuotaExceededError") {
+              console.warn("localStorage 配额不足，仅保存图片元信息");
+              localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(uploadedImages.value.map((img) => {
+                const { base64Data, ...meta } = img;
+                return meta;
+              })));
+            } else {
+              console.error("保存图片信息到 localStorage 失败:", storageError);
+            }
+          }
+
+          ElMessage.success(`图片 "${result.name}" 上传成功！当前共 ${uploadedImages.value.length} 张图片`);
+        }
       } catch (error: any) {
         ElMessage.error("图片上传失败：" + error.message);
       } finally {
@@ -3918,6 +3681,9 @@ export default defineComponent({
         delete (window as any).__previewBase64Image;
         delete (window as any).__base64PreviewData;
         delete (window as any).__toggleRecognitionJson;
+        delete (window as any).__gatewayUploadFiles;
+        delete (window as any).__viewGatewayImages;
+        delete (window as any).__proceedToNextStep;
       }
     });
 
@@ -4364,7 +4130,6 @@ export default defineComponent({
       validationResultJson,
       handleClose,
       sendMessage,
-      sendMessage2,
       sendMessage3,
       sendMessage4,
       sendMessage5,
@@ -5090,6 +4855,99 @@ export default defineComponent({
   border-radius: 4px;
   border: 1px solid #e2e8f0;
   overflow-x: auto;
+}
+
+.gateway-action-area {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #e0e7ff;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gateway-upload-section {
+  flex-shrink: 0;
+}
+
+.gateway-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: #1d4ed8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gateway-upload-btn:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.gateway-upload-input {
+  display: none;
+}
+
+.gateway-view-section {
+  flex-shrink: 0;
+}
+
+.gateway-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #f0f9ff;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  color: #0369a1;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gateway-view-btn:hover:not(:disabled) {
+  background-color: #e0f2fe;
+  border-color: #0ea5e9;
+}
+
+.gateway-view-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gateway-next-step {
+  flex-shrink: 0;
+}
+
+.gateway-next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gateway-next-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.gateway-next-btn:active {
+  transform: translateY(0);
 }
 
 .image-preview-container {

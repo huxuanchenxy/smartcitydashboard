@@ -22,8 +22,6 @@ interface ImportMetaEnv {
   
   // Dify AI 对话配置
   VITE_APP_DIFY_API_KEY: string;
-  VITE_APP_DIFY_API_KEY_FLOW1: string; // 发送2功能的第一次调用 API Key
-  VITE_APP_DIFY_API_KEY_FLOW2: string; // 发送2功能的第二次调用 API Key
   VITE_APP_DIFY_API_KEY_FLOW3: string; // 新程序专用 API Key
   VITE_APP_DIFY_API_KEY_FLOW4: string; // difyapidialog 专用 API Key 演示专用一次生成环保
   VITE_APP_DIFY_API_KEY_FLOWa1: string; // difyapidialog 专用 API Key (sendMessage4 FLOWa1)
