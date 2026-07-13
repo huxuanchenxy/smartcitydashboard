@@ -530,6 +530,7 @@ interface SendMessageConfig {
   onWorkflowPaused?: (data: any, fullContent: string) => Promise<boolean>;
   skipUserMessage?: boolean;
   files?: any[];
+  isGateway?: boolean;
 }
 
 interface SendType {
@@ -719,6 +720,10 @@ export default defineComponent({
     const stepResults = ref<Record<number, string>>({}); // 保存各步骤的结果
     const needAutoProceedToStep2 = ref(false); // 是否需要自动进入步骤2
     const needAutoProceedToStep3 = ref(false); // 是否需要自动进入步骤3
+
+    // 网关模式相关状态
+    const lasttask = ref(-1); // 上一次任务标识
+    const lastquerytask = ref(-1); // 上一次查询任务标识
 
     // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
     const assistant5RecognitionResult = ref("");
@@ -929,13 +934,13 @@ export default defineComponent({
       loadStepStateFromStorage();
       isHydrating.value = false;
 
-      // 根据恢复的步骤状态更新选中的发送类型
+      // 根据恢复的步骤状态更新选中的发送类型（使用网关助手进行统一调度）
       if (currentStep.value === 1) {
-        selectedSendType.value = "send5";
+        selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
       } else if (currentStep.value === 2) {
-        selectedSendType.value = "send6";
+        selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
       } else if (currentStep.value === 3) {
-        selectedSendType.value = "send7";
+        selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
       }
 
       // 设置全局base64图片预览函数
@@ -1067,6 +1072,7 @@ export default defineComponent({
           apiKey: props.apiKeyFlowGetway || "",
           logPrefix: "发送Getway",
           supportWorkflowPaused: true,
+          isGateway: true,
         },
       },
       {
@@ -1081,7 +1087,7 @@ export default defineComponent({
       },
     ]);
 
-    const selectedSendType = ref<string>(props.waterServiceMode ? "sendWater" : "send5");
+    const selectedSendType = ref<string>(props.waterServiceMode ? "sendWater" : "sendGetway");
 
     const previewImageUrl = computed(() => {
       if (!Array.isArray(uploadedImages.value) || uploadedImages.value.length === 0) return "";
@@ -1095,13 +1101,15 @@ export default defineComponent({
       return sendTypes.value.map((t) => {
         let disabled = t.isWaterOnly && !props.waterServiceMode;
 
-        // 根据当前步骤限制可选的助手
-        if (currentStep.value === 1) {
-          disabled = disabled || t.id !== "send5";
-        } else if (currentStep.value === 2) {
-          disabled = disabled || t.id !== "send6";
-        } else if (currentStep.value === 3) {
-          disabled = disabled || t.id !== "send7";
+        // 根据当前步骤限制可选的助手（网关模式不限制）
+        if (!props.waterServiceMode) {
+          if (currentStep.value === 1) {
+            disabled = disabled || (t.id !== "send5" && t.id !== "sendGetway");
+          } else if (currentStep.value === 2) {
+            disabled = disabled || (t.id !== "send6" && t.id !== "sendGetway");
+          } else if (currentStep.value === 3) {
+            disabled = disabled || (t.id !== "send7" && t.id !== "sendGetway");
+          }
         }
 
         return {
@@ -1115,13 +1123,15 @@ export default defineComponent({
     const getSendTypeDisabled = (type: any) => {
       let disabled = type.isWaterOnly ? !props.waterServiceMode : props.waterServiceMode;
 
-      // 根据当前步骤限制可选的助手
-      if (currentStep.value === 1) {
-        disabled = disabled || type.id !== "send5";
-      } else if (currentStep.value === 2) {
-        disabled = disabled || type.id !== "send6";
-      } else if (currentStep.value === 3) {
-        disabled = disabled || type.id !== "send7";
+      // 根据当前步骤限制可选的助手（网关模式不限制）
+      if (!props.waterServiceMode) {
+        if (currentStep.value === 1) {
+          disabled = disabled || (type.id !== "send5" && type.id !== "sendGetway");
+        } else if (currentStep.value === 2) {
+          disabled = disabled || (type.id !== "send6" && type.id !== "sendGetway");
+        } else if (currentStep.value === 3) {
+          disabled = disabled || (type.id !== "send7" && type.id !== "sendGetway");
+        }
       }
 
       return disabled;
@@ -1131,7 +1141,7 @@ export default defineComponent({
       currentStep.value = 1;
       stepResults.value = {};
       assistant5RecognitionResult.value = "";
-      selectedSendType.value = props.waterServiceMode ? "sendWater" : "send5";
+      selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
       localStorage.removeItem(getStepStorageKey());
       ElMessage.info("已重置到步骤1");
     };
@@ -1319,6 +1329,7 @@ export default defineComponent({
         onWorkflowPaused,
         skipUserMessage = false,
         files: configFiles,
+        isGateway = false,
       } = config;
 
       const query = configQuery || userQuery.value.trim();
@@ -1402,8 +1413,14 @@ export default defineComponent({
           }));
         }
 
+        const inputs = isGateway 
+          ? { 
+              lasttask: lasttask.value, 
+              lastquerytask: lastquerytask.value 
+            } 
+          : props.data;
         const requestBody = {
-          inputs: props.data,
+          inputs: inputs,
           query: query,
           response_mode: "streaming",
           conversation_id: conversationId.value || "",
@@ -1548,11 +1565,61 @@ export default defineComponent({
                 if (data.task_id) {
                   currentTaskId.value = data.task_id;
                 }
+                
+                let answerContent = data.answer;
+                console.log(`isGateway：`,isGateway);
+                console.log(`data.answer：`, data.answer);
+                // 网关模式：解析网关返回的 JSON 格式
+                if (isGateway) {
+                  try {
+                    let answerStr = data.answer;
+                    // 去除可能的 SSE 前缀或其他包装字符
+                    answerStr = answerStr.trim();
+                    if (answerStr.startsWith("data:")) {
+                      answerStr = answerStr.substring(5).trim();
+                    }
+                    // 去除可能的转义字符
+                    if (answerStr.startsWith('"') && answerStr.endsWith('"')) {
+                      answerStr = answerStr.slice(1, -1).replace(/\\"/g, '"');
+                    }
+                    
+                    const gatewayData = JSON.parse(answerStr);
+                    console.log(`解析后的 gatewayData：`, gatewayData);
+                    console.log(`gatewayData.prompt：`, gatewayData.prompt);
+                    console.log(`gatewayData.content：`, gatewayData.content);
+                    
+                    let displayContent = "";
+                    if (gatewayData.prompt !== undefined && gatewayData.prompt !== "") {
+                      displayContent += gatewayData.prompt;
+                    }
+                    if (gatewayData.content !== undefined && gatewayData.content !== "") {
+                      const contentStr = typeof gatewayData.content === "string" 
+                        ? gatewayData.content 
+                        : JSON.stringify(gatewayData.content);
+                      const formattedContent = tryFormatJson(contentStr);
+                      const highlightedContent = highlightJson(formattedContent);
+                      displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
+                    }
+                    console.log(`处理后的 displayContent：`, displayContent);
+                    answerContent = displayContent;
+                    
+                    // 更新 lasttask 和 lastquerytask（使用 nextstep 的值）
+                    if (gatewayData.nextstep !== undefined) {
+                      lasttask.value = gatewayData.nextstep;
+                      lastquerytask.value = gatewayData.nextstep;
+                    }
+                  } catch (e) {
+                    console.warn(`${logPrefix} 网关模式解析 answer 失败，使用原始内容`, e);
+                    console.warn(`原始 answer：`, data.answer);
+                  }
+                }
+                console.log(`最终 answerContent：`, answerContent);
+                
                 fullContent += data.answer;
                 const lastMsg = messages.value[messages.value.length - 1];
                 if (lastMsg?.role === "assistant") {
                   lastMsg.isThinking = false;
-                  lastMsg.content = fullContent;
+                  lastMsg.content = isGateway ? answerContent : fullContent;
                   await scrollToBottom();
                 }
               }
@@ -1580,14 +1647,45 @@ export default defineComponent({
                 } else if (data.data.outputs && data.data.outputs.answer) {
                   // 工作流成功，获取答案
                   fullContent = data.data.outputs.answer;
+                  
+                  // 网关模式：解析网关返回的 JSON 格式
+                  if (isGateway) {
+                    try {
+                      let answerStr = fullContent.trim();
+                      if (answerStr.startsWith("data:")) {
+                        answerStr = answerStr.substring(5).trim();
+                      }
+                      if (answerStr.startsWith('"') && answerStr.endsWith('"')) {
+                        answerStr = answerStr.slice(1, -1).replace(/\\"/g, '"');
+                      }
+                      
+                      const gatewayData = JSON.parse(answerStr);
+                      let displayContent = "";
+                      if (gatewayData.prompt !== undefined && gatewayData.prompt !== "") {
+                        displayContent += gatewayData.prompt;
+                      }
+                      if (gatewayData.content !== undefined && gatewayData.content !== "") {
+                        const contentStr = typeof gatewayData.content === "string" 
+                          ? gatewayData.content 
+                          : JSON.stringify(gatewayData.content);
+                        const formattedContent = tryFormatJson(contentStr);
+                        const highlightedContent = highlightJson(formattedContent);
+                        displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
+                      }
+                      fullContent = displayContent;
+                    } catch (e) {
+                      console.warn(`${logPrefix} workflow_finished 网关模式解析失败`, e);
+                    }
+                  }
+                  
                   if (lastMsg?.role === "assistant") {
                     lastMsg.isThinking = false;
                     lastMsg.content = fullContent;
                   }
                   await scrollToBottom();
 
-                  // 步骤1完成后标记需要进入步骤2（非人工介入场景）
-                  if (currentStep.value === 1 && !isPaused) {
+                  // 步骤1完成后标记需要进入步骤2（非人工介入场景，网关模式不自动推进）
+                  if (currentStep.value === 1 && !isPaused && !isGateway) {
                     stepResults.value[1] = fullContent;
                     needAutoProceedToStep2.value = true;
                   }
@@ -1702,11 +1800,11 @@ export default defineComponent({
           emit("message-received", fullContent);
         }
 
-        // 在返回之前检查是否需要自动进入步骤2或步骤3
-        if (needAutoProceedToStep2.value && !isPaused) {
+        // 在返回之前检查是否需要自动进入步骤2或步骤3（网关模式不自动推进）
+        if (needAutoProceedToStep2.value && !isPaused && !isGateway) {
           needAutoProceedToStep2.value = false;
           await autoProceedToStep2();
-        } else if (needAutoProceedToStep3.value && !isPaused) {
+        } else if (needAutoProceedToStep3.value && !isPaused && !isGateway) {
           needAutoProceedToStep3.value = false;
           await autoProceedToStep3();
         }
@@ -2396,6 +2494,7 @@ export default defineComponent({
         query: queryText,
         clearQuery: !queryText,
         supportWorkflowPaused: true,
+        isGateway: true,
       });
     };
 
@@ -2408,6 +2507,8 @@ export default defineComponent({
 
       if (sendType.id === "send2") {
         await sendMessage2();
+      } else if (sendType.id === "sendGetway") {
+        await sendMessageGetway();
       } else {
         await sendRequest(sendType.config);
       }
