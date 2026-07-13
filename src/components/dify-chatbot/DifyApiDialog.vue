@@ -805,6 +805,12 @@ export default defineComponent({
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg) return;
       
+      messages.value.forEach((m) => {
+        if (m.isGateway) {
+          m.isGatewayActionDisabled = true;
+        }
+      });
+      
       const stepConfig = stepApiKeyMap[nextStep];
       if (!stepConfig || !stepConfig.apiKey) {
         ElMessage.warning("未配置该步骤的 API Key");
@@ -812,12 +818,16 @@ export default defineComponent({
       }
       
       currentStep.value = nextStep;
-      const stepSendTypeMap: Record<number, string> = {
-        1: "send5",
-        2: "send6",
-        3: "send7",
-      };
-      selectedSendType.value = stepSendTypeMap[nextStep] || "send5";
+      if (props.waterServiceMode) {
+        selectedSendType.value = "sendWater";
+      } else {
+        const stepSendTypeMap: Record<number, string> = {
+          1: "send5",
+          2: "send6",
+          3: "send7",
+        };
+        selectedSendType.value = stepSendTypeMap[nextStep] || "send5";
+      }
       
       const stepLabel = getStepLabel(nextStep);
       
@@ -827,16 +837,13 @@ export default defineComponent({
         query: `请帮我${stepLabel}`,
         supportWorkflowPaused: true,
         isGateway: false,
+        skipUserMessage: true,
         files: (msg.gatewayImages || []).map((img: any) => ({
           type: "image",
           transfer_method: "local_file",
           upload_file_id: img.id,
         })),
       });
-      
-      if (msg.gatewayImages) {
-        msg.gatewayImages = [];
-      }
     };
 
     // 助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
