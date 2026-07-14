@@ -582,14 +582,14 @@ export default defineComponent({
     
     // 处理从 Dify API 聊天机器人接收消息
     const handleDifyApiMessageReceived = (data) => {
-      console.log('Message received from Dify API:', data);
-      nMessage.success('收到来自 Dify API 的消息');
+      // console.log('Message received from Dify API:', data);
+      // nMessage.success('收到来自 Dify API 的消息');
     };
     
     // 处理向 Dify API 聊天机器人发送消息
     const handleDifyApiMessageSent = (data) => {
-      console.log('Message sent to Dify API:', data);
-      nMessage.success('消息已发送到 Dify API');
+      // console.log('Message sent to Dify API:', data);
+      // nMessage.success('消息已发送到 Dify API');
     };
 
     return {

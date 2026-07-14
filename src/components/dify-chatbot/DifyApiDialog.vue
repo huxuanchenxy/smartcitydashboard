@@ -2317,7 +2317,7 @@ export default defineComponent({
     };
 
     // 发送消息Getway - 使用网关专用 API Key
-    const sendMessageGetway = async (queryText?: string) => {
+    const sendMessageGetway = async (queryText?: string, skipUserMsg = false) => {
       messages.value.forEach((msg) => {
         if (msg.isGateway) {
           msg.isGatewayActionDisabled = true;
@@ -2330,6 +2330,7 @@ export default defineComponent({
         clearQuery: !queryText,
         supportWorkflowPaused: true,
         isGateway: true,
+        skipUserMessage: skipUserMsg,
       });
     };
 
@@ -2612,16 +2613,20 @@ export default defineComponent({
           await scrollToBottom();
           emit("message-received", lastMsg?.content || "");
 
-          // 步骤完成后标记需要进入下一步
-          if (currentStep.value === 1 && finalResult.status === "succeeded") {
-            stepResults.value[1] = assistant5RecognitionResult.value;
-            needAutoProceedToStep2.value = true;
-          } else if (currentStep.value === 2 && finalResult.status === "succeeded") {
-            stepResults.value[2] = assistant5RecognitionResult.value;
-            needAutoProceedToStep3.value = true;
-          } else if (currentStep.value === 3 && finalResult.status === "succeeded") {
-            stepResults.value[3] = assistant5RecognitionResult.value;
-            currentStep.value = 4;
+          // 步骤完成后调用网关获取下一步指令
+          console.log("⏰ 检查是否调用网关:", { status: finalResult.status, currentStep: currentStep.value, lasttask: lasttask.value, lastquerytask: lastquerytask.value });
+          if (finalResult.status === "succeeded") {
+            stepResults.value[currentStep.value] = assistant5RecognitionResult.value;
+            lasttask.value = currentStep.value;
+            lastquerytask.value = -1;
+            
+            console.log("🚀 准备调用网关:", { lasttask: lasttask.value, lastquerytask: lastquerytask.value });
+            isLoading.value = false;
+            await sendMessageGetway("继续", true);
+            isLoading.value = true;
+            console.log("✅ 网关调用完成");
+          } else {
+            console.log("❌ 工作流未成功，不调用网关:", finalResult.status);
           }
         } else {
           const lastMsg = messages.value[messages.value.length - 1];
@@ -2656,15 +2661,6 @@ export default defineComponent({
         isAwaitingFeedback.value = false; // 重置等待反馈状态
         // 确保最后滚动到底部
         setTimeout(() => scrollToBottom(), 100);
-      }
-
-      // 在finally块之后执行自动进入步骤2或步骤3
-      if (needAutoProceedToStep2.value) {
-        needAutoProceedToStep2.value = false;
-        await autoProceedToStep2();
-      } else if (needAutoProceedToStep3.value) {
-        needAutoProceedToStep3.value = false;
-        await autoProceedToStep3();
       }
     };
 
