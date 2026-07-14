@@ -553,6 +553,15 @@ import { saveScreen } from "@/api/screen";
 import * as payloadJson from "./payloadpie.json";
 import comsTemplate from "./comstemplate.json";
 import { calibrateJsonString, JSONRepairTool } from "./jsonCalibration";
+import localforage from "localforage";
+
+const indexedDBStore = localforage.createInstance({
+  name: "DifyChatDB",
+  version: 1,
+  storeName: "dify_chat_data",
+  description: "Dify chatbot data storage using IndexedDB",
+  driver: [localforage.INDEXEDDB, localforage.WEBSQL, localforage.LOCALSTORAGE],
+});
 
 interface Message {
   role: "user" | "assistant";
@@ -963,20 +972,21 @@ export default defineComponent({
       if (saveMessagesTimer) {
         clearTimeout(saveMessagesTimer);
       }
-      saveMessagesTimer = window.setTimeout(() => {
+      saveMessagesTimer = window.setTimeout(async () => {
         try {
           const messagesToSave = messages.value.map(msg => {
             const { thinkingContent, ...rest } = msg;
             return rest;
           });
-          localStorage.setItem(getStorageKey(), JSON.stringify(messagesToSave));
+          const plainData = JSON.parse(JSON.stringify(messagesToSave));
+          await indexedDBStore.setItem(getStorageKey(), plainData);
         } catch (e) {
-          console.error("保存消息到 localStorage 失败:", e);
+          console.error("保存消息到 IndexedDB 失败:", e);
         }
       }, 5000);
     };
 
-    const saveStepStateToStorage = () => {
+    const saveStepStateToStorage = async () => {
       if (isHydrating.value) return;
       try {
         const stepState = {
@@ -984,46 +994,48 @@ export default defineComponent({
           stepResults: stepResults.value,
           assistant5RecognitionResult: assistant5RecognitionResult.value,
         };
-        localStorage.setItem(getStepStorageKey(), JSON.stringify(stepState));
+        const plainData = JSON.parse(JSON.stringify(stepState));
+        await indexedDBStore.setItem(getStepStorageKey(), plainData);
       } catch (e) {
-        console.error("保存步骤状态到 localStorage 失败:", e);
+        console.error("保存步骤状态到 IndexedDB 失败:", e);
       }
     };
 
-    const loadMessagesFromStorage = () => {
+    const loadMessagesFromStorage = async () => {
       try {
-        const saved = localStorage.getItem(getStorageKey());
+        const saved = await indexedDBStore.getItem(getStorageKey());
         if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            messages.value = parsed;
+          if (Array.isArray(saved)) {
+            messages.value = saved;
           }
         }
       } catch (e) {
-        console.error("从 localStorage 恢复消息失败:", e);
+        console.error("从 IndexedDB 恢复消息失败:", e);
       }
     };
 
-    const loadStepStateFromStorage = () => {
+    const loadStepStateFromStorage = async () => {
       try {
-        const saved = localStorage.getItem(getStepStorageKey());
+        const saved = await indexedDBStore.getItem(getStepStorageKey());
         if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed) {
-            if (parsed.currentStep) {
-              currentStep.value = parsed.currentStep;
-            }
-            if (parsed.stepResults) {
-              stepResults.value = parsed.stepResults;
-            }
-            if (parsed.assistant5RecognitionResult) {
-              assistant5RecognitionResult.value = parsed.assistant5RecognitionResult;
-            }
-            console.log("步骤状态已恢复:", parsed);
+          const parsed = saved as {
+            currentStep?: number;
+            stepResults?: Record<number, string>;
+            assistant5RecognitionResult?: string;
+          };
+          if (parsed.currentStep) {
+            currentStep.value = parsed.currentStep;
           }
+          if (parsed.stepResults) {
+            stepResults.value = parsed.stepResults;
+          }
+          if (parsed.assistant5RecognitionResult) {
+            assistant5RecognitionResult.value = parsed.assistant5RecognitionResult;
+          }
+          console.log("步骤状态已恢复:", parsed);
         }
       } catch (e) {
-        console.error("从 localStorage 恢复步骤状态失败:", e);
+        console.error("从 IndexedDB 恢复步骤状态失败:", e);
       }
     };
 
@@ -1048,16 +1060,16 @@ export default defineComponent({
 
     watch(
       () => EditorModule.screen?.id,
-      () => {
+      async () => {
         uploadedImages.value = [];
-        restoreUploadedImage();
+        await restoreUploadedImage();
       },
     );
 
-    onMounted(() => {
+    onMounted(async () => {
       isHydrating.value = true;
-      loadMessagesFromStorage();
-      loadStepStateFromStorage();
+      await loadMessagesFromStorage();
+      await loadStepStateFromStorage();
       isHydrating.value = false;
 
       // 根据恢复的步骤状态更新选中的发送类型（使用网关助手进行统一调度）
@@ -1355,12 +1367,12 @@ export default defineComponent({
       return disabled;
     };
 
-    const resetSteps = () => {
+    const resetSteps = async () => {
       currentStep.value = 1;
       stepResults.value = {};
       assistant5RecognitionResult.value = "";
       selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
-      localStorage.removeItem(getStepStorageKey());
+      await indexedDBStore.removeItem(getStepStorageKey());
       ElMessage.info("已重置到步骤1");
     };
 
@@ -1907,7 +1919,7 @@ export default defineComponent({
                         const formattedContent = tryFormatJson(contentStr);
                         const highlightedContent = highlightJson(formattedContent);
                         const contentLength = formattedContent.length;
-                        displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容 (${contentLength} 字符)</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
+                        displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
                       }
                       
                       // 更新网关状态
@@ -2355,12 +2367,18 @@ export default defineComponent({
       formToken: string,
       inputs: Record<string, any>,
       action: string,
+      apiKey?: string,
     ): Promise<any> => {
       const submitUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
 
-      // 获取当前选择的发送类型对应的 API Key
-      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
-      const usedApiKey = sendType?.config.apiKey || props.apiKey;
+      const usedApiKey = apiKey || (() => {
+        const stepConfig = stepApiKeyMap[currentStep.value];
+        if (stepConfig?.apiKey) {
+          return stepConfig.apiKey;
+        }
+        const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
+        return sendType?.config.apiKey || props.apiKey;
+      })();
 
       console.log(`📤 提交表单到: ${submitUrl}`);
       console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
@@ -2391,12 +2409,18 @@ export default defineComponent({
       formToken?: string,
       intervalMs: number = 10000,
       maxRetries: number = 30,
+      apiKey?: string,
     ): Promise<any> => {
       console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
 
-      // 获取当前选择的发送类型对应的 API Key
-      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
-      const usedApiKey = sendType?.config.apiKey || props.apiKey;
+      const usedApiKey = apiKey || (() => {
+        const stepConfig = stepApiKeyMap[currentStep.value];
+        if (stepConfig?.apiKey) {
+          return stepConfig.apiKey;
+        }
+        const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
+        return sendType?.config.apiKey || props.apiKey;
+      })();
       console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
 
       let retries = 0;
@@ -2670,8 +2694,6 @@ export default defineComponent({
     const handleHumanRevise = async (msgIndex: number) => {
       const message = messages.value[msgIndex];
 
-      // 获取当前选择的发送类型对应的 API Key
-      const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
       if (!message?.formToken) {
         ElMessage.error("无法获取表单令牌");
         return;
@@ -2720,7 +2742,8 @@ export default defineComponent({
         setTimeout(() => scrollToBottom(), 50);
 
         // 使用相同的 conversation_id 再次调用 chat-messages 接口
-        const apiKey = sendType?.config.apiKey || props.apiKey;
+        const stepConfig = stepApiKeyMap[currentStep.value];
+        const apiKey = stepConfig?.apiKey || props.apiKey;
 
         // 创建 AbortController 用于取消请求
         abortController.value = new AbortController();
@@ -3035,18 +3058,16 @@ export default defineComponent({
       }
     };
 
-    // 从localStorage恢复上传的图片信息
-    const restoreUploadedImage = () => {
+    const restoreUploadedImage = async () => {
       try {
-        const savedImagesStr = localStorage.getItem(getUploadImageStorageKey());
-        if (!savedImagesStr) return;
+        const savedImages = await indexedDBStore.getItem(getUploadImageStorageKey());
+        if (!savedImages) return;
 
-        const savedImages = JSON.parse(savedImagesStr);
         if (!Array.isArray(savedImages)) return;
 
         uploadedImages.value = savedImages;
       } catch (error) {
-        localStorage.removeItem(getUploadImageStorageKey());
+        await indexedDBStore.removeItem(getUploadImageStorageKey());
         uploadedImages.value = [];
       }
     };
@@ -3161,20 +3182,22 @@ export default defineComponent({
           uploadedImages.value.push(imageInfo);
 
           try {
+            const stored = (await indexedDBStore.getItem(getUploadImageStorageKey())) as any[] || [];
             const allImagesData = uploadedImages.value.map((img, index) => {
-              const stored = JSON.parse(localStorage.getItem(getUploadImageStorageKey()) || "[]");
               return index === uploadedImages.value.length - 1 ? imageInfo : stored[index] || img;
             });
-            localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(allImagesData));
+            const plainData = JSON.parse(JSON.stringify(allImagesData));
+            await indexedDBStore.setItem(getUploadImageStorageKey(), plainData);
           } catch (storageError: any) {
             if (storageError.name === "QuotaExceededError") {
-              console.warn("localStorage 配额不足，仅保存图片元信息");
-              localStorage.setItem(getUploadImageStorageKey(), JSON.stringify(uploadedImages.value.map((img) => {
+              console.warn("IndexedDB 配额不足，仅保存图片元信息");
+              const plainMeta = JSON.parse(JSON.stringify(uploadedImages.value.map((img) => {
                 const { base64Data, ...meta } = img;
                 return meta;
               })));
+              await indexedDBStore.setItem(getUploadImageStorageKey(), plainMeta);
             } else {
-              console.error("保存图片信息到 localStorage 失败:", storageError);
+              console.error("保存图片信息到 IndexedDB 失败:", storageError);
             }
           }
 
@@ -3443,18 +3466,18 @@ export default defineComponent({
     };
 
     // 确认清空
-    const confirmClear = () => {
+    const confirmClear = async () => {
       confirmDialogVisible.value = false;
       try {
-        localStorage.removeItem(getStorageKey());
-        localStorage.removeItem(getUploadImageStorageKey());
-        localStorage.removeItem(getStepStorageKey());
+        await indexedDBStore.removeItem(getStorageKey());
+        await indexedDBStore.removeItem(getUploadImageStorageKey());
+        await indexedDBStore.removeItem(getStepStorageKey());
       } catch (e) {
-        console.error("清空 localStorage 失败:", e);
+        console.error("清空 IndexedDB 失败:", e);
       }
       messages.value = [];
       uploadedImages.value = [];
-      resetSteps();
+      await resetSteps();
       ElMessage.success("对话已清空");
     };
 

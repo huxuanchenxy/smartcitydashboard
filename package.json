@@ -42,6 +42,7 @@
         "js-cookie": "^3.0.1",
         "jsonpath-plus": "^8.1.0",
         "less": "^4.4.0",
+        "localforage": "^1.10.0",
         "lodash-es": "^4.17.21",
         "mockjs": "^1.1.0",
         "monaco-editor": "0.27.0",
