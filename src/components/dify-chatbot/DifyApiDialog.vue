@@ -1816,7 +1816,8 @@ export default defineComponent({
                         : JSON.stringify(gatewayData.content);
                       const formattedContent = tryFormatJson(contentStr);
                       const highlightedContent = highlightJson(formattedContent);
-                      displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
+                      const contentLength = formattedContent.length;
+                      displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
                     }
                     console.log(`处理后的 displayContent：`, displayContent);
                     
@@ -1905,7 +1906,8 @@ export default defineComponent({
                           : JSON.stringify(gatewayData.content);
                         const formattedContent = tryFormatJson(contentStr);
                         const highlightedContent = highlightJson(formattedContent);
-                        displayContent += `<br/><br/><div class="gateway-content">${highlightedContent}</div>`;
+                        const contentLength = formattedContent.length;
+                        displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容 (${contentLength} 字符)</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
                       }
                       
                       // 更新网关状态
@@ -5252,6 +5254,42 @@ export default defineComponent({
   font-family: "Consolas", "Monaco", "Courier New", monospace;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+}
+
+:deep(.gateway-content-wrapper) {
+  margin-top: 8px;
+}
+
+:deep(.gateway-content-collapsed) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+  border-radius: 6px;
+}
+
+:deep(.gateway-content-collapsed:hover) {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+:deep(.gateway-content) {
+  padding: 12px;
+  background-color: #f8fafc;
+  line-height: 1.8;
+  font-size: 13px;
+  color: #1e293b;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  margin-top: 4px;
 }
 
 /* 步骤路径指示器样式 */
