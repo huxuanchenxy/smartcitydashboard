@@ -325,7 +325,7 @@
     <!-- 图片预览弹窗 -->
     <el-dialog
       v-model="imagePreviewVisible"
-      :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(currentPreviewIndex) ? 1 : currentPreviewIndex + 1} / ${Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
+      :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) ? 1 : (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1} / ${isGatewayPreview ? (Array.isArray(gatewayPreviewImages) ? gatewayPreviewImages.length : 0) : (Array.isArray(uploadedImages) ? uploadedImages.length : 0)})`"
       width="1000px"
       append-to-body
       @open="resetImageScale"
@@ -335,16 +335,16 @@
         <!-- 导航按钮 -->
         <button
           class="nav-btn nav-prev"
-          @click="prevImage"
-          :disabled="isNaN(currentPreviewIndex) || currentPreviewIndex === 0"
+          @click="isGatewayPreview ? (gatewayPreviewIndex > 0 && gatewayPreviewIndex--) : prevImage"
+          :disabled="isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) || (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) === 0"
           title="上一张"
         >
           ◀
         </button>
         <button
           class="nav-btn nav-next"
-          @click="nextImage"
-          :disabled="isNaN(currentPreviewIndex) || currentPreviewIndex >= uploadedImages.length - 1"
+          @click="isGatewayPreview ? ((gatewayPreviewIndex < (gatewayPreviewImages.length - 1)) && gatewayPreviewIndex++) : nextImage"
+          :disabled="isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) || (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) >= (isGatewayPreview ? gatewayPreviewImages.length - 1 : uploadedImages.length - 1)"
           title="下一张"
         >
           ▶
@@ -370,7 +370,7 @@
           <img
             ref="imageRef"
             :src="previewImageUrl"
-            :alt="`图片 ${currentPreviewIndex + 1}`"
+            :alt="`图片 ${(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1}`"
             class="preview-image"
             :class="{ 'is-dragging': isDragging }"
             :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
@@ -379,13 +379,13 @@
         </div>
 
         <!-- 缩略图列表 -->
-        <div class="thumbnail-list" v-if="uploadedImages.length > 1">
+        <div class="thumbnail-list" v-if="(isGatewayPreview ? gatewayPreviewImages.length : uploadedImages.length) > 1">
           <div
-            v-for="(file, index) in uploadedImages"
+            v-for="(file, index) in (isGatewayPreview ? gatewayPreviewImages : uploadedImages)"
             :key="file.id"
             class="thumbnail-item"
-            :class="{ active: index === currentPreviewIndex }"
-            @click="selectImage(index)"
+            :class="{ active: index === (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) }"
+            @click="isGatewayPreview ? (gatewayPreviewIndex = index) : selectImage(index)"
           >
             <div v-if="file.mime_type === 'text/plain'" class="thumbnail-txt-icon">📄</div>
             <img v-else :src="file.base64Data" :alt="file.name" class="thumbnail-img" />
@@ -788,6 +788,8 @@ export default defineComponent({
     const lastquerytask = ref(-1); // 上一次查询任务标识
     const gatewayNextStep = ref(-1); // 当前网关返回的下一步
     const gatewayUploadedImages = ref<any[]>([]); // 网关模式下当前步骤上传的文件
+    const gatewayPreviewImages = ref<any[]>([]); // 网关模式下预览的图片
+    const gatewayPreviewIndex = ref(0); // 网关模式下预览的索引
 
     // nextstep 与 API Key 的映射关系
     const stepApiKeyMap: Record<number, { apiKey: string; logPrefix: string; label: string }> = {
@@ -815,9 +817,9 @@ export default defineComponent({
     const viewGatewayImages = (conversationId: string) => {
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg || !msg.gatewayImages || msg.gatewayImages.length === 0) return;
+      gatewayPreviewImages.value = [...msg.gatewayImages];
+      gatewayPreviewIndex.value = 0;
       isGatewayPreview.value = true;
-      uploadedImages.value = [...msg.gatewayImages];
-      currentPreviewIndex.value = 0;
       imagePreviewVisible.value = true;
     };
 
@@ -825,13 +827,20 @@ export default defineComponent({
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg) return;
       
+      const stepConfig = stepApiKeyMap[nextStep];
+      console.log(`\n🚀 准备执行 proceedToNextStep:`);
+      console.log(`  - 当前步骤 (currentStep): ${currentStep.value} (${getStepLabel(currentStep.value)})`);
+      console.log(`  - 要切换到的步骤 (nextStep): ${nextStep} (${getStepLabel(nextStep)})`);
+      console.log(`  - 目标消息 (isGateway): ${msg.isGateway}`);
+      console.log(`  - 目标消息 gatewayNextStep: ${msg.gatewayNextStep}`);
+      console.log(`  - 使用的 API Key: ${stepConfig?.apiKey ? "***" + stepConfig.apiKey.slice(-4) : "未设置"}`);
+      
       messages.value.forEach((m) => {
         if (m.isGateway) {
           m.isGatewayActionDisabled = true;
         }
       });
       
-      const stepConfig = stepApiKeyMap[nextStep];
       if (!stepConfig || !stepConfig.apiKey) {
         ElMessage.warning("未配置该步骤的 API Key");
         return;
@@ -1173,9 +1182,9 @@ export default defineComponent({
       (window as any).__viewGatewayImages = (conversationId: string) => {
         const msg = findMessageByConversationId(conversationId);
         if (!msg || !msg.gatewayImages || msg.gatewayImages.length === 0) return;
+        gatewayPreviewImages.value = [...msg.gatewayImages];
+        gatewayPreviewIndex.value = 0;
         isGatewayPreview.value = true;
-        uploadedImages.value = [...msg.gatewayImages];
-        currentPreviewIndex.value = 0;
         imagePreviewVisible.value = true;
       };
 
@@ -1331,19 +1340,21 @@ export default defineComponent({
     const selectedSendType = ref<string>(props.waterServiceMode ? "sendWater" : "sendGetway");
 
     const previewImageUrl = computed(() => {
-      if (!Array.isArray(uploadedImages.value) || uploadedImages.value.length === 0) return "";
-      const maxIndex = uploadedImages.value.length - 1;
-      const index = isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value;
+      const images = isGatewayPreview.value ? gatewayPreviewImages.value : uploadedImages.value;
+      if (!Array.isArray(images) || images.length === 0) return "";
+      const maxIndex = images.length - 1;
+      const index = isGatewayPreview.value ? (isNaN(gatewayPreviewIndex.value) ? 0 : gatewayPreviewIndex.value) : (isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value);
       const validIndex = Math.max(0, Math.min(index, maxIndex));
-      return uploadedImages.value[validIndex]?.base64Data || "";
+      return images[validIndex]?.base64Data || "";
     });
 
     const getCurrentPreviewFile = computed(() => {
-      if (!Array.isArray(uploadedImages.value) || uploadedImages.value.length === 0) return null;
-      const maxIndex = uploadedImages.value.length - 1;
-      const index = isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value;
+      const images = isGatewayPreview.value ? gatewayPreviewImages.value : uploadedImages.value;
+      if (!Array.isArray(images) || images.length === 0) return null;
+      const maxIndex = images.length - 1;
+      const index = isGatewayPreview.value ? (isNaN(gatewayPreviewIndex.value) ? 0 : gatewayPreviewIndex.value) : (isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value);
       const validIndex = Math.max(0, Math.min(index, maxIndex));
-      return uploadedImages.value[validIndex] || null;
+      return images[validIndex] || null;
     });
 
     const copyPreviewText = async () => {
@@ -1869,6 +1880,12 @@ export default defineComponent({
                       lastquerytask.value = gatewayData.nextstep;
                       gatewayNextStep.value = gatewayData.nextstep;
                       currentStep.value = gatewayData.nextstep;
+                      
+                      const stepConfig = stepApiKeyMap[gatewayData.nextstep];
+                      console.log(`\n📢 网关返回消息，更新状态:`);
+                      console.log(`  - gatewayData.nextstep: ${gatewayData.nextstep} (${getStepLabel(gatewayData.nextstep)})`);
+                      console.log(`  - 更新后的 currentStep: ${currentStep.value}`);
+                      console.log(`  - 当前步骤 API Key: ${stepConfig?.apiKey ? "***" + stepConfig.apiKey.slice(-4) : "未设置"}`);
                     }
                     
                     // 获取 conversation_id
@@ -3131,14 +3148,11 @@ export default defineComponent({
           targetMsg = messages.value[msgIndex];
         }
         
-        // 如果找到目标消息且有 gatewayNextStep，优先使用消息中的步骤号
-        if (targetMsg && targetMsg.gatewayNextStep !== undefined) {
-          nextStep = targetMsg.gatewayNextStep;
-        }
-        
-        // 网关模式下，根据当前步骤使用对应步骤的 API Key
-        if (selectedSendType.value === "sendGetway" && nextStep >= 1 && nextStep <= 3) {
-          const stepConfig = stepApiKeyMap[nextStep];
+        // 网关模式下，根据当前步骤（currentStep）使用对应步骤的 API Key
+        // 判断是否为网关模式：消息是网关消息（isGateway）或当前步骤 >= 1 && <= 3
+        const isGatewayMode = targetMsg?.isGateway || (currentStep.value >= 1 && currentStep.value <= 3);
+        if (isGatewayMode && currentStep.value >= 1 && currentStep.value <= 3) {
+          const stepConfig = stepApiKeyMap[currentStep.value];
           apiKey = stepConfig?.apiKey || "";
         }
         // 非网关模式或未设置 nextstep，使用选中的发送类型的 API Key
@@ -3146,6 +3160,14 @@ export default defineComponent({
           const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
           apiKey = sendType?.config.apiKey || props.apiKey;
         }
+
+        console.log(`\n📤 准备上传文件:`);
+        console.log(`  - 当前步骤 (currentStep): ${currentStep.value} (${getStepLabel(currentStep.value)})`);
+        console.log(`  - 网关模式 (isGatewayMode): ${isGatewayMode}`);
+        console.log(`  - 目标消息 (isGateway): ${targetMsg?.isGateway}`);
+        console.log(`  - 选中发送类型 (selectedSendType): ${selectedSendType.value}`);
+        console.log(`  - 使用的 API Key: ${apiKey ? "***" + apiKey.slice(-4) : "未设置"}`);
+        console.log(`  - 文件: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`);
 
         const formData = new FormData();
         formData.append("file", file);
@@ -3208,7 +3230,7 @@ export default defineComponent({
 
         // 网关模式下，仅当从聊天框内上传（有 conversationId）时保存到对应消息的 gatewayImages
         // 从聊天框外上传（无 conversationId）时，始终保存到全局 uploadedImages，与网关逻辑独立
-        if (selectedSendType.value === "sendGetway" && conversationId && nextStep >= 1 && nextStep <= 3) {
+        if (isGatewayMode && conversationId && currentStep.value >= 1 && currentStep.value <= 3) {
           // 使用 targetMsg（已通过 conversationId 或 msgIndex 找到）
           if (!targetMsg) {
             // 如果没有找到对应消息，尝试通过 conversationId 查找
@@ -4369,6 +4391,9 @@ export default defineComponent({
       handlePreviewClose,
       getCurrentPreviewFile,
       copyPreviewText,
+      gatewayPreviewImages,
+      gatewayPreviewIndex,
+      isGatewayPreview,
     };
   },
 });
