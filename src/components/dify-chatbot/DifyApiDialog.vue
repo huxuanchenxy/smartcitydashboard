@@ -101,15 +101,17 @@
                     <span>📁 上传文件</span>
                   </label>
                 </div>
-                <div class="gateway-view-section">
-                  <button class="gateway-view-btn" @click="viewGatewayImages(message.conversationId || '')" :disabled="!message.gatewayImages || message.gatewayImages.length === 0">
-                    🖼️ 查看 ({{ message.gatewayImages?.length || 0 }})
-                  </button>
-                </div>
-                <div class="gateway-next-step" v-if="!message.isGatewayActionDisabled">
-                  <button class="gateway-next-btn" @click="proceedToNextStep(message.conversationId || '', message.gatewayNextStep)">
-                    🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
-                  </button>
+                <div class="gateway-action-buttons">
+                  <div class="gateway-view-section">
+                    <button class="gateway-view-btn" @click="viewGatewayImages(message.conversationId || '')" :disabled="!message.gatewayImages || message.gatewayImages.length === 0">
+                      🖼️ 查看 ({{ message.gatewayImages?.length || 0 }})
+                    </button>
+                  </div>
+                  <div class="gateway-next-step">
+                    <button class="gateway-next-btn" :disabled="message.isGatewayActionDisabled" @click="proceedToNextStep(message.conversationId || '', message.gatewayNextStep)">
+                      🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -224,7 +226,7 @@
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button> -->
-              <!-- 水务模式下保留：图片预览链接 -->
+              <!-- 图片预览链接 -->
               <el-link
                 v-if="uploadedImages.length > 0"
                 type="primary"
@@ -323,7 +325,7 @@
     <!-- 图片预览弹窗 -->
     <el-dialog
       v-model="imagePreviewVisible"
-      :title="`图片预览 (${isNaN(currentPreviewIndex) ? 1 : currentPreviewIndex + 1} / ${Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
+      :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(currentPreviewIndex) ? 1 : currentPreviewIndex + 1} / ${Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
       width="1000px"
       append-to-body
       @open="resetImageScale"
@@ -348,8 +350,16 @@
           ▶
         </button>
 
-        <!-- 主图片区域 -->
+        <!-- 主内容区域 -->
+        <div v-if="getCurrentPreviewFile?.mime_type === 'text/plain'" class="text-preview-container">
+          <div class="text-preview-header">
+            <span class="text-preview-filename">{{ getCurrentPreviewFile.name }}</span>
+            <button class="copy-text-btn" @click="copyPreviewText">📋 复制文本</button>
+          </div>
+          <pre class="text-preview-content">{{ getCurrentPreviewFile.textContent }}</pre>
+        </div>
         <div
+          v-else
           class="image-preview-container"
           @wheel.prevent="handleImageWheel"
           @mousedown="handleMouseDown"
@@ -371,18 +381,19 @@
         <!-- 缩略图列表 -->
         <div class="thumbnail-list" v-if="uploadedImages.length > 1">
           <div
-            v-for="(image, index) in uploadedImages"
-            :key="image.id"
+            v-for="(file, index) in uploadedImages"
+            :key="file.id"
             class="thumbnail-item"
             :class="{ active: index === currentPreviewIndex }"
             @click="selectImage(index)"
           >
-            <img :src="image.base64Data" :alt="image.name" class="thumbnail-img" />
-            <span class="thumbnail-name">{{ image.name }}</span>
+            <div v-if="file.mime_type === 'text/plain'" class="thumbnail-txt-icon">📄</div>
+            <img v-else :src="file.base64Data" :alt="file.name" class="thumbnail-img" />
+            <span class="thumbnail-name">{{ file.name }}</span>
           </div>
         </div>
       </div>
-      <div class="image-preview-hint">滚轮缩放图片，右键拖动查看细节，点击图片重置，点击缩略图切换</div>
+      <div class="image-preview-hint">{{ getCurrentPreviewFile?.mime_type === 'text/plain' ? '点击复制按钮复制文本内容' : '滚轮缩放图片，右键拖动查看细节，点击图片重置，点击缩略图切换' }}</div>
     </el-dialog>
 
     <!-- 验证结果图片预览弹窗 -->
@@ -1327,6 +1338,25 @@ export default defineComponent({
       return uploadedImages.value[validIndex]?.base64Data || "";
     });
 
+    const getCurrentPreviewFile = computed(() => {
+      if (!Array.isArray(uploadedImages.value) || uploadedImages.value.length === 0) return null;
+      const maxIndex = uploadedImages.value.length - 1;
+      const index = isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value;
+      const validIndex = Math.max(0, Math.min(index, maxIndex));
+      return uploadedImages.value[validIndex] || null;
+    });
+
+    const copyPreviewText = async () => {
+      if (getCurrentPreviewFile.value?.textContent) {
+        try {
+          await navigator.clipboard.writeText(getCurrentPreviewFile.value.textContent);
+          ElMessage.success("文本已复制到剪贴板");
+        } catch (e) {
+          ElMessage.error("复制失败");
+        }
+      }
+    };
+
     const selectOptions = computed(() => {
       return sendTypes.value.map((t) => {
         let disabled = t.isWaterOnly && !props.waterServiceMode;
@@ -1838,6 +1868,7 @@ export default defineComponent({
                       lasttask.value = gatewayData.nextstep;
                       lastquerytask.value = gatewayData.nextstep;
                       gatewayNextStep.value = gatewayData.nextstep;
+                      currentStep.value = gatewayData.nextstep;
                     }
                     
                     // 获取 conversation_id
@@ -1927,6 +1958,7 @@ export default defineComponent({
                         lasttask.value = gatewayData.nextstep;
                         lastquerytask.value = gatewayData.nextstep;
                         gatewayNextStep.value = gatewayData.nextstep;
+                        currentStep.value = gatewayData.nextstep;
                       }
                       
                       // 使用消息已有的 conversationId，或者从 workflow_finished 事件中获取
@@ -3074,15 +3106,15 @@ export default defineComponent({
 
     // 处理文件上传（支持文件输入和剪贴板粘贴）
     const uploadFile = async (file: File, source: string = "input", msgIndex?: number, conversationId?: string) => {
-      const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
+      const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "text/plain"];
       if (!validTypes.includes(file.type)) {
-        ElMessage.error("请选择有效的图片格式（png/jpeg/jpg/webp/gif）");
+        ElMessage.error("请选择有效的文件格式（png/jpeg/jpg/webp/gif/txt）");
         return;
       }
 
       const maxSize = 2 * 1024 * 1024;
       if (file.size > maxSize) {
-        ElMessage.error("图片大小不能超过2MB");
+        ElMessage.error("文件大小不能超过2MB");
         return;
       }
 
@@ -3090,21 +3122,21 @@ export default defineComponent({
 
       try {
         let apiKey = "";
-        // 获取消息的 nextstep（优先使用 conversationId，其次是 msgIndex，最后是全局 gatewayNextStep）
-        let nextStep = gatewayNextStep.value;
+        let nextStep = currentStep.value;
         let targetMsg: any = null;
         
         if (conversationId) {
           targetMsg = messages.value.find((msg) => msg.conversationId === conversationId);
-          if (targetMsg) {
-            nextStep = targetMsg.gatewayNextStep || nextStep;
-          }
         } else if (msgIndex !== undefined && messages.value[msgIndex]) {
           targetMsg = messages.value[msgIndex];
-          nextStep = targetMsg.gatewayNextStep || nextStep;
         }
         
-        // 网关模式下，根据 nextstep 使用对应步骤的 API Key
+        // 如果找到目标消息且有 gatewayNextStep，优先使用消息中的步骤号
+        if (targetMsg && targetMsg.gatewayNextStep !== undefined) {
+          nextStep = targetMsg.gatewayNextStep;
+        }
+        
+        // 网关模式下，根据当前步骤使用对应步骤的 API Key
         if (selectedSendType.value === "sendGetway" && nextStep >= 1 && nextStep <= 3) {
           const stepConfig = stepApiKeyMap[nextStep];
           apiKey = stepConfig?.apiKey || "";
@@ -3133,7 +3165,7 @@ export default defineComponent({
 
         const result = await response.json();
 
-        let imageInfo = {
+        let fileInfo = {
           id: result.id,
           name: result.name,
           size: result.size,
@@ -3141,24 +3173,42 @@ export default defineComponent({
           mime_type: result.mime_type,
           created_at: result.created_at,
           base64Data: "",
+          textContent: "",
         };
 
         try {
-          const base64Data = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              resolve(e.target?.result as string || "");
-            };
-            reader.onerror = () => {
-              resolve("");
-            };
-            reader.readAsDataURL(file);
-          });
-          imageInfo = { ...imageInfo, base64Data };
+          if (file.type === "text/plain") {
+            const textContent = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                resolve(e.target?.result as string || "");
+              };
+              reader.onerror = () => {
+                resolve("");
+              };
+              reader.readAsText(file, "utf-8");
+            });
+            fileInfo = { ...fileInfo, textContent };
+          } else {
+            const base64Data = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                resolve(e.target?.result as string || "");
+              };
+              reader.onerror = () => {
+                resolve("");
+              };
+              reader.readAsDataURL(file);
+            });
+            fileInfo = { ...fileInfo, base64Data };
+          }
         } catch (e) {}
 
-        // 网关模式下保存到对应消息的 gatewayImages，否则保存到全局数组
-        if (selectedSendType.value === "sendGetway" && nextStep >= 1 && nextStep <= 3) {
+        const isTxtFile = file.type === "text/plain";
+
+        // 网关模式下，仅当从聊天框内上传（有 conversationId）时保存到对应消息的 gatewayImages
+        // 从聊天框外上传（无 conversationId）时，始终保存到全局 uploadedImages，与网关逻辑独立
+        if (selectedSendType.value === "sendGetway" && conversationId && nextStep >= 1 && nextStep <= 3) {
           // 使用 targetMsg（已通过 conversationId 或 msgIndex 找到）
           if (!targetMsg) {
             // 如果没有找到对应消息，尝试通过 conversationId 查找
@@ -3171,37 +3221,40 @@ export default defineComponent({
             if (!targetMsg.gatewayImages) {
               targetMsg.gatewayImages = [];
             }
-            targetMsg.gatewayImages.push(imageInfo);
-            ElMessage.success(`图片 "${result.name}" 上传成功！当前步骤共 ${targetMsg.gatewayImages.length} 张图片`);
+            targetMsg.gatewayImages.push(fileInfo);
+            const count = targetMsg.gatewayImages.length;
+            ElMessage.success(`${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前步骤共 ${count} ${isTxtFile ? "个文件" : "张图片"}`);
           } else {
             // 回退到全局数组
-            gatewayUploadedImages.value.push(imageInfo);
-            ElMessage.success(`图片 "${result.name}" 上传成功！当前步骤共 ${gatewayUploadedImages.value.length} 张图片`);
+            gatewayUploadedImages.value.push(fileInfo);
+            const count = gatewayUploadedImages.value.length;
+            ElMessage.success(`${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前步骤共 ${count} ${isTxtFile ? "个文件" : "张图片"}`);
           }
         } else {
-          uploadedImages.value.push(imageInfo);
+          uploadedImages.value.push(fileInfo);
 
           try {
             const stored = (await indexedDBStore.getItem(getUploadImageStorageKey())) as any[] || [];
             const allImagesData = uploadedImages.value.map((img, index) => {
-              return index === uploadedImages.value.length - 1 ? imageInfo : stored[index] || img;
+              return index === uploadedImages.value.length - 1 ? fileInfo : stored[index] || img;
             });
             const plainData = JSON.parse(JSON.stringify(allImagesData));
             await indexedDBStore.setItem(getUploadImageStorageKey(), plainData);
           } catch (storageError: any) {
             if (storageError.name === "QuotaExceededError") {
-              console.warn("IndexedDB 配额不足，仅保存图片元信息");
+              console.warn("IndexedDB 配额不足，仅保存文件元信息");
               const plainMeta = JSON.parse(JSON.stringify(uploadedImages.value.map((img) => {
-                const { base64Data, ...meta } = img;
+                const { base64Data, textContent, ...meta } = img;
                 return meta;
               })));
               await indexedDBStore.setItem(getUploadImageStorageKey(), plainMeta);
             } else {
-              console.error("保存图片信息到 IndexedDB 失败:", storageError);
+              console.error("保存文件信息到 IndexedDB 失败:", storageError);
             }
           }
 
-          ElMessage.success(`图片 "${result.name}" 上传成功！当前共 ${uploadedImages.value.length} 张图片`);
+          const count = uploadedImages.value.length;
+          ElMessage.success(`${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前共 ${count} ${isTxtFile ? "个文件" : "张图片"}`);
         }
       } catch (error: any) {
         ElMessage.error("图片上传失败：" + error.message);
@@ -4314,6 +4367,8 @@ export default defineComponent({
       handleMouseUp,
       resetImageScale,
       handlePreviewClose,
+      getCurrentPreviewFile,
+      copyPreviewText,
     };
   },
 });
@@ -5016,7 +5071,7 @@ export default defineComponent({
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 5px 16px;
   background-color: #eff6ff;
   border: 1px solid #bfdbfe;
   border-radius: 6px;
@@ -5042,13 +5097,13 @@ export default defineComponent({
 .gateway-view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  gap: 4px;
+  padding: 4px 12px;
   background-color: #f0f9ff;
   border: 1px solid #7dd3fc;
-  border-radius: 6px;
+  border-radius: 4px;
   color: #0369a1;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -5063,6 +5118,12 @@ export default defineComponent({
   cursor: not-allowed;
 }
 
+.gateway-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .gateway-next-step {
   flex-shrink: 0;
 }
@@ -5070,13 +5131,13 @@ export default defineComponent({
 .gateway-next-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 20px;
+  gap: 4px;
+  padding: 4px 12px;
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -5089,6 +5150,17 @@ export default defineComponent({
 
 .gateway-next-btn:active {
   transform: translateY(0);
+}
+
+.gateway-next-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.gateway-next-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .image-preview-container {
@@ -5125,6 +5197,68 @@ export default defineComponent({
   font-size: 12px;
   color: #909399;
   margin-top: 8px;
+}
+
+.text-preview-container {
+  width: 100%;
+  max-height: 600px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.text-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #e4e7ed;
+  border-radius: 8px 8px 0 0;
+}
+
+.text-preview-filename {
+  font-weight: 600;
+  color: #303133;
+}
+
+.copy-text-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #409eff;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-text-btn:hover {
+  background-color: #66b1ff;
+}
+
+.text-preview-content {
+  flex: 1;
+  padding: 16px;
+  margin: 0;
+  overflow-y: auto;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #303133;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.thumbnail-txt-icon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  background-color: #f0f2f5;
+  border-radius: 4px;
 }
 
 .multi-image-preview-wrapper {
