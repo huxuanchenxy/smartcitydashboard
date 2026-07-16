@@ -97,7 +97,7 @@
               <div class="gateway-action-area" v-if="message.gatewayNextStep && message.gatewayNextStep >= 1 && message.gatewayNextStep <= 3">
                 <div class="gateway-upload-section" v-if="!message.isGatewayActionDisabled">
                   <label class="gateway-upload-btn">
-                    <input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" @change="(e) => handleGatewayUpload(e, message.conversationId || '')" />
+                    <input type="file" multiple class="gateway-upload-input" @change="(e) => handleGatewayUpload(e, message.conversationId || '')" />
                     <span>📁 上传文件</span>
                   </label>
                 </div>
@@ -375,7 +375,7 @@
     <input
       ref="fileInput"
       type="file"
-      accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+      
       multiple
       style="display: none"
       @change="handleImageUpload"
