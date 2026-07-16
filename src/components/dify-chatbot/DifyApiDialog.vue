@@ -1736,7 +1736,11 @@ export default defineComponent({
         const inputs = isGateway 
           ? { 
               lasttask: lasttask.value, 
-              lastquerytask: lastquerytask.value 
+              lastquerytask: lastquerytask.value,
+              // currentStep: currentStep.value,
+              // step1Result: stepResults.value[1] || "",
+              // step2Result: stepResults.value[2] || "",
+              // step3Result: stepResults.value[3] || "",
             } 
           : props.data;
         const requestBody = {
@@ -2744,7 +2748,13 @@ export default defineComponent({
             lasttask.value = currentStep.value;
             lastquerytask.value = -1;
             
-            console.log("🚀 准备调用网关:", { lasttask: lasttask.value, lastquerytask: lastquerytask.value });
+            // 步骤3完成后，重置currentStep为-1（用于网关的lasttask）
+            if (currentStep.value === 3) {
+              currentStep.value = -1;
+              console.log("🔄 步骤3完成，重置currentStep为-1");
+            }
+            
+            console.log("🚀 准备调用网关:", { lasttask: lasttask.value, lastquerytask: lastquerytask.value, currentStep: currentStep.value });
             isLoading.value = false;
             await sendMessageGetway("继续", true);
             isLoading.value = true;
