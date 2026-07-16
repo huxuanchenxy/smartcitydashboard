@@ -2020,7 +2020,7 @@ export default defineComponent({
                         const formattedContent = tryFormatJson(contentStr);
                         const highlightedContent = highlightJson(formattedContent);
                         const contentLength = formattedContent.length;
-                        displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
+                        displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">请参照以下模板</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
                       }
                       
                       // 更新网关状态
