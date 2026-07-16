@@ -147,6 +147,29 @@
                 </div>
                 <!-- 正常内容 -->
                 <div v-else class="content-text" v-html="formatContent(message.content)"></div>
+                
+                <!-- 用户消息中的文件列表 -->
+                <div v-if="message.files && message.files.length > 0" class="message-files">
+                  <div class="message-files-title">📎 附件</div>
+                  <div class="message-files-list">
+                    <div 
+                      v-for="(file, fileIndex) in message.files" 
+                      :key="fileIndex" 
+                      class="message-file-item"
+                      @click="viewMessageFile(message, fileIndex)"
+                    >
+                      <div class="message-file-icon">
+                        <span v-if="isImageFile(file)">🖼️</span>
+                        <span v-else-if="file.extension === 'txt'">📝</span>
+                        <span v-else>📄</span>
+                      </div>
+                      <div class="message-file-info">
+                        <div class="message-file-name">{{ file.name }}</div>
+                        <div class="message-file-size">{{ formatFileSize(file.size) }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="message-actions">
                 <button 
@@ -226,16 +249,31 @@
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button> -->
-              <!-- 图片预览链接 -->
-              <el-link
-                v-if="uploadedImages.length > 0"
-                type="primary"
-                :underline="false"
-                @click="openImagePreview"
-                class="image-preview-link"
-              >
-                🖼️ 查看 ({{ uploadedImages.length }})
-              </el-link>
+              <!-- 已上传文件列表 -->
+              <div v-if="uploadedImages.length > 0" class="uploaded-files-bar">
+                <div class="uploaded-files-list">
+                  <div 
+                    v-for="(file, index) in uploadedImages" 
+                    :key="index" 
+                    class="uploaded-file-tag"
+                    @click="previewUploadedFile(index)"
+                  >
+                    <span class="uploaded-file-icon">
+                      <span v-if="isImageFile(file)">🖼️</span>
+                      <span v-else-if="file.extension === 'txt'">📝</span>
+                      <span v-else>📄</span>
+                    </span>
+                    <span class="uploaded-file-name">{{ file.name }}</span>
+                    <button 
+                      class="uploaded-file-remove" 
+                      @click.stop="removeUploadedFile(index)"
+                      title="删除"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <!-- 输入框和发送按钮行 -->
@@ -332,24 +370,6 @@
       @close="handlePreviewClose"
     >
       <div class="multi-image-preview-wrapper">
-        <!-- 导航按钮 -->
-        <button
-          class="nav-btn nav-prev"
-          @click="isGatewayPreview ? (gatewayPreviewIndex > 0 && gatewayPreviewIndex--) : prevImage"
-          :disabled="isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) || (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) === 0"
-          title="上一张"
-        >
-          ◀
-        </button>
-        <button
-          class="nav-btn nav-next"
-          @click="isGatewayPreview ? ((gatewayPreviewIndex < (gatewayPreviewImages.length - 1)) && gatewayPreviewIndex++) : nextImage"
-          :disabled="isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) || (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) >= (isGatewayPreview ? gatewayPreviewImages.length - 1 : uploadedImages.length - 1)"
-          title="下一张"
-        >
-          ▶
-        </button>
-
         <!-- 主内容区域 -->
         <div v-if="getCurrentPreviewFile?.mime_type === 'text/plain'" class="text-preview-container">
           <div class="text-preview-header">
@@ -378,22 +398,8 @@
           />
         </div>
 
-        <!-- 缩略图列表 -->
-        <div class="thumbnail-list" v-if="(isGatewayPreview ? gatewayPreviewImages.length : uploadedImages.length) > 1">
-          <div
-            v-for="(file, index) in (isGatewayPreview ? gatewayPreviewImages : uploadedImages)"
-            :key="file.id"
-            class="thumbnail-item"
-            :class="{ active: index === (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) }"
-            @click="isGatewayPreview ? (gatewayPreviewIndex = index) : selectImage(index)"
-          >
-            <div v-if="file.mime_type === 'text/plain'" class="thumbnail-txt-icon">📄</div>
-            <img v-else :src="file.base64Data" :alt="file.name" class="thumbnail-img" />
-            <span class="thumbnail-name">{{ file.name }}</span>
-          </div>
         </div>
-      </div>
-      <div class="image-preview-hint">{{ getCurrentPreviewFile?.mime_type === 'text/plain' ? '点击复制按钮复制文本内容' : '滚轮缩放图片，右键拖动查看细节，点击图片重置，点击缩略图切换' }}</div>
+      <div class="image-preview-hint">{{ getCurrentPreviewFile?.mime_type === 'text/plain' ? '点击复制按钮复制文本内容' : '滚轮缩放图片，右键拖动查看细节，点击图片重置' }}</div>
     </el-dialog>
 
     <!-- 验证结果图片预览弹窗 -->
@@ -590,6 +596,7 @@ interface Message {
   gatewayImages?: any[];
   gatewayNextStep?: number;
   conversationId?: string;
+  files?: any[];
 }
 
 interface SendMessageConfig {
@@ -943,11 +950,7 @@ export default defineComponent({
 
     const handlePreviewClose = () => {
       resetImageScale();
-      // 如果是网关预览，关闭后清空上传图片列表
-      if (isGatewayPreview.value) {
-        uploadedImages.value = [];
-        isGatewayPreview.value = false;
-      }
+      isGatewayPreview.value = false;
     };
 
     // 人工介入相关
@@ -1622,11 +1625,36 @@ export default defineComponent({
 
       // 添加用户消息（可配置跳过）
       if (!skipUserMessage) {
-        messages.value.push({
+        const userMsg: Message = {
           role: "user",
           content: query,
           timestamp: Date.now(),
-        });
+        };
+        
+        // 如果有上传的文件，将文件信息添加到用户消息中
+        if (uploadedImages.value.length > 0) {
+          userMsg.files = uploadedImages.value.map(img => ({
+            id: img.id,
+            name: img.name,
+            size: img.size,
+            extension: img.extension,
+            mime_type: img.mime_type,
+            base64Data: img.base64Data,
+            textContent: img.textContent,
+          }));
+        }
+        
+        messages.value.push(userMsg);
+        
+        // 发送后清空上传的文件
+        if (uploadedImages.value.length > 0) {
+          uploadedImages.value = [];
+          try {
+            await indexedDBStore.setItem(getUploadImageStorageKey(), []);
+          } catch (error) {
+            console.error("清空上传文件缓存失败:", error);
+          }
+        }
       }
 
       // 添加 AI 思考中的占位消息
@@ -3321,6 +3349,51 @@ export default defineComponent({
       }
     };
 
+    // 预览已上传的文件
+    const previewUploadedFile = (index: number) => {
+      const file = uploadedImages.value[index];
+      if (!file) return;
+      
+      gatewayPreviewImages.value = JSON.parse(JSON.stringify(uploadedImages.value));
+      gatewayPreviewIndex.value = index;
+      isGatewayPreview.value = true;
+      imagePreviewVisible.value = true;
+    };
+
+    // 判断是否为图片文件
+    const isImageFile = (file: any): boolean => {
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      return imageExtensions.includes(file.extension?.toLowerCase() || '') || 
+             file.mime_type?.startsWith('image/');
+    };
+
+    // 格式化文件大小
+    const formatFileSize = (bytes: number): string => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    // 查看消息中的文件
+    const viewMessageFile = (message: any, fileIndex: number) => {
+      const file = message.files[fileIndex];
+      if (!file) return;
+      
+      if (isImageFile(file)) {
+        gatewayPreviewImages.value = [file];
+        gatewayPreviewIndex.value = 0;
+        isGatewayPreview.value = true;
+        imagePreviewVisible.value = true;
+      } else if (file.textContent) {
+        gatewayPreviewImages.value = [file];
+        gatewayPreviewIndex.value = 0;
+        isGatewayPreview.value = true;
+        imagePreviewVisible.value = true;
+      } else {
+        ElMessage.info('无法预览该文件类型');
+      }
+    };
+
     // 处理图片上传（文件输入）
     const handleImageUpload = async (event: Event) => {
       const target = event.target as HTMLInputElement;
@@ -3368,6 +3441,19 @@ export default defineComponent({
       if (index >= 0 && index < uploadedImages.value.length) {
         currentPreviewIndex.value = index;
         resetImageScale();
+      }
+    };
+
+    // 删除上传的文件
+    const removeUploadedFile = async (index: number) => {
+      uploadedImages.value.splice(index, 1);
+      
+      try {
+        const plainData = JSON.parse(JSON.stringify(uploadedImages.value));
+        await indexedDBStore.setItem(getUploadImageStorageKey(), plainData);
+        ElMessage.success("文件删除成功");
+      } catch (error) {
+        console.error("删除文件时更新 IndexedDB 失败:", error);
       }
     };
 
@@ -4394,6 +4480,11 @@ export default defineComponent({
       gatewayPreviewImages,
       gatewayPreviewIndex,
       isGatewayPreview,
+      removeUploadedFile,
+      previewUploadedFile,
+      isImageFile,
+      formatFileSize,
+      viewMessageFile,
     };
   },
 });
@@ -5662,5 +5753,116 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   gap: 16px;
+}
+
+.uploaded-files-bar {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.uploaded-files-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.uploaded-file-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  font-size: 12px;
+}
+
+.uploaded-file-icon {
+  font-size: 14px;
+}
+
+.uploaded-file-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #374151;
+}
+
+.uploaded-file-remove {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.uploaded-file-remove:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.message-files {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.message-files-title {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.message-files-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.message-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.message-file-item:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.message-file-icon {
+  font-size: 16px;
+}
+
+.message-file-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-file-name {
+  font-size: 13px;
+  color: #334155;
+}
+
+.message-file-size {
+  font-size: 11px;
+  color: #94a3b8;
 }
 </style>
