@@ -1438,6 +1438,13 @@ export default defineComponent({
       assistant5RecognitionResult.value = "";
       selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
       await indexedDBStore.removeItem(getStepStorageKey());
+      
+      messages.value.forEach((msg) => {
+        if (msg.isGateway) {
+          msg.isGatewayActionDisabled = true;
+        }
+      });
+      
       ElMessage.info("已重置到步骤1");
     };
 
@@ -1736,11 +1743,7 @@ export default defineComponent({
         const inputs = isGateway 
           ? { 
               lasttask: lasttask.value, 
-              lastquerytask: lastquerytask.value,
-              // currentStep: currentStep.value,
-              // step1Result: stepResults.value[1] || "",
-              // step2Result: stepResults.value[2] || "",
-              // step3Result: stepResults.value[3] || "",
+              lastquerytask: lastquerytask.value 
             } 
           : props.data;
         const requestBody = {
@@ -2457,8 +2460,8 @@ export default defineComponent({
         return;
       }
 
-      if (sendType.id === "sendGetway") {
-        await sendMessageGetway();
+      if (sendType.id === "sendGetway" || (currentStep.value >= 1 && currentStep.value <= 3) || currentStep.value === -1) {
+        await sendMessageGetway(userQuery.value.trim());
       } else {
         await sendRequest(sendType.config);
       }
@@ -3403,11 +3406,12 @@ export default defineComponent({
     };
 
     // 删除网关消息中的文件
-    const removeGatewayFile = (conversationId: string, index: number) => {
+    const removeGatewayFile = async (conversationId: string, index: number) => {
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg || !msg.gatewayImages) return;
       
       msg.gatewayImages.splice(index, 1);
+      await saveMessagesToStorage();
       ElMessage.success("文件删除成功");
     };
 
