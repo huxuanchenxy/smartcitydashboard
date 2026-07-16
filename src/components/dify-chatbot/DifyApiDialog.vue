@@ -1894,8 +1894,8 @@ export default defineComponent({
                 }
                 
                 let answerContent = data.answer;
-                console.log(`isGateway：`,isGateway);
-                console.log(`data.answer：`, data.answer);
+                // console.log(`isGateway：`,isGateway);
+                // console.log(`data.answer：`, data.answer);
                 // 网关模式：解析网关返回的 JSON 格式
                 if (isGateway) {
                   try {
@@ -1911,9 +1911,9 @@ export default defineComponent({
                     }
                     
                     const gatewayData = JSON.parse(answerStr);
-                    console.log(`解析后的 gatewayData：`, gatewayData);
-                    console.log(`gatewayData.prompt：`, gatewayData.prompt);
-                    console.log(`gatewayData.content：`, gatewayData.content);
+                    // console.log(`解析后的 gatewayData：`, gatewayData);
+                    // console.log(`gatewayData.prompt：`, gatewayData.prompt);
+                    // console.log(`gatewayData.content：`, gatewayData.content);
                     
                     let displayContent = "";
                     if (gatewayData.prompt !== undefined && gatewayData.prompt !== "") {
@@ -1928,7 +1928,7 @@ export default defineComponent({
                       const contentLength = formattedContent.length;
                       displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
                     }
-                    console.log(`处理后的 displayContent：`, displayContent);
+                    // console.log(`处理后的 displayContent：`, displayContent);
                     
                     // 更新网关状态
                     if (gatewayData.nextstep !== undefined) {
@@ -1965,7 +1965,7 @@ export default defineComponent({
                     console.warn(`原始 answer：`, data.answer);
                   }
                 }
-                console.log(`最终 answerContent：`, answerContent);
+                // console.log(`最终 answerContent：`, answerContent);
                 
                 fullContent += data.answer;
                 const lastMsg = messages.value[messages.value.length - 1];
@@ -1979,7 +1979,7 @@ export default defineComponent({
               // 处理 workflow_finished 事件 - 最终完成
               if (data.event === "workflow_finished" && data.data) {
                 console.log(`${logPrefix} 找到 workflow_finished 事件`);
-                console.log(`${logPrefix} workflow_finished 数据:`, JSON.stringify(data.data));
+                // console.log(`${logPrefix} workflow_finished 数据:`, JSON.stringify(data.data));
 
                 const lastMsg = messages.value[messages.value.length - 1];
 
@@ -2460,7 +2460,9 @@ export default defineComponent({
         return;
       }
 
-      if (sendType.id === "sendGetway" || (currentStep.value >= 1 && currentStep.value <= 3) || currentStep.value === -1) {
+      if (props.waterServiceMode && sendType.id === "sendWater") {
+        await sendMessageWater();
+      } else if (sendType.id === "sendGetway" || (currentStep.value >= 1 && currentStep.value <= 3) || currentStep.value === -1) {
         await sendMessageGetway(userQuery.value.trim());
       } else {
         await sendRequest(sendType.config);
@@ -2487,7 +2489,7 @@ export default defineComponent({
 
       console.log(`📤 提交表单到: ${submitUrl}`);
       console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
-      console.log("📤 提交数据:", JSON.stringify({ inputs, action }, null, 2));
+      // console.log("📤 提交数据:", JSON.stringify({ inputs, action }, null, 2));
 
       const response = await fetch(submitUrl, {
         method: "POST",
@@ -2504,7 +2506,7 @@ export default defineComponent({
 
       const result = await response.json();
       console.log("✅ 表单提交成功");
-      console.log("📥 返回数据:", JSON.stringify(result, null, 2));
+      // console.log("📥 返回数据:", JSON.stringify(result, null, 2));
       return result;
     };
 
@@ -2599,7 +2601,7 @@ export default defineComponent({
             }
 
             const hiResult = await response.json();
-            console.log(`   📥 human_input 返回:`, JSON.stringify(hiResult, null, 2));
+            // console.log(`   📥 human_input 返回:`, JSON.stringify(hiResult, null, 2));
 
             // 等待一下再查询状态
             await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -2647,7 +2649,7 @@ export default defineComponent({
 
     // 提取助手5的识别结果（从"识别结果:"到"验证结果:"之间的内容）
     const extractRecognitionResult = (content: string): string => {
-      console.log("助手5原始内容:", content);
+      // console.log("助手5原始内容:", content);
 
       // 支持中文全角冒号（：）和英文半角冒号（:），以及可能的Markdown格式（如**识别结果：**）
       const match = content.match(/识别结果[：:](?:\*\*)?[\s\S]*?(?=验证结果[：:])/);
@@ -3374,7 +3376,7 @@ export default defineComponent({
         }
 
         const result = await response.json();
-        console.log("文件上传成功:", result);
+        // console.log("文件上传成功:", result);
 
         return result;
       } catch (error: any) {
@@ -3559,7 +3561,7 @@ export default defineComponent({
           })),
         };
 
-        console.log("请求体:", JSON.stringify(requestBody, null, 2));
+        // console.log("请求体:", JSON.stringify(requestBody, null, 2));
 
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: "POST",
@@ -3637,7 +3639,7 @@ export default defineComponent({
         }
 
         console.log("=== CAD转JSON 完成 ===");
-        console.log("转换结果:", fullContent);
+        // console.log("转换结果:", fullContent);
 
         // 确保消息状态正确
         messages.value[msgIndex] = {
