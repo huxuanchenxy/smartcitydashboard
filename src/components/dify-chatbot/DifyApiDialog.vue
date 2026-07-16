@@ -101,12 +101,33 @@
                     <span>📁 上传文件</span>
                   </label>
                 </div>
-                <div class="gateway-action-buttons">
-                  <div class="gateway-view-section">
-                    <button class="gateway-view-btn" @click="viewGatewayImages(message.conversationId || '')" :disabled="!message.gatewayImages || message.gatewayImages.length === 0">
-                      🖼️ 查看 ({{ message.gatewayImages?.length || 0 }})
+                
+                <!-- 已上传文件列表 -->
+                <div v-if="message.gatewayImages && message.gatewayImages.length > 0" class="gateway-uploaded-files">
+                  <div 
+                    v-for="(file, index) in message.gatewayImages" 
+                    :key="index" 
+                    class="gateway-file-tag"
+                    @click="previewGatewayFile(message.conversationId || '', index)"
+                  >
+                    <span class="gateway-file-icon">
+                      <span v-if="isImageFile(file)">🖼️</span>
+                      <span v-else-if="file.extension === 'txt'">📝</span>
+                      <span v-else>📄</span>
+                    </span>
+                    <span class="gateway-file-name">{{ file.name }}</span>
+                    <button 
+                      v-if="!message.isGatewayActionDisabled"
+                      class="gateway-file-remove" 
+                      @click.stop="removeGatewayFile(message.conversationId || '', index)"
+                      title="删除"
+                    >
+                      ✕
                     </button>
                   </div>
+                </div>
+                
+                <div class="gateway-action-buttons">
                   <div class="gateway-next-step">
                     <button class="gateway-next-btn" :disabled="message.isGatewayActionDisabled" @click="proceedToNextStep(message.conversationId || '', message.gatewayNextStep)">
                       🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
@@ -3360,6 +3381,26 @@ export default defineComponent({
       imagePreviewVisible.value = true;
     };
 
+    // 预览网关消息中的文件
+    const previewGatewayFile = (conversationId: string, index: number) => {
+      const msg = messages.value.find((m) => m.conversationId === conversationId);
+      if (!msg || !msg.gatewayImages || !msg.gatewayImages[index]) return;
+      
+      gatewayPreviewImages.value = JSON.parse(JSON.stringify(msg.gatewayImages));
+      gatewayPreviewIndex.value = index;
+      isGatewayPreview.value = true;
+      imagePreviewVisible.value = true;
+    };
+
+    // 删除网关消息中的文件
+    const removeGatewayFile = (conversationId: string, index: number) => {
+      const msg = messages.value.find((m) => m.conversationId === conversationId);
+      if (!msg || !msg.gatewayImages) return;
+      
+      msg.gatewayImages.splice(index, 1);
+      ElMessage.success("文件删除成功");
+    };
+
     // 判断是否为图片文件
     const isImageFile = (file: any): boolean => {
       const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
@@ -4482,6 +4523,8 @@ export default defineComponent({
       isGatewayPreview,
       removeUploadedFile,
       previewUploadedFile,
+      previewGatewayFile,
+      removeGatewayFile,
       isImageFile,
       formatFileSize,
       viewMessageFile,
@@ -5277,6 +5320,62 @@ export default defineComponent({
 .gateway-next-btn:disabled:hover {
   transform: none;
   box-shadow: none;
+}
+
+.gateway-uploaded-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gateway-file-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gateway-file-tag:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.gateway-file-icon {
+  font-size: 14px;
+}
+
+.gateway-file-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #374151;
+}
+
+.gateway-file-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background-color: #ef4444;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gateway-file-remove:hover {
+  background-color: #dc2626;
+  transform: scale(1.1);
 }
 
 .image-preview-container {
