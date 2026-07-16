@@ -364,7 +364,7 @@
     <el-dialog
       v-model="imagePreviewVisible"
       :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) ? 1 : (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1} / ${isGatewayPreview ? (Array.isArray(gatewayPreviewImages) ? gatewayPreviewImages.length : 0) : (Array.isArray(uploadedImages) ? uploadedImages.length : 0)})`"
-      width="1000px"
+      width="1100px"
       append-to-body
       @open="resetImageScale"
       @close="handlePreviewClose"
