@@ -1583,6 +1583,19 @@ export default defineComponent({
         return match;
       });
 
+      const standaloneJsonPattern = /(\{[\s\S]*\})/g;
+      result = result.replace(standaloneJsonPattern, (jsonContent) => {
+        try {
+          JSON.parse(jsonContent);
+          const id = "json-content-" + Math.random().toString(36).substring(2, 9);
+          const formattedJson = tryFormatJson(jsonContent);
+          const highlightedJson = highlightJson(formattedJson);
+          return `<a href="#" id="${id}" class="hidden-content-link" onclick="window.__toggleRecognitionJson('${id}'); return false;">展开</a><div id="${id}-content" class="hidden-content json-content" style="display:none;">${highlightedJson}</div>`;
+        } catch {
+          return jsonContent;
+        }
+      });
+
       return result;
     };
 
@@ -1923,12 +1936,8 @@ export default defineComponent({
                       const contentStr = typeof gatewayData.content === "string" 
                         ? gatewayData.content 
                         : JSON.stringify(gatewayData.content);
-                      const formattedContent = tryFormatJson(contentStr);
-                      const highlightedContent = highlightJson(formattedContent);
-                      const contentLength = formattedContent.length;
-                      displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">点击展开详细内容</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
+                      displayContent += "\n\n" + contentStr;
                     }
-                    // console.log(`处理后的 displayContent：`, displayContent);
                     
                     // 更新网关状态
                     if (gatewayData.nextstep !== undefined) {
@@ -2020,10 +2029,7 @@ export default defineComponent({
                         const contentStr = typeof gatewayData.content === "string" 
                           ? gatewayData.content 
                           : JSON.stringify(gatewayData.content);
-                        const formattedContent = tryFormatJson(contentStr);
-                        const highlightedContent = highlightJson(formattedContent);
-                        const contentLength = formattedContent.length;
-                        displayContent += `<br/><br/><div class="gateway-content-wrapper"><div class="gateway-content-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.gateway-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">请参照以下模板</span></div><div class="gateway-content" style="display: none;">${highlightedContent}</div></div>`;
+                        displayContent += "\n\n" + contentStr;
                       }
                       
                       // 更新网关状态
