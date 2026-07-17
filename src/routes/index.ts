@@ -216,6 +216,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/screen/publish.vue'),
   },
   {
+    path: '/admin/screen/cache',
+    name: 'ScreenCache',
+    component: () => import('@/views/screen/cache.vue'),
+    meta: { title: '缓存管理' },
+  },
+  {
     path: '/:catchAll(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/index.vue'),
