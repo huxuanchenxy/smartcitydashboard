@@ -713,7 +713,7 @@ export default defineComponent({
     },
     userId: {
       type: String,
-      default: "huyz",
+      default: import.meta.env.VITE_APP_DIFY_USER_ID || "huyz",
     },
     conversationId: {
       type: String,
