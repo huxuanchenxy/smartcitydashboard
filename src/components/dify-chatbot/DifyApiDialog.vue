@@ -2730,10 +2730,8 @@ export default defineComponent({
                 assistant5RecognitionResult.value = recognitionResult;
                 // 根据当前步骤显示不同的提示文字
                 const completeText = currentStep.value === 1 ? "图片识别完毕" : currentStep.value === 2 ? "点位绑定完毕" : "生成DSL完毕";
-                // 格式化识别结果中的JSON
-                const formattedResult = highlightJson(tryFormatJson(recognitionResult));
-                // 显示折叠内容提示
-                lastMsg.content = `<div class="recognition-result-wrapper"><div class="recognition-result-collapsed" onclick="this.classList.toggle('expanded'); this.querySelector('.collapse-icon').textContent = this.classList.contains('expanded') ? '▼' : '▶'; this.parentElement.querySelector('.recognition-result-content').style.display = this.classList.contains('expanded') ? 'block' : 'none';"><span class="collapse-icon">▶</span><span class="collapse-text">${completeText}，点击展开具体内容</span></div><div class="recognition-result-content" style="display: none;">${formattedResult}</div></div>`;
+                // 存储原始文本，由formatContent函数动态格式化
+                lastMsg.content = `${completeText}\n\n${recognitionResult}`;
               } else {
                 // 如果没有提取到识别结果，显示默认提示
                 lastMsg.content = "工作流执行成功完成！";
