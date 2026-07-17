@@ -745,7 +745,7 @@ export default defineComponent({
       const eventMap: Record<string, string> = {
         loop_started: "循环开始",
         loop_ended: "循环结束",
-        node_started: "节点开始",
+        node_started: "当前节点",
         node_ended: "节点结束",
         tool_calling: "工具调用中",
         tool_called: "工具调用完成",
