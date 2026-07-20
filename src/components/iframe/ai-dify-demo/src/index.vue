@@ -4,9 +4,9 @@
       <IconAi class="ai-icon" :style="iconStyle" />
     </button>
     
-    <DifyApiDialog
+    <DifyApiDemoDialog
       v-model:visible="difyApiDialogVisible"
-      :data="difyData"
+      :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"
       @message-sent="handleDifyApiMessageSent"
@@ -19,12 +19,12 @@ import { defineComponent, PropType, computed, toRef, ref } from 'vue'
 import type { CSSProperties } from 'vue'
 import { AiDifyDemo } from './ai-dify-demo'
 import { useDataCenter } from '@/mixins/data-center'
-import DifyApiDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
 import { IconAi } from '@/icons'
 
 export default defineComponent({
   name: 'VAiDifyDemo',
-  components: { DifyApiDialog, IconAi },
+  components: { DifyApiDemoDialog, IconAi },
   props: {
     com: {
       type: Object as PropType<AiDifyDemo>,
@@ -113,6 +113,7 @@ export default defineComponent({
       handleDifyApiDialogClose,
       handleDifyApiMessageReceived,
       handleDifyApiMessageSent,
+      config,
     }
   },
 })

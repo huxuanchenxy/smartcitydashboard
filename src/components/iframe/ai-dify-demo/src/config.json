@@ -1,5 +1,39 @@
 [
   {
+    "key": "role",
+    "config": {
+      "type": "string",
+      "component": "select",
+      "alias": "预设角色",
+      "tip": "选择AI助手的预设角色，打开时会显示对应角色的欢迎语",
+      "displayMode": "single",
+      "features": [],
+      "layout": "horizontal",
+      "toggleCol": "",
+      "isHide": false,
+      "defaultValue": "",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "InfiniteMin": false,
+      "InfiniteMax": false,
+      "suffix": "",
+      "enums": [
+        { "label": "无（默认）", "value": "" },
+        { "label": "项目经理", "value": "project_manager" },
+        { "label": "开发人员", "value": "developer" },
+        { "label": "使用人员", "value": "user" }
+      ],
+      "whichEnum": {
+        "field": "",
+        "value": ""
+      },
+      "flatValue": false
+    },
+    "path": "role",
+    "virtualPath": ""
+  },
+  {
     "key": "buttonImage",
     "config": {
       "type": "string",

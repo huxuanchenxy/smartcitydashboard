@@ -149,6 +149,10 @@ export default defineComponent({
       type: String,
       default: "700px",
     },
+    role: {
+      type: String as PropType<"project_manager" | "developer" | "user" | "">,
+      default: "",
+    },
   },
   emits: ["update:visible", "close", "message-sent", "message-received"],
   setup(props, { emit }) {
@@ -161,9 +165,28 @@ export default defineComponent({
 
     const addWelcomeMessage = () => {
       if (messages.value.length === 0) {
+        let welcomeContent = "";
+        
+        if (props.role) {
+          scriptEngine.reset();
+          
+          const roleMap: Record<string, string> = {
+            "project_manager": "项目经理",
+            "developer": "开发人员",
+            "user": "使用人员",
+          };
+          
+          const roleName = roleMap[props.role] || props.role;
+          
+          const result = scriptEngine.processInput(roleName);
+          welcomeContent = result.response;
+        } else {
+          welcomeContent = "👋 欢迎！我是您的AI智能助手。\n\n请告诉我您的角色：\n- 项目经理\n- 开发人员\n- 使用人员";
+        }
+        
         messages.value.push({
           role: "assistant",
-          content: "👋 欢迎！我是您的AI智能助手。\n\n请告诉我您的角色：\n- 项目经理\n- 开发人员\n- 使用人员",
+          content: welcomeContent,
           timestamp: Date.now(),
         });
       }

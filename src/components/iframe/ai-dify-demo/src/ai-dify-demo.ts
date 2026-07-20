@@ -14,6 +14,7 @@ export class AiDifyDemo extends DatavComponent {
       backgroundColor: '#4CAF50',
       hoverBackgroundColor: '#45a049',
     },
+    role: '',
   }
 
   apis: Partial<ApiConfigMap>
