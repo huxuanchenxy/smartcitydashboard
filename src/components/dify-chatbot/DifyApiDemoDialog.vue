@@ -807,4 +807,9 @@ export default defineComponent({
   height: 40px;
   padding: 0 12px;
 }
+:deep(.el-button--warning) {
+  color: #FFFFFF !important;
+  background-color: #f5f7fa  !important;
+  border-color: #f5f7fa  !important;
+}
 </style>
