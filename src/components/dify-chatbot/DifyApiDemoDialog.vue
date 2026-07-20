@@ -83,7 +83,6 @@
                   v-if="isLoading"
                   type="danger"
                   size="small"
-                  @click="stopGeneration()"
                   class="stop-button"
                   title="停止"
                 >
@@ -125,6 +124,7 @@ import {
   PropType,
 } from "vue";
 import { ElMessage } from "element-plus";
+import { DemoScriptEngine } from "./demo-script";
 
 interface Message {
   role: "user" | "assistant";
@@ -149,22 +149,6 @@ export default defineComponent({
       type: String,
       default: "700px",
     },
-    apiKey: {
-      type: String,
-      default: import.meta.env.VITE_APP_DIFY_API_KEY,
-    },
-    baseUrl: {
-      type: String,
-      default: import.meta.env.VITE_APP_DIFY_BASE_URL || "http://10.89.34.9",
-    },
-    userId: {
-      type: String,
-      default: import.meta.env.VITE_APP_DIFY_USER_ID || "huyz",
-    },
-    data: {
-      type: Object as PropType<Record<string, any>>,
-      default: () => ({}),
-    },
   },
   emits: ["update:visible", "close", "message-sent", "message-received"],
   setup(props, { emit }) {
@@ -173,14 +157,27 @@ export default defineComponent({
     const messages = ref<Message[]>([]);
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement>();
-    const abortController = ref<AbortController | null>(null);
-    const timeoutTimer = ref<number | null>(null);
-    const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 90000;
+    const scriptEngine = new DemoScriptEngine();
+
+    const addWelcomeMessage = () => {
+      if (messages.value.length === 0) {
+        messages.value.push({
+          role: "assistant",
+          content: "👋 欢迎！我是您的AI智能助手。\n\n请告诉我您的角色：\n- 项目经理\n- 开发人员\n- 使用人员",
+          timestamp: Date.now(),
+        });
+      }
+    };
 
     watch(
       () => props.visible,
       (newVal) => {
         dialogVisible.value = newVal;
+        if (newVal) {
+          nextTick(() => {
+            addWelcomeMessage();
+          });
+        }
       },
     );
 
@@ -232,26 +229,8 @@ export default defineComponent({
     };
 
     const handleClose = () => {
-      stopGeneration();
       dialogVisible.value = false;
       emit("close");
-    };
-
-    const stopGeneration = async (isTimeout = false) => {
-      if (abortController.value) {
-        abortController.value.abort();
-        abortController.value = null;
-      }
-      if (timeoutTimer.value) {
-        clearTimeout(timeoutTimer.value);
-        timeoutTimer.value = null;
-      }
-      isLoading.value = false;
-      const lastMsg = messages.value[messages.value.length - 1];
-      if (lastMsg?.role === "assistant" && lastMsg.isThinking) {
-        lastMsg.isThinking = false;
-        lastMsg.content = isTimeout ? "请求超时，已自动断开" : "已手动停止";
-      }
     };
 
     const sendMessage = async () => {
@@ -278,6 +257,7 @@ export default defineComponent({
         content: "",
         timestamp: Date.now(),
         isThinking: true,
+        thinkingContent: "思考中...",
       };
       messages.value.push(thinkingMsg);
 
@@ -285,213 +265,26 @@ export default defineComponent({
       userQuery.value = "";
       isLoading.value = true;
 
-      abortController.value = new AbortController();
-      let isTimeoutAbort = false;
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
 
-      const resetTimeout = () => {
-        if (timeoutTimer.value) {
-          clearTimeout(timeoutTimer.value);
-        }
-        timeoutTimer.value = window.setTimeout(() => {
-          isTimeoutAbort = true;
-          if (abortController.value) {
-            abortController.value.abort();
-          }
-        }, SSE_TIMEOUT_MS);
-      };
+      const result = scriptEngine.processInput(query);
 
-      resetTimeout();
-
-      try {
-        const requestBody = {
-          inputs: props.data,
-          query: query,
-          response_mode: "streaming",
-          user: props.userId,
-        };
-
-        const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${props.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-          signal: abortController.value.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-          throw new Error("无法读取响应流");
-        }
-
-        let fullContent = "";
-        let pendingData = "";
-        let hasError = false;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          resetTimeout();
-
-          const chunk = pendingData + decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-          pendingData = lines.pop() || "";
-
-          for (const line of lines) {
-            if (line.trim() === "" || !line.startsWith("data: ")) continue;
-
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.event === "error") {
-                hasError = true;
-                const errorMsg = data.message || "服务发生未知错误";
-                console.error(`[Dify Error] ${errorMsg}`);
-
-                const lastMsg = messages.value[messages.value.length - 1];
-                if (lastMsg?.role === "assistant") {
-                  lastMsg.isThinking = false;
-                  lastMsg.content = `请求失败：${errorMsg}`;
-                }
-                ElMessage.error(errorMsg);
-                continue;
-              }
-
-              if (hasError) continue;
-
-              if (!data.event || ["message", "workflow_finished"].indexOf(data.event) === -1) {
-                const lastMsg = messages.value[messages.value.length - 1];
-                if (lastMsg?.role === "assistant" && lastMsg.isThinking) {
-                  lastMsg.thinkingContent = data.event || "处理中";
-                }
-              }
-
-              if (data.event === "message" && data.answer) {
-                fullContent += data.answer;
-                const lastMsg = messages.value[messages.value.length - 1];
-                if (lastMsg?.role === "assistant") {
-                  lastMsg.isThinking = false;
-                  lastMsg.content = fullContent;
-                  await scrollToBottom();
-                }
-              }
-
-              if (data.event === "workflow_finished" && data.data) {
-                if (data.data.status === "failed") {
-                  hasError = true;
-                  const errorMsg = data.data.error
-                    ? data.data.error.replace(/<[^>]*>/g, "").substring(0, 200)
-                    : "工作流执行失败";
-                  console.error(`工作流执行失败: ${errorMsg}`);
-
-                  const lastMsg = messages.value[messages.value.length - 1];
-                  if (lastMsg?.role === "assistant") {
-                    lastMsg.isThinking = false;
-                    lastMsg.content = `❌ 工作流执行失败：${errorMsg}`;
-                  }
-                  ElMessage.error(errorMsg);
-                } else if (data.data.outputs && data.data.outputs.answer) {
-                  fullContent = data.data.outputs.answer;
-                  const lastMsg = messages.value[messages.value.length - 1];
-                  if (lastMsg?.role === "assistant") {
-                    lastMsg.isThinking = false;
-                    lastMsg.content = fullContent;
-                    await scrollToBottom();
-                  }
-                }
-              }
-            } catch (e) {
-              console.warn("解析单行数据失败:", e);
-            }
-          }
-        }
-
-        if (pendingData.trim() && pendingData.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(pendingData.slice(6));
-            if (data.event === "error") {
-              hasError = true;
-              const errorMsg = data.message || "服务发生未知错误";
-              const lastMsg = messages.value[messages.value.length - 1];
-              if (lastMsg?.role === "assistant") {
-                lastMsg.isThinking = false;
-                lastMsg.content = `请求失败：${errorMsg}`;
-              }
-              ElMessage.error(errorMsg);
-            }
-            if (!hasError && data.event === "message" && data.answer) {
-              fullContent += data.answer;
-              const lastMsg = messages.value[messages.value.length - 1];
-              if (lastMsg?.role === "assistant") {
-                lastMsg.isThinking = false;
-                lastMsg.content = fullContent;
-                await scrollToBottom();
-              }
-            }
-          } catch (e) {
-            console.warn("解析残留数据失败:", e);
-          }
-        }
-
-        if (!hasError) {
-          emit("message-received", fullContent);
-        }
-
-      } catch (error: any) {
-        console.error("发送消息失败:", error);
-
-        const isTimeoutError =
-          error.message === "SSE_TIMEOUT" || (error.name === "AbortError" && isTimeoutAbort);
-
-        if (isTimeoutError) {
-          await stopGeneration(true);
-          return;
-        }
-
-        if (error.name === "AbortError") {
-          const lastMsg = messages.value[messages.value.length - 1];
-          if (lastMsg?.role === "assistant") {
-            lastMsg.isThinking = false;
-            if (!lastMsg.content.trim()) {
-              lastMsg.content = "已手动停止";
-            }
-          }
-          return;
-        }
-
-        const lastMsg = messages.value[messages.value.length - 1];
-        if (lastMsg?.role === "assistant") {
-          lastMsg.isThinking = false;
-          lastMsg.content = `❌ 请求失败：${error.message || "服务暂时不可用"}`;
-          ElMessage.error("发送消息失败: " + error.message);
-        }
-      } finally {
-        if (timeoutTimer.value) {
-          clearTimeout(timeoutTimer.value);
-          timeoutTimer.value = null;
-        }
-        isLoading.value = false;
-        abortController.value = null;
+      const lastMsg = messages.value[messages.value.length - 1];
+      if (lastMsg?.role === "assistant") {
+        lastMsg.isThinking = false;
+        lastMsg.thinkingContent = undefined;
+        lastMsg.content = result.response;
       }
 
+      isLoading.value = false;
+      await scrollToBottom();
+
       emit("message-sent", query);
+      emit("message-received", result.response);
     };
 
     onUnmounted(() => {
-      if (abortController.value) {
-        abortController.value.abort();
-      }
-      if (timeoutTimer.value) {
-        clearTimeout(timeoutTimer.value);
-      }
+      scriptEngine.reset();
     });
 
     return {
@@ -507,7 +300,6 @@ export default defineComponent({
       formatContent,
       formatTime,
       copyMessageContent,
-      stopGeneration,
     };
   },
 });
