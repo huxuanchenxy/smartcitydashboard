@@ -266,4 +266,20 @@ export class DemoScriptEngine {
   reset(): void {
     this.currentState = demoScript.initialState;
   }
+
+  getResponse(input: string): string {
+    const result = this.processInput(input);
+    return result.response;
+  }
+
+  getWelcomeMessage(role: string): string {
+    if (role === 'project_manager') {
+      return '您好！欢迎使用AI智能助手。作为项目经理，您可以上传设备文件、点位文件和图例文件来构建知识库。';
+    } else if (role === 'developer') {
+      return '您好！欢迎使用AI智能助手。作为开发人员，您可以上传图纸进行设备识别、点位绑定和界面生成。';
+    } else if (role === 'user') {
+      return '您好！欢迎使用AI智能助手。作为使用人员，您可以查询运维信息，与组态画面交互。';
+    }
+    return '';
+  }
 }
