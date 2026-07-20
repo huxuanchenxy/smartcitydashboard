@@ -1,0 +1,124 @@
+[
+  {
+    "key": "buttonImage",
+    "config": {
+      "type": "string",
+      "component": "input",
+      "alias": "按钮图片",
+      "tip": "",
+      "displayMode": "single",
+      "features": [],
+      "layout": "horizontal",
+      "toggleCol": "",
+      "isHide": false,
+      "defaultValue": "images/dify.png",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "InfiniteMin": false,
+      "InfiniteMax": false,
+      "suffix": "",
+      "enums": [],
+      "whichEnum": {
+        "field": "",
+        "value": ""
+      },
+      "flatValue": false
+    },
+    "path": "buttonImage",
+    "virtualPath": ""
+  },
+  {
+    "key": "buttonStyle",
+    "config": {
+      "type": "object",
+      "component": "none",
+      "alias": "按钮样式",
+      "tip": "",
+      "displayMode": "nest",
+      "features": [],
+      "layout": "horizontal",
+      "toggleCol": "",
+      "isHide": false,
+      "defaultValue": null,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "InfiniteMin": false,
+      "InfiniteMax": false,
+      "suffix": "",
+      "enums": [],
+      "whichEnum": {
+        "field": "",
+        "value": ""
+      },
+      "flatValue": false
+    },
+    "path": "buttonStyle",
+    "virtualPath": "",
+    "children": [
+      {
+        "key": "backgroundColor",
+        "config": {
+          "type": "string",
+          "component": "input",
+          "alias": "背景颜色",
+          "tip": "",
+          "displayMode": "single",
+          "features": [],
+          "layout": "horizontal",
+          "toggleCol": "",
+          "isHide": false,
+          "defaultValue": "#4CAF50",
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "InfiniteMin": false,
+          "InfiniteMax": false,
+          "suffix": "",
+          "enums": [],
+          "whichEnum": {
+            "field": "",
+            "value": ""
+          },
+          "flatValue": false
+        },
+        "path": "buttonStyle.backgroundColor",
+        "virtualPath": ""
+      },
+      {
+        "key": "hoverBackgroundColor",
+        "config": {
+          "type": "string",
+          "component": "input",
+          "alias": "悬停背景颜色",
+          "tip": "",
+          "displayMode": "single",
+          "features": [],
+          "layout": "horizontal",
+          "toggleCol": "",
+          "isHide": false,
+          "defaultValue": "#45a049",
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "InfiniteMin": false,
+          "InfiniteMax": false,
+          "suffix": "",
+          "enums": [],
+          "whichEnum": {
+            "field": "",
+            "value": ""
+          },
+          "flatValue": false
+        },
+        "path": "buttonStyle.hoverBackgroundColor",
+        "virtualPath": ""
+      }
+    ],
+    "cols": [
+      "backgroundColor",
+      "hoverBackgroundColor"
+    ]
+  }
+]
