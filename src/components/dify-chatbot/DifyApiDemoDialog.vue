@@ -52,7 +52,20 @@
                     </span>
                     <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
                   </div>
-                  <div v-else class="content-text" v-html="formatContent(message.content)"></div>
+                  <div v-else>
+                    <div class="content-text" v-html="formatContent(message.content)"></div>
+                    <div v-if="message.files && message.files.length > 0" class="message-files">
+                      <div
+                        v-for="file in message.files"
+                        :key="file.id"
+                        class="message-file-item"
+                      >
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">{{ file.name }}</span>
+                        <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="message-actions">
                   <button
@@ -79,6 +92,20 @@
                 </el-button>
               </div>
               <div class="input-row">
+                <div v-if="uploadedFiles.length > 0" class="uploaded-files-list">
+                  <div
+                    v-for="file in uploadedFiles"
+                    :key="file.id"
+                    class="uploaded-file-item"
+                  >
+                    <span class="file-icon">📄</span>
+                    <span class="file-name">{{ file.name }}</span>
+                    <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                    <button class="remove-file-btn" @click="removeFile(file.id)">
+                      ×
+                    </button>
+                  </div>
+                </div>
                 <el-input
                   v-model="userQuery"
                   type="textarea"
@@ -90,6 +117,17 @@
                 ></el-input>
                 <div class="input-actions">
                   <div class="actions-row">
+                    <el-button
+                      type="default"
+                      size="small"
+                      @click="openFileDialog"
+                      :disabled="isLoading"
+                      class="upload-button"
+                      title="上传文件"
+                      v-show="!isLoading"
+                    >
+                      <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M512 672c-17.6 0-32-14.4-32-32V192c0-17.6 14.4-32 32-32s32 14.4 32 32v448c0 17.6-14.4 32-32 32z" fill="#606266"></path><path d="M832 480H672c-17.6 0-32-14.4-32-32s14.4-32 32-32h160c17.6 0 32 14.4 32 32s-14.4 32-32 32z" fill="#606266"></path><path d="M256 480H96c-17.6 0-32-14.4-32-32s14.4-32 32-32h160c17.6 0 32 14.4 32 32s-14.4 32-32 32z" fill="#606266"></path><path d="M512 960c-264.8 0-480-215.2-480-480s215.2-480 480-480 480 215.2 480 480-215.2 480-480 480z m0-896c-229.6 0-416 186.4-416 416s186.4 416 416 416 416-186.4 416-416-186.4-416-416-416z" fill="#606266"></path></svg>
+                    </el-button>
                     <span class="hint" v-if="isLoading">AI 正在思考中，请稍候...</span>
                     <el-button
                       v-if="isLoading"
@@ -104,7 +142,7 @@
                       type="success"
                       size="small"
                       @click="sendMessage"
-                      :disabled="isLoading || !userQuery.trim()"
+                      :disabled="isLoading || (!userQuery.trim() && uploadedFiles.length === 0)"
                       class="send-button"
                       title="发送"
                       v-show="!isLoading"
@@ -114,6 +152,13 @@
                   </div>
                 </div>
               </div>
+              <input
+                ref="fileInputRef"
+                type="file"
+                multiple
+                class="hidden-file-input"
+                @change="handleFileSelect"
+              />
             </div>
           </div>
         </div>
@@ -137,12 +182,20 @@ import { DemoScriptEngine } from "./demo-script";
 
 export type RoleType = "" | "project_manager" | "developer" | "user";
 
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
   isThinking?: boolean;
   thinkingContent?: string;
+  files?: UploadedFile[];
 }
 
 export default defineComponent({
@@ -177,6 +230,9 @@ export default defineComponent({
     const isDragging = ref(false);
     const dragOffset = ref({ x: 0, y: 0 });
     const dialogPosition = ref({ x: 100, y: 100 });
+
+    const uploadedFiles = ref<UploadedFile[]>([]);
+    const fileInputRef = ref<HTMLInputElement>();
 
     const scrollToBottom = () => {
       setTimeout(() => {
@@ -213,6 +269,37 @@ export default defineComponent({
       scriptEngine.reset();
     };
 
+    const handleFileSelect = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const files = target.files;
+      if (!files) return;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        uploadedFiles.value.push({
+          id: Date.now().toString() + i,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+      }
+      target.value = "";
+    };
+
+    const removeFile = (fileId: string) => {
+      uploadedFiles.value = uploadedFiles.value.filter(file => file.id !== fileId);
+    };
+
+    const openFileDialog = () => {
+      fileInputRef.value?.click();
+    };
+
+    const formatFileSize = (bytes: number) => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
     const handleClose = () => {
       dialogVisible.value = false;
       emit("close");
@@ -243,16 +330,19 @@ export default defineComponent({
     };
 
     const sendMessage = async () => {
-      if (!userQuery.value.trim() || isLoading.value) return;
+      if (!userQuery.value.trim() && uploadedFiles.value.length === 0) return;
+      if (isLoading.value) return;
 
       const userMessage: Message = {
         role: "user",
         content: userQuery.value.trim(),
         timestamp: Date.now(),
+        files: uploadedFiles.value.length > 0 ? [...uploadedFiles.value] : undefined,
       };
       messages.value.push(userMessage);
       emit("message-sent", userMessage);
       userQuery.value = "";
+      uploadedFiles.value = [];
       scrollToBottom();
 
       isLoading.value = true;
@@ -344,6 +434,12 @@ export default defineComponent({
       copyMessageContent,
       dialogPosition,
       handleMouseDown,
+      uploadedFiles,
+      fileInputRef,
+      handleFileSelect,
+      removeFile,
+      openFileDialog,
+      formatFileSize,
     };
   },
 });
@@ -651,5 +747,65 @@ export default defineComponent({
 
 .custom-close-dialog .el-dialog__body {
   padding: 0;
+}
+
+.uploaded-files-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.uploaded-file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background-color: #f0f2f5;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.uploaded-file-item .file-icon {
+  font-size: 14px;
+}
+
+.uploaded-file-item .file-name {
+  color: #303133;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploaded-file-item .file-size {
+  color: #909399;
+}
+
+.remove-file-btn {
+  background: none;
+  border: none;
+  color: #909399;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-file-btn:hover {
+  color: #f56c6c;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.upload-button {
+  min-width: 48px;
+  height: 40px;
+  padding: 0 12px;
 }
 </style>
