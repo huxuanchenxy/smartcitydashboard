@@ -222,6 +222,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: '缓存管理' },
   },
   {
+    path: '/admin/screen/searichat',
+    name: 'SeariChat',
+    component: () => import('@/views/screen/searichat.vue'),
+    meta: { title: 'SeariChat管理' },
+  },
+  {
     path: '/:catchAll(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/index.vue'),
