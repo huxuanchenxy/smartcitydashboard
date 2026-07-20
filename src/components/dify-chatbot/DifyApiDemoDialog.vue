@@ -83,14 +83,14 @@
               </div>
             </div>
           </div>
+          <div class="message-section-actions">
+            <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话">
+              <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" fill="#ffffff"></path></svg>
+            </el-button>
+          </div>
 
           <div class="input-section">
             <div class="input-wrapper">
-              <div class="top-bar">
-                <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话">
-                  <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" fill="#ffffff"></path></svg>
-                </el-button>
-              </div>
               <div class="input-row">
                 <div v-if="uploadedFiles.length > 0" class="uploaded-files-list">
                   <div
@@ -161,9 +161,6 @@
               />
             </div>
           </div>
-        </div>
-        <div class="custom-dialog-footer">
-          <button class="custom-dialog-close-btn" @click="handleClose">关闭</button>
         </div>
       </div>
     </div>
@@ -523,6 +520,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   height: 500px;
+  position: relative;
 }
 
 .message-section {
@@ -530,6 +528,13 @@ export default defineComponent({
   overflow-y: auto;
   padding: 16px;
   background-color: #f5f7fa;
+}
+
+.message-section-actions {
+  position: absolute;
+  right: 18px;
+  bottom: 165px;
+  z-index: 10;
 }
 
 .empty-message {
@@ -694,12 +699,6 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .input-row {
