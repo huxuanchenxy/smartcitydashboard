@@ -495,21 +495,38 @@ export default defineComponent({
       setTimeout(async () => {
         const response = scriptEngine.getResponse(userMessage.content);
         
-        const assistantMessage = {
-          role: "assistant" as const,
-          content: response,
-          timestamp: Date.now(),
-        };
-
         const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
         if (thinkingIndex !== -1) {
-          messages.value[thinkingIndex] = assistantMessage;
+          messages.value[thinkingIndex] = {
+            role: "assistant" as const,
+            content: "",
+            timestamp: Date.now(),
+            isThinking: false,
+          };
+          await scrollToBottom();
+          
+          const typingSpeed = 50;
+          let index = 0;
+          const interval = setInterval(() => {
+            if (index < response.length) {
+              messages.value[thinkingIndex].content = response.slice(0, index + 1);
+              index++;
+              scrollToBottom();
+            } else {
+              clearInterval(interval);
+              isLoading.value = false;
+            }
+          }, typingSpeed);
         } else {
+          const assistantMessage = {
+            role: "assistant" as const,
+            content: response,
+            timestamp: Date.now(),
+          };
           messages.value.push(assistantMessage);
+          isLoading.value = false;
+          await scrollToBottom();
         }
-
-        isLoading.value = false;
-        await scrollToBottom();
       }, 5000 + Math.random() * 1000);
     };
 
