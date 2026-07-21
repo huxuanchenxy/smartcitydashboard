@@ -249,7 +249,7 @@ export default defineComponent({
     >([]);
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement | null>(null);
-    const dialogPosition = ref({ x: 100, y: 100 });
+    const dialogPosition = ref({ x: window.innerWidth / 2 + 50, y: 100 });
     const dragOffset = ref({ x: 0, y: 0 });
     const isDragging = ref(false);
 
@@ -961,7 +961,7 @@ export default defineComponent({
 }
 
 .input-section {
-  padding: 12px 16px;
+  padding: 22px 16px;
   background-color: white;
   border-top: 1px solid #e2e8f0;
 }
