@@ -530,8 +530,29 @@ export default defineComponent({
     };
 
     const copyMessageContent = (message: { content: string }) => {
-      navigator.clipboard.writeText(message.content).then(() => {
-      });
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(message.content).then(() => {
+        }).catch(() => {
+          fallbackCopy(message.content);
+        });
+      } else {
+        fallbackCopy(message.content);
+      }
+    };
+
+    const fallbackCopy = (text: string) => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+      } catch (err) {
+      }
+      document.body.removeChild(textArea);
     };
 
     const clearMessages = () => {
