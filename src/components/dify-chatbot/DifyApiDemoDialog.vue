@@ -184,6 +184,7 @@ import {
   computed,
   onMounted,
   onUnmounted,
+  nextTick,
 } from "vue";
 import { ElButton, ElInput } from "element-plus";
 import { DemoScriptEngine } from "./demo-script";
@@ -290,7 +291,8 @@ export default defineComponent({
       }
     );
 
-    const scrollToBottom = () => {
+    const scrollToBottom = async () => {
+      await nextTick();
       if (messageContainer.value) {
         messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
       }
@@ -476,7 +478,7 @@ export default defineComponent({
 
       isLoading.value = true;
 
-      setTimeout(() => {
+      setTimeout(async () => {
         const thinkingMessage = {
           role: "assistant" as const,
           content: "",
@@ -485,10 +487,10 @@ export default defineComponent({
           thinkingContent: "AI 正在思考中，请稍候...",
         };
         messages.value.push(thinkingMessage);
-        scrollToBottom();
+        await scrollToBottom();
       }, 500);
 
-      setTimeout(() => {
+      setTimeout(async () => {
         const response = scriptEngine.getResponse(userMessage.content);
         
         const assistantMessage = {
@@ -505,7 +507,7 @@ export default defineComponent({
         }
 
         isLoading.value = false;
-        scrollToBottom();
+        await scrollToBottom();
       }, 1500 + Math.random() * 1000);
     };
 
