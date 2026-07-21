@@ -32,70 +32,72 @@
             </button>
           </div>
           <div class="dify-api-container">
-            <div class="message-section" ref="messageContainer">
-              <div v-if="messages.length === 0" class="empty-message">
-                <div class="empty-icon">💬</div>
-                <div>暂无消息，开始您的对话吧！</div>
-              </div>
-              <div v-else class="message-list">
-                <div
-                  v-for="(message, index) in messages"
-                  :key="index"
-                  :class="[
-                    'message-item',
-                    message.role === 'user' ? 'user-message' : 'assistant-message',
-                  ]"
-                >
-                  <div class="message-header">
-                    <div class="avatar" :class="message.role">
-                      {{ message.role === "user" ? "👤" : "🤖" }}
+            <div class="message-section-wrapper">
+              <div class="message-section" ref="messageContainer">
+                <div v-if="messages.length === 0" class="empty-message">
+                  <div class="empty-icon">💬</div>
+                  <div>暂无消息，开始您的对话吧！</div>
+                </div>
+                <div v-else class="message-list">
+                  <div
+                    v-for="(message, index) in messages"
+                    :key="index"
+                    :class="[
+                      'message-item',
+                      message.role === 'user' ? 'user-message' : 'assistant-message',
+                    ]"
+                  >
+                    <div class="message-header">
+                      <div class="avatar" :class="message.role">
+                        {{ message.role === "user" ? "👤" : "🤖" }}
+                      </div>
+                      <div class="message-role">{{ message.role === "user" ? (currentRole === 'project_manager' ? '项目经理' : currentRole === 'developer' ? '开发人员' : '使用人员') : "AI 助手" }}</div>
                     </div>
-                    <div class="message-role">{{ message.role === "user" ? (currentRole === 'project_manager' ? '项目经理' : currentRole === 'developer' ? '开发人员' : '使用人员') : "AI 助手" }}</div>
-                  </div>
-                  <div class="message-content">
-                    <div v-if="message.isThinking" class="thinking-indicator">
-                      <span class="thinking-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </span>
-                      <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
-                    </div>
-                    <div v-else>
-                      <div class="content-text" v-html="formatContent(message.content)"></div>
-                      <div v-if="message.files && message.files.length > 0" class="message-files">
-                        <div
-                          v-for="file in message.files"
-                          :key="file.id"
-                          class="message-file-item"
-                        >
-                          <span class="file-icon">📄</span>
-                          <span class="file-name">{{ file.name }}</span>
-                          <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                    <div class="message-content">
+                      <div v-if="message.isThinking" class="thinking-indicator">
+                        <span class="thinking-dots">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </span>
+                        <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
+                      </div>
+                      <div v-else>
+                        <div class="content-text" v-html="formatContent(message.content)"></div>
+                        <div v-if="message.files && message.files.length > 0" class="message-files">
+                          <div
+                            v-for="file in message.files"
+                            :key="file.id"
+                            class="message-file-item"
+                          >
+                            <span class="file-icon">📄</span>
+                            <span class="file-name">{{ file.name }}</span>
+                            <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="message-actions">
-                    <button
-                      class="copy-btn"
-                      @click="copyMessageContent(message)"
-                      :title="'复制内容'"
-                      v-if="!message.isThinking"
-                    >
-                      <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
-                    </button>
-                  </div>
-                  <div class="message-time" v-if="!message.isThinking">
-                    {{ formatTime(message.timestamp) }}
+                    <div class="message-actions">
+                      <button
+                        class="copy-btn"
+                        @click="copyMessageContent(message)"
+                        :title="'复制内容'"
+                        v-if="!message.isThinking"
+                      >
+                        <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
+                      </button>
+                    </div>
+                    <div class="message-time" v-if="!message.isThinking">
+                      {{ formatTime(message.timestamp) }}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="message-section-actions">
-              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话">
-                <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" fill="#ffffff"></path></svg>
-              </el-button>
+              <!-- <div class="message-section-actions">
+                <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话">
+                  <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" fill="#ffffff"></path></svg>
+                </el-button>
+              </div> -->
             </div>
             <div class="input-section">
               <div class="input-wrapper">
@@ -134,8 +136,8 @@
                         title="上传文件"
                         v-show="!isLoading"
                       >
-                        <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M512 672c-17.6 0-32-14.4-32-32V192c0-17.6 14.4-32 32-32s32 14.4 32 32v448c0 17.6-14.4 32-32 32z" fill="#606266"></path><path d="M832 480H672c-17.6 0-32-14.4-32-32s14.4-32 32-32h160c17.6 0 32 14.4 32 32s-14.4 32-32 32z" fill="#606266"></path><path d="M256 480H96c-17.6 0-32-14.4-32-32s14.4-32 32-32h160c17.6 0 32 14.4 32 32s-14.4 32-32 32z" fill="#606266"></path><path d="M512 960c-264.8 0-480-215.2-480-480s215.2-480 480-480 480 215.2 480 480-215.2 480-480 480z m0-896c-229.6 0-416 186.4-416 416s186.4 416 416 416 416-186.4 416-416-186.4-416-416-416z" fill="#606266"></path></svg>
-                      </el-button>
+                      <svg t="1784599493754" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5433" width="28" height="28"><path d="M924.672 126.976q36.864 36.864 54.784 82.432t17.92 93.696-17.92 93.696-54.784 82.432l-392.192 389.12q-36.864 36.864-90.624 61.44t-113.664 28.672-122.368-16.384-115.712-73.728q-52.224-52.224-72.704-113.152t-16.384-121.344 28.16-113.664 60.928-90.112l348.16-345.088q9.216-9.216 27.136-4.608t27.136 13.824q8.192 9.216 13.312 27.136t-4.096 27.136l-347.136 344.064q-27.648 27.648-46.08 64.512t-21.504 78.848 12.288 84.992 55.296 82.944q35.84 35.84 79.36 50.688t86.528 12.288 81.92-18.944 66.56-44.032l391.168-388.096q27.648-27.648 39.424-57.344t11.264-58.88-13.824-56.832-36.864-51.2q-44.032-43.008-98.816-40.448t-110.08 57.856l-353.28 351.232q-23.552 23.552-23.04 52.224t18.944 47.104q22.528 22.528 51.712 18.432t47.616-22.528l320.512-318.464q9.216-9.216 27.136-4.608t27.136 13.824 14.336 27.136-4.096 27.136l-321.536 318.464q-36.864 36.864-70.656 51.2t-63.488 12.8-55.296-15.872-47.104-34.816q-17.408-16.384-31.232-41.984t-15.872-56.32 10.752-65.536 49.664-70.656q18.432-18.432 32.768-33.792 12.288-13.312 23.04-23.552t11.776-11.264l285.696-284.672q36.864-36.864 80.384-57.856t88.576-24.064 88.576 12.288 80.384 52.224z" p-id="5434" fill="#8a8a8a"></path></svg>
+                        </el-button>
                       <span class="hint" v-if="isLoading">AI 正在思考中，请稍候...</span>
                       <el-button
                         v-if="isLoading"
@@ -632,8 +634,9 @@ export default defineComponent({
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
   z-index: 9999;
+  backdrop-filter: blur(4px);
 }
 
 .custom-dialog-wrapper {
@@ -646,8 +649,8 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -655,50 +658,82 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background-color: #409eff;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   cursor: move;
   user-select: none;
 }
 
 .custom-dialog-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-dialog-title::before {
+  content: "🤖";
+  font-size: 18px;
 }
 
 .custom-dialog-close {
-  background: none;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
   color: white;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  padding: 0;
-  width: 24px;
-  height: 24px;
+  padding: 6px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  border-radius: 8px;
+  transition: background-color 0.2s;
 }
 
 .custom-dialog-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .dify-api-container {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 48px);
-  background-color: #f5f7fa;
+  height: calc(100% - 56px);
+  background-color: #f8fafc;
+}
+
+.message-section-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 }
 
 .message-section {
-  flex: 1;
+  width: 100%;
+  height: 100%;
   overflow-y: auto;
-  padding: 16px;
-  position: relative;
+  padding: 20px;
+}
+
+.message-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-section::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.message-section::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
 
 .empty-message {
@@ -707,18 +742,19 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #909399;
+  color: #94a3b8;
 }
 
 .empty-icon {
-  font-size: 48px;
+  font-size: 56px;
   margin-bottom: 16px;
+  opacity: 0.6;
 }
 
 .message-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .message-item {
@@ -742,63 +778,67 @@ export default defineComponent({
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .avatar.user {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .avatar.assistant {
-  background-color: #67c23a;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .message-role {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .message-content {
-  max-width: 70%;
-  padding: 12px 16px;
-  border-radius: 8px;
+  max-width: 75%;
+  padding: 14px 18px;
+  border-radius: 16px;
   word-break: break-word;
+  transition: all 0.2s ease;
 }
 
 .user-message .message-content {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  border-bottom-right-radius: 2px;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .assistant-message .message-content {
   background-color: white;
-  color: #303133;
-  border-bottom-left-radius: 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  color: #1e293b;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .thinking-indicator {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .thinking-dots {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .thinking-dots span {
-  width: 6px;
-  height: 6px;
-  background-color: #909399;
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   animation: thinking 1.4s infinite ease-in-out both;
 }
@@ -816,45 +856,51 @@ export default defineComponent({
   80%,
   100% {
     transform: scale(0);
+    opacity: 0.5;
   }
   40% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 .thinking-text {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: #94a3b8;
 }
 
 .content-text {
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.7;
 }
 
 .content-text code {
-  background-color: #f2f6fc;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-size: 12px;
+  background-color: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
 }
 
 .message-files {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .message-file-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 10px;
+  font-size: 13px;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
 }
 
 .file-icon {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .file-name {
@@ -865,21 +911,22 @@ export default defineComponent({
 }
 
 .file-size {
-  color: #909399;
+  color: #94a3b8;
 }
 
 .message-actions {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .copy-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  color: #909399;
+  padding: 6px;
+  color: #94a3b8;
   opacity: 0;
   transition: opacity 0.2s;
+  border-radius: 6px;
 }
 
 .message-item:hover .copy-btn {
@@ -887,62 +934,70 @@ export default defineComponent({
 }
 
 .copy-btn:hover {
-  color: #409eff;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
 .message-time {
-  font-size: 10px;
-  color: #c0c4cc;
-  margin-top: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 6px;
 }
 
 .input-section {
   padding: 12px 16px;
   background-color: white;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid #e2e8f0;
 }
 
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .input-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .uploaded-files-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .uploaded-file-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  font-size: 12px;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border-radius: 10px;
+  font-size: 13px;
+  border: 1px solid #e2e8f0;
 }
 
 .remove-file-btn {
-  background: none;
+  background: rgba(239, 68, 68, 0.1);
   border: none;
   cursor: pointer;
-  color: #f56c6c;
+  color: #ef4444;
   font-size: 16px;
   line-height: 1;
-  padding: 0;
-  width: 16px;
-  height: 16px;
+  padding: 4px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.remove-file-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 .hidden-file-input {
@@ -957,36 +1012,88 @@ export default defineComponent({
 .actions-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .hint {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: #94a3b8;
 }
 
 .send-button {
-  min-width: 48px;
-  height: 40px;
-  padding: 0 12px;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .stop-button {
-  min-width: 48px;
-  height: 40px;
-  padding: 0 12px;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
 }
 
 .upload-button {
-  min-width: 48px;
-  height: 40px;
-  padding: 0 12px;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.upload-button:hover {
+  background-color: #e2e8f0;
 }
 
 :deep(.el-button--warning) {
-  color: #FFFFFF !important;
+  color: #ffffff !important;
   background-color: #f5f7fa !important;
   border-color: #f5f7fa !important;
+}
+
+:deep(.el-input__inner) {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.2s !important;
+}
+
+:deep(.el-input__inner:hover) {
+  border-color: #cbd5e1 !important;
+  background-color: #ffffff !important;
+}
+
+:deep(.el-input__inner:focus) {
+  border-color: #3b82f6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.message-section-actions {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
 }
 
 .resize-handles {
@@ -1007,7 +1114,7 @@ export default defineComponent({
 }
 
 .resize-handle:hover {
-  background-color: rgba(64, 158, 255, 0.3);
+  background-color: rgba(102, 126, 234, 0.3);
 }
 
 .resize-n {
