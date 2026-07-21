@@ -510,7 +510,7 @@ export default defineComponent({
 
         isLoading.value = false;
         await scrollToBottom();
-      }, 1500 + Math.random() * 1000);
+      }, 5000 + Math.random() * 1000);
     };
 
     const handleEnter = () => {
