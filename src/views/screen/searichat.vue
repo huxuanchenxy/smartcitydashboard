@@ -2,8 +2,20 @@
   <div class="searichat-page">
     <div class="searichat-header">
     </div>
+    <button class="ai-chat-trigger" @click="showAiDialog = true"></button>
+    <DifyApiDemoDialog
+      v-model:visible="showAiDialog"
+      :role="'developer'"
+    />
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import DifyApiDemoDialog from "@/components/dify-chatbot/DifyApiDemoDialog.vue";
+
+const showAiDialog = ref(false);
+</script>
 
 <style scoped>
 .searichat-page {
@@ -14,6 +26,7 @@
   background-repeat: no-repeat;
   background-attachment: fixed;
   padding: 20px;
+  position: relative;
 }
 
 .searichat-header {
@@ -31,5 +44,23 @@
   font-size: 14px;
   color: #909399;
   margin: 0;
+}
+
+.ai-chat-trigger {
+    position: absolute;
+    top: 1%;
+    width: 180px;
+    height: 50px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    z-index: 10;
+    right: 11%;
+}
+
+.ai-chat-trigger:hover {
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 4px;
 }
 </style>
