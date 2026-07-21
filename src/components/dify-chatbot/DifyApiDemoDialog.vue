@@ -50,7 +50,7 @@
                     <div class="avatar" :class="message.role">
                       {{ message.role === "user" ? "👤" : "🤖" }}
                     </div>
-                    <div class="message-role">{{ message.role === "user" ? "用户" : "AI 助手" }}</div>
+                    <div class="message-role">{{ message.role === "user" ? (currentRole === 'project_manager' ? '项目经理' : currentRole === 'developer' ? '开发人员' : '使用人员') : "AI 助手" }}</div>
                   </div>
                   <div class="message-content">
                     <div v-if="message.isThinking" class="thinking-indicator">
@@ -598,6 +598,7 @@ export default defineComponent({
       dialogWidth,
       dialogHeight,
       startResize,
+      currentRole,
     };
   },
 });
