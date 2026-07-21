@@ -216,7 +216,7 @@
           <!-- 推荐问题下拉框和操作按钮行 -->
           <div class="top-bar">
             <!-- 水务模式下隐藏推荐问题下拉框 -->
-            <select
+            <!-- <select
               v-if="!waterServiceMode"
               v-model="selectedQuestion"
               :disabled="isLoading || isAwaitingFeedback"
@@ -234,7 +234,7 @@
               <option v-for="question in recommendQuestions" :key="question" :value="question">
                 {{ question }}
               </option>
-            </select>
+            </select> -->
             <div class="top-bar-actions">
               <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
               <!-- <el-button
