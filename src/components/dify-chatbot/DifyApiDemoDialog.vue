@@ -653,7 +653,6 @@ export default defineComponent({
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.3);
   z-index: 9999;
-  backdrop-filter: blur(4px);
 }
 
 .custom-dialog-wrapper {
