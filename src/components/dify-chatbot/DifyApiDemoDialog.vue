@@ -675,7 +675,7 @@ export default defineComponent({
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
   color: white;
   cursor: move;
   user-select: none;
@@ -809,7 +809,7 @@ export default defineComponent({
 }
 
 .avatar.assistant {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
 }
 
 .message-role {
@@ -854,7 +854,7 @@ export default defineComponent({
 .thinking-dots span {
   width: 8px;
   height: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
   border-radius: 50%;
   animation: thinking 1.4s infinite ease-in-out both;
 }
