@@ -4559,7 +4559,7 @@ export default defineComponent({
   height: 600px;
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  background-color: #f8fafc;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -4569,7 +4569,24 @@ export default defineComponent({
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background-color: #f5f5f5;
+  background-color: #f8fafc;
+}
+
+.message-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-section::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.message-section::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
 
 .empty-message {
@@ -4628,23 +4645,22 @@ export default defineComponent({
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .avatar.user {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .avatar.assistant {
-  background-color: #67c23a;
+  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
 }
 
 .message-role {
@@ -4654,16 +4670,17 @@ export default defineComponent({
 }
 
 .message-content {
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
   line-height: 1.6;
   font-size: 14px;
-  word-wrap: break-word;
+  word-break: break-word;
   white-space: pre-wrap;
   user-select: text;
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
+  transition: all 0.2s ease;
 }
 
 .content-text {
@@ -4674,16 +4691,17 @@ export default defineComponent({
 }
 
 .user-message .message-content {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .assistant-message .message-content {
   background-color: white;
-  color: #333;
+  color: #1e293b;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .message-time {
@@ -4796,22 +4814,21 @@ export default defineComponent({
 .thinking-indicator {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #999;
+  gap: 10px;
   padding: 8px 0;
 }
 
 .thinking-dots {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .thinking-dots span {
   width: 8px;
   height: 8px;
-  background-color: #409eff;
+  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
   border-radius: 50%;
-  animation: bounce 1.4s ease-in-out infinite both;
+  animation: thinking 1.4s infinite ease-in-out both;
 }
 
 .thinking-dots span:nth-child(1) {
@@ -4821,33 +4838,35 @@ export default defineComponent({
   animation-delay: -0.16s;
 }
 
-@keyframes bounce {
+@keyframes thinking {
   0%,
   80%,
   100% {
     transform: scale(0);
+    opacity: 0.5;
   }
   40% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 .thinking-text {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #64748b;
 }
 
 /* 输入区域 */
 .input-section {
   padding: 16px 20px;
   background-color: white;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid #e2e8f0;
 }
 
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .top-bar {
@@ -4993,7 +5012,13 @@ export default defineComponent({
 
 :deep(.el-dialog__header) {
   padding: 16px 20px;
-  border-bottom: 1px solid #e4e7ed;
+  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  border-bottom: none;
+}
+
+:deep(.el-dialog__title) {
+  color: white;
+  font-weight: 600;
 }
 
 :deep(.el-dialog__headerbtn) {
@@ -5022,18 +5047,21 @@ export default defineComponent({
   height: 32px;
   padding: 0;
   margin: 0;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
   cursor: pointer;
-  font-size: 24px;
-  color: #909399;
+  font-size: 18px;
+  color: white;
   line-height: 32px;
   text-align: center;
   z-index: 100;
+  border-radius: 8px;
+  transition: background-color 0.2s;
 }
 
 .my-close-btn:hover {
-  color: #606266;
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
 }
 
 :deep(.el-dialog__footer) {
@@ -5939,7 +5967,7 @@ export default defineComponent({
 
 .message-files-title {
   font-size: 12px;
-  color: #64748b;
+  color: #e5e7eb;
   margin-bottom: 8px;
 }
 
