@@ -5525,12 +5525,12 @@ export default defineComponent({
 
 .input-row {
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: flex-end;
 }
 
 .input-row :deep(.el-textarea) {
-  flex: 1;
+  width: 100%;
 }
 
 .input-actions {
