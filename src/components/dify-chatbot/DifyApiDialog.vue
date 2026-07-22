@@ -55,8 +55,150 @@
                       <!-- AI 消息内容 -->
                       <div class="ai-message-content">
                         <div v-html="formatContent(message.content)"></div>
+                        <button
+                          class="copy-btn human-copy-btn"
+                          @click="copyMessageContent(message)"
+                          :title="'复制内容'"
+                        >
+                          <svg
+                            t="1783476614918"
+                            class="copy-icon"
+                            viewBox="0 0 1024 1024"
+                            version="1.1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                          >
+                            <path
+                              d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
+                              fill="#909399"
+                            ></path>
+                            <path
+                              d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
+                              fill="#909399"
+                            ></path>
+                            <path
+                              d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
+                              fill="#909399"
+                            ></path>
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- 用户反馈输入区域 -->
+                      <div class="human-feedback-section">
+                        <textarea
+                          v-model="message.humanInput"
+                          rows="3"
+                          placeholder="在此填写修改意见:"
+                          class="feedback-textarea"
+                          :disabled="isSubmitting"
+                        ></textarea>
+                        <div class="feedback-actions">
+                          <el-button
+                            type="primary"
+                            @click="handleHumanApprove(index)"
+                            :disabled="isSubmitting || message.isProcessed"
+                            :loading="isSubmitting"
+                          >
+                            确认
+                          </el-button>
+                          <el-button
+                            type="default"
+                            @click="handleHumanRevise(index)"
+                            :disabled="isSubmitting || message.isProcessed"
+                            :loading="isSubmitting"
+                          >
+                            修改
+                          </el-button>
+                        </div>
+                        <div class="expiry-note">⚠️ 此操作将在1小时内过期。</div>
+                      </div>
+                    </div>
+
+                    <!-- 网关消息 -->
+                    <div v-else-if="message.isGateway" class="gateway-message-wrapper">
+                      <!-- AI提示标签 -->
+                      <div class="gateway-indicator">
+                        <span class="gateway-icon">🌐</span>
+                        <span class="gateway-text">AI提示</span>
+                      </div>
+
+                      <!-- AI 消息内容 -->
+                      <div class="gateway-message-content">
+                        <div v-html="formatContent(message.content)"></div>
+                      </div>
+
+                      <!-- 操作区域 -->
+                      <div
+                        class="gateway-action-area"
+                        v-if="
+                          message.gatewayNextStep &&
+                          message.gatewayNextStep >= 1 &&
+                          message.gatewayNextStep <= 3
+                        "
+                      >
+                        <div class="gateway-upload-section" v-if="!message.isGatewayActionDisabled">
+                          <label class="gateway-upload-btn">
+                            <input
+                              type="file"
+                              multiple
+                              class="gateway-upload-input"
+                              @change="(e) => handleGatewayUpload(e, message.conversationId || '')"
+                            />
+                            <span>📁 上传文件</span>
+                          </label>
+                        </div>
+
+                        <!-- 已上传文件列表 -->
+                        <div
+                          v-if="message.gatewayImages && message.gatewayImages.length > 0"
+                          class="gateway-uploaded-files"
+                        >
+                          <div
+                            v-for="(file, index) in message.gatewayImages"
+                            :key="index"
+                            class="gateway-file-tag"
+                            @click="previewGatewayFile(message.conversationId || '', index)"
+                          >
+                            <span class="gateway-file-icon">
+                              <span v-if="isImageFile(file)">🖼️</span>
+                              <span v-else-if="file.extension === 'txt'">📝</span>
+                              <span v-else>📄</span>
+                            </span>
+                            <span class="gateway-file-name">{{ file.name }}</span>
+                            <button
+                              v-if="!message.isGatewayActionDisabled"
+                              class="gateway-file-remove"
+                              @click.stop="removeGatewayFile(message.conversationId || '', index)"
+                              title="删除"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="gateway-action-buttons">
+                          <div class="gateway-next-step">
+                            <button
+                              class="gateway-next-btn"
+                              :disabled="message.isGatewayActionDisabled"
+                              @click="
+                                proceedToNextStep(
+                                  message.conversationId || '',
+                                  message.gatewayNextStep,
+                                )
+                              "
+                            >
+                              🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 复制按钮 -->
                       <button
-                        class="copy-btn human-copy-btn"
+                        class="copy-btn gateway-copy-btn"
                         @click="copyMessageContent(message)"
                         :title="'复制内容'"
                       >
@@ -83,248 +225,108 @@
                           ></path>
                         </svg>
                       </button>
+
+                      <div class="message-time">{{ formatTime(message.timestamp) }}</div>
                     </div>
 
-                    <!-- 用户反馈输入区域 -->
-                    <div class="human-feedback-section">
-                      <textarea
-                        v-model="message.humanInput"
-                        rows="3"
-                        placeholder="在此填写修改意见:"
-                        class="feedback-textarea"
-                        :disabled="isSubmitting"
-                      ></textarea>
-                      <div class="feedback-actions">
-                        <el-button
-                          type="primary"
-                          @click="handleHumanApprove(index)"
-                          :disabled="isSubmitting || message.isProcessed"
-                          :loading="isSubmitting"
-                        >
-                          确认
-                        </el-button>
-                        <el-button
-                          type="default"
-                          @click="handleHumanRevise(index)"
-                          :disabled="isSubmitting || message.isProcessed"
-                          :loading="isSubmitting"
-                        >
-                          修改
-                        </el-button>
+                    <!-- 普通消息 -->
+                    <template v-else>
+                      <div class="message-header">
+                        <div class="avatar" :class="message.role">
+                          {{ message.role === "user" ? "👤" : "🤖" }}
+                        </div>
+                        <div class="message-role">
+                          {{ message.role === "user" ? "用户" : "AI 助手" }}
+                        </div>
                       </div>
-                      <div class="expiry-note">⚠️ 此操作将在1小时内过期。</div>
-                    </div>
-                  </div>
-
-                  <!-- 网关消息 -->
-                  <div v-else-if="message.isGateway" class="gateway-message-wrapper">
-                    <!-- AI提示标签 -->
-                    <div class="gateway-indicator">
-                      <span class="gateway-icon">🌐</span>
-                      <span class="gateway-text">AI提示</span>
-                    </div>
-
-                    <!-- AI 消息内容 -->
-                    <div class="gateway-message-content">
-                      <div v-html="formatContent(message.content)"></div>
-                    </div>
-
-                    <!-- 操作区域 -->
-                    <div
-                      class="gateway-action-area"
-                      v-if="
-                        message.gatewayNextStep &&
-                        message.gatewayNextStep >= 1 &&
-                        message.gatewayNextStep <= 3
-                      "
-                    >
-                      <div class="gateway-upload-section" v-if="!message.isGatewayActionDisabled">
-                        <label class="gateway-upload-btn">
-                          <input
-                            type="file"
-                            multiple
-                            class="gateway-upload-input"
-                            @change="(e) => handleGatewayUpload(e, message.conversationId || '')"
-                          />
-                          <span>📁 上传文件</span>
-                        </label>
-                      </div>
-
-                      <!-- 已上传文件列表 -->
-                      <div
-                        v-if="message.gatewayImages && message.gatewayImages.length > 0"
-                        class="gateway-uploaded-files"
-                      >
-                        <div
-                          v-for="(file, index) in message.gatewayImages"
-                          :key="index"
-                          class="gateway-file-tag"
-                          @click="previewGatewayFile(message.conversationId || '', index)"
-                        >
-                          <span class="gateway-file-icon">
-                            <span v-if="isImageFile(file)">🖼️</span>
-                            <span v-else-if="file.extension === 'txt'">📝</span>
-                            <span v-else>📄</span>
+                      <div class="message-content">
+                        <!-- 思考中状态 -->
+                        <div v-if="message.isThinking" class="thinking-indicator">
+                          <span class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
                           </span>
-                          <span class="gateway-file-name">{{ file.name }}</span>
-                          <button
-                            v-if="!message.isGatewayActionDisabled"
-                            class="gateway-file-remove"
-                            @click.stop="removeGatewayFile(message.conversationId || '', index)"
-                            title="删除"
-                          >
-                            ✕
-                          </button>
+                          <span class="thinking-text">{{
+                            message.thinkingContent || "思考中"
+                          }}</span>
                         </div>
-                      </div>
+                        <!-- 正常内容 -->
+                        <div
+                          v-else
+                          class="content-text"
+                          v-html="formatContent(message.content)"
+                        ></div>
 
-                      <div class="gateway-action-buttons">
-                        <div class="gateway-next-step">
-                          <button
-                            class="gateway-next-btn"
-                            :disabled="message.isGatewayActionDisabled"
-                            @click="
-                              proceedToNextStep(
-                                message.conversationId || '',
-                                message.gatewayNextStep,
-                              )
-                            "
-                          >
-                            🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 复制按钮 -->
-                    <button
-                      class="copy-btn gateway-copy-btn"
-                      @click="copyMessageContent(message)"
-                      :title="'复制内容'"
-                    >
-                      <svg
-                        t="1783476614918"
-                        class="copy-icon"
-                        viewBox="0 0 1024 1024"
-                        version="1.1"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                      >
-                        <path
-                          d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
-                          fill="#909399"
-                        ></path>
-                        <path
-                          d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
-                          fill="#909399"
-                        ></path>
-                        <path
-                          d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
-                          fill="#909399"
-                        ></path>
-                      </svg>
-                    </button>
-
-                    <div class="message-time">{{ formatTime(message.timestamp) }}</div>
-                  </div>
-
-                  <!-- 普通消息 -->
-                  <template v-else>
-                    <div class="message-header">
-                      <div class="avatar" :class="message.role">
-                        {{ message.role === "user" ? "👤" : "🤖" }}
-                      </div>
-                      <div class="message-role">
-                        {{ message.role === "user" ? "用户" : "AI 助手" }}
-                      </div>
-                    </div>
-                    <div class="message-content">
-                      <!-- 思考中状态 -->
-                      <div v-if="message.isThinking" class="thinking-indicator">
-                        <span class="thinking-dots">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </span>
-                        <span class="thinking-text">{{ message.thinkingContent || "思考中" }}</span>
-                      </div>
-                      <!-- 正常内容 -->
-                      <div
-                        v-else
-                        class="content-text"
-                        v-html="formatContent(message.content)"
-                      ></div>
-
-                      <!-- 用户消息中的文件列表 -->
-                      <div v-if="message.files && message.files.length > 0" class="message-files">
-                        <div class="message-files-title">📎 附件</div>
-                        <div class="message-files-list">
-                          <div
-                            v-for="(file, fileIndex) in message.files"
-                            :key="fileIndex"
-                            class="message-file-item"
-                            @click="viewMessageFile(message, fileIndex)"
-                          >
-                            <div class="message-file-icon">
-                              <span v-if="isImageFile(file)">🖼️</span>
-                              <span v-else-if="file.extension === 'txt'">📝</span>
-                              <span v-else>📄</span>
-                            </div>
-                            <div class="message-file-info">
-                              <div class="message-file-name">{{ file.name }}</div>
-                              <div class="message-file-size">{{ formatFileSize(file.size) }}</div>
+                        <!-- 用户消息中的文件列表 -->
+                        <div v-if="message.files && message.files.length > 0" class="message-files">
+                          <div class="message-files-title">📎 附件</div>
+                          <div class="message-files-list">
+                            <div
+                              v-for="(file, fileIndex) in message.files"
+                              :key="fileIndex"
+                              class="message-file-item"
+                              @click="viewMessageFile(message, fileIndex)"
+                            >
+                              <div class="message-file-icon">
+                                <span v-if="isImageFile(file)">🖼️</span>
+                                <span v-else-if="file.extension === 'txt'">📝</span>
+                                <span v-else>📄</span>
+                              </div>
+                              <div class="message-file-info">
+                                <div class="message-file-name">{{ file.name }}</div>
+                                <div class="message-file-size">{{ formatFileSize(file.size) }}</div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    <div class="message-actions">
-                      <button
-                        class="copy-btn"
-                        @click="copyMessageContent(message)"
-                        :title="'复制内容'"
-                        v-if="!message.isThinking"
-                      >
-                        <svg
-                          t="1783476614918"
-                          class="copy-icon"
-                          viewBox="0 0 1024 1024"
-                          version="1.1"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
+                      <div class="message-actions">
+                        <button
+                          class="copy-btn"
+                          @click="copyMessageContent(message)"
+                          :title="'复制内容'"
+                          v-if="!message.isThinking"
                         >
-                          <path
-                            d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
-                            fill="#909399"
-                          ></path>
-                          <path
-                            d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
-                            fill="#909399"
-                          ></path>
-                          <path
-                            d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
-                            fill="#909399"
-                          ></path>
-                        </svg>
-                      </button>
-                    </div>
-                    <div class="message-time" v-if="!message.isThinking">
-                      {{ formatTime(message.timestamp) }}
-                    </div>
-                  </template>
+                          <svg
+                            t="1783476614918"
+                            class="copy-icon"
+                            viewBox="0 0 1024 1024"
+                            version="1.1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                          >
+                            <path
+                              d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
+                              fill="#909399"
+                            ></path>
+                            <path
+                              d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
+                              fill="#909399"
+                            ></path>
+                            <path
+                              d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
+                              fill="#909399"
+                            ></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <div class="message-time" v-if="!message.isThinking">
+                        {{ formatTime(message.timestamp) }}
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
-            </div>
-        <!-- 输入区域 -->
-        <div class="input-section">
-          <div class="input-wrapper">
-            <!-- 推荐问题下拉框和操作按钮行 -->
-            <div class="top-bar">
-              <!-- 水务模式下隐藏推荐问题下拉框 -->
-              <!-- <select
+            <!-- 输入区域 -->
+            <div class="input-section">
+              <div class="input-wrapper">
+                <!-- 推荐问题下拉框和操作按钮行 -->
+                <div class="top-bar">
+                  <!-- 水务模式下隐藏推荐问题下拉框 -->
+                  <!-- <select
               v-if="!waterServiceMode"
               v-model="selectedQuestion"
               :disabled="isLoading || isAwaitingFeedback"
@@ -343,106 +345,18 @@
                 {{ question }}
               </option>
             </select> -->
-              <div class="top-bar-actions">
-                <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
-                <!-- <el-button
+                  <div class="top-bar-actions">
+                    <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
+                    <!-- <el-button
                 type="primary"
                 size="small"
                 @click="copyLastMessageContent"
                 :disabled="isLoading"
                 >复制回答内容</el-button
               > -->
-                <el-button
-                  type="warning"
-                  size="small"
-                  @click="clearMessages"
-                  :disabled="isLoading"
-                  title="清空对话"
-                  class="upload-button"
-                  ><svg
-                    t="1783560291301"
-                    class="icon"
-                    viewBox="0 0 1024 1024"
-                    version="1.1"
-                    xmlns="http://www.w3.org/2000/svg"
-                    p-id="8032"
-                    width="20"
-                    height="20"
-                  >
-                    <path
-                      d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z"
-                      p-id="8033"
-                      fill="#ffffff"
-                    ></path>
-                  </svg>
-                </el-button>
-                <el-button
-                  type="success"
-                  size="small"
-                  @click="triggerImageUpload"
-                  :disabled="isLoading || isAwaitingFeedback"
-                  class="upload-button"
-                  title="上传文件"
-                >
-                  <svg
-                    t="1783924879903"
-                    class="icon"
-                    viewBox="0 0 1024 1024"
-                    version="1.1"
-                    xmlns="http://www.w3.org/2000/svg"
-                    p-id="2350"
-                    width="20"
-                    height="20"
-                  >
-                    <path
-                      d="M770.609824 1023.841829a142.354032 142.354032 0 0 1-104.86747-239.787458 14.235403 14.235403 0 0 1 20.878591 19.455051A113.883225 113.883225 0 1 0 727.429101 775.038616a14.235403 14.235403 0 1 1-10.597467-26.414581 142.354032 142.354032 0 1 1 53.145505 275.375965zM444.935434 292.932963H276.957677a16.766141 16.766141 0 0 1 0-33.532283h167.977757a16.766141 16.766141 0 0 1 0 33.532283zM344.180414 360.1557h-67.222737a16.766141 16.766141 0 0 1 0-33.532283h67.222737a16.766141 16.766141 0 0 1 0 33.532283zM679.977757 494.601174H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 561.823911H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 629.046648H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM411.086809 695.953043h-134.445474a16.924313 16.924313 0 0 1 0-33.690454H411.086809A16.924313 16.924313 0 0 1 411.086809 695.953043z"
-                      fill="#ffffff"
-                      p-id="2351"
-                    ></path>
-                    <path
-                      d="M699.116466 207.204201m0-3.796107l0-25.307383q0-3.796108 3.796107-3.796108l194.075997 0q3.796108 0 3.796107 3.796108l0 25.307383q0 3.796108-3.796107 3.796107l-194.075997 0q-3.796108 0-3.796107-3.796107Z"
-                      fill="#ffffff"
-                      p-id="2352"
-                    ></path>
-                    <path
-                      d="M731.857893 207.04603m-3.796107 0l-25.307384 0q-3.796108 0-3.796107-3.796107l0-110.087118q0-3.796108 3.796107-3.796107l25.307384 0q3.796108 0 3.796107 3.796107l0 110.087118q0 3.796108-3.796107 3.796107Z"
-                      fill="#ffffff"
-                      p-id="2353"
-                    ></path>
-                    <path
-                      d="M907.514349 190.194241m-2.684253 2.684254l-17.895023 17.895022q-2.684253 2.684253-5.368506 0l-186.331921-186.331921q-2.684253-2.684253 0-5.368507l17.895022-17.895022q2.684253-2.684253 5.368507 0l186.331921 186.331921q2.684253 2.684253 0 5.368507Z"
-                      fill="#ffffff"
-                      p-id="2354"
-                    ></path>
-                    <path
-                      d="M429.434662 997.427247m-16.449799 0a16.449799 16.449799 0 1 0 32.899598 0 16.449799 16.449799 0 1 0-32.899598 0Z"
-                      fill="#ffffff"
-                      p-id="2355"
-                    ></path>
-                    <path
-                      d="M363.635465 980.661106H176.67717a33.215941 33.215941 0 0 1-33.21594-33.215941V71.335187a33.374112 33.374112 0 0 1 33.21594-33.374112h540.628978V5.219648H176.67717A66.115539 66.115539 0 0 0 110.561631 71.335187v876.426321a66.115539 66.115539 0 0 0 66.115539 66.115539H363.635465a15.817115 15.817115 0 1 0 0-33.215941zM594.248996 980.661106H494.917516a15.817115 15.817115 0 0 0 0 32.899598h99.33148a15.817115 15.817115 0 0 0 0-32.899598zM901.417362 714.617238V272.845227a15.817115 15.817115 0 0 0-32.899599 0v441.772011a15.817115 15.817115 0 1 0 32.899599 0z"
-                      fill="#ffffff"
-                      p-id="2356"
-                    ></path>
-                    <path
-                      d="M754.160025 826.127896m3.796107 0l25.307384 0q3.796108 0 3.796107 3.796108l0 129.858511q0 3.796108-3.796107 3.796107l-25.307384 0q-3.796108 0-3.796107-3.796107l0-129.858511q0-3.796108 3.796107-3.796108Z"
-                      fill="#ffffff"
-                      p-id="2357"
-                    ></path>
-                    <path
-                      d="M747.422242 817.383321m2.684253-2.684253l17.895023-17.895023q2.684253-2.684253 5.368507 0l72.139309 72.139309q2.684253 2.684253 0 5.368507l-17.895023 17.895023q-2.684253 2.684253-5.368507 0l-72.139309-72.13931q-2.684253-2.684253 0-5.368506Z"
-                      fill="#ffffff"
-                      p-id="2358"
-                    ></path>
-                    <path
-                      d="M716.242933 895.111782m-2.684253-2.684254l-17.895022-17.895022q-2.684253-2.684253 0-5.368507l72.139309-72.139309q2.684253-2.684253 5.368506 0l17.895023 17.895023q2.684253 2.684253 0 5.368506l-72.139309 72.139309q-2.684253 2.684253-5.368507 0Z"
-                      fill="#ffffff"
-                      p-id="2359"
-                    ></path>
-                  </svg>
-                </el-button>
-                <!-- 水务模式下隐藏：CAD转JSON -->
-                <!-- <el-button 
+
+                    <!-- 水务模式下隐藏：CAD转JSON -->
+                    <!-- <el-button 
               v-if="!waterServiceMode"
               type="success" 
               size="small"
@@ -452,334 +366,398 @@
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button> -->
-                <!-- 已上传文件列表 -->
-                <div v-if="uploadedImages.length > 0" class="uploaded-files-bar">
-                  <div class="uploaded-files-list">
-                    <div
-                      v-for="(file, index) in uploadedImages"
-                      :key="index"
-                      class="uploaded-file-tag"
-                      @click="previewUploadedFile(index)"
-                    >
-                      <span class="uploaded-file-icon">
-                        <span v-if="isImageFile(file)">🖼️</span>
-                        <span v-else-if="file.extension === 'txt'">📝</span>
-                        <span v-else>📄</span>
-                      </span>
-                      <span class="uploaded-file-name">{{ file.name }}</span>
-                      <button
-                        class="uploaded-file-remove"
-                        @click.stop="removeUploadedFile(index)"
-                        title="删除"
+                    <!-- 已上传文件列表 -->
+                    <div v-if="uploadedImages.length > 0" class="uploaded-files-bar">
+                      <div class="uploaded-files-list">
+                        <div
+                          v-for="(file, index) in uploadedImages"
+                          :key="index"
+                          class="uploaded-file-tag"
+                          @click="previewUploadedFile(index)"
+                        >
+                          <span class="uploaded-file-icon">
+                            <span v-if="isImageFile(file)">🖼️</span>
+                            <span v-else-if="file.extension === 'txt'">📝</span>
+                            <span v-else>📄</span>
+                          </span>
+                          <span class="uploaded-file-name">{{ file.name }}</span>
+                          <button
+                            class="uploaded-file-remove"
+                            @click.stop="removeUploadedFile(index)"
+                            title="删除"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- 输入框和发送按钮行 -->
+                <div class="input-row">
+                  <el-input
+                    v-model="userQuery"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="请输入您的问题..."
+                    resize="none"
+                    :disabled="isLoading || isAwaitingFeedback"
+                    @keydown.enter.prevent="handleEnter"
+                  ></el-input>
+                  <div
+                    class="input-actions"
+                    style="display: flex; flex-direction: column; gap: 8px"
+                  >
+                    <!-- 第二行：操作按钮 -->
+                    <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
+                      <span class="hint" v-if="isLoading || isCadConverting"
+                        >AI 正在思考中，请稍候...</span
                       >
-                        ✕
-                      </button>
+                      <!-- 水务模式下保留：停止生成 -->
+                      <el-button
+                        v-if="isLoading || isCadConverting"
+                        type="danger"
+                        size="small"
+                        @click="stopGeneration()"
+                        class="stop-button"
+                        title="停止"
+                      >
+                        <svg
+                          t="1783304242585"
+                          class="stop-icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="28"
+                          height="28"
+                        >
+                          <path
+                            d="M678.592 639.68c0 17.6-14.4 32-32 32h-268.992a32 32 0 0 1-32-32v-260.608a32 32 0 0 1 32-32h268.992c17.6 0 32 14.4 32 32v260.608z"
+                            fill="#ffffff"
+                          ></path>
+                          <path
+                            d="M1015.552 512.128a502.656 502.656 0 0 0-503.68-503.68 502.208 502.208 0 0 0-356.096 147.264 502.016 502.016 0 0 0-147.328 356.416 500.288 500.288 0 0 0 146.816 356.736 499.584 499.584 0 0 0 356.544 146.688c277.312-2.816 503.744-226.24 503.744-503.424z m-947.968 0a444.288 444.288 0 0 1 444.288-444.544c246.976 0 447.296 200.128 447.296 444.544 0 244.032-200.32 444.416-447.296 444.416a442.304 442.304 0 0 1-444.288-444.416z"
+                            fill="#ffffff"
+                          ></path>
+                        </svg>
+                      </el-button>
+                      <!-- 助手下拉框 -->
+                      <select
+                        v-show="false"
+                        v-model="selectedSendType"
+                        :disabled="isLoading || isAwaitingFeedback"
+                        class="send-type-select"
+                        style="
+                          width: 90px;
+                          height: 32px;
+                          padding: 0 8px;
+                          border-radius: 4px;
+                          border: 1px solid #dcdfe6;
+                          font-size: 13px;
+                          z-index: 1000;
+                        "
+                      >
+                        <option
+                          v-for="type in sendTypes"
+                          :key="type.id"
+                          :value="type.id"
+                          :disabled="getSendTypeDisabled(type)"
+                        >
+                          {{ type.label }}
+                        </option>
+                      </select>
+                      <el-button
+                        type="warning"
+                        size="small"
+                        @click="clearMessages"
+                        :disabled="isLoading"
+                        title="清空对话"
+                        class="upload-button"
+                        ><svg
+                          t="1783560291301"
+                          class="icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          p-id="8032"
+                          width="20"
+                          height="20"
+                        >
+                          <path
+                            d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z"
+                            p-id="8033"
+                            fill="#ffffff"
+                          ></path>
+                        </svg>
+                      </el-button>
+
+                      <el-button
+                        type="success"
+                        size="small"
+                        @click="triggerImageUpload"
+                        :disabled="isLoading || isAwaitingFeedback"
+                        class="upload-button"
+                        title="上传文件"
+                      >
+                        <svg
+                          t="1784599493754"
+                          class="icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          p-id="5433"
+                          width="28"
+                          height="28"
+                        >
+                          <path
+                            d="M924.672 126.976q36.864 36.864 54.784 82.432t17.92 93.696-17.92 93.696-54.784 82.432l-392.192 389.12q-36.864 36.864-90.624 61.44t-113.664 28.672-122.368-16.384-115.712-73.728q-52.224-52.224-72.704-113.152t-16.384-121.344 28.16-113.664 60.928-90.112l348.16-345.088q9.216-9.216 27.136-4.608t27.136 13.824q8.192 9.216 13.312 27.136t-4.096 27.136l-347.136 344.064q-27.648 27.648-46.08 64.512t-21.504 78.848 12.288 84.992 55.296 82.944q35.84 35.84 79.36 50.688t86.528 12.288 81.92-18.944 66.56-44.032l391.168-388.096q27.648-27.648 39.424-57.344t11.264-58.88-13.824-56.832-36.864-51.2q-44.032-43.008-98.816-40.448t-110.08 57.856l-353.28 351.232q-23.552 23.552-23.04 52.224t18.944 47.104q22.528 22.528 51.712 18.432t47.616-22.528l320.512-318.464q9.216-9.216 27.136-4.608t27.136 13.824 14.336 27.136-4.096 27.136l-321.536 318.464q-36.864 36.864-70.656 51.2t-63.488 12.8-55.296-15.872-47.104-34.816q-17.408-16.384-31.232-41.984t-15.872-56.32 10.752-65.536 49.664-70.656q18.432-18.432 32.768-33.792 12.288-13.312 23.04-23.552t11.776-11.264l285.696-284.672q36.864-36.864 80.384-57.856t88.576-24.064 88.576 12.288 80.384 52.224z"
+                            p-id="5434"
+                            fill="#8a8a8a"
+                          ></path>
+                        </svg>
+                      </el-button>
+
+                      <el-button
+                        type="success"
+                        size="small"
+                        @click="sendDispatch"
+                        :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
+                        class="send-button"
+                        title="发送调度"
+                        v-show="!isLoading && !isCadConverting"
+                      >
+                        <template v-if="isLoading">发送中</template>
+                        <svg
+                          v-else
+                          t="1783304326600"
+                          class="icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="28"
+                          height="28"
+                        >
+                          <path
+                            d="M512 981.333333q11.52 0 23.04-0.554666t22.954667-1.706667q11.477333-1.109333 22.869333-2.816 11.392-1.706667 22.698667-3.925333 11.306667-2.261333 22.485333-5.077334 11.178667-2.773333 22.186667-6.144 11.008-3.328 21.888-7.210666 10.837333-3.882667 21.461333-8.277334 10.666667-4.437333 21.077333-9.386666 10.410667-4.906667 20.565334-10.325334 10.197333-5.418667 20.053333-11.349333 9.898667-5.930667 19.456-12.330667 9.6-6.4 18.858667-13.226666 9.258667-6.912 18.133333-14.208 8.96-7.296 17.493333-15.018667 8.533333-7.765333 16.64-15.914667 8.149333-8.106667 15.914667-16.64 7.68-8.533333 15.018667-17.493333 7.296-8.874667 14.165333-18.133333t13.269333-18.858667q6.4-9.557333 12.330667-19.456 5.930667-9.898667 11.349333-20.053333 5.418667-10.154667 10.368-20.565334 4.906667-10.410667 9.344-21.077333 4.394667-10.666667 8.277334-21.504 3.882667-10.837333 7.253333-21.888 3.328-11.008 6.101333-22.186667 2.816-11.178667 5.077334-22.485333 2.218667-11.306667 3.925333-22.698667t2.816-22.869333q1.152-11.434667 1.706667-22.954667Q981.333333 523.52 981.333333 512t-0.554666-23.04q-0.554667-11.52-1.706667-22.954667-1.109333-11.477333-2.816-22.869333-1.706667-11.392-3.925333-22.698667-2.261333-11.306667-5.077334-22.485333-2.773333-11.178667-6.144-22.186667-3.328-11.050667-7.210666-21.888-3.882667-10.837333-8.277334-21.504-4.437333-10.624-9.386666-21.034666-4.906667-10.410667-10.325334-20.565334-5.418667-10.197333-11.349333-20.053333-5.930667-9.898667-12.330667-19.456-6.4-9.6-13.226666-18.858667-6.912-9.258667-14.208-18.133333-7.296-8.96-15.018667-17.493333-7.765333-8.533333-15.914667-16.64-8.106667-8.149333-16.64-15.872-8.533333-7.765333-17.493333-15.061334-8.874667-7.296-18.133333-14.165333t-18.858667-13.269333q-9.557333-6.4-19.456-12.330667-9.898667-5.930667-20.053333-11.349333-10.154667-5.418667-20.565334-10.368-10.410667-4.906667-21.077333-9.344-10.624-4.394667-21.461333-8.277334-10.88-3.882667-21.888-7.253333-11.008-3.328-22.186667-6.101333-11.178667-2.816-22.485333-5.077334-11.306667-2.218667-22.698667-3.925333t-22.869333-2.816q-11.434667-1.109333-22.954667-1.706667Q523.52 42.666667 512 42.666667t-23.04 0.554666q-11.52 0.597333-22.954667 1.706667-11.477333 1.109333-22.869333 2.816-11.392 1.706667-22.698667 3.925333-11.306667 2.261333-22.485333 5.077334-11.178667 2.773333-22.186667 6.144-11.050667 3.328-21.888 7.210666-10.837333 3.882667-21.504 8.277334-10.624 4.437333-21.034666 9.386666-10.410667 4.906667-20.565334 10.325334-10.197333 5.418667-20.053333 11.349333-9.898667 5.930667-19.456 12.330667-9.6 6.4-18.858667 13.226666-9.258667 6.912-18.133333 14.208-8.96 7.296-17.493333 15.061334-8.533333 7.68-16.64 15.872-8.149333 8.106667-15.872 16.64-7.765333 8.533333-15.061334 17.493333-7.296 8.874667-14.165333 18.133333t-13.269333 18.858667q-6.4 9.557333-12.330667 19.456-5.930667 9.856-11.349333 20.053333-5.418667 10.154667-10.368 20.565334-4.906667 10.410667-9.344 21.034666-4.394667 10.666667-8.277334 21.504-3.882667 10.837333-7.253333 21.888-3.328 11.008-6.101333 22.186667-2.816 11.178667-5.077334 22.485333-2.218667 11.306667-3.925333 22.698667t-2.816 22.869333q-1.109333 11.434667-1.706667 22.954667Q42.666667 500.48 42.666667 512t0.554666 23.04q0.597333 11.52 1.706667 22.954667 1.109333 11.477333 2.816 22.869333 1.706667 11.392 3.925333 22.698667 2.261333 11.306667 5.077334 22.485333 2.773333 11.178667 6.144 22.186667 3.328 11.008 7.210666 21.888 3.882667 10.837333 8.277334 21.461333 4.437333 10.666667 9.386666 21.077333 4.906667 10.410667 10.325334 20.565334 5.418667 10.197333 11.349333 20.053333 5.930667 9.898667 12.330667 19.456 6.4 9.6 13.226666 18.858667 6.912 9.258667 14.208 18.133333 7.296 8.96 15.061334 17.493333 7.68 8.533333 15.872 16.64 8.106667 8.149333 16.64 15.914667 8.533333 7.68 17.493333 15.018667 8.874667 7.296 18.133333 14.165333t18.858667 13.269333q9.557333 6.4 19.456 12.330667 9.856 5.930667 20.053333 11.349333 10.154667 5.418667 20.565334 10.368 10.410667 4.906667 21.034666 9.344 10.666667 4.394667 21.504 8.277334 10.837333 3.882667 21.888 7.253333 11.008 3.328 22.186667 6.101333 11.178667 2.816 22.485333 5.077334 11.306667 2.218667 22.698667 3.925333t22.869333 2.816q11.434667 1.152 22.954667 1.706667 11.52 0.554667 23.04 0.554666z m-10.666667-673.322666a32 32 0 0 1 45.226667 0l150.613333 150.186666a32 32 0 1 1-45.226666 45.312l-96-95.744V725.333333a32 32 0 0 1-64 0V407.765333L395.946667 503.466667a32 32 0 1 1-45.226667-45.312l150.613333-150.186667z"
+                            fill="#ffffff"
+                          ></path>
+                        </svg>
+                      </el-button>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-            <!-- 输入框和发送按钮行 -->
-            <div class="input-row">
-              <el-input
-                v-model="userQuery"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入您的问题..."
-                resize="none"
-                :disabled="isLoading || isAwaitingFeedback"
-                @keydown.enter.prevent="handleEnter"
-              ></el-input>
-              <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px">
-                <!-- 第二行：操作按钮 -->
-                <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
-                  <span class="hint" v-if="isLoading || isCadConverting"
-                    >AI 正在思考中，请稍候...</span
-                  >
-                  <!-- 水务模式下保留：停止生成 -->
-                  <el-button
-                    v-if="isLoading || isCadConverting"
-                    type="danger"
-                    size="small"
-                    @click="stopGeneration()"
-                    class="stop-button"
-                    title="停止"
-                  >
-                    <svg
-                      t="1783304242585"
-                      class="stop-icon"
-                      viewBox="0 0 1024 1024"
-                      version="1.1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="28"
-                      height="28"
-                    >
-                      <path
-                        d="M678.592 639.68c0 17.6-14.4 32-32 32h-268.992a32 32 0 0 1-32-32v-260.608a32 32 0 0 1 32-32h268.992c17.6 0 32 14.4 32 32v260.608z"
-                        fill="#ffffff"
-                      ></path>
-                      <path
-                        d="M1015.552 512.128a502.656 502.656 0 0 0-503.68-503.68 502.208 502.208 0 0 0-356.096 147.264 502.016 502.016 0 0 0-147.328 356.416 500.288 500.288 0 0 0 146.816 356.736 499.584 499.584 0 0 0 356.544 146.688c277.312-2.816 503.744-226.24 503.744-503.424z m-947.968 0a444.288 444.288 0 0 1 444.288-444.544c246.976 0 447.296 200.128 447.296 444.544 0 244.032-200.32 444.416-447.296 444.416a442.304 442.304 0 0 1-444.288-444.416z"
-                        fill="#ffffff"
-                      ></path>
-                    </svg>
-                  </el-button>
-                  <!-- 助手下拉框 -->
-                  <select
-                    v-show="false"
-                    v-model="selectedSendType"
-                    :disabled="isLoading || isAwaitingFeedback"
-                    class="send-type-select"
-                    style="
-                      width: 90px;
-                      height: 32px;
-                      padding: 0 8px;
-                      border-radius: 4px;
-                      border: 1px solid #dcdfe6;
-                      font-size: 13px;
-                      z-index: 1000;
-                    "
-                  >
-                    <option
-                      v-for="type in sendTypes"
-                      :key="type.id"
-                      :value="type.id"
-                      :disabled="getSendTypeDisabled(type)"
-                    >
-                      {{ type.label }}
-                    </option>
-                  </select>
 
-                  <el-button
-                    type="success"
-                    size="small"
-                    @click="sendDispatch"
-                    :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                    class="send-button"
-                    title="发送调度"
-                    v-show="!isLoading && !isCadConverting"
-                  >
-                    <template v-if="isLoading">发送中</template>
-                    <svg
-                      v-else
-                      t="1783304326600"
-                      class="icon"
-                      viewBox="0 0 1024 1024"
-                      version="1.1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="28"
-                      height="28"
-                    >
-                      <path
-                        d="M512 981.333333q11.52 0 23.04-0.554666t22.954667-1.706667q11.477333-1.109333 22.869333-2.816 11.392-1.706667 22.698667-3.925333 11.306667-2.261333 22.485333-5.077334 11.178667-2.773333 22.186667-6.144 11.008-3.328 21.888-7.210666 10.837333-3.882667 21.461333-8.277334 10.666667-4.437333 21.077333-9.386666 10.410667-4.906667 20.565334-10.325334 10.197333-5.418667 20.053333-11.349333 9.898667-5.930667 19.456-12.330667 9.6-6.4 18.858667-13.226666 9.258667-6.912 18.133333-14.208 8.96-7.296 17.493333-15.018667 8.533333-7.765333 16.64-15.914667 8.149333-8.106667 15.914667-16.64 7.68-8.533333 15.018667-17.493333 7.296-8.874667 14.165333-18.133333t13.269333-18.858667q6.4-9.557333 12.330667-19.456 5.930667-9.898667 11.349333-20.053333 5.418667-10.154667 10.368-20.565334 4.906667-10.410667 9.344-21.077333 4.394667-10.666667 8.277334-21.504 3.882667-10.837333 7.253333-21.888 3.328-11.008 6.101333-22.186667 2.816-11.178667 5.077334-22.485333 2.218667-11.306667 3.925333-22.698667t2.816-22.869333q1.152-11.434667 1.706667-22.954667Q981.333333 523.52 981.333333 512t-0.554666-23.04q-0.554667-11.52-1.706667-22.954667-1.109333-11.477333-2.816-22.869333-1.706667-11.392-3.925333-22.698667-2.261333-11.306667-5.077334-22.485333-2.773333-11.178667-6.144-22.186667-3.328-11.050667-7.210666-21.888-3.882667-10.837333-8.277334-21.504-4.437333-10.624-9.386666-21.034666-4.906667-10.410667-10.325334-20.565334-5.418667-10.197333-11.349333-20.053333-5.930667-9.898667-12.330667-19.456-6.4-9.6-13.226666-18.858667-6.912-9.258667-14.208-18.133333-7.296-8.96-15.018667-17.493333-7.765333-8.533333-15.914667-16.64-8.106667-8.149333-16.64-15.872-8.533333-7.765333-17.493333-15.061334-8.874667-7.296-18.133333-14.165333t-18.858667-13.269333q-9.557333-6.4-19.456-12.330667-9.898667-5.930667-20.053333-11.349333-10.154667-5.418667-20.565334-10.368-10.410667-4.906667-21.077333-9.344-10.624-4.394667-21.461333-8.277334-10.88-3.882667-21.888-7.253333-11.008-3.328-22.186667-6.101333-11.178667-2.816-22.485333-5.077334-11.306667-2.218667-22.698667-3.925333t-22.869333-2.816q-11.434667-1.109333-22.954667-1.706667Q523.52 42.666667 512 42.666667t-23.04 0.554666q-11.52 0.597333-22.954667 1.706667-11.477333 1.109333-22.869333 2.816-11.392 1.706667-22.698667 3.925333-11.306667 2.261333-22.485333 5.077334-11.178667 2.773333-22.186667 6.144-11.050667 3.328-21.888 7.210666-10.837333 3.882667-21.504 8.277334-10.624 4.437333-21.034666 9.386666-10.410667 4.906667-20.565334 10.325334-10.197333 5.418667-20.053333 11.349333-9.898667 5.930667-19.456 12.330667-9.6 6.4-18.858667 13.226666-9.258667 6.912-18.133333 14.208-8.96 7.296-17.493333 15.061334-8.533333 7.68-16.64 15.872-8.149333 8.106667-15.872 16.64-7.765333 8.533333-15.061334 17.493333-7.296 8.874667-14.165333 18.133333t-13.269333 18.858667q-6.4 9.557333-12.330667 19.456-5.930667 9.856-11.349333 20.053333-5.418667 10.154667-10.368 20.565334-4.906667 10.410667-9.344 21.034666-4.394667 10.666667-8.277334 21.504-3.882667 10.837333-7.253333 21.888-3.328 11.008-6.101333 22.186667-2.816 11.178667-5.077334 22.485333-2.218667 11.306667-3.925333 22.698667t-2.816 22.869333q-1.109333 11.434667-1.706667 22.954667Q42.666667 500.48 42.666667 512t0.554666 23.04q0.597333 11.52 1.706667 22.954667 1.109333 11.477333 2.816 22.869333 1.706667 11.392 3.925333 22.698667 2.261333 11.306667 5.077334 22.485333 2.773333 11.178667 6.144 22.186667 3.328 11.008 7.210666 21.888 3.882667 10.837333 8.277334 21.461333 4.437333 10.666667 9.386666 21.077333 4.906667 10.410667 10.325334 20.565334 5.418667 10.197333 11.349333 20.053333 5.930667 9.898667 12.330667 19.456 6.4 9.6 13.226666 18.858667 6.912 9.258667 14.208 18.133333 7.296 8.96 15.061334 17.493333 7.68 8.533333 15.872 16.64 8.106667 8.149333 16.64 15.914667 8.533333 7.68 17.493333 15.018667 8.874667 7.296 18.133333 14.165333t18.858667 13.269333q9.557333 6.4 19.456 12.330667 9.856 5.930667 20.053333 11.349333 10.154667 5.418667 20.565334 10.368 10.410667 4.906667 21.034666 9.344 10.666667 4.394667 21.504 8.277334 10.837333 3.882667 21.888 7.253333 11.008 3.328 22.186667 6.101333 11.178667 2.816 22.485333 5.077334 11.306667 2.218667 22.698667 3.925333t22.869333 2.816q11.434667 1.152 22.954667 1.706667 11.52 0.554667 23.04 0.554666z m-10.666667-673.322666a32 32 0 0 1 45.226667 0l150.613333 150.186666a32 32 0 1 1-45.226666 45.312l-96-95.744V725.333333a32 32 0 0 1-64 0V407.765333L395.946667 503.466667a32 32 0 1 1-45.226667-45.312l150.613333-150.186667z"
-                        fill="#ffffff"
-                      ></path>
-                    </svg>
-                  </el-button>
-                </div>
-              </div>
-
-              <!-- 上传图片输入框（隐藏） -->
-              <input
-                ref="fileInput"
-                type="file"
-                multiple
-                style="display: none"
-                @change="handleImageUpload"
-              />
-
-              <!-- 图片预览弹窗 -->
-              <el-dialog
-                v-model="imagePreviewVisible"
-                :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) ? 1 : (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1} / ${isGatewayPreview ? (Array.isArray(gatewayPreviewImages) ? gatewayPreviewImages.length : 0) : Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
-                width="1100px"
-                append-to-body
-                :z-index="20000"
-                @open="resetImageScale"
-                @close="handlePreviewClose"
-              >
-                <div class="multi-image-preview-wrapper">
-                  <!-- 主内容区域 -->
-                  <div
-                    v-if="getCurrentPreviewFile?.mime_type === 'text/plain'"
-                    class="text-preview-container"
-                  >
-                    <div class="text-preview-header">
-                      <span class="text-preview-filename">{{ getCurrentPreviewFile.name }}</span>
-                      <button class="copy-text-btn" @click="copyPreviewText">📋 复制文本</button>
-                    </div>
-                    <pre class="text-preview-content">{{ getCurrentPreviewFile.textContent }}</pre>
-                  </div>
-                  <div
-                    v-else
-                    class="image-preview-container"
-                    @wheel.prevent="handleImageWheel"
-                    @mousedown="handleMouseDown"
-                    @mousemove="handleMouseMove"
-                    @mouseup="handleMouseUp"
-                    @mouseleave="handleMouseUp"
-                  >
-                    <img
-                      ref="imageRef"
-                      :src="previewImageUrl"
-                      :alt="`图片 ${(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1}`"
-                      class="preview-image"
-                      :class="{ 'is-dragging': isDragging }"
-                      :style="{
-                        transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})`,
-                      }"
-                      @click.stop="resetImageScale"
-                    />
-                  </div>
-                </div>
-                <div class="image-preview-hint">
-                  {{
-                    getCurrentPreviewFile?.mime_type === "text/plain"
-                      ? "点击复制按钮复制文本内容"
-                      : "滚轮缩放图片，右键拖动查看细节，点击图片重置"
-                  }}
-                </div>
-              </el-dialog>
-
-              <!-- 验证结果图片预览弹窗 -->
-              <el-dialog
-                v-model="validationResultImageVisible"
-                title="验证结果图片"
-                width="800px"
-                append-to-body
-                :z-index="20000"
-                @open="resetImageScale"
-                @close="handlePreviewClose"
-              >
-                <div
-                  class="image-preview-container"
-                  @wheel.prevent="handleImageWheel"
-                  @mousedown="handleMouseDown"
-                  @mousemove="handleMouseMove"
-                  @mouseup="handleMouseUp"
-                  @mouseleave="handleMouseUp"
-                >
-                  <img
-                    ref="imageRef"
-                    :src="validationResultImageUrl"
-                    alt="验证结果图片"
-                    class="preview-image"
-                    :class="{ 'is-dragging': isDragging }"
-                    :style="{
-                      transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})`,
-                    }"
-                    @click.stop="resetImageScale"
+                  <!-- 上传图片输入框（隐藏） -->
+                  <input
+                    ref="fileInput"
+                    type="file"
+                    multiple
+                    style="display: none"
+                    @change="handleImageUpload"
                   />
-                </div>
-                <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
-                <div
-                  v-if="validationResultJson"
-                  style="
-                    margin-top: 16px;
-                    padding: 12px;
-                    background-color: #f5f5f5;
-                    border-radius: 8px;
-                  "
-                >
-                  <h4 style="margin-bottom: 8px">验证结果摘要:</h4>
-                  <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6">
-                    {{ validationResultJson.summary }}
-                  </p>
-                  <p
-                    v-if="validationResultJson.success !== undefined"
-                    style="font-size: 13px; margin-top: 8px"
-                  >
-                    状态:
-                    <span
-                      :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }"
-                      >{{ validationResultJson.success ? "成功" : "失败" }}</span
-                    >
-                  </p>
-                </div>
-              </el-dialog>
 
-              <!-- 确认清空对话框 -->
-              <el-dialog
-                v-model="confirmDialogVisible"
-                title="确认清空"
-                width="400px"
-                append-to-body
-                :show-close="false"
-                :close-on-click-modal="false"
-                :close-on-press-escape="false"
-              >
-                <div class="confirm-dialog-content">
-                  <div class="confirm-icon">⚠️</div>
-                  <p>确定要清空所有对话内容吗？</p>
-                  <p class="confirm-hint">此操作将删除所有消息和已上传的图片，且无法恢复。</p>
-                </div>
-                <template #footer>
-                  <div class="confirm-dialog-footer">
-                    <el-button type="primary" @click="confirmClear">确定</el-button>
-                    <el-button @click="cancelClear">取消</el-button>
-                  </div>
-                </template>
-              </el-dialog>
+                  <!-- 图片预览弹窗 -->
+                  <el-dialog
+                    v-model="imagePreviewVisible"
+                    :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) ? 1 : (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1} / ${isGatewayPreview ? (Array.isArray(gatewayPreviewImages) ? gatewayPreviewImages.length : 0) : Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
+                    width="1100px"
+                    append-to-body
+                    :z-index="20000"
+                    @open="resetImageScale"
+                    @close="handlePreviewClose"
+                  >
+                    <div class="multi-image-preview-wrapper">
+                      <!-- 主内容区域 -->
+                      <div
+                        v-if="getCurrentPreviewFile?.mime_type === 'text/plain'"
+                        class="text-preview-container"
+                      >
+                        <div class="text-preview-header">
+                          <span class="text-preview-filename">{{
+                            getCurrentPreviewFile.name
+                          }}</span>
+                          <button class="copy-text-btn" @click="copyPreviewText">
+                            📋 复制文本
+                          </button>
+                        </div>
+                        <pre class="text-preview-content">{{
+                          getCurrentPreviewFile.textContent
+                        }}</pre>
+                      </div>
+                      <div
+                        v-else
+                        class="image-preview-container"
+                        @wheel.prevent="handleImageWheel"
+                        @mousedown="handleMouseDown"
+                        @mousemove="handleMouseMove"
+                        @mouseup="handleMouseUp"
+                        @mouseleave="handleMouseUp"
+                      >
+                        <img
+                          ref="imageRef"
+                          :src="previewImageUrl"
+                          :alt="`图片 ${(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1}`"
+                          class="preview-image"
+                          :class="{ 'is-dragging': isDragging }"
+                          :style="{
+                            transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})`,
+                          }"
+                          @click.stop="resetImageScale"
+                        />
+                      </div>
+                    </div>
+                    <div class="image-preview-hint">
+                      {{
+                        getCurrentPreviewFile?.mime_type === "text/plain"
+                          ? "点击复制按钮复制文本内容"
+                          : "滚轮缩放图片，右键拖动查看细节，点击图片重置"
+                      }}
+                    </div>
+                  </el-dialog>
 
-              <div class="dialog-footer">
-                <!-- 步骤路径指示器 -->
-                <div class="step-path-container" v-if="!waterServiceMode">
-                  <div class="step-path">
-                    <!-- 步骤1：图纸识别 -->
+                  <!-- 验证结果图片预览弹窗 -->
+                  <el-dialog
+                    v-model="validationResultImageVisible"
+                    title="验证结果图片"
+                    width="800px"
+                    append-to-body
+                    :z-index="20000"
+                    @open="resetImageScale"
+                    @close="handlePreviewClose"
+                  >
                     <div
-                      class="step-node"
-                      :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+                      class="image-preview-container"
+                      @wheel.prevent="handleImageWheel"
+                      @mousedown="handleMouseDown"
+                      @mousemove="handleMouseMove"
+                      @mouseup="handleMouseUp"
+                      @mouseleave="handleMouseUp"
                     >
-                      <div class="step-dot">
-                        <span v-if="currentStep > 1" class="step-check">✓</span>
-                        <span v-else class="step-number">1</span>
-                      </div>
-                      <span class="step-label">图纸识别</span>
+                      <img
+                        ref="imageRef"
+                        :src="validationResultImageUrl"
+                        alt="验证结果图片"
+                        class="preview-image"
+                        :class="{ 'is-dragging': isDragging }"
+                        :style="{
+                          transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})`,
+                        }"
+                        @click.stop="resetImageScale"
+                      />
                     </div>
-                    <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
-                    <!-- 步骤2：点位绑定 -->
+                    <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
                     <div
-                      class="step-node"
-                      :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+                      v-if="validationResultJson"
+                      style="
+                        margin-top: 16px;
+                        padding: 12px;
+                        background-color: #f5f5f5;
+                        border-radius: 8px;
+                      "
                     >
-                      <div class="step-dot">
-                        <span v-if="currentStep > 2" class="step-check">✓</span>
-                        <span v-else class="step-number">2</span>
-                      </div>
-                      <span class="step-label">点位绑定</span>
+                      <h4 style="margin-bottom: 8px">验证结果摘要:</h4>
+                      <p
+                        v-if="validationResultJson.summary"
+                        style="font-size: 13px; line-height: 1.6"
+                      >
+                        {{ validationResultJson.summary }}
+                      </p>
+                      <p
+                        v-if="validationResultJson.success !== undefined"
+                        style="font-size: 13px; margin-top: 8px"
+                      >
+                        状态:
+                        <span
+                          :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }"
+                          >{{ validationResultJson.success ? "成功" : "失败" }}</span
+                        >
+                      </p>
                     </div>
-                    <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
-                    <!-- 步骤3：生成DSL -->
-                    <div
-                      class="step-node"
-                      :class="{ current: currentStep === 3, completed: currentStep > 3 }"
-                    >
-                      <div class="step-dot">
-                        <span v-if="currentStep > 3" class="step-check">✓</span>
-                        <span v-else class="step-number">3</span>
+                  </el-dialog>
+
+                  <!-- 确认清空对话框 -->
+                  <el-dialog
+                    v-model="confirmDialogVisible"
+                    title="确认清空"
+                    width="400px"
+                    append-to-body
+                    :show-close="false"
+                    :close-on-click-modal="false"
+                    :close-on-press-escape="false"
+                  >
+                    <div class="confirm-dialog-content">
+                      <div class="confirm-icon">⚠️</div>
+                      <p>确定要清空所有对话内容吗？</p>
+                      <p class="confirm-hint">此操作将删除所有消息和已上传的图片，且无法恢复。</p>
+                    </div>
+                    <template #footer>
+                      <div class="confirm-dialog-footer">
+                        <el-button type="primary" @click="confirmClear">确定</el-button>
+                        <el-button @click="cancelClear">取消</el-button>
                       </div>
-                      <span class="step-label">生成DSL</span>
+                    </template>
+                  </el-dialog>
+
+                  <div class="dialog-footer">
+                    <!-- 步骤路径指示器 -->
+                    <div class="step-path-container" v-if="!waterServiceMode">
+                      <div class="step-path">
+                        <!-- 步骤1：图纸识别 -->
+                        <div
+                          class="step-node"
+                          :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+                        >
+                          <div class="step-dot">
+                            <span v-if="currentStep > 1" class="step-check">✓</span>
+                            <span v-else class="step-number">1</span>
+                          </div>
+                          <span class="step-label">图纸识别</span>
+                        </div>
+                        <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+                        <!-- 步骤2：点位绑定 -->
+                        <div
+                          class="step-node"
+                          :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+                        >
+                          <div class="step-dot">
+                            <span v-if="currentStep > 2" class="step-check">✓</span>
+                            <span v-else class="step-number">2</span>
+                          </div>
+                          <span class="step-label">点位绑定</span>
+                        </div>
+                        <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
+                        <!-- 步骤3：生成DSL -->
+                        <div
+                          class="step-node"
+                          :class="{ current: currentStep === 3, completed: currentStep > 3 }"
+                        >
+                          <div class="step-dot">
+                            <span v-if="currentStep > 3" class="step-check">✓</span>
+                            <span v-else class="step-number">3</span>
+                          </div>
+                          <span class="step-label">生成DSL</span>
+                        </div>
+                      </div>
+                      <!-- 重置步骤按钮 -->
+                      <el-button
+                        v-if="currentStep > 1"
+                        type="default"
+                        size="small"
+                        @click="resetSteps"
+                        :disabled="isLoading || isAwaitingFeedback"
+                        title="重置到步骤1"
+                        class="reset-button"
+                      >
+                        重置
+                      </el-button>
+                      <el-button
+                        v-if="!waterServiceMode"
+                        type="success"
+                        @click="fetchAndSaveScreenAI"
+                        :disabled="isLoading || isAwaitingFeedback"
+                        >AI生成画布</el-button
+                      >
                     </div>
                   </div>
-                  <!-- 重置步骤按钮 -->
-                  <el-button
-                    v-if="currentStep > 1"
-                    type="default"
-                    size="small"
-                    @click="resetSteps"
-                    :disabled="isLoading || isAwaitingFeedback"
-                    title="重置到步骤1"
-                    class="reset-button"
-                  >
-                    重置
-                  </el-button>
-                  <el-button
-                    v-if="!waterServiceMode"
-                    type="success"
-                    @click="fetchAndSaveScreenAI"
-                    :disabled="isLoading || isAwaitingFeedback"
-                    >AI生成画布</el-button
-                  >
                 </div>
               </div>
             </div>
@@ -787,9 +765,7 @@
         </div>
       </div>
     </div>
-    </div>
-  </div>
-</Teleport>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -956,7 +932,10 @@ export default defineComponent({
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
 
-    const dialogPosition = ref({ x: (window.innerWidth - 900) / 2, y: (window.innerHeight - 700) / 2 });
+    const dialogPosition = ref({
+      x: (window.innerWidth - 900) / 2,
+      y: (window.innerHeight - 700) / 2,
+    });
     const dragOffset = ref({ x: 0, y: 0 });
     const isDialogDragging = ref(false);
     const isResizing = ref(false);
@@ -5542,6 +5521,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 :deep(.el-textarea__inner) {
@@ -5588,6 +5568,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .image-preview-link {
