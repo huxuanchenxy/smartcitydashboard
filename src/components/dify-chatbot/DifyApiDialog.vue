@@ -463,7 +463,8 @@
                       </el-button>
                       <el-button
                         v-if="!waterServiceMode"
-                        type="success"
+                        type="primary"
+                        class="ai-canvas-button"
                         @click="fetchAndSaveScreenAI"
                         :disabled="isLoading || isAwaitingFeedback"
                         >AI生成画布</el-button
@@ -5633,6 +5634,28 @@ export default defineComponent({
   opacity: 0.5;
 }
 
+.ai-canvas-button {
+  min-width: 100px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.ai-canvas-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.ai-canvas-button:disabled {
+  opacity: 0.5;
+}
+
 .upload-button {
   min-width: 44px;
   height: 38px;
@@ -6368,17 +6391,17 @@ export default defineComponent({
 }
 
 .step-node.current .step-dot {
-  background-color: #67c23a;
-  border-color: #67c23a;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #3b82f6;
   box-shadow:
-    0 0 0 4px rgba(103, 194, 58, 0.2),
-    0 0 12px rgba(103, 194, 58, 0.4);
-  animation: pulse-green 2s infinite;
+    0 0 0 4px rgba(59, 130, 246, 0.2),
+    0 0 12px rgba(59, 130, 246, 0.4);
+  animation: pulse-blue 2s infinite;
 }
 
 .step-node.completed .step-dot {
-  background-color: #67c23a;
-  border-color: #67c23a;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #3b82f6;
 }
 
 .step-number {
@@ -6404,12 +6427,12 @@ export default defineComponent({
 }
 
 .step-node.current .step-label {
-  color: #67c23a;
+  color: #3b82f6;
   font-weight: 600;
 }
 
 .step-node.completed .step-label {
-  color: #67c23a;
+  color: #3b82f6;
 }
 
 .step-connector {
@@ -6421,25 +6444,25 @@ export default defineComponent({
 }
 
 .step-connector.active {
-  background-color: #67c23a;
-  box-shadow: 0 0 8px rgba(103, 194, 58, 0.4);
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
 }
 
-@keyframes pulse-green {
+@keyframes pulse-blue {
   0% {
     box-shadow:
-      0 0 0 4px rgba(103, 194, 58, 0.2),
-      0 0 12px rgba(103, 194, 58, 0.4);
+      0 0 0 4px rgba(59, 130, 246, 0.2),
+      0 0 12px rgba(59, 130, 246, 0.4);
   }
   50% {
     box-shadow:
-      0 0 0 6px rgba(103, 194, 58, 0.1),
-      0 0 20px rgba(103, 194, 58, 0.6);
+      0 0 0 6px rgba(59, 130, 246, 0.1),
+      0 0 20px rgba(59, 130, 246, 0.6);
   }
   100% {
     box-shadow:
-      0 0 0 4px rgba(103, 194, 58, 0.2),
-      0 0 12px rgba(103, 194, 58, 0.4);
+      0 0 0 4px rgba(59, 130, 246, 0.2),
+      0 0 12px rgba(59, 130, 246, 0.4);
   }
 }
 
