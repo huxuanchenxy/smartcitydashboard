@@ -410,6 +410,67 @@
                   >
                     <!-- 第二行：操作按钮 -->
                     <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
+                      <!-- 步骤路径指示器 -->
+                    <div class="step-path-container" v-if="!waterServiceMode">
+                      <div class="step-path">
+                        <!-- 步骤1：图纸识别 -->
+                        <div
+                          class="step-node"
+                          :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+                        >
+                          <div class="step-dot">
+                            <span v-if="currentStep > 1" class="step-check">✓</span>
+                            <span v-else class="step-number">1</span>
+                          </div>
+                          <span class="step-label">图纸识别</span>
+                        </div>
+                        <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+                        <!-- 步骤2：点位绑定 -->
+                        <div
+                          class="step-node"
+                          :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+                        >
+                          <div class="step-dot">
+                            <span v-if="currentStep > 2" class="step-check">✓</span>
+                            <span v-else class="step-number">2</span>
+                          </div>
+                          <span class="step-label">点位绑定</span>
+                        </div>
+                        <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
+                        <!-- 步骤3：生成DSL -->
+                        <div
+                          class="step-node"
+                          :class="{ current: currentStep === 3, completed: currentStep > 3 }"
+                        >
+                          <div class="step-dot">
+                            <span v-if="currentStep > 3" class="step-check">✓</span>
+                            <span v-else class="step-number">3</span>
+                          </div>
+                          <span class="step-label">生成DSL</span>
+                        </div>
+                      </div>
+                      <!-- 重置步骤按钮 -->
+                      <el-button
+                        v-if="currentStep > 1"
+                        type="default"
+                        size="small"
+                        @click="resetSteps"
+                        :disabled="isLoading || isAwaitingFeedback"
+                        title="重置到步骤1"
+                        class="reset-button"
+                      >
+                        重置
+                      </el-button>
+                      <el-button
+                        v-if="!waterServiceMode"
+                        type="success"
+                        @click="fetchAndSaveScreenAI"
+                        :disabled="isLoading || isAwaitingFeedback"
+                        >AI生成画布</el-button
+                      >
+                    </div>
+                      
+                      
                       <span class="hint" v-if="isLoading || isCadConverting"
                         >AI 正在思考中，请稍候...</span
                       >
@@ -698,65 +759,7 @@
                   </el-dialog>
 
                   <div class="dialog-footer">
-                    <!-- 步骤路径指示器 -->
-                    <div class="step-path-container" v-if="!waterServiceMode">
-                      <div class="step-path">
-                        <!-- 步骤1：图纸识别 -->
-                        <div
-                          class="step-node"
-                          :class="{ current: currentStep === 1, completed: currentStep > 1 }"
-                        >
-                          <div class="step-dot">
-                            <span v-if="currentStep > 1" class="step-check">✓</span>
-                            <span v-else class="step-number">1</span>
-                          </div>
-                          <span class="step-label">图纸识别</span>
-                        </div>
-                        <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
-                        <!-- 步骤2：点位绑定 -->
-                        <div
-                          class="step-node"
-                          :class="{ current: currentStep === 2, completed: currentStep > 2 }"
-                        >
-                          <div class="step-dot">
-                            <span v-if="currentStep > 2" class="step-check">✓</span>
-                            <span v-else class="step-number">2</span>
-                          </div>
-                          <span class="step-label">点位绑定</span>
-                        </div>
-                        <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
-                        <!-- 步骤3：生成DSL -->
-                        <div
-                          class="step-node"
-                          :class="{ current: currentStep === 3, completed: currentStep > 3 }"
-                        >
-                          <div class="step-dot">
-                            <span v-if="currentStep > 3" class="step-check">✓</span>
-                            <span v-else class="step-number">3</span>
-                          </div>
-                          <span class="step-label">生成DSL</span>
-                        </div>
-                      </div>
-                      <!-- 重置步骤按钮 -->
-                      <el-button
-                        v-if="currentStep > 1"
-                        type="default"
-                        size="small"
-                        @click="resetSteps"
-                        :disabled="isLoading || isAwaitingFeedback"
-                        title="重置到步骤1"
-                        class="reset-button"
-                      >
-                        重置
-                      </el-button>
-                      <el-button
-                        v-if="!waterServiceMode"
-                        type="success"
-                        @click="fetchAndSaveScreenAI"
-                        :disabled="isLoading || isAwaitingFeedback"
-                        >AI生成画布</el-button
-                      >
-                    </div>
+                    
                   </div>
                 </div>
               </div>
@@ -6332,11 +6335,10 @@ export default defineComponent({
 
 /* 步骤路径指示器样式 */
 .step-path-container {
-  width: 100%;
   display: flex;
-  justify-content: center;
-  padding: 8px 0;
+  align-items: center;
   gap: 20px;
+  margin-right: auto;
 }
 
 .step-path {
