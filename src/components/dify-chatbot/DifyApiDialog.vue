@@ -1,222 +1,330 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    :title="title"
-    :width="width"
-    :before-close="handleClose"
-    :close-on-click-modal="false"
-    append-to-body
-    :show-close="true"
-    class="custom-close-dialog"
-    top="10vh"
-  >
-    <button class="my-close-btn" @click="handleClose">×</button>
-    <div class="dify-api-container">
-      <!-- 消息区域 -->
-      <div class="message-section" ref="messageContainer">
-        <div v-if="messages.length === 0" class="empty-message">
-          <div class="empty-icon">💬</div>
-          <div>暂无消息，开始您的对话吧！</div>
+  <Teleport to="body">
+    <div v-if="dialogVisible" class="custom-dialog-mask">
+      <div
+        class="custom-dialog-wrapper"
+        :style="{
+          left: dialogPosition.x + 'px',
+          top: dialogPosition.y + 'px',
+          width: dialogWidth + 'px',
+          height: dialogHeight + 'px',
+        }"
+      >
+        <div class="resize-handles">
+          <div class="resize-handle resize-n" @mousedown.stop="startResize('n', $event)"></div>
+          <div class="resize-handle resize-s" @mousedown.stop="startResize('s', $event)"></div>
+          <div class="resize-handle resize-e" @mousedown.stop="startResize('e', $event)"></div>
+          <div class="resize-handle resize-w" @mousedown.stop="startResize('w', $event)"></div>
+          <div class="resize-handle resize-ne" @mousedown.stop="startResize('ne', $event)"></div>
+          <div class="resize-handle resize-nw" @mousedown.stop="startResize('nw', $event)"></div>
+          <div class="resize-handle resize-se" @mousedown.stop="startResize('se', $event)"></div>
+          <div class="resize-handle resize-sw" @mousedown.stop="startResize('sw', $event)"></div>
         </div>
-        <div v-else class="message-list">
-          <div
-            v-for="(message, index) in messages"
-            :key="index"
-            :class="[
-              'message-item',
-              message.role === 'user' ? 'user-message' : 'assistant-message',
-              { 'human-interaction-message': message.isHumanInteraction },
-              { 'gateway-message': message.isGateway },
-            ]"
-          >
-            <!-- 人工介入消息 -->
-            <div v-if="message.isHumanInteraction" class="human-interaction-wrapper">
-              <!-- 人工介入提示条 -->
-              <div class="agent-indicator">
-                <span class="agent-icon">🔔</span>
-                <span class="agent-text">等待您的反馈</span>
-              </div>
-
-              <!-- AI 消息内容 -->
-              <div class="ai-message-content">
-                <div v-html="formatContent(message.content)"></div>
-                <button 
-                  class="copy-btn human-copy-btn" 
-                  @click="copyMessageContent(message)"
-                  :title="'复制内容'"
-                >
-                  <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
-                </button>
-              </div>
-
-              <!-- 用户反馈输入区域 -->
-              <div class="human-feedback-section">
-                <textarea
-                  v-model="message.humanInput"
-                  rows="3"
-                  placeholder="在此填写修改意见:"
-                  class="feedback-textarea"
-                  :disabled="isSubmitting"
-                ></textarea>
-                <div class="feedback-actions">
-                  <el-button
-                    type="primary"
-                    @click="handleHumanApprove(index)"
-                    :disabled="isSubmitting || message.isProcessed"
-                    :loading="isSubmitting"
+        <div class="custom-dialog">
+          <div class="custom-dialog-header" @mousedown="handleDialogMouseDown">
+            <span class="custom-dialog-title">{{ title }}</span>
+            <button class="custom-dialog-close" @click="handleClose">×</button>
+          </div>
+          <div class="dify-api-container">
+            <!-- 消息区域 -->
+            <div class="message-section-wrapper">
+              <div class="message-section" ref="messageContainer">
+                <div v-if="messages.length === 0" class="empty-message">
+                  <div class="empty-icon">💬</div>
+                  <div>暂无消息，开始您的对话吧！</div>
+                </div>
+                <div v-else class="message-list">
+                  <div
+                    v-for="(message, index) in messages"
+                    :key="index"
+                    :class="[
+                      'message-item',
+                      message.role === 'user' ? 'user-message' : 'assistant-message',
+                      { 'human-interaction-message': message.isHumanInteraction },
+                      { 'gateway-message': message.isGateway },
+                    ]"
                   >
-                    确认
-                  </el-button>
-                  <el-button
-                    type="default"
-                    @click="handleHumanRevise(index)"
-                    :disabled="isSubmitting || message.isProcessed"
-                    :loading="isSubmitting"
-                  >
-                    修改
-                  </el-button>
-                </div>
-                <div class="expiry-note">⚠️ 此操作将在1小时内过期。</div>
-              </div>
-            </div>
-
-            <!-- 网关消息 -->
-            <div v-else-if="message.isGateway" class="gateway-message-wrapper">
-              <!-- AI提示标签 -->
-              <div class="gateway-indicator">
-                <span class="gateway-icon">🌐</span>
-                <span class="gateway-text">AI提示</span>
-              </div>
-
-              <!-- AI 消息内容 -->
-              <div class="gateway-message-content">
-                <div v-html="formatContent(message.content)"></div>
-              </div>
-
-              <!-- 操作区域 -->
-              <div class="gateway-action-area" v-if="message.gatewayNextStep && message.gatewayNextStep >= 1 && message.gatewayNextStep <= 3">
-                <div class="gateway-upload-section" v-if="!message.isGatewayActionDisabled">
-                  <label class="gateway-upload-btn">
-                    <input type="file" multiple class="gateway-upload-input" @change="(e) => handleGatewayUpload(e, message.conversationId || '')" />
-                    <span>📁 上传文件</span>
-                  </label>
-                </div>
-                
-                <!-- 已上传文件列表 -->
-                <div v-if="message.gatewayImages && message.gatewayImages.length > 0" class="gateway-uploaded-files">
-                  <div 
-                    v-for="(file, index) in message.gatewayImages" 
-                    :key="index" 
-                    class="gateway-file-tag"
-                    @click="previewGatewayFile(message.conversationId || '', index)"
-                  >
-                    <span class="gateway-file-icon">
-                      <span v-if="isImageFile(file)">🖼️</span>
-                      <span v-else-if="file.extension === 'txt'">📝</span>
-                      <span v-else>📄</span>
-                    </span>
-                    <span class="gateway-file-name">{{ file.name }}</span>
-                    <button 
-                      v-if="!message.isGatewayActionDisabled"
-                      class="gateway-file-remove" 
-                      @click.stop="removeGatewayFile(message.conversationId || '', index)"
-                      title="删除"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-                
-                <div class="gateway-action-buttons">
-                  <div class="gateway-next-step">
-                    <button class="gateway-next-btn" :disabled="message.isGatewayActionDisabled" @click="proceedToNextStep(message.conversationId || '', message.gatewayNextStep)">
-                      🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 复制按钮 -->
-              <button 
-                class="copy-btn gateway-copy-btn" 
-                @click="copyMessageContent(message)"
-                :title="'复制内容'"
-              >
-                <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
-              </button>
-
-              <div class="message-time">{{ formatTime(message.timestamp) }}</div>
-            </div>
-
-            <!-- 普通消息 -->
-            <template v-else>
-              <div class="message-header">
-                <div class="avatar" :class="message.role">
-                  {{ message.role === "user" ? "👤" : "🤖" }}
-                </div>
-                <div class="message-role">{{ message.role === "user" ? "用户" : "AI 助手" }}</div>
-              </div>
-              <div class="message-content">
-                <!-- 思考中状态 -->
-                <div v-if="message.isThinking" class="thinking-indicator">
-                  <span class="thinking-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </span>
-                  <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
-                </div>
-                <!-- 正常内容 -->
-                <div v-else class="content-text" v-html="formatContent(message.content)"></div>
-                
-                <!-- 用户消息中的文件列表 -->
-                <div v-if="message.files && message.files.length > 0" class="message-files">
-                  <div class="message-files-title">📎 附件</div>
-                  <div class="message-files-list">
-                    <div 
-                      v-for="(file, fileIndex) in message.files" 
-                      :key="fileIndex" 
-                      class="message-file-item"
-                      @click="viewMessageFile(message, fileIndex)"
-                    >
-                      <div class="message-file-icon">
-                        <span v-if="isImageFile(file)">🖼️</span>
-                        <span v-else-if="file.extension === 'txt'">📝</span>
-                        <span v-else>📄</span>
+                    <!-- 人工介入消息 -->
+                    <div v-if="message.isHumanInteraction" class="human-interaction-wrapper">
+                      <!-- 人工介入提示条 -->
+                      <div class="agent-indicator">
+                        <span class="agent-icon">🔔</span>
+                        <span class="agent-text">等待您的反馈</span>
                       </div>
-                      <div class="message-file-info">
-                        <div class="message-file-name">{{ file.name }}</div>
-                        <div class="message-file-size">{{ formatFileSize(file.size) }}</div>
+
+                      <!-- AI 消息内容 -->
+                      <div class="ai-message-content">
+                        <div v-html="formatContent(message.content)"></div>
+                      <button
+                        class="copy-btn human-copy-btn"
+                        @click="copyMessageContent(message)"
+                        :title="'复制内容'"
+                      >
+                        <svg
+                          t="1783476614918"
+                          class="copy-icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                        >
+                          <path
+                            d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
+                            fill="#909399"
+                          ></path>
+                          <path
+                            d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
+                            fill="#909399"
+                          ></path>
+                          <path
+                            d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
+                            fill="#909399"
+                          ></path>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <!-- 用户反馈输入区域 -->
+                    <div class="human-feedback-section">
+                      <textarea
+                        v-model="message.humanInput"
+                        rows="3"
+                        placeholder="在此填写修改意见:"
+                        class="feedback-textarea"
+                        :disabled="isSubmitting"
+                      ></textarea>
+                      <div class="feedback-actions">
+                        <el-button
+                          type="primary"
+                          @click="handleHumanApprove(index)"
+                          :disabled="isSubmitting || message.isProcessed"
+                          :loading="isSubmitting"
+                        >
+                          确认
+                        </el-button>
+                        <el-button
+                          type="default"
+                          @click="handleHumanRevise(index)"
+                          :disabled="isSubmitting || message.isProcessed"
+                          :loading="isSubmitting"
+                        >
+                          修改
+                        </el-button>
                       </div>
+                      <div class="expiry-note">⚠️ 此操作将在1小时内过期。</div>
                     </div>
                   </div>
+
+                  <!-- 网关消息 -->
+                  <div v-else-if="message.isGateway" class="gateway-message-wrapper">
+                    <!-- AI提示标签 -->
+                    <div class="gateway-indicator">
+                      <span class="gateway-icon">🌐</span>
+                      <span class="gateway-text">AI提示</span>
+                    </div>
+
+                    <!-- AI 消息内容 -->
+                    <div class="gateway-message-content">
+                      <div v-html="formatContent(message.content)"></div>
+                    </div>
+
+                    <!-- 操作区域 -->
+                    <div
+                      class="gateway-action-area"
+                      v-if="
+                        message.gatewayNextStep &&
+                        message.gatewayNextStep >= 1 &&
+                        message.gatewayNextStep <= 3
+                      "
+                    >
+                      <div class="gateway-upload-section" v-if="!message.isGatewayActionDisabled">
+                        <label class="gateway-upload-btn">
+                          <input
+                            type="file"
+                            multiple
+                            class="gateway-upload-input"
+                            @change="(e) => handleGatewayUpload(e, message.conversationId || '')"
+                          />
+                          <span>📁 上传文件</span>
+                        </label>
+                      </div>
+
+                      <!-- 已上传文件列表 -->
+                      <div
+                        v-if="message.gatewayImages && message.gatewayImages.length > 0"
+                        class="gateway-uploaded-files"
+                      >
+                        <div
+                          v-for="(file, index) in message.gatewayImages"
+                          :key="index"
+                          class="gateway-file-tag"
+                          @click="previewGatewayFile(message.conversationId || '', index)"
+                        >
+                          <span class="gateway-file-icon">
+                            <span v-if="isImageFile(file)">🖼️</span>
+                            <span v-else-if="file.extension === 'txt'">📝</span>
+                            <span v-else>📄</span>
+                          </span>
+                          <span class="gateway-file-name">{{ file.name }}</span>
+                          <button
+                            v-if="!message.isGatewayActionDisabled"
+                            class="gateway-file-remove"
+                            @click.stop="removeGatewayFile(message.conversationId || '', index)"
+                            title="删除"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="gateway-action-buttons">
+                        <div class="gateway-next-step">
+                          <button
+                            class="gateway-next-btn"
+                            :disabled="message.isGatewayActionDisabled"
+                            @click="
+                              proceedToNextStep(
+                                message.conversationId || '',
+                                message.gatewayNextStep,
+                              )
+                            "
+                          >
+                            🚀 开始{{ getStepLabel(message.gatewayNextStep) }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 复制按钮 -->
+                    <button
+                      class="copy-btn gateway-copy-btn"
+                      @click="copyMessageContent(message)"
+                      :title="'复制内容'"
+                    >
+                      <svg
+                        t="1783476614918"
+                        class="copy-icon"
+                        viewBox="0 0 1024 1024"
+                        version="1.1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                      >
+                        <path
+                          d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
+                          fill="#909399"
+                        ></path>
+                        <path
+                          d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
+                          fill="#909399"
+                        ></path>
+                        <path
+                          d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
+                          fill="#909399"
+                        ></path>
+                      </svg>
+                    </button>
+
+                    <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+                  </div>
+
+                  <!-- 普通消息 -->
+                  <template v-else>
+                    <div class="message-header">
+                      <div class="avatar" :class="message.role">
+                        {{ message.role === "user" ? "👤" : "🤖" }}
+                      </div>
+                      <div class="message-role">
+                        {{ message.role === "user" ? "用户" : "AI 助手" }}
+                      </div>
+                    </div>
+                    <div class="message-content">
+                      <!-- 思考中状态 -->
+                      <div v-if="message.isThinking" class="thinking-indicator">
+                        <span class="thinking-dots">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </span>
+                        <span class="thinking-text">{{ message.thinkingContent || "思考中" }}</span>
+                      </div>
+                      <!-- 正常内容 -->
+                      <div
+                        v-else
+                        class="content-text"
+                        v-html="formatContent(message.content)"
+                      ></div>
+
+                      <!-- 用户消息中的文件列表 -->
+                      <div v-if="message.files && message.files.length > 0" class="message-files">
+                        <div class="message-files-title">📎 附件</div>
+                        <div class="message-files-list">
+                          <div
+                            v-for="(file, fileIndex) in message.files"
+                            :key="fileIndex"
+                            class="message-file-item"
+                            @click="viewMessageFile(message, fileIndex)"
+                          >
+                            <div class="message-file-icon">
+                              <span v-if="isImageFile(file)">🖼️</span>
+                              <span v-else-if="file.extension === 'txt'">📝</span>
+                              <span v-else>📄</span>
+                            </div>
+                            <div class="message-file-info">
+                              <div class="message-file-name">{{ file.name }}</div>
+                              <div class="message-file-size">{{ formatFileSize(file.size) }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="message-actions">
+                      <button
+                        class="copy-btn"
+                        @click="copyMessageContent(message)"
+                        :title="'复制内容'"
+                        v-if="!message.isThinking"
+                      >
+                        <svg
+                          t="1783476614918"
+                          class="copy-icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                        >
+                          <path
+                            d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z"
+                            fill="#909399"
+                          ></path>
+                          <path
+                            d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z"
+                            fill="#909399"
+                          ></path>
+                          <path
+                            d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z"
+                            fill="#909399"
+                          ></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="message-time" v-if="!message.isThinking">
+                      {{ formatTime(message.timestamp) }}
+                    </div>
+                  </template>
                 </div>
               </div>
-              <div class="message-actions">
-                <button 
-                  class="copy-btn" 
-                  @click="copyMessageContent(message)"
-                  :title="'复制内容'"
-                  v-if="!message.isThinking"
-                >
-                  <svg t="1783476614918" class="copy-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M912 17.28H340.48a96 96 0 0 0-96 96v83.2h64v-83.2a32 32 0 0 1 32-32h571.52a32 32 0 0 1 32 32v650.88a31.36 31.36 0 0 1-32 31.36h-164.48v64h164.48a96 96 0 0 0 96-95.36V113.28a96 96 0 0 0-96-96z" fill="#909399"></path><path d="M683.52 1006.72H112a96 96 0 0 1-96-96V259.84a96 96 0 0 1 96-95.36h571.52a96 96 0 0 1 96 95.36v650.88a96 96 0 0 1-96 96zM112 228.48a31.36 31.36 0 0 0-32 31.36v650.88a32 32 0 0 0 32 32h571.52a32 32 0 0 0 32-32V259.84a32 32 0 0 0-32-31.36z" fill="#909399"></path><path d="M603.52 423.68H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32zM603.52 617.6H192a32 32 0 0 1 0-64h411.52a32 32 0 0 1 0 64zM603.52 810.88H192a32 32 0 0 1-32-32 32 32 0 0 1 32-32h411.52a32 32 0 0 1 32 32 32 32 0 0 1-32 32z" fill="#909399"></path></svg>
-                </button>
-              </div>
-              <div class="message-time" v-if="!message.isThinking">
-                {{ formatTime(message.timestamp) }}
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <!-- 输入区域 -->
-      <div class="input-section">
-        <div class="input-wrapper">
-          <!-- 推荐问题下拉框和操作按钮行 -->
-          <div class="top-bar">
-            <!-- 水务模式下隐藏推荐问题下拉框 -->
-            <!-- <select
+            </div>
+            </div>
+        <!-- 输入区域 -->
+        <div class="input-section">
+          <div class="input-wrapper">
+            <!-- 推荐问题下拉框和操作按钮行 -->
+            <div class="top-bar">
+              <!-- 水务模式下隐藏推荐问题下拉框 -->
+              <!-- <select
               v-if="!waterServiceMode"
               v-model="selectedQuestion"
               :disabled="isLoading || isAwaitingFeedback"
@@ -235,32 +343,106 @@
                 {{ question }}
               </option>
             </select> -->
-            <div class="top-bar-actions">
-              <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
-              <!-- <el-button
+              <div class="top-bar-actions">
+                <!-- 水务模式下保留：复制回答内容、清空对话、上传图片 -->
+                <!-- <el-button
                 type="primary"
                 size="small"
                 @click="copyLastMessageContent"
                 :disabled="isLoading"
                 >复制回答内容</el-button
               > -->
-              <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话"
-              class="upload-button"
-                ><svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8032" width="20" height="20"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" p-id="8033" fill="#ffffff"></path></svg>
-                </el-button
-              >
-              <el-button
-                type="success"
-                size="small"
-                @click="triggerImageUpload"
-                :disabled="isLoading || isAwaitingFeedback"
-                class="upload-button"
-                title="上传文件"
-              >
-              <svg t="1783924879903" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2350" width="20" height="20"><path d="M770.609824 1023.841829a142.354032 142.354032 0 0 1-104.86747-239.787458 14.235403 14.235403 0 0 1 20.878591 19.455051A113.883225 113.883225 0 1 0 727.429101 775.038616a14.235403 14.235403 0 1 1-10.597467-26.414581 142.354032 142.354032 0 1 1 53.145505 275.375965zM444.935434 292.932963H276.957677a16.766141 16.766141 0 0 1 0-33.532283h167.977757a16.766141 16.766141 0 0 1 0 33.532283zM344.180414 360.1557h-67.222737a16.766141 16.766141 0 0 1 0-33.532283h67.222737a16.766141 16.766141 0 0 1 0 33.532283zM679.977757 494.601174H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 561.823911H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 629.046648H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM411.086809 695.953043h-134.445474a16.924313 16.924313 0 0 1 0-33.690454H411.086809A16.924313 16.924313 0 0 1 411.086809 695.953043z" fill="#ffffff" p-id="2351"></path><path d="M699.116466 207.204201m0-3.796107l0-25.307383q0-3.796108 3.796107-3.796108l194.075997 0q3.796108 0 3.796107 3.796108l0 25.307383q0 3.796108-3.796107 3.796107l-194.075997 0q-3.796108 0-3.796107-3.796107Z" fill="#ffffff" p-id="2352"></path><path d="M731.857893 207.04603m-3.796107 0l-25.307384 0q-3.796108 0-3.796107-3.796107l0-110.087118q0-3.796108 3.796107-3.796107l25.307384 0q3.796108 0 3.796107 3.796107l0 110.087118q0 3.796108-3.796107 3.796107Z" fill="#ffffff" p-id="2353"></path><path d="M907.514349 190.194241m-2.684253 2.684254l-17.895023 17.895022q-2.684253 2.684253-5.368506 0l-186.331921-186.331921q-2.684253-2.684253 0-5.368507l17.895022-17.895022q2.684253-2.684253 5.368507 0l186.331921 186.331921q2.684253 2.684253 0 5.368507Z" fill="#ffffff" p-id="2354"></path><path d="M429.434662 997.427247m-16.449799 0a16.449799 16.449799 0 1 0 32.899598 0 16.449799 16.449799 0 1 0-32.899598 0Z" fill="#ffffff" p-id="2355"></path><path d="M363.635465 980.661106H176.67717a33.215941 33.215941 0 0 1-33.21594-33.215941V71.335187a33.374112 33.374112 0 0 1 33.21594-33.374112h540.628978V5.219648H176.67717A66.115539 66.115539 0 0 0 110.561631 71.335187v876.426321a66.115539 66.115539 0 0 0 66.115539 66.115539H363.635465a15.817115 15.817115 0 1 0 0-33.215941zM594.248996 980.661106H494.917516a15.817115 15.817115 0 0 0 0 32.899598h99.33148a15.817115 15.817115 0 0 0 0-32.899598zM901.417362 714.617238V272.845227a15.817115 15.817115 0 0 0-32.899599 0v441.772011a15.817115 15.817115 0 1 0 32.899599 0z" fill="#ffffff" p-id="2356"></path><path d="M754.160025 826.127896m3.796107 0l25.307384 0q3.796108 0 3.796107 3.796108l0 129.858511q0 3.796108-3.796107 3.796107l-25.307384 0q-3.796108 0-3.796107-3.796107l0-129.858511q0-3.796108 3.796107-3.796108Z" fill="#ffffff" p-id="2357"></path><path d="M747.422242 817.383321m2.684253-2.684253l17.895023-17.895023q2.684253-2.684253 5.368507 0l72.139309 72.139309q2.684253 2.684253 0 5.368507l-17.895023 17.895023q-2.684253 2.684253-5.368507 0l-72.139309-72.13931q-2.684253-2.684253 0-5.368506Z" fill="#ffffff" p-id="2358"></path><path d="M716.242933 895.111782m-2.684253-2.684254l-17.895022-17.895022q-2.684253-2.684253 0-5.368507l72.139309-72.139309q2.684253-2.684253 5.368506 0l17.895023 17.895023q2.684253 2.684253 0 5.368506l-72.139309 72.139309q-2.684253 2.684253-5.368507 0Z" fill="#ffffff" p-id="2359"></path></svg>
-              </el-button>
-              <!-- 水务模式下隐藏：CAD转JSON -->
-              <!-- <el-button 
+                <el-button
+                  type="warning"
+                  size="small"
+                  @click="clearMessages"
+                  :disabled="isLoading"
+                  title="清空对话"
+                  class="upload-button"
+                  ><svg
+                    t="1783560291301"
+                    class="icon"
+                    viewBox="0 0 1024 1024"
+                    version="1.1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    p-id="8032"
+                    width="20"
+                    height="20"
+                  >
+                    <path
+                      d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z"
+                      p-id="8033"
+                      fill="#ffffff"
+                    ></path>
+                  </svg>
+                </el-button>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="triggerImageUpload"
+                  :disabled="isLoading || isAwaitingFeedback"
+                  class="upload-button"
+                  title="上传文件"
+                >
+                  <svg
+                    t="1783924879903"
+                    class="icon"
+                    viewBox="0 0 1024 1024"
+                    version="1.1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    p-id="2350"
+                    width="20"
+                    height="20"
+                  >
+                    <path
+                      d="M770.609824 1023.841829a142.354032 142.354032 0 0 1-104.86747-239.787458 14.235403 14.235403 0 0 1 20.878591 19.455051A113.883225 113.883225 0 1 0 727.429101 775.038616a14.235403 14.235403 0 1 1-10.597467-26.414581 142.354032 142.354032 0 1 1 53.145505 275.375965zM444.935434 292.932963H276.957677a16.766141 16.766141 0 0 1 0-33.532283h167.977757a16.766141 16.766141 0 0 1 0 33.532283zM344.180414 360.1557h-67.222737a16.766141 16.766141 0 0 1 0-33.532283h67.222737a16.766141 16.766141 0 0 1 0 33.532283zM679.977757 494.601174H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 561.823911H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM679.977757 629.046648H276.957677a16.924313 16.924313 0 0 1 0-33.690454H679.977757a16.924313 16.924313 0 0 1 0 33.690454zM411.086809 695.953043h-134.445474a16.924313 16.924313 0 0 1 0-33.690454H411.086809A16.924313 16.924313 0 0 1 411.086809 695.953043z"
+                      fill="#ffffff"
+                      p-id="2351"
+                    ></path>
+                    <path
+                      d="M699.116466 207.204201m0-3.796107l0-25.307383q0-3.796108 3.796107-3.796108l194.075997 0q3.796108 0 3.796107 3.796108l0 25.307383q0 3.796108-3.796107 3.796107l-194.075997 0q-3.796108 0-3.796107-3.796107Z"
+                      fill="#ffffff"
+                      p-id="2352"
+                    ></path>
+                    <path
+                      d="M731.857893 207.04603m-3.796107 0l-25.307384 0q-3.796108 0-3.796107-3.796107l0-110.087118q0-3.796108 3.796107-3.796107l25.307384 0q3.796108 0 3.796107 3.796107l0 110.087118q0 3.796108-3.796107 3.796107Z"
+                      fill="#ffffff"
+                      p-id="2353"
+                    ></path>
+                    <path
+                      d="M907.514349 190.194241m-2.684253 2.684254l-17.895023 17.895022q-2.684253 2.684253-5.368506 0l-186.331921-186.331921q-2.684253-2.684253 0-5.368507l17.895022-17.895022q2.684253-2.684253 5.368507 0l186.331921 186.331921q2.684253 2.684253 0 5.368507Z"
+                      fill="#ffffff"
+                      p-id="2354"
+                    ></path>
+                    <path
+                      d="M429.434662 997.427247m-16.449799 0a16.449799 16.449799 0 1 0 32.899598 0 16.449799 16.449799 0 1 0-32.899598 0Z"
+                      fill="#ffffff"
+                      p-id="2355"
+                    ></path>
+                    <path
+                      d="M363.635465 980.661106H176.67717a33.215941 33.215941 0 0 1-33.21594-33.215941V71.335187a33.374112 33.374112 0 0 1 33.21594-33.374112h540.628978V5.219648H176.67717A66.115539 66.115539 0 0 0 110.561631 71.335187v876.426321a66.115539 66.115539 0 0 0 66.115539 66.115539H363.635465a15.817115 15.817115 0 1 0 0-33.215941zM594.248996 980.661106H494.917516a15.817115 15.817115 0 0 0 0 32.899598h99.33148a15.817115 15.817115 0 0 0 0-32.899598zM901.417362 714.617238V272.845227a15.817115 15.817115 0 0 0-32.899599 0v441.772011a15.817115 15.817115 0 1 0 32.899599 0z"
+                      fill="#ffffff"
+                      p-id="2356"
+                    ></path>
+                    <path
+                      d="M754.160025 826.127896m3.796107 0l25.307384 0q3.796108 0 3.796107 3.796108l0 129.858511q0 3.796108-3.796107 3.796107l-25.307384 0q-3.796108 0-3.796107-3.796107l0-129.858511q0-3.796108 3.796107-3.796108Z"
+                      fill="#ffffff"
+                      p-id="2357"
+                    ></path>
+                    <path
+                      d="M747.422242 817.383321m2.684253-2.684253l17.895023-17.895023q2.684253-2.684253 5.368507 0l72.139309 72.139309q2.684253 2.684253 0 5.368507l-17.895023 17.895023q-2.684253 2.684253-5.368507 0l-72.139309-72.13931q-2.684253-2.684253 0-5.368506Z"
+                      fill="#ffffff"
+                      p-id="2358"
+                    ></path>
+                    <path
+                      d="M716.242933 895.111782m-2.684253-2.684254l-17.895022-17.895022q-2.684253-2.684253 0-5.368507l72.139309-72.139309q2.684253-2.684253 5.368506 0l17.895023 17.895023q2.684253 2.684253 0 5.368506l-72.139309 72.139309q-2.684253 2.684253-5.368507 0Z"
+                      fill="#ffffff"
+                      p-id="2359"
+                    ></path>
+                  </svg>
+                </el-button>
+                <!-- 水务模式下隐藏：CAD转JSON -->
+                <!-- <el-button 
               v-if="!waterServiceMode"
               type="success" 
               size="small"
@@ -270,304 +452,344 @@
             >
               {{ isCadConverting ? '转换中' : 'CAD转JSON' }}
             </el-button> -->
-              <!-- 已上传文件列表 -->
-              <div v-if="uploadedImages.length > 0" class="uploaded-files-bar">
-                <div class="uploaded-files-list">
-                  <div 
-                    v-for="(file, index) in uploadedImages" 
-                    :key="index" 
-                    class="uploaded-file-tag"
-                    @click="previewUploadedFile(index)"
-                  >
-                    <span class="uploaded-file-icon">
-                      <span v-if="isImageFile(file)">🖼️</span>
-                      <span v-else-if="file.extension === 'txt'">📝</span>
-                      <span v-else>📄</span>
-                    </span>
-                    <span class="uploaded-file-name">{{ file.name }}</span>
-                    <button 
-                      class="uploaded-file-remove" 
-                      @click.stop="removeUploadedFile(index)"
-                      title="删除"
+                <!-- 已上传文件列表 -->
+                <div v-if="uploadedImages.length > 0" class="uploaded-files-bar">
+                  <div class="uploaded-files-list">
+                    <div
+                      v-for="(file, index) in uploadedImages"
+                      :key="index"
+                      class="uploaded-file-tag"
+                      @click="previewUploadedFile(index)"
                     >
-                      ✕
-                    </button>
+                      <span class="uploaded-file-icon">
+                        <span v-if="isImageFile(file)">🖼️</span>
+                        <span v-else-if="file.extension === 'txt'">📝</span>
+                        <span v-else>📄</span>
+                      </span>
+                      <span class="uploaded-file-name">{{ file.name }}</span>
+                      <button
+                        class="uploaded-file-remove"
+                        @click.stop="removeUploadedFile(index)"
+                        title="删除"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <!-- 输入框和发送按钮行 -->
-          <div class="input-row">
-            <el-input
-              v-model="userQuery"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入您的问题..."
-              resize="none"
-              :disabled="isLoading || isAwaitingFeedback"
-              @keydown.enter.prevent="handleEnter"
-            ></el-input>
-            <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px">
-              
-              <!-- 第二行：操作按钮 -->
-              <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
-                <span class="hint" v-if="isLoading || isCadConverting"
-                  >AI 正在思考中，请稍候...</span
+            <!-- 输入框和发送按钮行 -->
+            <div class="input-row">
+              <el-input
+                v-model="userQuery"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入您的问题..."
+                resize="none"
+                :disabled="isLoading || isAwaitingFeedback"
+                @keydown.enter.prevent="handleEnter"
+              ></el-input>
+              <div class="input-actions" style="display: flex; flex-direction: column; gap: 8px">
+                <!-- 第二行：操作按钮 -->
+                <div class="actions-row" style="display: flex; align-items: center; gap: 8px">
+                  <span class="hint" v-if="isLoading || isCadConverting"
+                    >AI 正在思考中，请稍候...</span
+                  >
+                  <!-- 水务模式下保留：停止生成 -->
+                  <el-button
+                    v-if="isLoading || isCadConverting"
+                    type="danger"
+                    size="small"
+                    @click="stopGeneration()"
+                    class="stop-button"
+                    title="停止"
+                  >
+                    <svg
+                      t="1783304242585"
+                      class="stop-icon"
+                      viewBox="0 0 1024 1024"
+                      version="1.1"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="28"
+                      height="28"
+                    >
+                      <path
+                        d="M678.592 639.68c0 17.6-14.4 32-32 32h-268.992a32 32 0 0 1-32-32v-260.608a32 32 0 0 1 32-32h268.992c17.6 0 32 14.4 32 32v260.608z"
+                        fill="#ffffff"
+                      ></path>
+                      <path
+                        d="M1015.552 512.128a502.656 502.656 0 0 0-503.68-503.68 502.208 502.208 0 0 0-356.096 147.264 502.016 502.016 0 0 0-147.328 356.416 500.288 500.288 0 0 0 146.816 356.736 499.584 499.584 0 0 0 356.544 146.688c277.312-2.816 503.744-226.24 503.744-503.424z m-947.968 0a444.288 444.288 0 0 1 444.288-444.544c246.976 0 447.296 200.128 447.296 444.544 0 244.032-200.32 444.416-447.296 444.416a442.304 442.304 0 0 1-444.288-444.416z"
+                        fill="#ffffff"
+                      ></path>
+                    </svg>
+                  </el-button>
+                  <!-- 助手下拉框 -->
+                  <select
+                    v-show="false"
+                    v-model="selectedSendType"
+                    :disabled="isLoading || isAwaitingFeedback"
+                    class="send-type-select"
+                    style="
+                      width: 90px;
+                      height: 32px;
+                      padding: 0 8px;
+                      border-radius: 4px;
+                      border: 1px solid #dcdfe6;
+                      font-size: 13px;
+                      z-index: 1000;
+                    "
+                  >
+                    <option
+                      v-for="type in sendTypes"
+                      :key="type.id"
+                      :value="type.id"
+                      :disabled="getSendTypeDisabled(type)"
+                    >
+                      {{ type.label }}
+                    </option>
+                  </select>
+
+                  <el-button
+                    type="success"
+                    size="small"
+                    @click="sendDispatch"
+                    :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
+                    class="send-button"
+                    title="发送调度"
+                    v-show="!isLoading && !isCadConverting"
+                  >
+                    <template v-if="isLoading">发送中</template>
+                    <svg
+                      v-else
+                      t="1783304326600"
+                      class="icon"
+                      viewBox="0 0 1024 1024"
+                      version="1.1"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="28"
+                      height="28"
+                    >
+                      <path
+                        d="M512 981.333333q11.52 0 23.04-0.554666t22.954667-1.706667q11.477333-1.109333 22.869333-2.816 11.392-1.706667 22.698667-3.925333 11.306667-2.261333 22.485333-5.077334 11.178667-2.773333 22.186667-6.144 11.008-3.328 21.888-7.210666 10.837333-3.882667 21.461333-8.277334 10.666667-4.437333 21.077333-9.386666 10.410667-4.906667 20.565334-10.325334 10.197333-5.418667 20.053333-11.349333 9.898667-5.930667 19.456-12.330667 9.6-6.4 18.858667-13.226666 9.258667-6.912 18.133333-14.208 8.96-7.296 17.493333-15.018667 8.533333-7.765333 16.64-15.914667 8.149333-8.106667 15.914667-16.64 7.68-8.533333 15.018667-17.493333 7.296-8.874667 14.165333-18.133333t13.269333-18.858667q6.4-9.557333 12.330667-19.456 5.930667-9.898667 11.349333-20.053333 5.418667-10.154667 10.368-20.565334 4.906667-10.410667 9.344-21.077333 4.394667-10.666667 8.277334-21.504 3.882667-10.837333 7.253333-21.888 3.328-11.008 6.101333-22.186667 2.816-11.178667 5.077334-22.485333 2.218667-11.306667 3.925333-22.698667t2.816-22.869333q1.152-11.434667 1.706667-22.954667Q981.333333 523.52 981.333333 512t-0.554666-23.04q-0.554667-11.52-1.706667-22.954667-1.109333-11.477333-2.816-22.869333-1.706667-11.392-3.925333-22.698667-2.261333-11.306667-5.077334-22.485333-2.773333-11.178667-6.144-22.186667-3.328-11.050667-7.210666-21.888-3.882667-10.837333-8.277334-21.504-4.437333-10.624-9.386666-21.034666-4.906667-10.410667-10.325334-20.565334-5.418667-10.197333-11.349333-20.053333-5.930667-9.898667-12.330667-19.456-6.4-9.6-13.226666-18.858667-6.912-9.258667-14.208-18.133333-7.296-8.96-15.018667-17.493333-7.765333-8.533333-15.914667-16.64-8.106667-8.149333-16.64-15.872-8.533333-7.765333-17.493333-15.061334-8.874667-7.296-18.133333-14.165333t-18.858667-13.269333q-9.557333-6.4-19.456-12.330667-9.898667-5.930667-20.053333-11.349333-10.154667-5.418667-20.565334-10.368-10.410667-4.906667-21.077333-9.344-10.624-4.394667-21.461333-8.277334-10.88-3.882667-21.888-7.253333-11.008-3.328-22.186667-6.101333-11.178667-2.816-22.485333-5.077334-11.306667-2.218667-22.698667-3.925333t-22.869333-2.816q-11.434667-1.109333-22.954667-1.706667Q523.52 42.666667 512 42.666667t-23.04 0.554666q-11.52 0.597333-22.954667 1.706667-11.477333 1.109333-22.869333 2.816-11.392 1.706667-22.698667 3.925333-11.306667 2.261333-22.485333 5.077334-11.178667 2.773333-22.186667 6.144-11.050667 3.328-21.888 7.210666-10.837333 3.882667-21.504 8.277334-10.624 4.437333-21.034666 9.386666-10.410667 4.906667-20.565334 10.325334-10.197333 5.418667-20.053333 11.349333-9.898667 5.930667-19.456 12.330667-9.6 6.4-18.858667 13.226666-9.258667 6.912-18.133333 14.208-8.96 7.296-17.493333 15.061334-8.533333 7.68-16.64 15.872-8.149333 8.106667-15.872 16.64-7.765333 8.533333-15.061334 17.493333-7.296 8.874667-14.165333 18.133333t-13.269333 18.858667q-6.4 9.557333-12.330667 19.456-5.930667 9.856-11.349333 20.053333-5.418667 10.154667-10.368 20.565334-4.906667 10.410667-9.344 21.034666-4.394667 10.666667-8.277334 21.504-3.882667 10.837333-7.253333 21.888-3.328 11.008-6.101333 22.186667-2.816 11.178667-5.077334 22.485333-2.218667 11.306667-3.925333 22.698667t-2.816 22.869333q-1.109333 11.434667-1.706667 22.954667Q42.666667 500.48 42.666667 512t0.554666 23.04q0.597333 11.52 1.706667 22.954667 1.109333 11.477333 2.816 22.869333 1.706667 11.392 3.925333 22.698667 2.261333 11.306667 5.077334 22.485333 2.773333 11.178667 6.144 22.186667 3.328 11.008 7.210666 21.888 3.882667 10.837333 8.277334 21.461333 4.437333 10.666667 9.386666 21.077333 4.906667 10.410667 10.325334 20.565334 5.418667 10.197333 11.349333 20.053333 5.930667 9.898667 12.330667 19.456 6.4 9.6 13.226666 18.858667 6.912 9.258667 14.208 18.133333 7.296 8.96 15.061334 17.493333 7.68 8.533333 15.872 16.64 8.106667 8.149333 16.64 15.914667 8.533333 7.68 17.493333 15.018667 8.874667 7.296 18.133333 14.165333t18.858667 13.269333q9.557333 6.4 19.456 12.330667 9.856 5.930667 20.053333 11.349333 10.154667 5.418667 20.565334 10.368 10.410667 4.906667 21.034666 9.344 10.666667 4.394667 21.504 8.277334 10.837333 3.882667 21.888 7.253333 11.008 3.328 22.186667 6.101333 11.178667 2.816 22.485333 5.077334 11.306667 2.218667 22.698667 3.925333t22.869333 2.816q11.434667 1.152 22.954667 1.706667 11.52 0.554667 23.04 0.554666z m-10.666667-673.322666a32 32 0 0 1 45.226667 0l150.613333 150.186666a32 32 0 1 1-45.226666 45.312l-96-95.744V725.333333a32 32 0 0 1-64 0V407.765333L395.946667 503.466667a32 32 0 1 1-45.226667-45.312l150.613333-150.186667z"
+                        fill="#ffffff"
+                      ></path>
+                    </svg>
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 上传图片输入框（隐藏） -->
+              <input
+                ref="fileInput"
+                type="file"
+                multiple
+                style="display: none"
+                @change="handleImageUpload"
+              />
+
+              <!-- 图片预览弹窗 -->
+              <el-dialog
+                v-model="imagePreviewVisible"
+                :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) ? 1 : (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1} / ${isGatewayPreview ? (Array.isArray(gatewayPreviewImages) ? gatewayPreviewImages.length : 0) : Array.isArray(uploadedImages) ? uploadedImages.length : 0})`"
+                width="1100px"
+                append-to-body
+                :z-index="20000"
+                @open="resetImageScale"
+                @close="handlePreviewClose"
+              >
+                <div class="multi-image-preview-wrapper">
+                  <!-- 主内容区域 -->
+                  <div
+                    v-if="getCurrentPreviewFile?.mime_type === 'text/plain'"
+                    class="text-preview-container"
+                  >
+                    <div class="text-preview-header">
+                      <span class="text-preview-filename">{{ getCurrentPreviewFile.name }}</span>
+                      <button class="copy-text-btn" @click="copyPreviewText">📋 复制文本</button>
+                    </div>
+                    <pre class="text-preview-content">{{ getCurrentPreviewFile.textContent }}</pre>
+                  </div>
+                  <div
+                    v-else
+                    class="image-preview-container"
+                    @wheel.prevent="handleImageWheel"
+                    @mousedown="handleMouseDown"
+                    @mousemove="handleMouseMove"
+                    @mouseup="handleMouseUp"
+                    @mouseleave="handleMouseUp"
+                  >
+                    <img
+                      ref="imageRef"
+                      :src="previewImageUrl"
+                      :alt="`图片 ${(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1}`"
+                      class="preview-image"
+                      :class="{ 'is-dragging': isDragging }"
+                      :style="{
+                        transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})`,
+                      }"
+                      @click.stop="resetImageScale"
+                    />
+                  </div>
+                </div>
+                <div class="image-preview-hint">
+                  {{
+                    getCurrentPreviewFile?.mime_type === "text/plain"
+                      ? "点击复制按钮复制文本内容"
+                      : "滚轮缩放图片，右键拖动查看细节，点击图片重置"
+                  }}
+                </div>
+              </el-dialog>
+
+              <!-- 验证结果图片预览弹窗 -->
+              <el-dialog
+                v-model="validationResultImageVisible"
+                title="验证结果图片"
+                width="800px"
+                append-to-body
+                :z-index="20000"
+                @open="resetImageScale"
+                @close="handlePreviewClose"
+              >
+                <div
+                  class="image-preview-container"
+                  @wheel.prevent="handleImageWheel"
+                  @mousedown="handleMouseDown"
+                  @mousemove="handleMouseMove"
+                  @mouseup="handleMouseUp"
+                  @mouseleave="handleMouseUp"
                 >
-                <!-- 水务模式下保留：停止生成 -->
-                <el-button
-                  v-if="isLoading || isCadConverting"
-                  type="danger"
-                  size="small"
-                  @click="stopGeneration()"
-                  class="stop-button"
-                  title="停止"
-                >
-                  <svg t="1783304242585" class="stop-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="28" height="28"><path d="M678.592 639.68c0 17.6-14.4 32-32 32h-268.992a32 32 0 0 1-32-32v-260.608a32 32 0 0 1 32-32h268.992c17.6 0 32 14.4 32 32v260.608z" fill="#ffffff"></path><path d="M1015.552 512.128a502.656 502.656 0 0 0-503.68-503.68 502.208 502.208 0 0 0-356.096 147.264 502.016 502.016 0 0 0-147.328 356.416 500.288 500.288 0 0 0 146.816 356.736 499.584 499.584 0 0 0 356.544 146.688c277.312-2.816 503.744-226.24 503.744-503.424z m-947.968 0a444.288 444.288 0 0 1 444.288-444.544c246.976 0 447.296 200.128 447.296 444.544 0 244.032-200.32 444.416-447.296 444.416a442.304 442.304 0 0 1-444.288-444.416z" fill="#ffffff"></path></svg>
-                </el-button>
-                <!-- 助手下拉框 -->
-                <select
-                  v-show="false"
-                  v-model="selectedSendType"
-                  :disabled="isLoading || isAwaitingFeedback"
-                  class="send-type-select"
+                  <img
+                    ref="imageRef"
+                    :src="validationResultImageUrl"
+                    alt="验证结果图片"
+                    class="preview-image"
+                    :class="{ 'is-dragging': isDragging }"
+                    :style="{
+                      transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})`,
+                    }"
+                    @click.stop="resetImageScale"
+                  />
+                </div>
+                <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
+                <div
+                  v-if="validationResultJson"
                   style="
-                    width: 90px;
-                    height: 32px;
-                    padding: 0 8px;
-                    border-radius: 4px;
-                    border: 1px solid #dcdfe6;
-                    font-size: 13px;
-                    z-index: 1000;
+                    margin-top: 16px;
+                    padding: 12px;
+                    background-color: #f5f5f5;
+                    border-radius: 8px;
                   "
                 >
-                  <option
-                    v-for="type in sendTypes"
-                    :key="type.id"
-                    :value="type.id"
-                    :disabled="getSendTypeDisabled(type)"
+                  <h4 style="margin-bottom: 8px">验证结果摘要:</h4>
+                  <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6">
+                    {{ validationResultJson.summary }}
+                  </p>
+                  <p
+                    v-if="validationResultJson.success !== undefined"
+                    style="font-size: 13px; margin-top: 8px"
                   >
-                    {{ type.label }}
-                  </option>
-                </select>
+                    状态:
+                    <span
+                      :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }"
+                      >{{ validationResultJson.success ? "成功" : "失败" }}</span
+                    >
+                  </p>
+                </div>
+              </el-dialog>
 
-                <el-button
-                  type="success"
-                  size="small"
-                  @click="sendDispatch"
-                  :disabled="isLoading || isAwaitingFeedback || !userQuery.trim()"
-                  class="send-button"
-                  title="发送调度"
-                  v-show="!isLoading && !isCadConverting"
-                >
-                  <template v-if="isLoading">发送中</template>
-                  <svg v-else t="1783304326600" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="28" height="28"><path d="M512 981.333333q11.52 0 23.04-0.554666t22.954667-1.706667q11.477333-1.109333 22.869333-2.816 11.392-1.706667 22.698667-3.925333 11.306667-2.261333 22.485333-5.077334 11.178667-2.773333 22.186667-6.144 11.008-3.328 21.888-7.210666 10.837333-3.882667 21.461333-8.277334 10.666667-4.437333 21.077333-9.386666 10.410667-4.906667 20.565334-10.325334 10.197333-5.418667 20.053333-11.349333 9.898667-5.930667 19.456-12.330667 9.6-6.4 18.858667-13.226666 9.258667-6.912 18.133333-14.208 8.96-7.296 17.493333-15.018667 8.533333-7.765333 16.64-15.914667 8.149333-8.106667 15.914667-16.64 7.68-8.533333 15.018667-17.493333 7.296-8.874667 14.165333-18.133333t13.269333-18.858667q6.4-9.557333 12.330667-19.456 5.930667-9.898667 11.349333-20.053333 5.418667-10.154667 10.368-20.565334 4.906667-10.410667 9.344-21.077333 4.394667-10.666667 8.277334-21.504 3.882667-10.837333 7.253333-21.888 3.328-11.008 6.101333-22.186667 2.816-11.178667 5.077334-22.485333 2.218667-11.306667 3.925333-22.698667t2.816-22.869333q1.152-11.434667 1.706667-22.954667Q981.333333 523.52 981.333333 512t-0.554666-23.04q-0.554667-11.52-1.706667-22.954667-1.109333-11.477333-2.816-22.869333-1.706667-11.392-3.925333-22.698667-2.261333-11.306667-5.077334-22.485333-2.773333-11.178667-6.144-22.186667-3.328-11.050667-7.210666-21.888-3.882667-10.837333-8.277334-21.504-4.437333-10.624-9.386666-21.034666-4.906667-10.410667-10.325334-20.565334-5.418667-10.197333-11.349333-20.053333-5.930667-9.898667-12.330667-19.456-6.4-9.6-13.226666-18.858667-6.912-9.258667-14.208-18.133333-7.296-8.96-15.018667-17.493333-7.765333-8.533333-15.914667-16.64-8.106667-8.149333-16.64-15.872-8.533333-7.765333-17.493333-15.061334-8.874667-7.296-18.133333-14.165333t-18.858667-13.269333q-9.557333-6.4-19.456-12.330667-9.898667-5.930667-20.053333-11.349333-10.154667-5.418667-20.565334-10.368-10.410667-4.906667-21.077333-9.344-10.624-4.394667-21.461333-8.277334-10.88-3.882667-21.888-7.253333-11.008-3.328-22.186667-6.101333-11.178667-2.816-22.485333-5.077334-11.306667-2.218667-22.698667-3.925333t-22.869333-2.816q-11.434667-1.109333-22.954667-1.706667Q523.52 42.666667 512 42.666667t-23.04 0.554666q-11.52 0.597333-22.954667 1.706667-11.477333 1.109333-22.869333 2.816-11.392 1.706667-22.698667 3.925333-11.306667 2.261333-22.485333 5.077334-11.178667 2.773333-22.186667 6.144-11.050667 3.328-21.888 7.210666-10.837333 3.882667-21.504 8.277334-10.624 4.437333-21.034666 9.386666-10.410667 4.906667-20.565334 10.325334-10.197333 5.418667-20.053333 11.349333-9.898667 5.930667-19.456 12.330667-9.6 6.4-18.858667 13.226666-9.258667 6.912-18.133333 14.208-8.96 7.296-17.493333 15.061334-8.533333 7.68-16.64 15.872-8.149333 8.106667-15.872 16.64-7.765333 8.533333-15.061334 17.493333-7.296 8.874667-14.165333 18.133333t-13.269333 18.858667q-6.4 9.557333-12.330667 19.456-5.930667 9.856-11.349333 20.053333-5.418667 10.154667-10.368 20.565334-4.906667 10.410667-9.344 21.034666-4.394667 10.666667-8.277334 21.504-3.882667 10.837333-7.253333 21.888-3.328 11.008-6.101333 22.186667-2.816 11.178667-5.077334 22.485333-2.218667 11.306667-3.925333 22.698667t-2.816 22.869333q-1.109333 11.434667-1.706667 22.954667Q42.666667 500.48 42.666667 512t0.554666 23.04q0.597333 11.52 1.706667 22.954667 1.109333 11.477333 2.816 22.869333 1.706667 11.392 3.925333 22.698667 2.261333 11.306667 5.077334 22.485333 2.773333 11.178667 6.144 22.186667 3.328 11.008 7.210666 21.888 3.882667 10.837333 8.277334 21.461333 4.437333 10.666667 9.386666 21.077333 4.906667 10.410667 10.325334 20.565334 5.418667 10.197333 11.349333 20.053333 5.930667 9.898667 12.330667 19.456 6.4 9.6 13.226666 18.858667 6.912 9.258667 14.208 18.133333 7.296 8.96 15.061334 17.493333 7.68 8.533333 15.872 16.64 8.106667 8.149333 16.64 15.914667 8.533333 7.68 17.493333 15.018667 8.874667 7.296 18.133333 14.165333t18.858667 13.269333q9.557333 6.4 19.456 12.330667 9.856 5.930667 20.053333 11.349333 10.154667 5.418667 20.565334 10.368 10.410667 4.906667 21.034666 9.344 10.666667 4.394667 21.504 8.277334 10.837333 3.882667 21.888 7.253333 11.008 3.328 22.186667 6.101333 11.178667 2.816 22.485333 5.077334 11.306667 2.218667 22.698667 3.925333t22.869333 2.816q11.434667 1.152 22.954667 1.706667 11.52 0.554667 23.04 0.554666z m-10.666667-673.322666a32 32 0 0 1 45.226667 0l150.613333 150.186666a32 32 0 1 1-45.226666 45.312l-96-95.744V725.333333a32 32 0 0 1-64 0V407.765333L395.946667 503.466667a32 32 0 1 1-45.226667-45.312l150.613333-150.186667z" fill="#ffffff"></path></svg>
-                </el-button>
+              <!-- 确认清空对话框 -->
+              <el-dialog
+                v-model="confirmDialogVisible"
+                title="确认清空"
+                width="400px"
+                append-to-body
+                :show-close="false"
+                :close-on-click-modal="false"
+                :close-on-press-escape="false"
+              >
+                <div class="confirm-dialog-content">
+                  <div class="confirm-icon">⚠️</div>
+                  <p>确定要清空所有对话内容吗？</p>
+                  <p class="confirm-hint">此操作将删除所有消息和已上传的图片，且无法恢复。</p>
+                </div>
+                <template #footer>
+                  <div class="confirm-dialog-footer">
+                    <el-button type="primary" @click="confirmClear">确定</el-button>
+                    <el-button @click="cancelClear">取消</el-button>
+                  </div>
+                </template>
+              </el-dialog>
+
+              <div class="dialog-footer">
+                <!-- 步骤路径指示器 -->
+                <div class="step-path-container" v-if="!waterServiceMode">
+                  <div class="step-path">
+                    <!-- 步骤1：图纸识别 -->
+                    <div
+                      class="step-node"
+                      :class="{ current: currentStep === 1, completed: currentStep > 1 }"
+                    >
+                      <div class="step-dot">
+                        <span v-if="currentStep > 1" class="step-check">✓</span>
+                        <span v-else class="step-number">1</span>
+                      </div>
+                      <span class="step-label">图纸识别</span>
+                    </div>
+                    <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+                    <!-- 步骤2：点位绑定 -->
+                    <div
+                      class="step-node"
+                      :class="{ current: currentStep === 2, completed: currentStep > 2 }"
+                    >
+                      <div class="step-dot">
+                        <span v-if="currentStep > 2" class="step-check">✓</span>
+                        <span v-else class="step-number">2</span>
+                      </div>
+                      <span class="step-label">点位绑定</span>
+                    </div>
+                    <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
+                    <!-- 步骤3：生成DSL -->
+                    <div
+                      class="step-node"
+                      :class="{ current: currentStep === 3, completed: currentStep > 3 }"
+                    >
+                      <div class="step-dot">
+                        <span v-if="currentStep > 3" class="step-check">✓</span>
+                        <span v-else class="step-number">3</span>
+                      </div>
+                      <span class="step-label">生成DSL</span>
+                    </div>
+                  </div>
+                  <!-- 重置步骤按钮 -->
+                  <el-button
+                    v-if="currentStep > 1"
+                    type="default"
+                    size="small"
+                    @click="resetSteps"
+                    :disabled="isLoading || isAwaitingFeedback"
+                    title="重置到步骤1"
+                    class="reset-button"
+                  >
+                    重置
+                  </el-button>
+                  <el-button
+                    v-if="!waterServiceMode"
+                    type="success"
+                    @click="fetchAndSaveScreenAI"
+                    :disabled="isLoading || isAwaitingFeedback"
+                    >AI生成画布</el-button
+                  >
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- 上传图片输入框（隐藏） -->
-    <input
-      ref="fileInput"
-      type="file"
-      
-      multiple
-      style="display: none"
-      @change="handleImageUpload"
-    />
-
-    <!-- 图片预览弹窗 -->
-    <el-dialog
-      v-model="imagePreviewVisible"
-      :title="`${getCurrentPreviewFile?.mime_type === 'text/plain' ? '文件' : '图片'}预览 (${isNaN(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) ? 1 : (isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1} / ${isGatewayPreview ? (Array.isArray(gatewayPreviewImages) ? gatewayPreviewImages.length : 0) : (Array.isArray(uploadedImages) ? uploadedImages.length : 0)})`"
-      width="1100px"
-      append-to-body
-      @open="resetImageScale"
-      @close="handlePreviewClose"
-    >
-      <div class="multi-image-preview-wrapper">
-        <!-- 主内容区域 -->
-        <div v-if="getCurrentPreviewFile?.mime_type === 'text/plain'" class="text-preview-container">
-          <div class="text-preview-header">
-            <span class="text-preview-filename">{{ getCurrentPreviewFile.name }}</span>
-            <button class="copy-text-btn" @click="copyPreviewText">📋 复制文本</button>
-          </div>
-          <pre class="text-preview-content">{{ getCurrentPreviewFile.textContent }}</pre>
-        </div>
-        <div
-          v-else
-          class="image-preview-container"
-          @wheel.prevent="handleImageWheel"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          @mouseup="handleMouseUp"
-          @mouseleave="handleMouseUp"
-        >
-          <img
-            ref="imageRef"
-            :src="previewImageUrl"
-            :alt="`图片 ${(isGatewayPreview ? gatewayPreviewIndex : currentPreviewIndex) + 1}`"
-            class="preview-image"
-            :class="{ 'is-dragging': isDragging }"
-            :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
-            @click.stop="resetImageScale"
-          />
-        </div>
-
-        </div>
-      <div class="image-preview-hint">{{ getCurrentPreviewFile?.mime_type === 'text/plain' ? '点击复制按钮复制文本内容' : '滚轮缩放图片，右键拖动查看细节，点击图片重置' }}</div>
-    </el-dialog>
-
-    <!-- 验证结果图片预览弹窗 -->
-    <el-dialog
-      v-model="validationResultImageVisible"
-      title="验证结果图片"
-      width="800px"
-      append-to-body
-      @open="resetImageScale"
-      @close="handlePreviewClose"
-    >
-      <div
-        class="image-preview-container"
-        @wheel.prevent="handleImageWheel"
-        @mousedown="handleMouseDown"
-        @mousemove="handleMouseMove"
-        @mouseup="handleMouseUp"
-        @mouseleave="handleMouseUp"
-      >
-        <img
-          ref="imageRef"
-          :src="validationResultImageUrl"
-          alt="验证结果图片"
-          class="preview-image"
-          :class="{ 'is-dragging': isDragging }"
-          :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${imageScale})` }"
-          @click.stop="resetImageScale"
-        />
-      </div>
-      <div class="image-preview-hint">滚轮缩放图片，拖动查看细节，点击图片重置</div>
-      <div
-        v-if="validationResultJson"
-        style="margin-top: 16px; padding: 12px; background-color: #f5f5f5; border-radius: 8px"
-      >
-        <h4 style="margin-bottom: 8px">验证结果摘要:</h4>
-        <p v-if="validationResultJson.summary" style="font-size: 13px; line-height: 1.6">
-          {{ validationResultJson.summary }}
-        </p>
-        <p
-          v-if="validationResultJson.success !== undefined"
-          style="font-size: 13px; margin-top: 8px"
-        >
-          状态:
-          <span :style="{ color: validationResultJson.success ? '#67c23a' : '#f56c6c' }">{{
-            validationResultJson.success ? "成功" : "失败"
-          }}</span>
-        </p>
-      </div>
-    </el-dialog>
-
-    <!-- 确认清空对话框 -->
-    <el-dialog
-      v-model="confirmDialogVisible"
-      title="确认清空"
-      width="400px"
-      append-to-body
-      :show-close="false"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-    >
-      <div class="confirm-dialog-content">
-        <div class="confirm-icon">⚠️</div>
-        <p>确定要清空所有对话内容吗？</p>
-        <p class="confirm-hint">此操作将删除所有消息和已上传的图片，且无法恢复。</p>
-      </div>
-      <template #footer>
-        <div class="confirm-dialog-footer">
-          <el-button type="primary" @click="confirmClear">确定</el-button>
-          <el-button @click="cancelClear">取消</el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <template #footer>
-      <div class="dialog-footer">
-        <!-- 步骤路径指示器 -->
-              <div class="step-path-container" v-if="!waterServiceMode">
-                <div class="step-path">
-                  <!-- 步骤1：图纸识别 -->
-                  <div
-                    class="step-node"
-                    :class="{ current: currentStep === 1, completed: currentStep > 1 }"
-                  >
-                    <div class="step-dot">
-                      <span v-if="currentStep > 1" class="step-check">✓</span>
-                      <span v-else class="step-number">1</span>
-                    </div>
-                    <span class="step-label">图纸识别</span>
-                  </div>
-                  <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
-                  <!-- 步骤2：点位绑定 -->
-                  <div
-                    class="step-node"
-                    :class="{ current: currentStep === 2, completed: currentStep > 2 }"
-                  >
-                    <div class="step-dot">
-                      <span v-if="currentStep > 2" class="step-check">✓</span>
-                      <span v-else class="step-number">2</span>
-                    </div>
-                    <span class="step-label">点位绑定</span>
-                  </div>
-                  <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
-                  <!-- 步骤3：生成DSL -->
-                  <div
-                    class="step-node"
-                    :class="{ current: currentStep === 3, completed: currentStep > 3 }"
-                  >
-                    <div class="step-dot">
-                      <span v-if="currentStep > 3" class="step-check">✓</span>
-                      <span v-else class="step-number">3</span>
-                    </div>
-                    <span class="step-label">生成DSL</span>
-                  </div>
-                </div>
-                                <!-- 重置步骤按钮 -->
-                <el-button
-                  v-if="currentStep > 1"
-                  type="default"
-                  size="small"
-                  @click="resetSteps"
-                  :disabled="isLoading || isAwaitingFeedback"
-                  title="重置到步骤1"
-                  class="reset-button"
-                >
-                  重置
-                </el-button>
-<el-button v-if="!waterServiceMode" type="success" @click="fetchAndSaveScreenAI" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button>
-              </div>
-        <!-- <el-button @click="handleClose">关闭</el-button> -->
-
-        <!-- <el-button v-if="!waterServiceMode" type="primary" @click="outputJsonToConsole" :disabled="isLoading || isAwaitingFeedback">AI生成画布</el-button> -->
-        <!-- <el-button v-if="!waterServiceMode" type="success" @click="saveRawJson" :disabled="isLoading || isAwaitingFeedback">原始保存</el-button> -->
-        <!-- <el-button v-if="!waterServiceMode" type="info" @click="saveTempPayload" :disabled="isAwaitingFeedback">临时保存payload</el-button> -->
-        <!-- 水务模式下隐藏：AI生成画布 -->
-        
-        <!-- <el-button v-if="!waterServiceMode" type="danger" @click="calibrateJson" :disabled="isLoading || isAwaitingFeedback">校准JSON</el-button> -->
-        <!-- <el-button v-if="!waterServiceMode" type="primary" @click="extractValidationResult" :disabled="isLoading || isAwaitingFeedback">提取验证结果</el-button> -->
-
-        <!-- <el-switch
-          v-model="enableJsonValidation"
-          active-text="JSON校验"
-          inactive-text="JSON校验"
-          class="json-validation-switch"
-        /> -->
-      </div>
-    </template>
-  </el-dialog>
+    </div>
+  </div>
+</Teleport>
 </template>
 
 <script lang="ts">
@@ -684,7 +906,7 @@ export default defineComponent({
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb2 || "",
     },
-        // difyapidialog 专用 API Key (FLOWb3)
+    // difyapidialog 专用 API Key (FLOWb3)
     apiKeyFlowB3: {
       type: String,
       default: import.meta.env.VITE_APP_DIFY_API_KEY_FLOWb3 || "",
@@ -733,6 +955,15 @@ export default defineComponent({
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement>();
     const abortController = ref<AbortController | null>(null);
+
+    const dialogPosition = ref({ x: (window.innerWidth - 900) / 2, y: (window.innerHeight - 700) / 2 });
+    const dragOffset = ref({ x: 0, y: 0 });
+    const isDialogDragging = ref(false);
+    const isResizing = ref(false);
+    const resizeDirection = ref("");
+    const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 });
+    const dialogWidth = ref(900);
+    const dialogHeight = ref(700);
     const timeoutTimer = ref<number | null>(null);
     // SSE 超时时间，从环境变量读取，默认 90 秒
     const SSE_TIMEOUT_MS = Number(import.meta.env.VITE_APP_DIFY_SSE_TIMEOUT_MS) || 90000;
@@ -835,7 +1066,7 @@ export default defineComponent({
       const target = event.target as HTMLInputElement;
       const files = target.files;
       if (!files || files.length === 0) return;
-      
+
       for (let i = 0; i < files.length; i++) {
         await uploadFile(files[i], "gateway", undefined, conversationId);
       }
@@ -854,26 +1085,30 @@ export default defineComponent({
     const proceedToNextStep = async (conversationId: string, nextStep: number) => {
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg) return;
-      
+
       const stepConfig = stepApiKeyMap[nextStep];
       console.log(`\n🚀 准备执行 proceedToNextStep:`);
-      console.log(`  - 当前步骤 (currentStep): ${currentStep.value} (${getStepLabel(currentStep.value)})`);
+      console.log(
+        `  - 当前步骤 (currentStep): ${currentStep.value} (${getStepLabel(currentStep.value)})`,
+      );
       console.log(`  - 要切换到的步骤 (nextStep): ${nextStep} (${getStepLabel(nextStep)})`);
       console.log(`  - 目标消息 (isGateway): ${msg.isGateway}`);
       console.log(`  - 目标消息 gatewayNextStep: ${msg.gatewayNextStep}`);
-      console.log(`  - 使用的 API Key: ${stepConfig?.apiKey ? "***" + stepConfig.apiKey.slice(-4) : "未设置"}`);
-      
+      console.log(
+        `  - 使用的 API Key: ${stepConfig?.apiKey ? "***" + stepConfig.apiKey.slice(-4) : "未设置"}`,
+      );
+
       messages.value.forEach((m) => {
         if (m.isGateway) {
           m.isGatewayActionDisabled = true;
         }
       });
-      
+
       if (!stepConfig || !stepConfig.apiKey) {
         ElMessage.warning("未配置该步骤的 API Key");
         return;
       }
-      
+
       currentStep.value = nextStep;
       if (props.waterServiceMode) {
         selectedSendType.value = "sendWater";
@@ -885,9 +1120,9 @@ export default defineComponent({
         };
         selectedSendType.value = stepSendTypeMap[nextStep] || "send5";
       }
-      
+
       const stepLabel = getStepLabel(nextStep);
-      
+
       await sendRequest({
         apiKey: stepConfig.apiKey,
         logPrefix: stepConfig.logPrefix,
@@ -984,7 +1219,10 @@ export default defineComponent({
     const getScreenId = () => {
       const hash = window.location.hash;
       if (hash) {
-        const parts = hash.replace('#', '').split('/').filter(p => p);
+        const parts = hash
+          .replace("#", "")
+          .split("/")
+          .filter((p) => p);
         if (parts.length > 0) {
           const lastPart = parts[parts.length - 1];
           if (/^\d+$/.test(lastPart)) {
@@ -996,7 +1234,7 @@ export default defineComponent({
     };
     const getStorageKey = () => {
       const screenId = getScreenId();
-      console.log("拿到的screeid",screenId);
+      console.log("拿到的screeid", screenId);
       return STORAGE_KEY_PREFIX + screenId;
     };
 
@@ -1018,7 +1256,7 @@ export default defineComponent({
       }
       saveMessagesTimer = window.setTimeout(async () => {
         try {
-          const messagesToSave = messages.value.map(msg => {
+          const messagesToSave = messages.value.map((msg) => {
             const { thinkingContent, ...rest } = msg;
             return rest;
           });
@@ -1158,15 +1396,18 @@ export default defineComponent({
       };
 
       // 网关上传文件函数
-      (window as any).__gatewayUploadFiles = async (input: HTMLInputElement, conversationId: string) => {
+      (window as any).__gatewayUploadFiles = async (
+        input: HTMLInputElement,
+        conversationId: string,
+      ) => {
         const files = input.files;
         if (!files || files.length === 0) return;
-        
+
         for (let i = 0; i < files.length; i++) {
           await uploadFile(files[i], "gateway", undefined, conversationId);
         }
         input.value = "";
-        
+
         // 更新对应消息中的操作区域
         updateGatewayActionArea(conversationId);
       };
@@ -1179,23 +1420,26 @@ export default defineComponent({
         } else {
           targetMsg = messages.value[messages.value.length - 1];
         }
-        
+
         if (!targetMsg || targetMsg.role !== "assistant") return;
-        
+
         const nextStep = targetMsg.gatewayNextStep;
         const nextStepConfig = stepApiKeyMap[nextStep || 0];
         if (nextStep && nextStep >= 1 && nextStep <= 3 && nextStepConfig) {
           const hasImages = (targetMsg.gatewayImages || []).length > 0;
-          const actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${targetMsg.conversationId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${targetMsg.conversationId}')" ${!hasImages ? 'disabled' : ''}>🖼️ 查看 (${(targetMsg.gatewayImages || []).length})</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${targetMsg.conversationId}', ${nextStep})">🚀 开始${nextStepConfig.label}</button></div></div>`;
-          
+          const actionArea = `<div class="gateway-action-area"><div class="gateway-upload-section"><label class="gateway-upload-btn"><input type="file" multiple accept="image/*,.dwg,.dxf,.pdf" class="gateway-upload-input" onchange="window.__gatewayUploadFiles(this, '${targetMsg.conversationId}')"/><span>📁 上传文件</span></label></div><div class="gateway-view-section"><button class="gateway-view-btn" onclick="window.__viewGatewayImages('${targetMsg.conversationId}')" ${!hasImages ? "disabled" : ""}>🖼️ 查看 (${(targetMsg.gatewayImages || []).length})</button></div><div class="gateway-next-step"><button class="gateway-next-btn" onclick="window.__proceedToNextStep('${targetMsg.conversationId}', ${nextStep})">🚀 开始${nextStepConfig.label}</button></div></div>`;
+
           let content = targetMsg.content;
-          if (content.includes('GATEWAY_ACTION_PLACEHOLDER')) {
+          if (content.includes("GATEWAY_ACTION_PLACEHOLDER")) {
             // 删除占位符后面的所有内容（包括旧的操作区域）
-            const placeholderIndex = content.indexOf('<!-- GATEWAY_ACTION_PLACEHOLDER -->');
+            const placeholderIndex = content.indexOf("<!-- GATEWAY_ACTION_PLACEHOLDER -->");
             if (placeholderIndex !== -1) {
-              content = content.substring(0, placeholderIndex + '<!-- GATEWAY_ACTION_PLACEHOLDER -->'.length);
+              content = content.substring(
+                0,
+                placeholderIndex + "<!-- GATEWAY_ACTION_PLACEHOLDER -->".length,
+              );
               // 添加新的操作区域和结束标签
-              content = content + actionArea + '</div>';
+              content = content + actionArea + "</div>";
               targetMsg.content = content;
             }
           }
@@ -1216,16 +1460,16 @@ export default defineComponent({
       (window as any).__proceedToNextStep = async (conversationId: string, nextStep: number) => {
         const msg = findMessageByConversationId(conversationId);
         if (!msg) return;
-        
+
         const stepConfig = stepApiKeyMap[nextStep];
         if (!stepConfig || !stepConfig.apiKey) {
           ElMessage.warning("未配置该步骤的 API Key");
           return;
         }
-        
+
         currentStep.value = nextStep;
         selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
-        
+
         await sendRequest({
           apiKey: stepConfig.apiKey,
           logPrefix: stepConfig.logPrefix,
@@ -1237,7 +1481,7 @@ export default defineComponent({
             upload_file_id: img.id,
           })),
         });
-        
+
         // 清空该消息的网关上传文件
         if (msg.gatewayImages) {
           msg.gatewayImages = [];
@@ -1367,7 +1611,13 @@ export default defineComponent({
       const images = isGatewayPreview.value ? gatewayPreviewImages.value : uploadedImages.value;
       if (!Array.isArray(images) || images.length === 0) return "";
       const maxIndex = images.length - 1;
-      const index = isGatewayPreview.value ? (isNaN(gatewayPreviewIndex.value) ? 0 : gatewayPreviewIndex.value) : (isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value);
+      const index = isGatewayPreview.value
+        ? isNaN(gatewayPreviewIndex.value)
+          ? 0
+          : gatewayPreviewIndex.value
+        : isNaN(currentPreviewIndex.value)
+          ? 0
+          : currentPreviewIndex.value;
       const validIndex = Math.max(0, Math.min(index, maxIndex));
       return images[validIndex]?.base64Data || "";
     });
@@ -1376,7 +1626,13 @@ export default defineComponent({
       const images = isGatewayPreview.value ? gatewayPreviewImages.value : uploadedImages.value;
       if (!Array.isArray(images) || images.length === 0) return null;
       const maxIndex = images.length - 1;
-      const index = isGatewayPreview.value ? (isNaN(gatewayPreviewIndex.value) ? 0 : gatewayPreviewIndex.value) : (isNaN(currentPreviewIndex.value) ? 0 : currentPreviewIndex.value);
+      const index = isGatewayPreview.value
+        ? isNaN(gatewayPreviewIndex.value)
+          ? 0
+          : gatewayPreviewIndex.value
+        : isNaN(currentPreviewIndex.value)
+          ? 0
+          : currentPreviewIndex.value;
       const validIndex = Math.max(0, Math.min(index, maxIndex));
       return images[validIndex] || null;
     });
@@ -1438,13 +1694,13 @@ export default defineComponent({
       assistant5RecognitionResult.value = "";
       selectedSendType.value = props.waterServiceMode ? "sendWater" : "sendGetway";
       await indexedDBStore.removeItem(getStepStorageKey());
-      
+
       messages.value.forEach((msg) => {
         if (msg.isGateway) {
           msg.isGatewayActionDisabled = true;
         }
       });
-      
+
       ElMessage.info("已重置到步骤1");
     };
 
@@ -1491,12 +1747,18 @@ export default defineComponent({
 
     const tryFormatJson = (text: string): string => {
       let workingText = text;
-      workingText = workingText.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\\"/g, "\"").replace(/\\\\/g, "\\");
+      workingText = workingText
+        .replace(/\\n/g, "\n")
+        .replace(/\\r/g, "\r")
+        .replace(/\\\"/g, '"')
+        .replace(/\\\\/g, "\\");
 
       try {
         const trimmed = workingText.trim();
-        if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || 
-            (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+        if (
+          (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+          (trimmed.startsWith("[") && trimmed.endsWith("]"))
+        ) {
           const parsed = JSON.parse(trimmed);
           return JSON.stringify(parsed, null, 2);
         }
@@ -1521,10 +1783,7 @@ export default defineComponent({
     };
 
     const highlightJson = (jsonStr: string): string => {
-      let result = jsonStr
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+      let result = jsonStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
       result = result
         .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
@@ -1544,7 +1803,10 @@ export default defineComponent({
         return String(content);
       }
 
-      if (content.includes("recognition-result-wrapper") || content.includes("<span class=\"json-key\">")) {
+      if (
+        content.includes("recognition-result-wrapper") ||
+        content.includes('<span class="json-key">')
+      ) {
         return content;
       }
 
@@ -1671,10 +1933,10 @@ export default defineComponent({
           content: query,
           timestamp: Date.now(),
         };
-        
+
         // 如果有上传的文件，将文件信息添加到用户消息中
         if (uploadedImages.value.length > 0) {
-          userMsg.files = uploadedImages.value.map(img => ({
+          userMsg.files = uploadedImages.value.map((img) => ({
             id: img.id,
             name: img.name,
             size: img.size,
@@ -1684,9 +1946,9 @@ export default defineComponent({
             textContent: img.textContent,
           }));
         }
-        
+
         messages.value.push(userMsg);
-        
+
         // 发送后清空上传的文件
         if (uploadedImages.value.length > 0) {
           uploadedImages.value = [];
@@ -1753,17 +2015,17 @@ export default defineComponent({
           }));
         }
 
-        const inputs = isGateway 
-          ? { 
-              lasttask: lasttask.value, 
-              lastquerytask: lastquerytask.value 
-            } 
+        const inputs = isGateway
+          ? {
+              lasttask: lasttask.value,
+              lastquerytask: lastquerytask.value,
+            }
           : props.data;
         const requestBody = {
           inputs: inputs,
           query: query,
           response_mode: "streaming",
-          conversation_id: isGateway ? "" : (conversationId.value || ""),
+          conversation_id: isGateway ? "" : conversationId.value || "",
           user: props.userId,
           files: files,
         };
@@ -1891,7 +2153,11 @@ export default defineComponent({
               }
 
               // 处理其他事件类型 - 更新思考过程
-              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) === -1) {
+              if (
+                !data.event ||
+                ["message", "workflow_finished", "workflow_paused", "error"].indexOf(data.event) ===
+                  -1
+              ) {
                 const lastMsg = messages.value[messages.value.length - 1];
                 if (lastMsg?.role === "assistant" && lastMsg.isThinking) {
                   const eventDisplayName = getEventDisplayName(data.event, data.data);
@@ -1905,7 +2171,7 @@ export default defineComponent({
                 if (data.task_id) {
                   currentTaskId.value = data.task_id;
                 }
-                
+
                 let answerContent = data.answer;
                 // console.log(`isGateway：`,isGateway);
                 // console.log(`data.answer：`, data.answer);
@@ -1922,43 +2188,48 @@ export default defineComponent({
                     if (answerStr.startsWith('"') && answerStr.endsWith('"')) {
                       answerStr = answerStr.slice(1, -1).replace(/\\"/g, '"');
                     }
-                    
+
                     const gatewayData = JSON.parse(answerStr);
                     // console.log(`解析后的 gatewayData：`, gatewayData);
                     // console.log(`gatewayData.prompt：`, gatewayData.prompt);
                     // console.log(`gatewayData.content：`, gatewayData.content);
-                    
+
                     let displayContent = "";
                     if (gatewayData.prompt !== undefined && gatewayData.prompt !== "") {
                       displayContent += gatewayData.prompt;
                     }
                     if (gatewayData.content !== undefined && gatewayData.content !== "") {
-                      const contentStr = typeof gatewayData.content === "string" 
-                        ? gatewayData.content 
-                        : JSON.stringify(gatewayData.content);
+                      const contentStr =
+                        typeof gatewayData.content === "string"
+                          ? gatewayData.content
+                          : JSON.stringify(gatewayData.content);
                       displayContent += "\n\n" + contentStr;
                     }
-                    
+
                     // 更新网关状态
                     if (gatewayData.nextstep !== undefined) {
                       lasttask.value = gatewayData.nextstep;
                       lastquerytask.value = gatewayData.nextstep;
                       gatewayNextStep.value = gatewayData.nextstep;
                       currentStep.value = gatewayData.nextstep;
-                      
+
                       const stepConfig = stepApiKeyMap[gatewayData.nextstep];
                       console.log(`\n📢 网关返回消息，更新状态:`);
-                      console.log(`  - gatewayData.nextstep: ${gatewayData.nextstep} (${getStepLabel(gatewayData.nextstep)})`);
+                      console.log(
+                        `  - gatewayData.nextstep: ${gatewayData.nextstep} (${getStepLabel(gatewayData.nextstep)})`,
+                      );
                       console.log(`  - 更新后的 currentStep: ${currentStep.value}`);
-                      console.log(`  - 当前步骤 API Key: ${stepConfig?.apiKey ? "***" + stepConfig.apiKey.slice(-4) : "未设置"}`);
+                      console.log(
+                        `  - 当前步骤 API Key: ${stepConfig?.apiKey ? "***" + stepConfig.apiKey.slice(-4) : "未设置"}`,
+                      );
                     }
-                    
+
                     // 获取 conversation_id
                     const convId = data.conversation_id || `conv-${Date.now()}`;
-                    
+
                     // 设置消息为网关模式，由模板的v-if控制显示
                     answerContent = displayContent;
-                    
+
                     // 将 conversation_id、nextstep 和空的文件列表添加到消息中
                     const msgIndex = messages.value.length - 1;
                     const currentMsg = messages.value[msgIndex];
@@ -1975,7 +2246,7 @@ export default defineComponent({
                   }
                 }
                 // console.log(`最终 answerContent：`, answerContent);
-                
+
                 fullContent += data.answer;
                 const lastMsg = messages.value[messages.value.length - 1];
                 if (lastMsg?.role === "assistant") {
@@ -2008,7 +2279,7 @@ export default defineComponent({
                 } else if (data.data.outputs && data.data.outputs.answer) {
                   // 工作流成功，获取答案
                   fullContent = data.data.outputs.answer;
-                  
+
                   // 网关模式：解析网关返回的 JSON 格式
                   if (isGateway) {
                     try {
@@ -2019,19 +2290,20 @@ export default defineComponent({
                       if (answerStr.startsWith('"') && answerStr.endsWith('"')) {
                         answerStr = answerStr.slice(1, -1).replace(/\\"/g, '"');
                       }
-                      
+
                       const gatewayData = JSON.parse(answerStr);
                       let displayContent = "";
                       if (gatewayData.prompt !== undefined && gatewayData.prompt !== "") {
                         displayContent += gatewayData.prompt;
                       }
                       if (gatewayData.content !== undefined && gatewayData.content !== "") {
-                        const contentStr = typeof gatewayData.content === "string" 
-                          ? gatewayData.content 
-                          : JSON.stringify(gatewayData.content);
+                        const contentStr =
+                          typeof gatewayData.content === "string"
+                            ? gatewayData.content
+                            : JSON.stringify(gatewayData.content);
                         displayContent += "\n\n" + contentStr;
                       }
-                      
+
                       // 更新网关状态
                       if (gatewayData.nextstep !== undefined) {
                         lasttask.value = gatewayData.nextstep;
@@ -2039,13 +2311,14 @@ export default defineComponent({
                         gatewayNextStep.value = gatewayData.nextstep;
                         currentStep.value = gatewayData.nextstep;
                       }
-                      
+
                       // 使用消息已有的 conversationId，或者从 workflow_finished 事件中获取
-                      const convId = lastMsg?.conversationId || data.conversation_id || `conv-${Date.now()}`;
-                      
+                      const convId =
+                        lastMsg?.conversationId || data.conversation_id || `conv-${Date.now()}`;
+
                       // 设置消息为网关模式，由模板的v-if控制显示
                       fullContent = displayContent;
-                      
+
                       // 将 conversation_id、nextstep 和空的文件列表添加到消息中
                       if (lastMsg?.role === "assistant") {
                         lastMsg.isGateway = true;
@@ -2057,7 +2330,7 @@ export default defineComponent({
                       console.warn(`${logPrefix} workflow_finished 网关模式解析失败`, e);
                     }
                   }
-                  
+
                   if (lastMsg?.role === "assistant") {
                     lastMsg.isThinking = false;
                     lastMsg.content = fullContent;
@@ -2468,7 +2741,11 @@ export default defineComponent({
 
       if (props.waterServiceMode && sendType.id === "sendWater") {
         await sendMessageWater();
-      } else if (sendType.id === "sendGetway" || (currentStep.value >= 1 && currentStep.value <= 3) || currentStep.value === -1) {
+      } else if (
+        sendType.id === "sendGetway" ||
+        (currentStep.value >= 1 && currentStep.value <= 3) ||
+        currentStep.value === -1
+      ) {
         await sendMessageGetway(userQuery.value.trim());
       } else {
         await sendRequest(sendType.config);
@@ -2484,14 +2761,16 @@ export default defineComponent({
     ): Promise<any> => {
       const submitUrl = `${props.baseUrl}/api/form/human_input/${formToken}`;
 
-      const usedApiKey = apiKey || (() => {
-        const stepConfig = stepApiKeyMap[currentStep.value];
-        if (stepConfig?.apiKey) {
-          return stepConfig.apiKey;
-        }
-        const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
-        return sendType?.config.apiKey || props.apiKey;
-      })();
+      const usedApiKey =
+        apiKey ||
+        (() => {
+          const stepConfig = stepApiKeyMap[currentStep.value];
+          if (stepConfig?.apiKey) {
+            return stepConfig.apiKey;
+          }
+          const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
+          return sendType?.config.apiKey || props.apiKey;
+        })();
 
       console.log(`📤 提交表单到: ${submitUrl}`);
       console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
@@ -2526,14 +2805,16 @@ export default defineComponent({
     ): Promise<any> => {
       console.log(`\n⏳ 开始轮询工作流状态 (ID: ${workflowRunId})...`);
 
-      const usedApiKey = apiKey || (() => {
-        const stepConfig = stepApiKeyMap[currentStep.value];
-        if (stepConfig?.apiKey) {
-          return stepConfig.apiKey;
-        }
-        const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
-        return sendType?.config.apiKey || props.apiKey;
-      })();
+      const usedApiKey =
+        apiKey ||
+        (() => {
+          const stepConfig = stepApiKeyMap[currentStep.value];
+          if (stepConfig?.apiKey) {
+            return stepConfig.apiKey;
+          }
+          const sendType = sendTypes.value.find((t) => t.id === selectedSendType.value);
+          return sendType?.config.apiKey || props.apiKey;
+        })();
       console.log(`📤 使用 API Key: ${usedApiKey ? "***" + usedApiKey.slice(-4) : "未设置"}`);
 
       let retries = 0;
@@ -2729,7 +3010,12 @@ export default defineComponent({
                 // 保存识别结果
                 assistant5RecognitionResult.value = recognitionResult;
                 // 根据当前步骤显示不同的提示文字
-                const completeText = currentStep.value === 1 ? "图片识别完毕" : currentStep.value === 2 ? "点位绑定完毕" : "生成DSL完毕";
+                const completeText =
+                  currentStep.value === 1
+                    ? "图片识别完毕"
+                    : currentStep.value === 2
+                      ? "点位绑定完毕"
+                      : "生成DSL完毕";
                 // 存储原始文本，由formatContent函数动态格式化
                 lastMsg.content = `${completeText}\n\n${recognitionResult}`;
               } else {
@@ -2751,19 +3037,28 @@ export default defineComponent({
           emit("message-received", lastMsg?.content || "");
 
           // 步骤完成后调用网关获取下一步指令
-          console.log("⏰ 检查是否调用网关:", { status: finalResult.status, currentStep: currentStep.value, lasttask: lasttask.value, lastquerytask: lastquerytask.value });
+          console.log("⏰ 检查是否调用网关:", {
+            status: finalResult.status,
+            currentStep: currentStep.value,
+            lasttask: lasttask.value,
+            lastquerytask: lastquerytask.value,
+          });
           if (finalResult.status === "succeeded") {
             stepResults.value[currentStep.value] = assistant5RecognitionResult.value;
             lasttask.value = currentStep.value;
             lastquerytask.value = -1;
-            
+
             // 步骤3完成后，重置currentStep为-1（用于网关的lasttask）
             if (currentStep.value === 3) {
               currentStep.value = -1;
               console.log("🔄 步骤3完成，重置currentStep为-1");
             }
-            
-            console.log("🚀 准备调用网关:", { lasttask: lasttask.value, lastquerytask: lastquerytask.value, currentStep: currentStep.value });
+
+            console.log("🚀 准备调用网关:", {
+              lasttask: lasttask.value,
+              lastquerytask: lastquerytask.value,
+              currentStep: currentStep.value,
+            });
             isLoading.value = false;
             await sendMessageGetway("继续", true);
             isLoading.value = true;
@@ -2866,13 +3161,14 @@ export default defineComponent({
         abortController.value = new AbortController();
 
         // 构建 files 参数（如果有上传的图片）
-        const files = uploadedImages.value.length > 0
-          ? uploadedImages.value.map((img) => ({
-              type: "image",
-              transfer_method: "local_file",
-              upload_file_id: img.id,
-            }))
-          : [];
+        const files =
+          uploadedImages.value.length > 0
+            ? uploadedImages.value.map((img) => ({
+                type: "image",
+                transfer_method: "local_file",
+                upload_file_id: img.id,
+              }))
+            : [];
 
         const response = await fetch(`${props.baseUrl}/v1/chat-messages`, {
           method: "POST",
@@ -3005,7 +3301,16 @@ export default defineComponent({
                   }
 
                   // 处理其他事件类型 - 更新思考过程
-                  if (data.event && ["message", "workflow_finished", "workflow_paused", "error", "message_end"].indexOf(data.event) === -1) {
+                  if (
+                    data.event &&
+                    [
+                      "message",
+                      "workflow_finished",
+                      "workflow_paused",
+                      "error",
+                      "message_end",
+                    ].indexOf(data.event) === -1
+                  ) {
                     const msgIndex = messages.value.length - 1;
                     const lastMsg = messages.value[msgIndex];
                     if (lastMsg?.role === "assistant" && lastMsg.isThinking) {
@@ -3190,8 +3495,20 @@ export default defineComponent({
     };
 
     // 处理文件上传（支持文件输入和剪贴板粘贴）
-    const uploadFile = async (file: File, source: string = "input", msgIndex?: number, conversationId?: string) => {
-      const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "text/plain"];
+    const uploadFile = async (
+      file: File,
+      source: string = "input",
+      msgIndex?: number,
+      conversationId?: string,
+    ) => {
+      const validTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/webp",
+        "image/gif",
+        "text/plain",
+      ];
       if (!validTypes.includes(file.type)) {
         ElMessage.error("请选择有效的文件格式（png/jpeg/jpg/webp/gif/txt）");
         return;
@@ -3209,16 +3526,17 @@ export default defineComponent({
         let apiKey = "";
         let nextStep = currentStep.value;
         let targetMsg: any = null;
-        
+
         if (conversationId) {
           targetMsg = messages.value.find((msg) => msg.conversationId === conversationId);
         } else if (msgIndex !== undefined && messages.value[msgIndex]) {
           targetMsg = messages.value[msgIndex];
         }
-        
+
         // 网关模式下，根据当前步骤（currentStep）使用对应步骤的 API Key
         // 判断是否为网关模式：消息是网关消息（isGateway）或当前步骤 >= 1 && <= 3
-        const isGatewayMode = targetMsg?.isGateway || (currentStep.value >= 1 && currentStep.value <= 3);
+        const isGatewayMode =
+          targetMsg?.isGateway || (currentStep.value >= 1 && currentStep.value <= 3);
         if (isGatewayMode && currentStep.value >= 1 && currentStep.value <= 3) {
           const stepConfig = stepApiKeyMap[currentStep.value];
           apiKey = stepConfig?.apiKey || "";
@@ -3230,7 +3548,9 @@ export default defineComponent({
         }
 
         console.log(`\n📤 准备上传文件:`);
-        console.log(`  - 当前步骤 (currentStep): ${currentStep.value} (${getStepLabel(currentStep.value)})`);
+        console.log(
+          `  - 当前步骤 (currentStep): ${currentStep.value} (${getStepLabel(currentStep.value)})`,
+        );
         console.log(`  - 网关模式 (isGatewayMode): ${isGatewayMode}`);
         console.log(`  - 目标消息 (isGateway): ${targetMsg?.isGateway}`);
         console.log(`  - 选中发送类型 (selectedSendType): ${selectedSendType.value}`);
@@ -3271,7 +3591,7 @@ export default defineComponent({
             const textContent = await new Promise<string>((resolve) => {
               const reader = new FileReader();
               reader.onload = (e) => {
-                resolve(e.target?.result as string || "");
+                resolve((e.target?.result as string) || "");
               };
               reader.onerror = () => {
                 resolve("");
@@ -3283,7 +3603,7 @@ export default defineComponent({
             const base64Data = await new Promise<string>((resolve) => {
               const reader = new FileReader();
               reader.onload = (e) => {
-                resolve(e.target?.result as string || "");
+                resolve((e.target?.result as string) || "");
               };
               reader.onerror = () => {
                 resolve("");
@@ -3306,25 +3626,30 @@ export default defineComponent({
               targetMsg = messages.value.find((msg) => msg.conversationId === conversationId);
             }
           }
-          
+
           if (targetMsg && targetMsg.role === "assistant") {
             if (!targetMsg.gatewayImages) {
               targetMsg.gatewayImages = [];
             }
             targetMsg.gatewayImages.push(fileInfo);
             const count = targetMsg.gatewayImages.length;
-            ElMessage.success(`${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前步骤共 ${count} ${isTxtFile ? "个文件" : "张图片"}`);
+            ElMessage.success(
+              `${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前步骤共 ${count} ${isTxtFile ? "个文件" : "张图片"}`,
+            );
           } else {
             // 回退到全局数组
             gatewayUploadedImages.value.push(fileInfo);
             const count = gatewayUploadedImages.value.length;
-            ElMessage.success(`${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前步骤共 ${count} ${isTxtFile ? "个文件" : "张图片"}`);
+            ElMessage.success(
+              `${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前步骤共 ${count} ${isTxtFile ? "个文件" : "张图片"}`,
+            );
           }
         } else {
           uploadedImages.value.push(fileInfo);
 
           try {
-            const stored = (await indexedDBStore.getItem(getUploadImageStorageKey())) as any[] || [];
+            const stored =
+              ((await indexedDBStore.getItem(getUploadImageStorageKey())) as any[]) || [];
             const allImagesData = uploadedImages.value.map((img, index) => {
               return index === uploadedImages.value.length - 1 ? fileInfo : stored[index] || img;
             });
@@ -3333,10 +3658,14 @@ export default defineComponent({
           } catch (storageError: any) {
             if (storageError.name === "QuotaExceededError") {
               console.warn("IndexedDB 配额不足，仅保存文件元信息");
-              const plainMeta = JSON.parse(JSON.stringify(uploadedImages.value.map((img) => {
-                const { base64Data, textContent, ...meta } = img;
-                return meta;
-              })));
+              const plainMeta = JSON.parse(
+                JSON.stringify(
+                  uploadedImages.value.map((img) => {
+                    const { base64Data, textContent, ...meta } = img;
+                    return meta;
+                  }),
+                ),
+              );
               await indexedDBStore.setItem(getUploadImageStorageKey(), plainMeta);
             } else {
               console.error("保存文件信息到 IndexedDB 失败:", storageError);
@@ -3344,7 +3673,9 @@ export default defineComponent({
           }
 
           const count = uploadedImages.value.length;
-          ElMessage.success(`${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前共 ${count} ${isTxtFile ? "个文件" : "张图片"}`);
+          ElMessage.success(
+            `${isTxtFile ? "文件" : "图片"} "${result.name}" 上传成功！当前共 ${count} ${isTxtFile ? "个文件" : "张图片"}`,
+          );
         }
       } catch (error: any) {
         ElMessage.error("图片上传失败：" + error.message);
@@ -3393,7 +3724,7 @@ export default defineComponent({
     const previewUploadedFile = (index: number) => {
       const file = uploadedImages.value[index];
       if (!file) return;
-      
+
       gatewayPreviewImages.value = JSON.parse(JSON.stringify(uploadedImages.value));
       gatewayPreviewIndex.value = index;
       isGatewayPreview.value = true;
@@ -3404,7 +3735,7 @@ export default defineComponent({
     const previewGatewayFile = (conversationId: string, index: number) => {
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg || !msg.gatewayImages || !msg.gatewayImages[index]) return;
-      
+
       gatewayPreviewImages.value = JSON.parse(JSON.stringify(msg.gatewayImages));
       gatewayPreviewIndex.value = index;
       isGatewayPreview.value = true;
@@ -3415,7 +3746,7 @@ export default defineComponent({
     const removeGatewayFile = async (conversationId: string, index: number) => {
       const msg = messages.value.find((m) => m.conversationId === conversationId);
       if (!msg || !msg.gatewayImages) return;
-      
+
       msg.gatewayImages.splice(index, 1);
       await saveMessagesToStorage();
       ElMessage.success("文件删除成功");
@@ -3423,23 +3754,25 @@ export default defineComponent({
 
     // 判断是否为图片文件
     const isImageFile = (file: any): boolean => {
-      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-      return imageExtensions.includes(file.extension?.toLowerCase() || '') || 
-             file.mime_type?.startsWith('image/');
+      const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+      return (
+        imageExtensions.includes(file.extension?.toLowerCase() || "") ||
+        file.mime_type?.startsWith("image/")
+      );
     };
 
     // 格式化文件大小
     const formatFileSize = (bytes: number): string => {
-      if (bytes < 1024) return bytes + ' B';
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
     };
 
     // 查看消息中的文件
     const viewMessageFile = (message: any, fileIndex: number) => {
       const file = message.files[fileIndex];
       if (!file) return;
-      
+
       if (isImageFile(file)) {
         gatewayPreviewImages.value = [file];
         gatewayPreviewIndex.value = 0;
@@ -3451,7 +3784,7 @@ export default defineComponent({
         isGatewayPreview.value = true;
         imagePreviewVisible.value = true;
       } else {
-        ElMessage.info('无法预览该文件类型');
+        ElMessage.info("无法预览该文件类型");
       }
     };
 
@@ -3508,7 +3841,7 @@ export default defineComponent({
     // 删除上传的文件
     const removeUploadedFile = async (index: number) => {
       uploadedImages.value.splice(index, 1);
-      
+
       try {
         const plainData = JSON.parse(JSON.stringify(uploadedImages.value));
         await indexedDBStore.setItem(getUploadImageStorageKey(), plainData);
@@ -3613,8 +3946,16 @@ export default defineComponent({
                 currentTaskId.value = data.task_id;
               }
 
-              if (!data.event || ["message", "workflow_finished", "workflow_paused", "error", "end"].indexOf(data.event) === -1) {
-                if (messages.value[msgIndex]?.role === "assistant" && messages.value[msgIndex].isThinking) {
+              if (
+                !data.event ||
+                ["message", "workflow_finished", "workflow_paused", "error", "end"].indexOf(
+                  data.event,
+                ) === -1
+              ) {
+                if (
+                  messages.value[msgIndex]?.role === "assistant" &&
+                  messages.value[msgIndex].isThinking
+                ) {
                   const eventDisplayName = getEventDisplayName(data.event, data.data);
                   messages.value[msgIndex].thinkingContent = eventDisplayName;
                 }
@@ -3711,14 +4052,13 @@ export default defineComponent({
     // 停止生成
     const stopGeneration = async (isTimeout: boolean = false) => {
       if (!isLoading.value && !isCadConverting.value) return;
-      
+
       // 设置手动停止标记（非超时情况）
       if (!isTimeout) {
         isUserManualStop.value = true;
       }
-      
 
-      console.log("currentTaskId.value ",currentTaskId.value);
+      console.log("currentTaskId.value ", currentTaskId.value);
       // 根据当前步骤获取对应的 API Key
       let usedApiKey = props.apiKey;
       if (currentStep.value === 1) {
@@ -4013,6 +4353,119 @@ export default defineComponent({
       }
     };
 
+    const handleDialogMouseDown = (e: MouseEvent) => {
+      if (isResizing.value) return;
+      isDialogDragging.value = true;
+      dragOffset.value = {
+        x: e.clientX - dialogPosition.value.x,
+        y: e.clientY - dialogPosition.value.y,
+      };
+      document.addEventListener("mousemove", handleDialogMouseMove);
+      document.addEventListener("mouseup", handleDialogMouseUp);
+    };
+
+    const handleDialogMouseMove = (e: MouseEvent) => {
+      if (!isDialogDragging.value) return;
+      dialogPosition.value = {
+        x: e.clientX - dragOffset.value.x,
+        y: e.clientY - dragOffset.value.y,
+      };
+    };
+
+    const handleDialogMouseUp = () => {
+      isDialogDragging.value = false;
+      document.removeEventListener("mousemove", handleDialogMouseMove);
+      document.removeEventListener("mouseup", handleDialogMouseUp);
+    };
+
+    const startResize = (direction: string, e: MouseEvent) => {
+      isResizing.value = true;
+      resizeDirection.value = direction;
+      resizeStart.value = {
+        x: e.clientX,
+        y: e.clientY,
+        width: dialogWidth.value,
+        height: dialogHeight.value,
+        left: dialogPosition.value.x,
+        top: dialogPosition.value.y,
+      };
+      document.addEventListener("mousemove", handleResize);
+      document.addEventListener("mouseup", stopResize);
+    };
+
+    const handleResize = (e: MouseEvent) => {
+      if (!isResizing.value) return;
+
+      const dx = e.clientX - resizeStart.value.x;
+      const dy = e.clientY - resizeStart.value.y;
+      const minWidth = 400;
+      const minHeight = 500;
+
+      switch (resizeDirection.value) {
+        case "n": {
+          const newHeight = Math.max(minHeight, resizeStart.value.height - dy);
+          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight);
+          dialogHeight.value = newHeight;
+          dialogPosition.value.y = newTop;
+          break;
+        }
+        case "s": {
+          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy);
+          break;
+        }
+        case "e": {
+          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx);
+          break;
+        }
+        case "w": {
+          const newWidth = Math.max(minWidth, resizeStart.value.width - dx);
+          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth);
+          dialogWidth.value = newWidth;
+          dialogPosition.value.x = newLeft;
+          break;
+        }
+        case "ne": {
+          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx);
+          const newHeight = Math.max(minHeight, resizeStart.value.height - dy);
+          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight);
+          dialogHeight.value = newHeight;
+          dialogPosition.value.y = newTop;
+          break;
+        }
+        case "nw": {
+          const newWidth = Math.max(minWidth, resizeStart.value.width - dx);
+          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth);
+          const newHeight = Math.max(minHeight, resizeStart.value.height - dy);
+          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight);
+          dialogWidth.value = newWidth;
+          dialogPosition.value.x = newLeft;
+          dialogHeight.value = newHeight;
+          dialogPosition.value.y = newTop;
+          break;
+        }
+        case "se": {
+          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx);
+          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy);
+          break;
+        }
+        case "sw": {
+          const newWidth = Math.max(minWidth, resizeStart.value.width - dx);
+          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth);
+          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy);
+          dialogWidth.value = newWidth;
+          dialogPosition.value.x = newLeft;
+          break;
+        }
+      }
+    };
+
+    const stopResize = () => {
+      isResizing.value = false;
+      resizeDirection.value = "";
+      document.removeEventListener("mousemove", handleResize);
+      document.removeEventListener("mouseup", stopResize);
+    };
+
     // 测试模式开关 - 设置为true时直接使用本地测试数据
     const USE_TEST_DATA = true;
 
@@ -4044,6 +4497,12 @@ export default defineComponent({
         delete (window as any).__viewGatewayImages;
         delete (window as any).__proceedToNextStep;
       }
+
+      // 清理拖拽和缩放事件监听器
+      document.removeEventListener("mousemove", handleDialogMouseMove);
+      document.removeEventListener("mouseup", handleDialogMouseUp);
+      document.removeEventListener("mousemove", handleResize);
+      document.removeEventListener("mouseup", stopResize);
     });
 
     // 校准JSON功能
@@ -4281,7 +4740,7 @@ export default defineComponent({
       }
 
       // 清理HTML标签，只保留纯文本
-      const tempDiv = document.createElement('div');
+      const tempDiv = document.createElement("div");
       tempDiv.innerHTML = message.content;
       const plainText = tempDiv.textContent || tempDiv.innerText || message.content;
 
@@ -4548,25 +5007,194 @@ export default defineComponent({
       isImageFile,
       formatFileSize,
       viewMessageFile,
+      dialogPosition,
+      dialogWidth,
+      dialogHeight,
+      isDialogDragging,
+      isResizing,
+      handleDialogMouseDown,
+      startResize,
     };
   },
 });
 </script>
 
 <style scoped>
+.custom-dialog-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0);
+  z-index: 9999;
+}
+
+.custom-dialog-wrapper {
+  position: absolute;
+  background-color: transparent;
+  z-index: 10000;
+}
+
+.custom-dialog {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.15),
+    0 4px 24px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+.custom-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #3478f3 0%, #0d2a42 100%);
+  color: white;
+  cursor: move;
+  user-select: none;
+}
+
+.custom-dialog-title {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-dialog-title::before {
+  content: "🤖";
+  font-size: 18px;
+}
+
+.custom-dialog-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.custom-dialog-close:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.resize-handles {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.resize-handle {
+  position: absolute;
+  background-color: transparent;
+  z-index: 10002;
+  pointer-events: auto;
+}
+
+.resize-n {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: n-resize;
+}
+
+.resize-s {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: s-resize;
+}
+
+.resize-e {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: e-resize;
+}
+
+.resize-w {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: w-resize;
+}
+
+.resize-ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: ne-resize;
+}
+
+.resize-nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nw-resize;
+}
+
+.resize-se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+}
+
+.resize-sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: sw-resize;
+}
+
 .dify-api-container {
   width: 100%;
-  height: 600px;
+  height: calc(100% - 56px);
   display: flex;
   flex-direction: column;
   background-color: #f8fafc;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
 }
 
 /* 消息区域 */
-.message-section {
+.message-section-wrapper {
   flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-section {
+  width: 100%;
+  height: 100%;
   overflow-y: auto;
   padding: 20px;
   background-color: #f8fafc;
@@ -4660,7 +5288,7 @@ export default defineComponent({
 }
 
 .avatar.assistant {
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  background: linear-gradient(135deg, #3478f3 0%, #0d2a42 100%);
 }
 
 .message-role {
@@ -4688,6 +5316,16 @@ export default defineComponent({
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.content-text code {
+  background-color: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
 }
 
 .user-message .message-content {
@@ -4718,22 +5356,23 @@ export default defineComponent({
 }
 
 .copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  background: none;
   border: none;
-  background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-  opacity: 0.6;
+  padding: 6px;
+  color: #94a3b8;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 6px;
+}
+
+.message-item:hover .copy-btn {
+  opacity: 1;
 }
 
 .copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  opacity: 1;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
 .copy-icon {
@@ -4741,7 +5380,7 @@ export default defineComponent({
 }
 
 .copy-btn:hover .copy-icon {
-  fill: #409eff;
+  fill: #3b82f6;
 }
 
 .message-actions {
@@ -4751,22 +5390,23 @@ export default defineComponent({
 }
 
 .copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  background: none;
   border: none;
-  background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-  opacity: 0.6;
+  padding: 6px;
+  color: #94a3b8;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 6px;
+}
+
+.message-item:hover .copy-btn {
+  opacity: 1;
 }
 
 .copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  opacity: 1;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
 .copy-icon {
@@ -4774,7 +5414,7 @@ export default defineComponent({
 }
 
 .copy-btn:hover .copy-icon {
-  fill: #409eff;
+  fill: #3b82f6;
 }
 
 .message-actions {
@@ -4784,22 +5424,23 @@ export default defineComponent({
 }
 
 .copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  background: none;
   border: none;
-  background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-  opacity: 0.6;
+  padding: 6px;
+  color: #94a3b8;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 6px;
+}
+
+.message-item:hover .copy-btn {
+  opacity: 1;
 }
 
 .copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  opacity: 1;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
 .copy-icon {
@@ -4807,7 +5448,7 @@ export default defineComponent({
 }
 
 .copy-btn:hover .copy-icon {
-  fill: #409eff;
+  fill: #3b82f6;
 }
 
 /* 思考中动画 */
@@ -4826,7 +5467,7 @@ export default defineComponent({
 .thinking-dots span {
   width: 8px;
   height: 8px;
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  background: linear-gradient(135deg, #3478f3 0%, #0d2a42 100%);
   border-radius: 50%;
   animation: thinking 1.4s infinite ease-in-out both;
 }
@@ -4894,24 +5535,59 @@ export default defineComponent({
 
 .input-actions {
   display: flex;
-  flex-direction: row;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 :deep(.el-textarea__inner) {
-  border-radius: 8px;
+  border-radius: 12px;
   resize: none;
   font-size: 14px;
   line-height: 1.5;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+:deep(.el-textarea__inner:focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+:deep(.el-input__inner) {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+:deep(.el-input__inner:hover) {
+  border-color: #cbd5e1;
+  background-color: #ffffff;
+}
+
+:deep(.el-input__inner:focus) {
+  border-color: #3b82f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .input-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+}
+
+.actions-row {
+  display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
 .image-preview-link {
@@ -4950,32 +5626,57 @@ export default defineComponent({
 }
 
 .send-button {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 50%;
-  padding: 0;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.send-button:disabled {
+  opacity: 0.5;
 }
 
 .upload-button {
-  width: 20px;
-  height: 20px;
-  min-width: 35px;
-  padding: 0;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.upload-button:hover {
+  background-color: #e2e8f0;
+}
+
 .stop-button {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 50%;
-  padding: 0;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5003,70 +5704,6 @@ export default defineComponent({
 
 .send-type-select :deep(.n-base-selection__border) {
   height: 32px;
-}
-
-/* 对话框样式优化 */
-:deep(.el-dialog__body) {
-  padding: 0;
-}
-
-:deep(.el-dialog__header) {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
-  border-bottom: none;
-}
-
-:deep(.el-dialog__title) {
-  color: white;
-  font-weight: 600;
-}
-
-:deep(.el-dialog__headerbtn) {
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 隐藏原来的关闭按钮 */
-:deep(.el-dialog__headerbtn) {
-  visibility: hidden;
-}
-
-/* 自定义关闭按钮 */
-.my-close-btn {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  margin: 0;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: white;
-  line-height: 32px;
-  text-align: center;
-  z-index: 100;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.my-close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-  color: white;
-}
-
-:deep(.el-dialog__footer) {
-  border-top: 1px solid #e4e7ed;
-  padding: 12px 20px;
 }
 
 /* JSON校验开关样式 */
@@ -5718,7 +6355,7 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   padding: 8px 0;
-  gap:20px;
+  gap: 20px;
 }
 
 .step-path {
