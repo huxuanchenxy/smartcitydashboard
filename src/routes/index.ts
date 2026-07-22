@@ -225,7 +225,13 @@ const routes: Array<RouteRecordRaw> = [
     path: '/admin/screen/searichat',
     name: 'SeariChat',
     component: () => import('@/views/screen/searichat.vue'),
-    meta: { title: 'SeariChat管理' },
+    meta: { title: '开发人员' },
+  },
+  {
+    path: '/admin/screen/searichatpm',
+    name: 'SeariChatPM',
+    component: () => import('@/views/screen/searichatpm.vue'),
+    meta: { title: '项目经理' },
   },
   {
     path: '/:catchAll(.*)*',
