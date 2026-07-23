@@ -3,7 +3,6 @@
     <div
       v-if="dialogVisible"
       class="custom-dialog-mask"
-      @click.self="handleClose"
     >
       <div
         class="custom-dialog-wrapper"
