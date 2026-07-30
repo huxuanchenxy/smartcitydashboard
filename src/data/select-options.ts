@@ -8,6 +8,7 @@ export const animationTypes = [
   { id: "ZoomInCenter", value: "逐渐放大" },
   { id: "Swing", value: "左摇右摆" },
   { id: "Blink", value: "闪烁" },
+  { id: "Breathing", value: "呼吸灯" },
   { id: "FadeInOut", value: "淡入淡出" },
   { id: "BounceIn", value: "弹跳进入" },
   { id: "Jitter", value: "抖动" },
