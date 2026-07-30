@@ -51,18 +51,18 @@ const showAiDialog = ref(false);
 .ai-chat-trigger {
     position: absolute;
     top: 3%;
-    width: 180px;
+    width: 50px;
     height: 50px;
     background: transparent;
     border: none;
     cursor: pointer;
     outline: none;
     z-index: 10;
-    right: 11%;
+    right: 14%;
 }
 
 .ai-chat-trigger:hover {
-  background: rgba(64, 158, 255, 0.1);
+  background: rgba(252, 253, 253, 0.1);
   border-radius: 4px;
 }
 </style>
