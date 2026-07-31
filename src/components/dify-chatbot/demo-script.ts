@@ -215,12 +215,49 @@ export const demoScript: DemoScript = {
           nextState: 'user'
         },
         {
+          keywords: ['图表', '可视化', 'chart', 'pie', '饼图', '折线', '柱状', '条形'],
+          response: '📈 正在为您进入图表演示模式...',
+          nextState: 'flint_chart_demo'
+        },
+        {
           keywords: ['退出', '切换角色'],
           response: '已退出使用人员模式，请重新选择角色。',
           nextState: 'welcome'
         }
       ],
-      defaultResponse: '👁️ 使用人员模式：请打开发布画面或查询运维信息。'
+      defaultResponse: '👁️ 使用人员模式：请打开发布画面、查询运维信息，或输入"图表"生成数据可视化。'
+    },
+
+    flint_chart_demo: {
+      name: 'Flint图表演示',
+      rules: [
+        {
+          keywords: ['设备状态', '设备分布', 'device status', 'pie', '饼图'],
+          response: '📊 设备状态分布饼图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "status": "正常运行", "count": 35 },\n      { "status": "警告", "count": 1 },\n      { "status": "故障", "count": 1 }\n    ]\n  },\n  "semantic_types": { "status": "Category", "count": "Quantity" },\n  "chart_spec": {\n    "chartType": "Pie Chart",\n    "encodings": { "color": { "field": "status" }, "theta": { "field": "count" } },\n    "chartProperties": { "donutHole": 0.4 }\n  }\n}\n```',
+          nextState: 'flint_chart_demo'
+        },
+        {
+          keywords: ['能耗趋势', '能耗', '趋势', 'energy', 'line', '折线'],
+          response: '📈 月度能耗趋势折线图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "month": "2024-01", "kwh": 12400, "cost": 8900 },\n      { "month": "2024-02", "kwh": 11800, "cost": 8500 },\n      { "month": "2024-03", "kwh": 13200, "cost": 9500 },\n      { "month": "2024-04", "kwh": 14100, "cost": 10200 },\n      { "month": "2024-05", "kwh": 15800, "cost": 11400 },\n      { "month": "2024-06", "kwh": 17200, "cost": 12500 },\n      { "month": "2024-07", "kwh": 18500, "cost": 13400 }\n    ]\n  },\n  "semantic_types": { "month": "YearMonth", "kwh": "Quantity", "cost": "Quantity" },\n  "chart_spec": {\n    "chartType": "Line Chart",\n    "encodings": { "x": { "field": "month" }, "y": { "field": "kwh" } },\n    "chartProperties": { "smooth": true }\n  }\n}\n```',
+          nextState: 'flint_chart_demo'
+        },
+        {
+          keywords: ['设备数量', '设备类型', 'bar', '柱状', '条形'],
+          response: '📊 各类型设备数量柱状图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "type": "风机", "count": 12 },\n      { "type": "水泵", "count": 8 },\n      { "type": "传感器", "count": 24 },\n      { "type": "阀门", "count": 16 },\n      { "type": "控制器", "count": 6 }\n    ]\n  },\n  "semantic_types": { "type": "Category", "count": "Quantity" },\n  "chart_spec": {\n    "chartType": "Bar Chart",\n    "encodings": { "x": { "field": "type" }, "y": { "field": "count" } }\n  }\n}\n```',
+          nextState: 'flint_chart_demo'
+        },
+        {
+          keywords: ['楼层分布', '楼层', 'grouped', '分组'],
+          response: '🏢 各楼层设备状态分组柱状图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "floor": "1F", "status": "正常", "count": 18 },\n      { "floor": "1F", "status": "警告", "count": 1 },\n      { "floor": "2F", "status": "正常", "count": 22 },\n      { "floor": "2F", "status": "故障", "count": 1 },\n      { "floor": "3F", "status": "正常", "count": 15 },\n      { "floor": "3F", "status": "警告", "count": 2 },\n      { "floor": "4F", "status": "正常", "count": 20 },\n      { "floor": "4F", "status": "警告", "count": 1 }\n    ]\n  },\n  "semantic_types": { "floor": "Category", "status": "Category", "count": "Quantity" },\n  "chart_spec": {\n    "chartType": "Grouped Bar Chart",\n    "encodings": { "x": { "field": "floor" }, "y": { "field": "count" }, "color": { "field": "status" } }\n  }\n}\n```',
+          nextState: 'flint_chart_demo'
+        },
+        {
+          keywords: ['退出', '返回', 'back'],
+          response: '已退出图表演示模式，返回使用人员模式。',
+          nextState: 'user'
+        }
+      ],
+      defaultResponse: '📈 Flint图表演示：请输入图表类型关键词生成可视化图表。\n可用命令：\n- "设备状态" → 饼图\n- "能耗趋势" → 折线图\n- "设备数量" → 柱状图\n- "楼层分布" → 分组柱状图\n- "退出" → 返回'
     }
   }
 };
@@ -281,7 +318,7 @@ export class DemoScriptEngine {
       return '您好！欢迎使用AI智能助手。作为开发人员，您可以上传图纸进行设备识别、点位绑定和界面生成。';
     } else if (role === 'user') {
       this.currentState = 'user';
-      return '您好！欢迎使用AI智能助手。作为使用人员，您可以查询运维信息，与组态画面交互。';
+      return '您好！欢迎使用AI智能助手。作为使用人员，您可以查询运维信息、与组态画面交互，或输入"图表"让AI为您生成数据可视化图表。';
     }
     return '';
   }

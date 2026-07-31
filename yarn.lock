@@ -5452,6 +5452,11 @@ flatted@^3.1.0:
   resolved "https://registry.npmjs.org/flatted/-/flatted-3.1.1.tgz#c4b489e80096d9df1dfc97c79871aea7c617c469"
   integrity sha512-zAoAQiudy+r5SvnSw3KJy5os/oRJYHzrzja/tBDqrZtNhUw8bt6y8OBzMWcjWr+8liV8Eb6yOhw8WZ7VFZ5ZzA==
 
+flint-chart@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.npmjs.org/flint-chart/-/flint-chart-0.4.1.tgz#b0c06ac8237986bc9293896876497bc5087cbdde"
+  integrity sha512-4umtCbQpDiY5sRCAqNlBKxIpxRXg0FMRj0f1d2d1n/5p75MzfasiRJDEIkrPtjBdPffjmaXtDeBnSqazrh1opA==
+
 follow-redirects@^1.10.0:
   version "1.14.1"
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.14.1.tgz#d9114ded0a1cfdd334e164e6662ad02bfd91ff43"

@@ -63,6 +63,14 @@
                       </div>
                       <div v-else>
                         <div class="content-text" v-html="formatContent(message.content)"></div>
+                        <div v-if="message.flintSpecs && message.flintSpecs.length > 0" class="flint-charts-container">
+                          <div
+                            v-for="(spec, chartIdx) in message.flintSpecs"
+                            :key="chartIdx"
+                            :ref="(el) => setFlintChartRef(el, index, chartIdx)"
+                            class="flint-chart-item"
+                          ></div>
+                        </div>
                         <div v-if="message.files && message.files.length > 0" class="message-files">
                           <div
                             v-for="file in message.files"
@@ -193,6 +201,28 @@ import ChatCopy from "@/icons/chat-copy.vue";
 import ChatUpload from "@/icons/chat-upload.vue";
 import ChatStop from "@/icons/chat-stop.vue";
 import ChatSend from "@/icons/chat-send.vue";
+import { assembleECharts, type ChartAssemblyInput } from "flint-chart";
+import * as echarts from "echarts";
+
+// Flint 图表相关接口
+interface FlintSpec {
+  rawInput: ChartAssemblyInput;
+  echartsOption: any;
+}
+
+interface ChartMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+  isThinking?: boolean;
+  thinkingContent?: string;
+  files?: Array<{
+    id: string;
+    name: string;
+    size: number;
+  }>;
+  flintSpecs?: FlintSpec[];
+}
 
 export default defineComponent({
   name: "DifyApiDemoDialog",
@@ -240,20 +270,9 @@ export default defineComponent({
   setup(props, { emit }) {
     const dialogVisible = ref(false);
     const userQuery = ref("");
-    const messages = ref<
-      Array<{
-        role: "user" | "assistant";
-        content: string;
-        timestamp: number;
-        isThinking?: boolean;
-        thinkingContent?: string;
-        files?: Array<{
-          id: string;
-          name: string;
-          size: number;
-        }>;
-      }>
-    >([]);
+    const messages = ref<ChartMessage[]>([]);
+    const flintChartRefs = ref<Map<string, HTMLElement>>(new Map());
+    const flintChartInstances = ref<Map<string, echarts.ECharts>>(new Map());
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement | null>(null);
     const dialogPosition = ref({ x: window.innerWidth / 2 + 50, y: 100 });
@@ -320,8 +339,16 @@ export default defineComponent({
       }
     };
 
+    // 窗口 resize 时同步调整图表大小
+    const handleWindowResize = () => {
+      flintChartInstances.value.forEach((instance) => {
+        instance.resize();
+      });
+    };
+
     onMounted(() => {
       dialogVisible.value = props.visible;
+      window.addEventListener('resize', handleWindowResize);
       if (dialogVisible.value) {
         showWelcomeMessage();
       }
@@ -337,11 +364,28 @@ export default defineComponent({
       }
     );
 
+    // 清理所有 Flint 图表实例
+    const disposeAllCharts = () => {
+      // 清理 ResizeObserver
+      resizeObservers.forEach((observer) => {
+        observer.disconnect();
+      });
+      resizeObservers.length = 0;
+
+      flintChartInstances.value.forEach((instance) => {
+        instance.dispose();
+      });
+      flintChartInstances.value.clear();
+      flintChartRefs.value.clear();
+    };
+
     onUnmounted(() => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
+      window.removeEventListener('resize', handleWindowResize);
+      disposeAllCharts();
     });
 
     const handleClose = () => {
@@ -501,7 +545,8 @@ export default defineComponent({
 
       setTimeout(async () => {
         const response = scriptEngine.getResponse(userMessage.content);
-        
+        const flintSpecs = parseFlintSpecs(response);
+
         const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
         if (thinkingIndex !== -1) {
           messages.value[thinkingIndex] = {
@@ -509,9 +554,10 @@ export default defineComponent({
             content: "",
             timestamp: Date.now(),
             isThinking: false,
+            flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
           };
           await scrollToBottom();
-          
+
           const typingSpeed = 50;
           let index = 0;
           const interval = setInterval(() => {
@@ -522,17 +568,26 @@ export default defineComponent({
             } else {
               clearInterval(interval);
               isLoading.value = false;
+              // 打字完成后渲染 Flint 图表
+              if (flintSpecs.length > 0) {
+                renderFlintCharts(thinkingIndex);
+              }
             }
           }, typingSpeed);
         } else {
-          const assistantMessage = {
+          const assistantMessage: ChartMessage = {
             role: "assistant" as const,
             content: response,
             timestamp: Date.now(),
+            flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
           };
           messages.value.push(assistantMessage);
           isLoading.value = false;
           await scrollToBottom();
+          // 立即渲染 Flint 图表
+          if (flintSpecs.length > 0) {
+            renderFlintCharts(messages.value.length - 1);
+          }
         }
       }, 5000 + Math.random() * 1000);
     };
@@ -541,8 +596,82 @@ export default defineComponent({
       sendMessage();
     };
 
+    // 从消息内容中解析 Flint spec
+    const parseFlintSpecs = (content: string): FlintSpec[] => {
+      const specs: FlintSpec[] = [];
+      const regex = /```flint\s*\n([\s\S]*?)\n```/g;
+      let match;
+      while ((match = regex.exec(content)) !== null) {
+        try {
+          const rawInput = JSON.parse(match[1]) as ChartAssemblyInput;
+          const echartsOption = assembleECharts(rawInput);
+          specs.push({ rawInput, echartsOption });
+        } catch (e) {
+          console.warn('Failed to parse Flint spec:', e);
+        }
+      }
+      return specs;
+    };
+
+    // 清理消息内容中的 Flint 代码块
+    const stripFlintBlocks = (content: string): string => {
+      return content.replace(/```flint\s*\n[\s\S]*?\n```/g, '');
+    };
+
+    // 设置图表 DOM 引用
+    const setFlintChartRef = (el: any, messageIndex: number, chartIdx: number) => {
+      if (el) {
+        const key = `${messageIndex}-${chartIdx}`;
+        flintChartRefs.value.set(key, el as HTMLElement);
+      }
+    };
+
+    // 渲染 Flint 图表
+    const renderFlintCharts = async (messageIndex: number) => {
+      await nextTick();
+      const msg = messages.value[messageIndex];
+      if (!msg || !msg.flintSpecs || msg.flintSpecs.length === 0) return;
+
+      msg.flintSpecs.forEach((spec, chartIdx) => {
+        const key = `${messageIndex}-${chartIdx}`;
+        const domEl = flintChartRefs.value.get(key);
+        if (!domEl) return;
+
+        // 确保容器有正确的宽度
+        const rect = domEl.getBoundingClientRect();
+        if (rect.width === 0) {
+          // 宽度为0，等待下一帧再试
+          requestAnimationFrame(() => renderFlintCharts(messageIndex));
+          return;
+        }
+
+        const existingInstance = flintChartInstances.value.get(key);
+        if (existingInstance) {
+          existingInstance.dispose();
+        }
+
+        const chartInstance = echarts.init(domEl);
+        chartInstance.setOption(spec.echartsOption);
+        flintChartInstances.value.set(key, chartInstance);
+
+        // 使用 ResizeObserver 监听容器尺寸变化
+        if (typeof ResizeObserver !== 'undefined') {
+          const observer = new ResizeObserver(() => {
+            chartInstance.resize();
+          });
+          observer.observe(domEl);
+          resizeObservers.push(observer);
+        }
+      });
+    };
+
+    // 存储 ResizeObserver 以便清理
+    const resizeObservers: ResizeObserver[] = [];
+
+    // 格式化内容（清理 Flint 块 + 标准格式化）
     const formatContent = (content: string): string => {
-      return content
+      const cleaned = stripFlintBlocks(content);
+      return cleaned
         .replace(/\n/g, "<br />")
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
         .replace(/`(.*?)`/g, "<code>$1</code>");
@@ -582,6 +711,7 @@ export default defineComponent({
     };
 
     const clearMessages = () => {
+      disposeAllCharts();
       messages.value = [];
       showWelcomeMessage();
     };
@@ -646,6 +776,7 @@ export default defineComponent({
       dialogHeight,
       startResize,
       currentRole,
+      setFlintChartRef,
     };
   },
 });
@@ -826,11 +957,17 @@ export default defineComponent({
 }
 
 .message-content {
+  width: auto;
   max-width: 75%;
   padding: 14px 18px;
   border-radius: 16px;
   word-break: break-word;
   transition: all 0.2s ease;
+}
+
+.assistant-message .message-content {
+  width: 75%;
+  min-width: 320px;
 }
 
 .user-message .message-content {
@@ -1202,5 +1339,35 @@ export default defineComponent({
   width: 20px;
   height: 20px;
   cursor: sw-resize;
+}
+
+/* Flint 图表样式 */
+.flint-charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.flint-chart-item {
+  width: 100%;
+  height: 280px;
+  min-height: 220px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.flint-chart-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.assistant-message .flint-chart-item {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 </style>
