@@ -49,18 +49,18 @@ export const demoScript: DemoScript = {
       name: '项目经理',
       rules: [
         {
-          keywords: ['上传设备文件', '设备文件', 'device file', '设备'],
-          response: '📄 检测到设备信息文件，是否上传至设备知识库？(Y/N)',
+          keywords: ['我上传了设备信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行', '设备文件', 'device file', '设备'],
+          response: '📄 检测到设备信息文件，数据完整，无缺失内容，是否上传至设备知识库？（是/否）',
           nextState: 'pm_device_confirm'
         },
         {
-          keywords: ['上传点位文件', '点位文件', 'point file', '点位'],
-          response: '📄 检测到点位信息文件，是否上传至点位知识库？(Y/N)',
+          keywords: ['我上传了点位信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行', '点位文件', 'point file', '点位'],
+          response: '📄 检测到点位信息文件，数据完整，无缺失内容，是否上传至点位知识库？（是/否）',
           nextState: 'pm_point_confirm'
         },
         {
-          keywords: ['上传图例文件', '图例文件', 'legend file', '图例'],
-          response: '📄 检测到图例信息文件，是否上传至图例知识库？(Y/N)',
+          keywords: ['我上传了图例信息文件，请从文件中提取标准图例，对每一个图例，识别并标注其关联的设备名称，建立图例和设备之间的映射。若某图例无法对应到具体设备名，请明确列出待补项', '图例文件', 'legend file', '图例'],
+          response: '📄 检测到图例信息文件，已建立图例和设备之间的映射，无待补项，是否上传至图例知识库？（是/否）',
           nextState: 'pm_legend_confirm'
         },
         {
@@ -86,7 +86,7 @@ export const demoScript: DemoScript = {
           nextState: 'project_manager'
         }
       ],
-      defaultResponse: '请确认是否上传设备信息文件至设备知识库？(Y/N)'
+      defaultResponse: '请确认是否上传设备信息文件至设备知识库？（是/否）'
     },
 
     pm_point_confirm: {
@@ -103,7 +103,7 @@ export const demoScript: DemoScript = {
           nextState: 'project_manager'
         }
       ],
-      defaultResponse: '请确认是否上传点位信息文件至点位知识库？(Y/N)'
+      defaultResponse: '请确认是否上传点位信息文件至点位知识库？（是/否）'
     },
 
     pm_legend_confirm: {
@@ -120,15 +120,15 @@ export const demoScript: DemoScript = {
           nextState: 'project_manager'
         }
       ],
-      defaultResponse: '请确认是否上传图例信息文件至图例知识库？(Y/N)'
+      defaultResponse: '请确认是否上传图例信息文件至图例知识库？（是/否）'
     },
 
     developer: {
       name: '开发人员',
       rules: [
         {
-          keywords: ['上传图纸', '图纸', 'upload drawing', 'drawing'],
-          response: '📄 检测到图纸，是否进行设备识别？(Y/N)',
+          keywords: ['我上传了一张图纸，请调用此前已建好的知识库，匹配图纸中的图例符号，判定每台设备的类型，并提取设备在图纸上的位置与相对布局，依次进行设备识别、点位绑定和界面生成，每个流程执行前向我确认', '图纸', 'upload drawing', 'drawing'],
+          response: '📄 检测到图纸，是否进行设备识别？（是/否）',
           nextState: 'dev_drawing_recognize'
         },
         {
@@ -150,7 +150,7 @@ export const demoScript: DemoScript = {
       rules: [
         {
           keywords: ['Y', '是', 'yes', '确认'],
-          response: '🔍 正在进行设备识别...\n\n识别完毕！已识别到以下设备：\n- 传感器 × 15\n- 控制器 × 8\n- 执行器 × 12\n\n是否进行点位绑定？(Y/N)',
+          response: '🔍 正在进行设备识别...\n\n识别完毕！已识别到以下设备：\n- 电动防烟防火阀 × 2\n- 电动风阀 × 17\n- 风机盘管 × 1\n- 回排风机 × 2\n- 空气幕 × 4\n- 连锁风阀 × 4\n- 排烟风机 × 2\n- 小新风机 × 2\n- 组合式空调箱 × 2\n\n是否进行点位绑定？（是/否）',
           nextState: 'dev_point_binding'
         },
         {
@@ -159,7 +159,7 @@ export const demoScript: DemoScript = {
           nextState: 'developer'
         }
       ],
-      defaultResponse: '请确认是否对图纸进行设备识别？(Y/N)'
+      defaultResponse: '请确认是否对图纸进行设备识别？（是/否）'
     },
 
     dev_point_binding: {
@@ -167,7 +167,7 @@ export const demoScript: DemoScript = {
       rules: [
         {
           keywords: ['Y', '是', 'yes', '确认'],
-          response: '🔗 正在进行点位绑定...\n\n已从知识库加载设备和点位信息：\n- 设备知识库：已选中（35个设备）\n- 点位知识库：已选中（128个点位）\n\n点位绑定结束，是否生成界面？(Y/N)',
+          response: '🔗 正在进行点位绑定...\n\n已从知识库加载设备和点位信息：\n- 设备知识库：已选中（9种设备）\n- 点位知识库：已选中（742个点位）\n\n点位绑定结束，是否生成界面？（是/否）',
           nextState: 'dev_generate_ui'
         },
         {
@@ -176,7 +176,7 @@ export const demoScript: DemoScript = {
           nextState: 'developer'
         }
       ],
-      defaultResponse: '请确认是否进行点位绑定？(Y/N)'
+      defaultResponse: '请确认是否进行点位绑定？（是/否）'
     },
 
     dev_generate_ui: {
@@ -184,7 +184,7 @@ export const demoScript: DemoScript = {
       rules: [
         {
           keywords: ['Y', '是', 'yes', '确认'],
-          response: '🎨 正在生成组态界面...\n\n✅ 界面生成成功！\n- 生成组件：52个\n- 绑定点位：128个\n- 布局方式：自动排列\n\n界面已就绪，可进行发布。',
+          response: '🎨 正在生成组态界面，请稍后...\n\n⏳ 界面即将生成\n- 预计生成组件：36个\n- 预计绑定点位：742个\n- 布局方式：自动排列\n\n请进入「编辑模式」进行核对与微调，确认无误后再发布。',
           nextState: 'developer'
         },
         {
@@ -193,7 +193,7 @@ export const demoScript: DemoScript = {
           nextState: 'developer'
         }
       ],
-      defaultResponse: '请确认是否生成组态界面？(Y/N)'
+      defaultResponse: '请确认是否生成组态界面？（是/否）'
     },
 
     user: {
@@ -206,7 +206,7 @@ export const demoScript: DemoScript = {
         },
         {
           keywords: ['查询运维信息', '运维', 'operation', 'maintenance'],
-          response: '📊 运维信息查询结果：\n\n当前设备状态：\n- 🟢 正常运行：28台\n- 🟡 警告状态：3台\n- 🔴 故障告警：1台\n\n今日运维任务：\n1. 设备巡检（已完成）\n2. 系统备份（进行中）\n3. 日志清理（待执行）',
+          response: '📊 运维信息查询结果：\n\n当前设备状态：\n- 🟢 正常运行：35台\n- 🟡 警告状态：1台\n- 🔴 故障告警：1台\n\n今日运维任务：\n1. 设备巡检（已完成）\n2. 系统备份（进行中）\n3. 日志清理（待执行）',
           nextState: 'user'
         },
         {
