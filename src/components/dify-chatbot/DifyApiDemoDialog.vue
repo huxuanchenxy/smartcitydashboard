@@ -546,6 +546,8 @@ export default defineComponent({
       setTimeout(async () => {
         const response = scriptEngine.getResponse(userMessage.content);
         const flintSpecs = parseFlintSpecs(response);
+        // 关键：先清除 Flint 块，获取纯文本内容
+        const textContent = stripFlintBlocks(response).trim();
 
         const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
         if (thinkingIndex !== -1) {
@@ -561,8 +563,9 @@ export default defineComponent({
           const typingSpeed = 50;
           let index = 0;
           const interval = setInterval(() => {
-            if (index < response.length) {
-              messages.value[thinkingIndex].content = response.slice(0, index + 1);
+            // 使用纯文本内容（不含 Flint JSON）进行打字
+            if (index < textContent.length) {
+              messages.value[thinkingIndex].content = textContent.slice(0, index + 1);
               index++;
               scrollToBottom();
             } else {
@@ -577,7 +580,8 @@ export default defineComponent({
         } else {
           const assistantMessage: ChartMessage = {
             role: "assistant" as const,
-            content: response,
+            // 使用纯文本内容（不含 Flint JSON）
+            content: textContent,
             timestamp: Date.now(),
             flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
           };
