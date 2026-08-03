@@ -1,22 +1,35 @@
 <template>
-
-    <div>
-      Agent配置
-    </div>
+  <div class="agent-config-page">
+    <DifyApiDemoDialog
+      v-model:visible="showDialog"
+      title="Agent 配置助手"
+    />
+  </div>
 </template>
 
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
+import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
 
-<script lang='ts'>
-import { defineComponent } from 'vue'
-import { useRouter } from 'vue-router';
 export default defineComponent({
-    name: 'AgentConfig',
-    components: {
+  name: 'AgentConfig',
+  components: {
+    DifyApiDemoDialog,
   },
-    setup() {
-    },
+  setup() {
+    const showDialog = ref(true)
+
+    return {
+      showDialog,
+    }
+  },
 })
 </script>
 
-
-<style scoped></style>
+<style scoped>
+.agent-config-page {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+</style>

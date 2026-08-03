@@ -52,10 +52,24 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      //navs.value = mainMenu;
-      const mainMenu = (JSON.parse(getMainMenu()) as any[]).filter(r => r.enabled);
-      navs.value = mainMenu;
-      console.log('navs.value',navs.value);
+      const storedMenu = JSON.parse(getMainMenu()) as any[];
+      const templateMenu = (mainMenuJson.default as unknown) as any[];
+
+      const mergedMenu = templateMenu.map(templateItem => {
+        const storedItem = storedMenu?.find(s => s.id === templateItem.id);
+        if (storedItem) {
+          const mergedChildren = templateItem.children.map(tc => {
+            const sc = storedItem.children?.find(s => s.id === tc.id);
+            return { ...tc, ...sc, enabled: true };
+          });
+          return { ...templateItem, ...storedItem, children: mergedChildren, enabled: true };
+        }
+        const children = templateItem.children.map(c => ({ ...c, enabled: true }));
+        return { ...templateItem, enabled: true, children };
+      });
+
+      navs.value = mergedMenu.filter(r => r.enabled);
+      console.log('navs.value', navs.value);
       window.addEventListener('scroll', scroll)
     })
 
