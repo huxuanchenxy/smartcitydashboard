@@ -55,7 +55,7 @@ export default defineComponent({
       //navs.value = mainMenu;
       const mainMenu = (JSON.parse(getMainMenu()) as any[]).filter(r => r.enabled);
       navs.value = mainMenu;
-      console.log(navs.value);
+      console.log('navs.value',navs.value);
       window.addEventListener('scroll', scroll)
     })
 

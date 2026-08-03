@@ -59,6 +59,12 @@ const navRoutes: Array<RouteRecordRaw> = [
         meta: { title: '集群配置' },
       },
       {
+        path: 'agentConfig',
+        name: 'AgentConfig',
+        component: () => import('@/views/project/NetWork/AgentConfig.vue'),
+        meta: { title: 'Agent配置' },
+      },
+      {
         path: 'updatePassword',
         name: 'UpdatePassword',
         component: () => import('@/views/home/updatePassword.vue'),

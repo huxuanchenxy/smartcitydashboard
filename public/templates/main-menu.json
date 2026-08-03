@@ -25,6 +25,7 @@
       { "id": 4, "icon": "IconSbglqpz", "name": "设备管理器配置", "path": "ServerConfig" },
       { "id": 5, "icon": "IconSbgl", "name": "设备管理", "path": "DeviceType" },
       { "id": 6, "icon": "IconJqpz", "name": "集群配置", "path": "ColonyConfig" },
+      { "id": 7, "icon": "IconJqpz", "name": "Agent配置", "path": "AgentConfig" },
       { "id": 3, "icon": "IconCspz", "name": "参数配置", "path": "ParamConfig" }
     ]
   }
