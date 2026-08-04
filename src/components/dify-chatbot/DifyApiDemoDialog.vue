@@ -3,6 +3,7 @@
     <div
       v-if="dialogVisible"
       class="custom-dialog-mask"
+      :class="{ 'no-mask': noMask }"
     >
       <div
         class="custom-dialog-wrapper"
@@ -26,7 +27,7 @@
         <div class="custom-dialog" @mousedown="handleMouseDown">
           <div class="custom-dialog-header">
             <span class="custom-dialog-title">{{ title }}</span>
-            <button class="custom-dialog-close" @click="handleClose">
+            <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
               ×
             </button>
           </div>
@@ -245,6 +246,18 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    noMask: {
+      type: Boolean,
+      default: false,
+    },
+    initialPosition: {
+      type: Object as () => { x: number; y: number },
+      default: null,
+    },
+    initialSize: {
+      type: Object as () => { width: number; height: number },
+      default: null,
+    },
     role: {
       type: String,
       default: "",
@@ -277,7 +290,7 @@ export default defineComponent({
     const flintChartInstances = ref<Map<string, echarts.ECharts>>(new Map());
     const isLoading = ref(false);
     const messageContainer = ref<HTMLElement | null>(null);
-    const dialogPosition = ref({ x: window.innerWidth / 2 + 50, y: 100 });
+    const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 });
     const dragOffset = ref({ x: 0, y: 0 });
     const isDragging = ref(false);
 
@@ -425,6 +438,25 @@ export default defineComponent({
       }
     );
 
+    watch(
+      () => props.initialPosition,
+      (newPos) => {
+        if (newPos) {
+          dialogPosition.value = { ...newPos };
+        }
+      }
+    );
+
+    watch(
+      () => props.initialSize,
+      (newSize) => {
+        if (newSize) {
+          dialogWidth.value = newSize.width;
+          dialogHeight.value = newSize.height;
+        }
+      }
+    );
+
     // 清理所有 Flint 图表实例
     const disposeAllCharts = () => {
       // 清理 ResizeObserver
@@ -483,8 +515,8 @@ export default defineComponent({
     const isResizing = ref(false);
     const resizeDirection = ref('');
     const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 });
-    const dialogWidth = ref(600);
-    const dialogHeight = ref(600);
+    const dialogWidth = ref(props.initialSize?.width ?? 600);
+    const dialogHeight = ref(props.initialSize?.height ?? 600);
 
     const startResize = (direction: string, e: MouseEvent) => {
       isResizing.value = true;
@@ -856,6 +888,15 @@ export default defineComponent({
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.3);
   z-index: 9999;
+}
+
+.custom-dialog-mask.no-mask {
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.custom-dialog-mask.no-mask .custom-dialog-wrapper {
+  pointer-events: auto;
 }
 
 .custom-dialog-wrapper {
