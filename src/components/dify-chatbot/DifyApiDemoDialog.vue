@@ -14,7 +14,7 @@
           height: dialogHeight + 'px',
         }"
       >
-        <div class="resize-handles">
+        <div v-if="!fixed" class="resize-handles">
           <div class="resize-handle resize-n" @mousedown.stop="startResize('n', $event)"></div>
           <div class="resize-handle resize-s" @mousedown.stop="startResize('s', $event)"></div>
           <div class="resize-handle resize-e" @mousedown.stop="startResize('e', $event)"></div>
@@ -24,7 +24,7 @@
           <div class="resize-handle resize-se" @mousedown.stop="startResize('se', $event)"></div>
           <div class="resize-handle resize-sw" @mousedown.stop="startResize('sw', $event)"></div>
         </div>
-        <div class="custom-dialog" @mousedown="handleMouseDown">
+        <div class="custom-dialog" :class="{ 'custom-dialog-fixed': fixed }" @mousedown="handleMouseDown">
           <div class="custom-dialog-header">
             <span class="custom-dialog-title">{{ title }}</span>
             <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
@@ -318,6 +318,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    fixed: {
+      type: Boolean,
+      default: false,
+    },
     initialPosition: {
       type: Object as () => { x: number; y: number },
       default: null,
@@ -556,6 +560,7 @@ export default defineComponent({
     };
 
     const handleMouseDown = (e: MouseEvent) => {
+      if (props.fixed) return;
       if (isResizing.value) return;
       isDragging.value = true;
       dragOffset.value = {
@@ -1099,6 +1104,10 @@ export default defineComponent({
   border-radius: 16px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+}
+
+.custom-dialog-fixed .custom-dialog-header {
+  cursor: default;
 }
 
 .custom-dialog-header {

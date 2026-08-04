@@ -5,6 +5,7 @@
         v-model:visible="showDialog"
         title="Agent 配置助手"
         :no-mask="true"
+        :fixed="true"
         :initial-position="initialPosition"
         :initial-size="initialSize"
         role="backend_ops"
