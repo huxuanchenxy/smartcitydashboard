@@ -72,6 +72,61 @@
                             class="flint-chart-item"
                           ></div>
                         </div>
+                        <!-- HTML 交互面板 -->
+                        <div
+                          v-if="message.htmlInteractions && message.htmlInteractions.length > 0"
+                          class="html-interactions-container"
+                        >
+                          <div
+                            v-for="(interaction, interIdx) in message.htmlInteractions"
+                            :key="interIdx"
+                            class="html-interaction-panel"
+                            :class="{ resolved: message.interactionResolved }"
+                          >
+                            <div v-if="interaction.type === 'skill_select'" class="skill-select-panel">
+                              <div class="skill-select-message">{{ interaction.message }}</div>
+                              <div class="skill-select-list">
+                                <div
+                                  v-for="skill in interaction.skills"
+                                  :key="skill.name"
+                                  class="skill-select-item"
+                                  :class="{ selected: message.selectedSkills && message.selectedSkills.includes(skill.name) }"
+                                  @click="toggleSkill(index, skill.name)"
+                                >
+                                  <div class="skill-checkbox">
+                                    <span v-if="message.selectedSkills && message.selectedSkills.includes(skill.name)">✓</span>
+                                  </div>
+                                  <div class="skill-select-info">
+                                    <div class="skill-select-name">{{ skill.name }}</div>
+                                    <div class="skill-select-desc">{{ skill.desc }}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="skill-select-actions">
+                                <button
+                                  class="skill-btn skill-confirm-btn"
+                                  @click="confirmSkillSelection(index)"
+                                  :disabled="message.interactionResolved"
+                                >
+                                  确定
+                                </button>
+                                <button
+                                  class="skill-btn skill-cancel-btn"
+                                  @click="cancelSkillSelection(index)"
+                                  :disabled="message.interactionResolved"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                              <div v-if="message.interactionResolved && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
+                                已选择：{{ message.selectedSkills.join('、') }}
+                              </div>
+                              <div v-if="message.interactionResolved && (!message.selectedSkills || message.selectedSkills.length === 0)" class="skill-selected-summary">
+                                已取消选择
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                         <div v-if="message.files && message.files.length > 0" class="message-files">
                           <div
                             v-for="file in message.files"
@@ -213,6 +268,16 @@ interface FlintSpec {
   echartsOption: any;
 }
 
+// HTML 交互内容接口
+interface HtmlInteraction {
+  type: string;
+  message: string;
+  skills?: Array<{
+    name: string;
+    desc: string;
+  }>;
+}
+
 interface ChartMessage {
   role: "user" | "assistant";
   content: string;
@@ -225,6 +290,9 @@ interface ChartMessage {
     size: number;
   }>;
   flintSpecs?: FlintSpec[];
+  htmlInteractions?: HtmlInteraction[];
+  selectedSkills?: string[];
+  interactionResolved?: boolean;
 }
 
 export default defineComponent({
@@ -639,8 +707,9 @@ export default defineComponent({
       setTimeout(async () => {
         const response = scriptEngine.getResponse(userMessage.content);
         const flintSpecs = parseFlintSpecs(response);
-        // 关键：先清除 Flint 块，获取纯文本内容
-        const textContent = stripFlintBlocks(response).trim();
+        const htmlInteractions = parseHtmlInteractions(response);
+        // 关键：先清除 Flint/HTML 块，获取纯文本内容
+        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim();
 
         const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
         if (thinkingIndex !== -1) {
@@ -650,13 +719,16 @@ export default defineComponent({
             timestamp: Date.now(),
             isThinking: false,
             flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
+            htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
+            selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
+            interactionResolved: false,
           };
           await scrollToBottom();
 
           const typingSpeed = 50;
           let index = 0;
           const interval = setInterval(() => {
-            // 使用纯文本内容（不含 Flint JSON）进行打字
+            // 使用纯文本内容（不含 Flint/HTML JSON）进行打字
             if (index < textContent.length) {
               messages.value[thinkingIndex].content = textContent.slice(0, index + 1);
               index++;
@@ -673,10 +745,13 @@ export default defineComponent({
         } else {
           const assistantMessage: ChartMessage = {
             role: "assistant" as const,
-            // 使用纯文本内容（不含 Flint JSON）
+            // 使用纯文本内容（不含 Flint/HTML JSON）
             content: textContent,
             timestamp: Date.now(),
             flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
+            htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
+            selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
+            interactionResolved: false,
           };
           messages.value.push(assistantMessage);
           isLoading.value = false;
@@ -710,9 +785,30 @@ export default defineComponent({
       return specs;
     };
 
+    // 从消息内容中解析 HTML 交互内容
+    const parseHtmlInteractions = (content: string): HtmlInteraction[] => {
+      const interactions: HtmlInteraction[] = [];
+      const regex = /```html\s*\n([\s\S]*?)\n```/g;
+      let match;
+      while ((match = regex.exec(content)) !== null) {
+        try {
+          const interaction = JSON.parse(match[1]) as HtmlInteraction;
+          interactions.push(interaction);
+        } catch (e) {
+          console.warn('Failed to parse HTML interaction:', e);
+        }
+      }
+      return interactions;
+    };
+
     // 清理消息内容中的 Flint 代码块
     const stripFlintBlocks = (content: string): string => {
       return content.replace(/```flint\s*\n[\s\S]*?\n```/g, '');
+    };
+
+    // 清理消息内容中的 HTML 代码块
+    const stripHtmlBlocks = (content: string): string => {
+      return content.replace(/```html\s*\n[\s\S]*?\n```/g, '');
     };
 
     // 设置图表 DOM 引用
@@ -765,9 +861,9 @@ export default defineComponent({
     // 存储 ResizeObserver 以便清理
     const resizeObservers: ResizeObserver[] = [];
 
-    // 格式化内容（清理 Flint 块 + 标准格式化）
+    // 格式化内容（清理 Flint/HTML 块 + 标准格式化）
     const formatContent = (content: string): string => {
-      const cleaned = stripFlintBlocks(content);
+      const cleaned = stripHtmlBlocks(stripFlintBlocks(content));
       return cleaned
         .replace(/\n/g, "<br />")
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
@@ -811,6 +907,101 @@ export default defineComponent({
       disposeAllCharts();
       messages.value = [];
       showWelcomeMessage();
+    };
+
+    // 切换技能选中状态
+    const toggleSkill = (messageIndex: number, skillName: string) => {
+      const msg = messages.value[messageIndex];
+      if (!msg || !msg.selectedSkills || msg.interactionResolved) return;
+      const idx = msg.selectedSkills.indexOf(skillName);
+      if (idx === -1) {
+        msg.selectedSkills.push(skillName);
+      } else {
+        msg.selectedSkills.splice(idx, 1);
+      }
+    };
+
+    // 确认技能选择
+    const confirmSkillSelection = (messageIndex: number) => {
+      const msg = messages.value[messageIndex];
+      if (!msg || msg.interactionResolved) return;
+      const selected = msg.selectedSkills || [];
+      msg.interactionResolved = true;
+      // 将选择结果作为用户消息发送给脚本引擎
+      const selectionText = selected.length > 0
+        ? `已选择技能：${selected.join('、')}`
+        : '取消选择';
+      sendInteractionMessage(selectionText);
+    };
+
+    // 取消技能选择
+    const cancelSkillSelection = (messageIndex: number) => {
+      const msg = messages.value[messageIndex];
+      if (!msg || msg.interactionResolved) return;
+      msg.interactionResolved = true;
+      msg.selectedSkills = [];
+      sendInteractionMessage('取消选择');
+    };
+
+    // 发送交互结果消息（不走输入框，直接触发脚本引擎）
+    const sendInteractionMessage = (text: string) => {
+      const userMessage = {
+        role: "user" as const,
+        content: text,
+        timestamp: Date.now(),
+      };
+      messages.value.push(userMessage);
+
+      isLoading.value = true;
+      setTimeout(async () => {
+        const thinkingMessage = {
+          role: "assistant" as const,
+          content: "",
+          timestamp: Date.now(),
+          isThinking: true,
+          thinkingContent: "AI 正在思考中，请稍候...",
+        };
+        messages.value.push(thinkingMessage);
+        await scrollToBottom();
+      }, 500);
+
+      setTimeout(async () => {
+        const response = scriptEngine.getResponse(text);
+        const flintSpecs = parseFlintSpecs(response);
+        const htmlInteractions = parseHtmlInteractions(response);
+        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim();
+
+        const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
+        if (thinkingIndex !== -1) {
+          messages.value[thinkingIndex] = {
+            role: "assistant" as const,
+            content: "",
+            timestamp: Date.now(),
+            isThinking: false,
+            flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
+            htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
+            selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
+            interactionResolved: false,
+          };
+          await scrollToBottom();
+
+          const typingSpeed = 50;
+          let index = 0;
+          const interval = setInterval(() => {
+            if (index < textContent.length) {
+              messages.value[thinkingIndex].content = textContent.slice(0, index + 1);
+              index++;
+              scrollToBottom();
+            } else {
+              clearInterval(interval);
+              isLoading.value = false;
+              if (flintSpecs.length > 0) {
+                renderFlintCharts(thinkingIndex);
+              }
+            }
+          }, typingSpeed);
+        }
+      }, 3000 + Math.random() * 1000);
     };
 
     const handleFileSelect = (event: Event) => {
@@ -874,6 +1065,9 @@ export default defineComponent({
       startResize,
       currentRole,
       setFlintChartRef,
+      toggleSkill,
+      confirmSkillSelection,
+      cancelSkillSelection,
     };
   },
 });
@@ -1475,5 +1669,153 @@ export default defineComponent({
 
 .assistant-message .flint-chart-item {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* HTML 交互面板样式 */
+.html-interactions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.html-interaction-panel {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.html-interaction-panel.resolved {
+  opacity: 0.75;
+}
+
+.skill-select-panel {
+  padding: 16px;
+}
+
+.skill-select-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.skill-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.skill-select-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.skill-select-item:hover {
+  border-color: #93c5fd;
+  background-color: #eff6ff;
+}
+
+.skill-select-item.selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.skill-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 12px;
+  color: white;
+  transition: all 0.2s;
+}
+
+.skill-select-item.selected .skill-checkbox {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #3b82f6;
+}
+
+.skill-select-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-select-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.skill-select-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.skill-select-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.skill-btn {
+  padding: 7px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skill-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.skill-confirm-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.skill-confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.skill-cancel-btn {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.skill-cancel-btn:hover:not(:disabled) {
+  background-color: #e2e8f0;
+}
+
+.skill-selected-summary {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #15803d;
 }
 </style>

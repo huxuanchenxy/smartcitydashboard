@@ -7,6 +7,7 @@
         :no-mask="true"
         :initial-position="initialPosition"
         :initial-size="initialSize"
+        role="backend_ops"
       />
     </div>
     <div class="right-panel">

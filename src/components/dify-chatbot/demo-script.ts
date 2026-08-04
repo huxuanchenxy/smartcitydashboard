@@ -114,6 +114,9 @@ export class DemoScriptEngine {
       } else if (role === 'user' && welcomeMessages.user) {
         this.currentState = 'user';
         return welcomeMessages.user;
+      } else if (role === 'backend_ops' && (welcomeMessages as any).backend_ops) {
+        this.currentState = 'backend_ops';
+        return (welcomeMessages as any).backend_ops;
       }
       return welcomeMessages.default || '';
     }
@@ -127,6 +130,9 @@ export class DemoScriptEngine {
     } else if (role === 'user') {
       this.currentState = 'user';
       return '您好！欢迎使用AI智能助手。作为使用人员，您可以查询运维信息、与组态画面交互，或输入"图表"让AI为您生成数据可视化图表。';
+    } else if (role === 'backend_ops') {
+      this.currentState = 'backend_ops';
+      return '您好！欢迎使用AI智能助手。作为后台运维人员，您可以配置 Agent 技能、管理运维任务。输入"技能"或"skill"开始选择需要的技能类型。';
     }
     return '';
   }
