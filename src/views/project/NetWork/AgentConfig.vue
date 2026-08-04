@@ -168,6 +168,17 @@ export default defineComponent({
   padding: 24px;
   overflow: hidden;
   background-color: #f8fafc;
+  border-radius:16px;
+}
+
+.skills-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  padding: 4px 8px 4px 4px;
+  margin: -4px;
 }
 
 .panel-header {
@@ -184,15 +195,6 @@ export default defineComponent({
 .panel-subtitle {
   font-size: 13px;
   color: #94a3b8;
-}
-
-.skills-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  overflow-y: auto;
-  padding-right: 8px;
 }
 
 .skills-grid::-webkit-scrollbar {
@@ -225,6 +227,7 @@ export default defineComponent({
   border-color: #3b82f6;
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
   transform: translateY(-1px);
+  border-top: 2px solid #3b82f6;
 }
 
 .skill-avatar {
