@@ -196,13 +196,15 @@ import {
   nextTick,
 } from "vue";
 import { ElButton, ElInput } from "element-plus";
-import { DemoScriptEngine } from "./demo-script";
+import { DemoScriptEngine, type DemoScript } from "./demo-script";
 import ChatCopy from "@/icons/chat-copy.vue";
 import ChatUpload from "@/icons/chat-upload.vue";
 import ChatStop from "@/icons/chat-stop.vue";
 import ChatSend from "@/icons/chat-send.vue";
 import { assembleECharts, type ChartAssemblyInput } from "flint-chart";
 import * as echarts from "echarts";
+
+const SCRIPT_MOCK_URL = "http://10.89.33.97:5000/mockdata.json";
 
 // Flint 图表相关接口
 interface FlintSpec {
@@ -289,6 +291,48 @@ export default defineComponent({
     const fileInputRef = ref<HTMLInputElement | null>(null);
 
     const scriptEngine = new DemoScriptEngine();
+    const scriptLoaded = ref(false);
+    const scriptLoadError = ref<string | null>(null);
+
+    const loadScriptFromMock = async (): Promise<void> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        // 加 timestamp 防止浏览器/CDN 缓存旧 mockdata.json
+        const url = `${SCRIPT_MOCK_URL}?t=${Date.now()}`;
+        console.log('[Mock脚本] 请求URL:', url);
+        const response = await fetch(url, {
+          signal: controller.signal,
+          cache: 'no-cache',
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('mockdata.json 返回：', data);
+
+        if (data && data.states && data.initialState) {
+          scriptEngine.setScript(data as DemoScript);
+          scriptLoaded.value = true;
+          scriptLoadError.value = null;
+        } else {
+          scriptLoaded.value = true;
+          scriptLoadError.value = '返回数据格式无效（缺少 states 或 initialState），使用内置脚本';
+        }
+      } catch (e: any) {
+        scriptLoaded.value = true;
+        if (e?.name === 'AbortError') {
+          scriptLoadError.value = '加载 mock 脚本超时，使用内置脚本';
+        } else if (e?.message?.includes('CORS') || e?.message?.includes('Failed to fetch')) {
+          scriptLoadError.value = '跨域或网络错误（CORS/无法连接 10.89.33.97:5000），使用内置脚本';
+        } else {
+          scriptLoadError.value = (e?.message || '加载 mock 脚本失败') + '，使用内置脚本';
+        }
+      }
+    };
 
     const currentRole = computed(() => {
       return props.role || props.com.role;
@@ -326,13 +370,29 @@ export default defineComponent({
       }
     };
 
-    const showWelcomeMessage = () => {
+    const showWelcomeMessage = async () => {
+      if (!scriptLoaded.value) {
+        await new Promise<void>((resolve) => {
+          const timer = setInterval(() => {
+            if (scriptLoaded.value) {
+              clearInterval(timer);
+              resolve();
+            }
+          }, 50);
+          setTimeout(() => {
+            clearInterval(timer);
+            resolve();
+          }, 10000);
+        });
+      }
+
       const role = currentRole.value;
       const welcomeMessage = scriptEngine.getWelcomeMessage(role);
-      if (welcomeMessage) {
+      const errorSuffix = scriptLoadError.value ? `\n\n⚠️ ${scriptLoadError.value}` : '';
+      if (welcomeMessage || errorSuffix) {
         messages.value = [{
           role: "assistant",
-          content: welcomeMessage,
+          content: (welcomeMessage || '') + errorSuffix,
           timestamp: Date.now(),
         }];
         setTimeout(scrollToBottom, 100);
@@ -349,6 +409,7 @@ export default defineComponent({
     onMounted(() => {
       dialogVisible.value = props.visible;
       window.addEventListener('resize', handleWindowResize);
+      loadScriptFromMock();
       if (dialogVisible.value) {
         showWelcomeMessage();
       }

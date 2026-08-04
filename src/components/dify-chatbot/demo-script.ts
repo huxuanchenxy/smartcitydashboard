@@ -12,6 +12,7 @@ export interface DemoScriptState {
 
 export interface DemoScript {
   initialState: string;
+  welcomeMessages?: Record<string, string>;
   states: Record<string, DemoScriptState>;
 }
 
@@ -44,237 +45,29 @@ export const demoScript: DemoScript = {
       ],
       defaultResponse: '您好！欢迎使用AI智能助手。请告诉我您的角色：项目经理、开发人员或使用人员？'
     },
-
-    project_manager: {
-      name: '项目经理',
-      rules: [
-        {
-          keywords: ['我上传了设备信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行', '设备文件', 'device file', '设备'],
-          response: '📄 检测到设备信息文件，数据完整，无缺失内容，是否上传至设备知识库？（是/否）',
-          nextState: 'pm_device_confirm'
-        },
-        {
-          keywords: ['我上传了点位信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行', '点位文件', 'point file', '点位'],
-          response: '📄 检测到点位信息文件，数据完整，无缺失内容，是否上传至点位知识库？（是/否）',
-          nextState: 'pm_point_confirm'
-        },
-        {
-          keywords: ['我上传了图例信息文件，请从文件中提取标准图例，对每一个图例，识别并标注其关联的设备名称，建立图例和设备之间的映射。若某图例无法对应到具体设备名，请明确列出待补项', '图例文件', 'legend file', '图例'],
-          response: '📄 检测到图例信息文件，已建立图例和设备之间的映射，无待补项，是否上传至图例知识库？（是/否）',
-          nextState: 'pm_legend_confirm'
-        },
-        {
-          keywords: ['退出', '切换角色'],
-          response: '已退出项目经理模式，请重新选择角色。',
-          nextState: 'welcome'
-        }
-      ],
-      defaultResponse: '👷 项目经理模式：请上传设备文件、点位文件或图例文件。'
-    },
-
-    pm_device_confirm: {
-      name: '设备文件确认',
-      rules: [
-        {
-          keywords: ['Y', '是', 'yes', '确认'],
-          response: '✅ 设备信息文件已成功上传至设备知识库！知识库已更新。',
-          nextState: 'project_manager'
-        },
-        {
-          keywords: ['N', '否', 'no', '取消'],
-          response: '❌ 已取消上传设备文件。',
-          nextState: 'project_manager'
-        }
-      ],
-      defaultResponse: '请确认是否上传设备信息文件至设备知识库？（是/否）'
-    },
-
-    pm_point_confirm: {
-      name: '点位文件确认',
-      rules: [
-        {
-          keywords: ['Y', '是', 'yes', '确认'],
-          response: '✅ 点位信息文件已成功上传至点位知识库！知识库已更新。',
-          nextState: 'project_manager'
-        },
-        {
-          keywords: ['N', '否', 'no', '取消'],
-          response: '❌ 已取消上传点位文件。',
-          nextState: 'project_manager'
-        }
-      ],
-      defaultResponse: '请确认是否上传点位信息文件至点位知识库？（是/否）'
-    },
-
-    pm_legend_confirm: {
-      name: '图例文件确认',
-      rules: [
-        {
-          keywords: ['Y', '是', 'yes', '确认'],
-          response: '✅ 图例信息文件已成功上传至图例知识库！知识库已更新。',
-          nextState: 'project_manager'
-        },
-        {
-          keywords: ['N', '否', 'no', '取消'],
-          response: '❌ 已取消上传图例文件。',
-          nextState: 'project_manager'
-        }
-      ],
-      defaultResponse: '请确认是否上传图例信息文件至图例知识库？（是/否）'
-    },
-
-    developer: {
-      name: '开发人员',
-      rules: [
-        {
-          keywords: ['我上传了一张图纸，请调用此前已建好的知识库，匹配图纸中的图例符号，判定每台设备的类型，并提取设备在图纸上的位置与相对布局，依次进行设备识别、点位绑定和界面生成，每个流程执行前向我确认', '图纸', 'upload drawing', 'drawing'],
-          response: '📄 检测到图纸，是否进行设备识别？（是/否）',
-          nextState: 'dev_drawing_recognize'
-        },
-        {
-          keywords: ['发布组态', '发布'],
-          response: '🚀 组态发布成功！画面已部署到生产环境。',
-          nextState: 'developer'
-        },
-        {
-          keywords: ['退出', '切换角色'],
-          response: '已退出开发人员模式，请重新选择角色。',
-          nextState: 'welcome'
-        }
-      ],
-      defaultResponse: '👨‍💻 开发人员模式：请上传图纸进行设备识别。'
-    },
-
-    dev_drawing_recognize: {
-      name: '设备识别',
-      rules: [
-        {
-          keywords: ['Y', '是', 'yes', '确认'],
-          response: '🔍 正在进行设备识别...\n\n识别完毕！已识别到以下设备：\n- 电动防烟防火阀 × 2\n- 电动风阀 × 17\n- 风机盘管 × 1\n- 回排风机 × 2\n- 空气幕 × 4\n- 连锁风阀 × 4\n- 排烟风机 × 2\n- 小新风机 × 2\n- 组合式空调箱 × 2\n\n是否进行点位绑定？（是/否）',
-          nextState: 'dev_point_binding'
-        },
-        {
-          keywords: ['N', '否', 'no', '取消'],
-          response: '❌ 已取消设备识别。',
-          nextState: 'developer'
-        }
-      ],
-      defaultResponse: '请确认是否对图纸进行设备识别？（是/否）'
-    },
-
-    dev_point_binding: {
-      name: '点位绑定',
-      rules: [
-        {
-          keywords: ['Y', '是', 'yes', '确认'],
-          response: '🔗 正在进行点位绑定...\n\n已从知识库加载设备和点位信息：\n- 设备知识库：已选中（9种设备）\n- 点位知识库：已选中（742个点位）\n\n点位绑定结束，是否生成界面？（是/否）',
-          nextState: 'dev_generate_ui'
-        },
-        {
-          keywords: ['N', '否', 'no', '取消'],
-          response: '❌ 已取消点位绑定。',
-          nextState: 'developer'
-        }
-      ],
-      defaultResponse: '请确认是否进行点位绑定？（是/否）'
-    },
-
-    dev_generate_ui: {
-      name: '界面生成',
-      rules: [
-        {
-          keywords: ['Y', '是', 'yes', '确认'],
-          response: '🎨 正在生成组态界面，请稍后...\n\n⏳ 界面即将生成\n- 预计生成组件：36个\n- 预计绑定点位：742个\n- 布局方式：自动排列\n\n请进入「编辑模式」进行核对与微调，确认无误后再发布。',
-          nextState: 'developer'
-        },
-        {
-          keywords: ['N', '否', 'no', '取消'],
-          response: '❌ 已取消界面生成。',
-          nextState: 'developer'
-        }
-      ],
-      defaultResponse: '请确认是否生成组态界面？（是/否）'
-    },
-
-    user: {
-      name: '使用人员',
-      rules: [
-        {
-          keywords: ['打开画面', '打开发布画面', '画面'],
-          response: '🖥️ 正在打开已发布的组态画面...\n\n画面已加载完成，您可以与组态画面交互，或使用AI助手查询运维信息。',
-          nextState: 'user'
-        },
-        {
-          keywords: ['查询运维信息', '运维', 'operation', 'maintenance'],
-          response: '📊 运维信息查询结果：\n\n当前设备状态：\n- 🟢 正常运行：35台\n- 🟡 警告状态：1台\n- 🔴 故障告警：1台\n\n今日运维任务：\n1. 设备巡检（已完成）\n2. 系统备份（进行中）\n3. 日志清理（待执行）',
-          nextState: 'user'
-        },
-        {
-          keywords: ['交互', '操作', 'control'],
-          response: '🎮 组态画面交互功能已就绪：\n- 点击设备查看详情\n- 拖动调整布局\n- 双击进入编辑模式\n- 右键菜单快捷操作',
-          nextState: 'user'
-        },
-        {
-          keywords: ['图表', '可视化', 'chart', 'pie', '饼图', '折线', '柱状', '条形'],
-          response: '📈 正在为您进入图表演示模式...',
-          nextState: 'flint_chart_demo'
-        },
-        {
-          keywords: ['退出', '切换角色'],
-          response: '已退出使用人员模式，请重新选择角色。',
-          nextState: 'welcome'
-        }
-      ],
-      defaultResponse: '👁️ 使用人员模式：请打开发布画面、查询运维信息，或输入"图表"生成数据可视化。'
-    },
-
-    flint_chart_demo: {
-      name: 'Flint图表演示',
-      rules: [
-        {
-          keywords: ['设备状态', '设备分布', 'device status', 'pie', '饼图'],
-          response: '📊 设备状态分布饼图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "status": "正常运行", "count": 35 },\n      { "status": "警告", "count": 1 },\n      { "status": "故障", "count": 1 }\n    ]\n  },\n  "semantic_types": { "status": "Category", "count": "Quantity" },\n  "chart_spec": {\n    "chartType": "Pie Chart",\n    "encodings": { "color": { "field": "status" }, "theta": { "field": "count" } },\n    "chartProperties": { "donutHole": 0.4 }\n  }\n}\n```',
-          nextState: 'flint_chart_demo'
-        },
-        {
-          keywords: ['能耗趋势', '能耗', '趋势', 'energy', 'line', '折线'],
-          response: '📈 月度能耗趋势折线图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "month": "2024-01", "kwh": 12400, "cost": 8900 },\n      { "month": "2024-02", "kwh": 11800, "cost": 8500 },\n      { "month": "2024-03", "kwh": 13200, "cost": 9500 },\n      { "month": "2024-04", "kwh": 14100, "cost": 10200 },\n      { "month": "2024-05", "kwh": 15800, "cost": 11400 },\n      { "month": "2024-06", "kwh": 17200, "cost": 12500 },\n      { "month": "2024-07", "kwh": 18500, "cost": 13400 }\n    ]\n  },\n  "semantic_types": { "month": "YearMonth", "kwh": "Quantity", "cost": "Quantity" },\n  "chart_spec": {\n    "chartType": "Line Chart",\n    "encodings": { "x": { "field": "month" }, "y": { "field": "kwh" } },\n    "chartProperties": { "smooth": true }\n  }\n}\n```',
-          nextState: 'flint_chart_demo'
-        },
-        {
-          keywords: ['设备数量', '设备类型', 'bar', '柱状', '条形'],
-          response: '📊 各类型设备数量柱状图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "type": "风机", "count": 12 },\n      { "type": "水泵", "count": 8 },\n      { "type": "传感器", "count": 24 },\n      { "type": "阀门", "count": 16 },\n      { "type": "控制器", "count": 6 }\n    ]\n  },\n  "semantic_types": { "type": "Category", "count": "Quantity" },\n  "chart_spec": {\n    "chartType": "Bar Chart",\n    "encodings": { "x": { "field": "type" }, "y": { "field": "count" } }\n  }\n}\n```',
-          nextState: 'flint_chart_demo'
-        },
-        {
-          keywords: ['楼层分布', '楼层', 'grouped', '分组'],
-          response: '🏢 各楼层设备状态分组柱状图：\n\n```flint\n{\n  "data": {\n    "values": [\n      { "floor": "1F", "status": "正常", "count": 18 },\n      { "floor": "1F", "status": "警告", "count": 1 },\n      { "floor": "2F", "status": "正常", "count": 22 },\n      { "floor": "2F", "status": "故障", "count": 1 },\n      { "floor": "3F", "status": "正常", "count": 15 },\n      { "floor": "3F", "status": "警告", "count": 2 },\n      { "floor": "4F", "status": "正常", "count": 20 },\n      { "floor": "4F", "status": "警告", "count": 1 }\n    ]\n  },\n  "semantic_types": { "floor": "Category", "status": "Category", "count": "Quantity" },\n  "chart_spec": {\n    "chartType": "Grouped Bar Chart",\n    "encodings": { "x": { "field": "floor" }, "y": { "field": "count" }, "color": { "field": "status" } }\n  }\n}\n```',
-          nextState: 'flint_chart_demo'
-        },
-        {
-          keywords: ['退出', '返回', 'back'],
-          response: '已退出图表演示模式，返回使用人员模式。',
-          nextState: 'user'
-        }
-      ],
-      defaultResponse: '📈 Flint图表演示：请输入图表类型关键词生成可视化图表。\n可用命令：\n- "设备状态" → 饼图\n- "能耗趋势" → 折线图\n- "设备数量" → 柱状图\n- "楼层分布" → 分组柱状图\n- "退出" → 返回'
-    }
   }
 };
 
 export class DemoScriptEngine {
   private currentState: string;
+  private script: DemoScript;
 
-  constructor() {
-    this.currentState = demoScript.initialState;
+  constructor(customScript?: DemoScript) {
+    this.script = customScript || demoScript;
+    this.currentState = this.script.initialState;
+  }
+
+  setScript(script: DemoScript): void {
+    this.script = script;
+    this.currentState = script.initialState;
   }
 
   getCurrentStateName(): string {
-    return demoScript.states[this.currentState]?.name || '未知';
+    return this.script.states[this.currentState]?.name || '未知';
   }
 
   processInput(input: string): { response: string; stateChanged: boolean } {
-    const state = demoScript.states[this.currentState];
+    const state = this.script.states[this.currentState];
     if (!state) {
       return { response: '未知状态', stateChanged: false };
     }
@@ -282,7 +75,7 @@ export class DemoScriptEngine {
     const lowerInput = input.toLowerCase();
 
     for (const rule of state.rules) {
-      const matched = rule.keywords.some(keyword => 
+      const matched = rule.keywords.some(keyword =>
         lowerInput.includes(keyword.toLowerCase())
       );
       if (matched) {
@@ -290,9 +83,9 @@ export class DemoScriptEngine {
         if (rule.nextState) {
           this.currentState = rule.nextState;
         }
-        return { 
-          response: rule.response, 
-          stateChanged: previousState !== this.currentState 
+        return {
+          response: rule.response,
+          stateChanged: previousState !== this.currentState
         };
       }
     }
@@ -301,7 +94,7 @@ export class DemoScriptEngine {
   }
 
   reset(): void {
-    this.currentState = demoScript.initialState;
+    this.currentState = this.script.initialState;
   }
 
   getResponse(input: string): string {
@@ -310,6 +103,21 @@ export class DemoScriptEngine {
   }
 
   getWelcomeMessage(role: string): string {
+    const welcomeMessages = this.script.welcomeMessages;
+    if (welcomeMessages) {
+      if (role === 'project_manager' && welcomeMessages.project_manager) {
+        this.currentState = 'project_manager';
+        return welcomeMessages.project_manager;
+      } else if (role === 'developer' && welcomeMessages.developer) {
+        this.currentState = 'developer';
+        return welcomeMessages.developer;
+      } else if (role === 'user' && welcomeMessages.user) {
+        this.currentState = 'user';
+        return welcomeMessages.user;
+      }
+      return welcomeMessages.default || '';
+    }
+
     if (role === 'project_manager') {
       this.currentState = 'project_manager';
       return '您好！欢迎使用AI智能助手。作为项目经理，您可以上传设备文件、点位文件和图例文件来构建知识库。';
