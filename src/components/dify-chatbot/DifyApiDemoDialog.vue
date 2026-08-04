@@ -943,15 +943,8 @@ export default defineComponent({
       sendInteractionMessage('取消选择');
     };
 
-    // 发送交互结果消息（不走输入框，直接触发脚本引擎）
+    // 发送交互结果消息（不显示用户消息，直接触发脚本引擎返回结果）
     const sendInteractionMessage = (text: string) => {
-      const userMessage = {
-        role: "user" as const,
-        content: text,
-        timestamp: Date.now(),
-      };
-      messages.value.push(userMessage);
-
       isLoading.value = true;
       setTimeout(async () => {
         const thinkingMessage = {
@@ -963,7 +956,7 @@ export default defineComponent({
         };
         messages.value.push(thinkingMessage);
         await scrollToBottom();
-      }, 500);
+      }, 300);
 
       setTimeout(async () => {
         const response = scriptEngine.getResponse(text);
@@ -1001,7 +994,7 @@ export default defineComponent({
             }
           }, typingSpeed);
         }
-      }, 3000 + Math.random() * 1000);
+      }, 2500 + Math.random() * 500);
     };
 
     const handleFileSelect = (event: Event) => {
