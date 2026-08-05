@@ -137,6 +137,21 @@
                                   </div>
                                 </div>
                               </div>
+                              <div v-if="interaction.buttons && interaction.buttons.length > 0" class="skill-select-actions">
+                                <button
+                                  v-for="btn in getButtons(interaction)"
+                                  :key="btn.type"
+                                  class="skill-btn"
+                                  :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                  @click="btn.type === 'confirm' ? confirmSkillList(index) : cancelSkillList(index)"
+                                  :disabled="message.interactionResolved"
+                                >
+                                  {{ btn.text }}
+                                </button>
+                              </div>
+                              <div v-if="message.interactionResolved" class="skill-selected-summary">
+                                {{ message.interactionText || '已确认' }}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -310,6 +325,7 @@ interface ChartMessage {
   htmlInteractions?: HtmlInteraction[];
   selectedSkills?: string[];
   interactionResolved?: boolean;
+  interactionText?: string;
 }
 
 export default defineComponent({
@@ -965,6 +981,24 @@ export default defineComponent({
       sendInteractionMessage('取消选择');
     };
 
+    // 确认技能列表
+    const confirmSkillList = (messageIndex: number) => {
+      const msg = messages.value[messageIndex];
+      if (!msg || msg.interactionResolved) return;
+      msg.interactionResolved = true;
+      msg.interactionText = '已确认查看';
+      sendInteractionMessage('确认查看技能列表');
+    };
+
+    // 取消技能列表
+    const cancelSkillList = (messageIndex: number) => {
+      const msg = messages.value[messageIndex];
+      if (!msg || msg.interactionResolved) return;
+      msg.interactionResolved = true;
+      msg.interactionText = '已取消查看';
+      sendInteractionMessage('取消');
+    };
+
     // 发送交互结果消息（不显示用户消息，直接触发脚本引擎返回结果）
     const sendInteractionMessage = (text: string) => {
       isLoading.value = true;
@@ -1095,6 +1129,8 @@ export default defineComponent({
       toggleSkill,
       confirmSkillSelection,
       cancelSkillSelection,
+      confirmSkillList,
+      cancelSkillList,
       getButtons,
     };
   },
