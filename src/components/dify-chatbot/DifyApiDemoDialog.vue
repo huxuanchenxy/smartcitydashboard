@@ -83,6 +83,7 @@
                             class="html-interaction-panel"
                             :class="{ resolved: message.interactionResolved }"
                           >
+                            <!-- 技能选择面板（可勾选） -->
                             <div v-if="interaction.type === 'skill_select'" class="skill-select-panel">
                               <div class="skill-select-message">{{ interaction.message }}</div>
                               <div class="skill-select-list">
@@ -119,6 +120,22 @@
                               </div>
                               <div v-if="message.interactionResolved && (!message.selectedSkills || message.selectedSkills.length === 0)" class="skill-selected-summary">
                                 已取消选择
+                              </div>
+                            </div>
+                            <!-- 技能列表面板（只读列表，不可勾选） -->
+                            <div v-else-if="interaction.type === 'skill_list'" class="skill-list-panel">
+                              <div class="skill-select-message">{{ interaction.message }}</div>
+                              <div class="skill-select-list">
+                                <div
+                                  v-for="skill in interaction.skills"
+                                  :key="skill.name"
+                                  class="skill-list-item"
+                                >
+                                  <div class="skill-list-info">
+                                    <div class="skill-select-name">{{ skill.name }}</div>
+                                    <div class="skill-select-desc">{{ skill.desc }}</div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1832,5 +1849,30 @@ export default defineComponent({
   border-radius: 8px;
   font-size: 12px;
   color: #15803d;
+}
+
+/* 技能列表面板样式（只读列表） */
+.skill-list-panel {
+  padding: 16px;
+}
+
+.skill-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.skill-list-item:last-child {
+  margin-bottom: 0;
+}
+
+.skill-list-info {
+  flex: 1;
+  min-width: 0;
 }
 </style>
