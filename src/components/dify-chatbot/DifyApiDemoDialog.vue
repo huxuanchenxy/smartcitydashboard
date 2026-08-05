@@ -104,18 +104,14 @@
                               </div>
                               <div class="skill-select-actions">
                                 <button
-                                  class="skill-btn skill-confirm-btn"
-                                  @click="confirmSkillSelection(index)"
+                                  v-for="btn in getButtons(interaction)"
+                                  :key="btn.type"
+                                  class="skill-btn"
+                                  :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index) : cancelSkillSelection(index)"
                                   :disabled="message.interactionResolved"
                                 >
-                                  确定
-                                </button>
-                                <button
-                                  class="skill-btn skill-cancel-btn"
-                                  @click="cancelSkillSelection(index)"
-                                  :disabled="message.interactionResolved"
-                                >
-                                  取消
+                                  {{ btn.text }}
                                 </button>
                               </div>
                               <div v-if="message.interactionResolved && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
@@ -260,8 +256,8 @@ import ChatSend from "@/icons/chat-send.vue";
 import { assembleECharts, type ChartAssemblyInput } from "flint-chart";
 import * as echarts from "echarts";
 
-const SCRIPT_MOCK_URL = "http://10.89.33.97:5000/mockdata.json";
-
+// const SCRIPT_MOCK_URL = "http://10.89.33.97:5000/mockdata.json";
+const SCRIPT_MOCK_URL = "/mockdata.json";
 // Flint 图表相关接口
 interface FlintSpec {
   rawInput: ChartAssemblyInput;
@@ -275,6 +271,10 @@ interface HtmlInteraction {
   skills?: Array<{
     name: string;
     desc: string;
+  }>;
+  buttons?: Array<{
+    type: 'confirm' | 'cancel';
+    text: string;
   }>;
 }
 
@@ -1037,6 +1037,18 @@ export default defineComponent({
       }
     };
 
+    // 获取按钮配置，如果未配置则使用默认值
+    const getButtons = (interaction: HtmlInteraction) => {
+      if (interaction.buttons && interaction.buttons.length > 0) {
+        return interaction.buttons;
+      }
+      // 默认按钮配置
+      return [
+        { type: 'confirm' as const, text: '确定' },
+        { type: 'cancel' as const, text: '取消' }
+      ];
+    };
+
     return {
       dialogVisible,
       userQuery,
@@ -1066,6 +1078,7 @@ export default defineComponent({
       toggleSkill,
       confirmSkillSelection,
       cancelSkillSelection,
+      getButtons,
     };
   },
 });
