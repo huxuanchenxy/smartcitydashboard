@@ -5,7 +5,6 @@ import vue from '@vitejs/plugin-vue'
 import plainText from 'vite-plugin-plain-text'
 
 import { resolve } from 'path'
-import legacy from '@vitejs/plugin-legacy'
 
 import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 
@@ -25,10 +24,6 @@ export default ({ mode }: ConfigEnv) => {
     plugins: [
       vue(),
       plainText(/\.hbs$/),
-      legacy({
-        targets: ['ie >= 11'],
-        additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
-      }),
       monacoEditorPlugin({}),
     ],
     css: {
@@ -84,10 +79,20 @@ export default ({ mode }: ConfigEnv) => {
     build: {
       sourcemap: false,
       outDir: 'website',
+      chunkSizeWarningLimit: 1500,
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'index.html'),
           share: resolve(__dirname, 'share/index.html'),
+        },
+        output: {
+          manualChunks: {
+            'vendor-vue': ['vue', 'vue-router', 'vuex'],
+            'vendor-echarts': ['echarts'],
+            'vendor-monaco': ['monaco-editor'],
+            'vendor-three': ['three'],
+            'vendor-ui': ['element-plus', 'naive-ui'],
+          },
         },
       },
     },
