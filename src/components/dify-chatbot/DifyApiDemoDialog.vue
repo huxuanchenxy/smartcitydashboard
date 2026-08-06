@@ -290,8 +290,7 @@ import ChatSend from "@/icons/chat-send.vue";
 import { assembleECharts, type ChartAssemblyInput } from "flint-chart";
 import * as echarts from "echarts";
 
-// const SCRIPT_MOCK_URL = "http://10.89.33.97:5000/mockdata.json";
-const SCRIPT_MOCK_URL = "/mockdata.json";
+const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || "/mockdata.json";
 // Flint 图表相关接口
 interface FlintSpec {
   rawInput: ChartAssemblyInput;
