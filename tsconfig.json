@@ -24,6 +24,9 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "flint-chart": [
+        "src/types/flint-chart"
       ]
     },
     "lib": [

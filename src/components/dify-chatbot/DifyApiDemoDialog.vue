@@ -282,12 +282,14 @@ import {
   nextTick,
 } from "vue";
 import { ElButton, ElInput } from "element-plus";
-import { DemoScriptEngine, type DemoScript } from "./demo-script";
+import { DemoScriptEngine } from "./demo-script";
+import type { DemoScript } from "./demo-script";
 import ChatCopy from "@/icons/chat-copy.vue";
 import ChatUpload from "@/icons/chat-upload.vue";
 import ChatStop from "@/icons/chat-stop.vue";
 import ChatSend from "@/icons/chat-send.vue";
-import { assembleECharts, type ChartAssemblyInput } from "flint-chart";
+import { assembleECharts } from "flint-chart";
+import type { ChartAssemblyInput } from "flint-chart";
 import * as echarts from "echarts";
 
 const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || "/mockdata.json";
