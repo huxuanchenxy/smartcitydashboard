@@ -12,27 +12,46 @@
       "name": "欢迎",
       "rules": [
         {
-          "keywords": ["项目经理", "project manager", "pm"],
+          "keywords": [
+            "项目经理",
+            "project manager",
+            "pm"
+          ],
           "response": "您好！欢迎使用AI智能助手。作为项目经理，您可以上传设备文件、点位文件和图例文件来构建知识库。",
           "nextState": "project_manager"
         },
         {
-          "keywords": ["开发人员", "developer", "dev"],
+          "keywords": [
+            "开发人员",
+            "developer",
+            "dev"
+          ],
           "response": "您好！欢迎使用AI智能助手。作为开发人员，您可以上传图纸进行设备识别、点位绑定和界面生成。",
           "nextState": "developer"
         },
         {
-          "keywords": ["使用人员", "user", "运维"],
+          "keywords": [
+            "使用人员",
+            "user",
+            "运维"
+          ],
           "response": "您好！欢迎使用AI智能助手。作为使用人员，您可以查询运维信息，与组态画面交互。",
           "nextState": "user"
         },
         {
-          "keywords": ["后台运维", "backend", "后台"],
+          "keywords": [
+            "后台运维",
+            "backend",
+            "后台"
+          ],
           "response": "您好！欢迎使用AI智能助手。作为后台运维人员，您可以配置 Agent 技能、管理运维任务。",
           "nextState": "backend_ops"
         },
         {
-          "keywords": ["登录", "login"],
+          "keywords": [
+            "登录",
+            "login"
+          ],
           "response": "请选择您的角色：项目经理 / 开发人员 / 使用人员",
           "nextState": "welcome"
         }
@@ -43,22 +62,40 @@
       "name": "项目经理",
       "rules": [
         {
-          "keywords": ["我上传了设备信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行", "设备文件", "device file", "设备"],
+          "keywords": [
+            "我上传了设备信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行",
+            "设备文件",
+            "device file",
+            "设备"
+          ],
           "response": "📄 检测到设备信息文件，数据完整，无缺失内容，是否上传至设备知识库？（是/否）",
           "nextState": "pm_device_confirm"
         },
         {
-          "keywords": ["我上传了点位信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行", "点位文件", "point file", "点位"],
+          "keywords": [
+            "我上传了点位信息文件，请按设备编码字段从文件中结构化抽取设备数据，并检查字段完整性、格式正确性与重复项，明确标记缺失或异常的数据行",
+            "点位文件",
+            "point file",
+            "点位"
+          ],
           "response": "📄 检测到点位信息文件，数据完整，无缺失内容，是否上传至点位知识库？（是/否）",
           "nextState": "pm_point_confirm"
         },
         {
-          "keywords": ["我上传了图例信息文件，请从文件中提取标准图例，对每一个图例，识别并标注其关联的设备名称，建立图例和设备之间的映射。若某图例无法对应到具体设备名，请明确列出待补项", "图例文件", "legend file", "图例"],
+          "keywords": [
+            "我上传了图例信息文件，请从文件中提取标准图例，对每一个图例，识别并标注其关联的设备名称，建立图例和设备之间的映射。若某图例无法对应到具体设备名，请明确列出待补项",
+            "图例文件",
+            "legend file",
+            "图例"
+          ],
           "response": "📄 检测到图例信息文件，已建立图例和设备之间的映射，无待补项，是否上传至图例知识库？（是/否）",
           "nextState": "pm_legend_confirm"
         },
         {
-          "keywords": ["退出", "切换角色"],
+          "keywords": [
+            "退出",
+            "切换角色"
+          ],
           "response": "已退出项目经理模式，请重新选择角色。",
           "nextState": "welcome"
         }
@@ -69,12 +106,22 @@
       "name": "设备文件确认",
       "rules": [
         {
-          "keywords": ["Y", "是", "yes", "确认"],
+          "keywords": [
+            "Y",
+            "是",
+            "yes",
+            "确认"
+          ],
           "response": "✅ 设备信息文件已成功上传至设备知识库！知识库已更新。",
           "nextState": "project_manager"
         },
         {
-          "keywords": ["N", "否", "no", "取消"],
+          "keywords": [
+            "N",
+            "否",
+            "no",
+            "取消"
+          ],
           "response": "❌ 已取消上传设备文件。",
           "nextState": "project_manager"
         }
@@ -85,12 +132,22 @@
       "name": "点位文件确认",
       "rules": [
         {
-          "keywords": ["Y", "是", "yes", "确认"],
+          "keywords": [
+            "Y",
+            "是",
+            "yes",
+            "确认"
+          ],
           "response": "✅ 点位信息文件已成功上传至点位知识库！知识库已更新。",
           "nextState": "project_manager"
         },
         {
-          "keywords": ["N", "否", "no", "取消"],
+          "keywords": [
+            "N",
+            "否",
+            "no",
+            "取消"
+          ],
           "response": "❌ 已取消上传点位文件。",
           "nextState": "project_manager"
         }
@@ -101,12 +158,22 @@
       "name": "图例文件确认",
       "rules": [
         {
-          "keywords": ["Y", "是", "yes", "确认"],
+          "keywords": [
+            "Y",
+            "是",
+            "yes",
+            "确认"
+          ],
           "response": "✅ 图例信息文件已成功上传至图例知识库！知识库已更新。",
           "nextState": "project_manager"
         },
         {
-          "keywords": ["N", "否", "no", "取消"],
+          "keywords": [
+            "N",
+            "否",
+            "no",
+            "取消"
+          ],
           "response": "❌ 已取消上传图例文件。",
           "nextState": "project_manager"
         }
@@ -117,17 +184,28 @@
       "name": "开发人员",
       "rules": [
         {
-          "keywords": ["我上传了一张图纸，请调用此前已建好的知识库，匹配图纸中的图例符号，判定每台设备的类型，并提取设备在图纸上的位置与相对布局，依次进行设备识别、点位绑定和界面生成，每个流程执行前向我确认", "图纸", "upload drawing", "drawing"],
+          "keywords": [
+            "我上传了一张图纸，请调用此前已建好的知识库，匹配图纸中的图例符号，判定每台设备的类型，并提取设备在图纸上的位置与相对布局，依次进行设备识别、点位绑定和界面生成，每个流程执行前向我确认",
+            "图纸",
+            "upload drawing",
+            "drawing"
+          ],
           "response": "📄 检测到图纸，是否进行设备识别？（是/否）",
           "nextState": "dev_drawing_recognize"
         },
         {
-          "keywords": ["发布组态", "发布"],
+          "keywords": [
+            "发布组态",
+            "发布"
+          ],
           "response": "🚀 组态发布成功！画面已部署到生产环境。",
           "nextState": "developer"
         },
         {
-          "keywords": ["退出", "切换角色"],
+          "keywords": [
+            "退出",
+            "切换角色"
+          ],
           "response": "已退出开发人员模式，请重新选择角色。",
           "nextState": "welcome"
         }
@@ -138,12 +216,22 @@
       "name": "设备识别",
       "rules": [
         {
-          "keywords": ["Y", "是", "yes", "确认"],
+          "keywords": [
+            "Y",
+            "是",
+            "yes",
+            "确认"
+          ],
           "response": "🔍 正在进行设备识别...\n\n识别完毕！已识别到以下设备：\n- 电动防烟防火阀 × 2\n- 电动风阀 × 17\n- 风机盘管 × 1\n- 回排风机 × 2\n- 空气幕 × 4\n- 连锁风阀 × 4\n- 排烟风机 × 2\n- 小新风机 × 2\n- 组合式空调箱 × 2\n\n是否进行点位绑定？（是/否）",
           "nextState": "dev_point_binding"
         },
         {
-          "keywords": ["N", "否", "no", "取消"],
+          "keywords": [
+            "N",
+            "否",
+            "no",
+            "取消"
+          ],
           "response": "❌ 已取消设备识别。",
           "nextState": "developer"
         }
@@ -154,12 +242,22 @@
       "name": "点位绑定",
       "rules": [
         {
-          "keywords": ["Y", "是", "yes", "确认"],
+          "keywords": [
+            "Y",
+            "是",
+            "yes",
+            "确认"
+          ],
           "response": "🔗 正在进行点位绑定...\n\n已从知识库加载设备和点位信息：\n- 设备知识库：已选中（9种设备）\n- 点位知识库：已选中（742个点位）\n\n点位绑定结束，是否生成界面？（是/否）",
           "nextState": "dev_generate_ui"
         },
         {
-          "keywords": ["N", "否", "no", "取消"],
+          "keywords": [
+            "N",
+            "否",
+            "no",
+            "取消"
+          ],
           "response": "❌ 已取消点位绑定。",
           "nextState": "developer"
         }
@@ -170,12 +268,22 @@
       "name": "界面生成",
       "rules": [
         {
-          "keywords": ["Y", "是", "yes", "确认"],
+          "keywords": [
+            "Y",
+            "是",
+            "yes",
+            "确认"
+          ],
           "response": "🎨 正在生成组态界面，请稍后...\n\n⏳ 界面即将生成\n- 预计生成组件：36个\n- 预计绑定点位：742个\n- 布局方式：自动排列\n\n请进入「编辑模式」进行核对与微调，确认无误后再发布。",
           "nextState": "developer"
         },
         {
-          "keywords": ["N", "否", "no", "取消"],
+          "keywords": [
+            "N",
+            "否",
+            "no",
+            "取消"
+          ],
           "response": "❌ 已取消界面生成。",
           "nextState": "developer"
         }
@@ -186,32 +294,59 @@
       "name": "使用人员",
       "rules": [
         {
-          "keywords": ["联动方案"],
-          "response": "以下是当前所有可用的 Agent 技能列表：\n\n```html\n{\n  \"type\": \"skill_list\",\n  \"message\": \"当前可用的 Agent 技能列表（共10项）：\",\n  \"skills\": [\n    { \"name\": \"知识库检索\", \"desc\": \"从企业知识库中智能检索相关文档\" },\n    { \"name\": \"实时数据\", \"desc\": \"实时采集与展示业务运行关键指标\" },\n    { \"name\": \"图纸定位\", \"desc\": \"在工程图纸中快速定位设备与部件位置\" },\n    { \"name\": \"历史趋势\", \"desc\": \"分析历史数据变化趋势\" },\n    { \"name\": \"关联研判\", \"desc\": \"多维度数据关联分析与研判\" },\n    { \"name\": \"预测计算\", \"desc\": \"基于算法模型预测未来业务指标\" },\n    { \"name\": \"模板规则\", \"desc\": \"内置业务模板与规则库\" },\n    { \"name\": \"指令下发\", \"desc\": \"快速下发工作指令至指定部门\" },\n    { \"name\": \"文档生成\", \"desc\": \"自动生成各类业务文档与报告\" },\n    { \"name\": \"交互确认\", \"desc\": \"关键操作需人工确认\" }\n  ],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认\" },\n    { \"type\": \"cancel\", \"text\": \"取消\" }\n  ]\n}\n```",
+          "keywords": [
+            "联动方案"
+          ],
+          "response": "以下是当前所有可用的 Agent 技能列表：\n\n```html\n{\n  \"type\": \"skill_list\",\n  \"message\": \"当前可用的 Agent 技能列表（共10项）：\",\n  \"skills\": [\n    { \"name\": \"知识库检索\", \"desc\": \"从企业知识库中智能检索相关文档\" },\n    { \"name\": \"实时数据\", \"desc\": \"实时采集与展示业务运行关键指标\" },\n    { \"name\": \"图纸定位\", \"desc\": \"在工程图纸中快速定位设备与部件位置\" },\n    { \"name\": \"历史趋势\", \"desc\": \"分析历史数据变化趋势\" },\n    { \"name\": \"关联研判\", \"desc\": \"多维度数据关联分析与研判\" },\n    { \"name\": \"预测计算\", \"desc\": \"基于算法模型预测未来业务指标\" },\n    { \"name\": \"模板规则\", \"desc\": \"内置业务模板与规则库\" },\n    { \"name\": \"指令下发\", \"desc\": \"快速下发工作指令至指定部门\" },\n    { \"name\": \"文档生成\", \"desc\": \"自动生成各类业务文档与报告\" },\n    { \"name\": \"交互确认\", \"desc\": \"关键操作需人工确认\" }\n  ],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认11确认11确认11确认11确认11\", \"color\": { \"backgroundColor\": \"#FC1E1E\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"取消\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
           "nextState": "user_skill_list_confirm"
         },
         {
-          "keywords": ["打开画面", "打开发布画面", "画面"],
+          "keywords": [
+            "打开画面",
+            "打开发布画面",
+            "画面"
+          ],
           "response": "🖥️ 正在打开已发布的组态画面...\n\n画面已加载完成，您可以与组态画面交互，或使用AI助手查询运维信息。",
           "nextState": "user"
         },
         {
-          "keywords": ["查询运维信息", "运维", "operation", "maintenance"],
+          "keywords": [
+            "查询运维信息",
+            "运维",
+            "operation",
+            "maintenance"
+          ],
           "response": "📊 运维信息查询结果：\n\n当前设备状态：\n- 🟢 正常运行：35台\n- 🟡 警告状态：1台\n- 🔴 故障告警：1台\n\n今日运维任务：\n1. 设备巡检（已完成）\n2. 系统备份（进行中）\n3. 日志清理（待执行）",
           "nextState": "user"
         },
         {
-          "keywords": ["交互", "操作", "control"],
+          "keywords": [
+            "交互",
+            "操作",
+            "control"
+          ],
           "response": "🎮 组态画面交互功能已就绪：\n- 点击设备查看详情\n- 拖动调整布局\n- 双击进入编辑模式\n- 右键菜单快捷操作",
           "nextState": "user"
         },
         {
-          "keywords": ["图表", "可视化", "chart", "pie", "饼图", "折线", "柱状", "条形"],
+          "keywords": [
+            "图表",
+            "可视化",
+            "chart",
+            "pie",
+            "饼图",
+            "折线",
+            "柱状",
+            "条形"
+          ],
           "response": "📈 正在为您进入图表演示模式...",
           "nextState": "flint_chart_demo"
         },
         {
-          "keywords": ["退出", "切换角色"],
+          "keywords": [
+            "退出",
+            "切换角色"
+          ],
           "response": "已退出使用人员模式，请重新选择角色。",
           "nextState": "welcome"
         }
@@ -222,12 +357,16 @@
       "name": "技能列表确认",
       "rules": [
         {
-          "keywords": ["确认查看技能列表"],
+          "keywords": [
+            "确认查看技能列表"
+          ],
           "response": "✅ 已确认查看技能列表。您可以根据上述技能列表选择需要的功能，或输入\"图表\"生成数据可视化。",
           "nextState": "user"
         },
         {
-          "keywords": ["取消"],
+          "keywords": [
+            "取消"
+          ],
           "response": "❌ 已取消查看技能列表。您可以继续操作或输入\"退出\"切换角色。",
           "nextState": "user"
         }
@@ -238,27 +377,55 @@
       "name": "Flint图表演示",
       "rules": [
         {
-          "keywords": ["设备状态", "设备分布", "device status", "pie", "饼图"],
+          "keywords": [
+            "设备状态",
+            "设备分布",
+            "device status",
+            "pie",
+            "饼图"
+          ],
           "response": "📊 设备状态分布饼图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"status\": \"正常运行\", \"count\": 35 },\n      { \"status\": \"警告\", \"count\": 1 },\n      { \"status\": \"故障\", \"count\": 1 }\n    ]\n  },\n  \"semantic_types\": { \"status\": \"Category\", \"count\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Pie Chart\",\n    \"encodings\": { \"color\": { \"field\": \"status\" }, \"theta\": { \"field\": \"count\" } },\n    \"chartProperties\": { \"donutHole\": 0.4 }\n  }\n}\n```",
           "nextState": "flint_chart_demo"
         },
         {
-          "keywords": ["能耗趋势", "能耗", "趋势", "energy", "line", "折线"],
+          "keywords": [
+            "能耗趋势",
+            "能耗",
+            "趋势",
+            "energy",
+            "line",
+            "折线"
+          ],
           "response": "📈 月度能耗趋势折线图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"month\": \"2024-01\", \"kwh\": 12400, \"cost\": 8900 },\n      { \"month\": \"2024-02\", \"kwh\": 11800, \"cost\": 8500 },\n      { \"month\": \"2024-03\", \"kwh\": 13200, \"cost\": 9500 },\n      { \"month\": \"2024-04\", \"kwh\": 14100, \"cost\": 10200 },\n      { \"month\": \"2024-05\", \"kwh\": 15800, \"cost\": 11400 },\n      { \"month\": \"2024-06\", \"kwh\": 17200, \"cost\": 12500 },\n      { \"month\": \"2024-07\", \"kwh\": 18500, \"cost\": 13400 }\n    ]\n  },\n  \"semantic_types\": { \"month\": \"YearMonth\", \"kwh\": \"Quantity\", \"cost\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Line Chart\",\n    \"encodings\": { \"x\": { \"field\": \"month\" }, \"y\": { \"field\": \"kwh\" } },\n    \"chartProperties\": { \"smooth\": true }\n  }\n}\n```",
           "nextState": "flint_chart_demo"
         },
         {
-          "keywords": ["设备数量", "设备类型", "bar", "柱状", "条形"],
+          "keywords": [
+            "设备数量",
+            "设备类型",
+            "bar",
+            "柱状",
+            "条形"
+          ],
           "response": "📊 各类型设备数量柱状图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"type\": \"风机\", \"count\": 12 },\n      { \"type\": \"水泵\", \"count\": 8 },\n      { \"type\": \"传感器\", \"count\": 24 },\n      { \"type\": \"阀门\", \"count\": 16 },\n      { \"type\": \"控制器\", \"count\": 6 }\n    ]\n  },\n  \"semantic_types\": { \"type\": \"Category\", \"count\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Bar Chart\",\n    \"encodings\": { \"x\": { \"field\": \"type\" }, \"y\": { \"field\": \"count\" } }\n  }\n}\n```",
           "nextState": "flint_chart_demo"
         },
         {
-          "keywords": ["楼层分布", "楼层", "grouped", "分组"],
+          "keywords": [
+            "楼层分布",
+            "楼层",
+            "grouped",
+            "分组"
+          ],
           "response": "🏢 各楼层设备状态分组柱状图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"floor\": \"1F\", \"status\": \"正常\", \"count\": 18 },\n      { \"floor\": \"1F\", \"status\": \"警告\", \"count\": 1 },\n      { \"floor\": \"2F\", \"status\": \"正常\", \"count\": 22 },\n      { \"floor\": \"2F\", \"status\": \"故障\", \"count\": 1 },\n      { \"floor\": \"3F\", \"status\": \"正常\", \"count\": 15 },\n      { \"floor\": \"3F\", \"status\": \"警告\", \"count\": 2 },\n      { \"floor\": \"4F\", \"status\": \"正常\", \"count\": 20 },\n      { \"floor\": \"4F\", \"status\": \"警告\", \"count\": 1 }\n    ]\n  },\n  \"semantic_types\": { \"floor\": \"Category\", \"status\": \"Category\", \"count\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Grouped Bar Chart\",\n    \"encodings\": { \"x\": { \"field\": \"floor\" }, \"y\": { \"field\": \"count\" }, \"color\": { \"field\": \"status\" } }\n  }\n}\n```",
           "nextState": "flint_chart_demo"
         },
         {
-          "keywords": ["退出", "返回", "back"],
+          "keywords": [
+            "退出",
+            "返回",
+            "back"
+          ],
           "response": "已退出图表演示模式，返回使用人员模式。",
           "nextState": "user"
         }
@@ -269,22 +436,39 @@
       "name": "后台运维人员",
       "rules": [
         {
-          "keywords": ["查看技能", "技能列表", "可用技能", "查看可用"],
-          "response": "以下是当前所有可用的 Agent 技能列表：\n\n```html\n{\n  \"type\": \"skill_list\",\n  \"message\": \"当前可用的 Agent 技能列表（共10项）：\",\n  \"skills\": [\n    { \"name\": \"知识库检索\", \"desc\": \"从企业知识库中智能检索相关文档\" },\n    { \"name\": \"实时数据\", \"desc\": \"实时采集与展示业务运行关键指标\" },\n    { \"name\": \"图纸定位\", \"desc\": \"在工程图纸中快速定位设备与部件位置\" },\n    { \"name\": \"历史趋势\", \"desc\": \"分析历史数据变化趋势\" },\n    { \"name\": \"关联研判\", \"desc\": \"多维度数据关联分析与研判\" },\n    { \"name\": \"预测计算\", \"desc\": \"基于算法模型预测未来业务指标\" },\n    { \"name\": \"模板规则\", \"desc\": \"内置业务模板与规则库\" },\n    { \"name\": \"指令下发\", \"desc\": \"快速下发工作指令至指定部门\" },\n    { \"name\": \"文档生成\", \"desc\": \"自动生成各类业务文档与报告\" },\n    { \"name\": \"交互确认\", \"desc\": \"关键操作需人工确认\" }\n  ],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认\" },\n    { \"type\": \"cancel\", \"text\": \"取消\" }\n  ]\n}\n```",
+          "keywords": [
+            "查看技能",
+            "技能列表",
+            "可用技能",
+            "查看可用"
+          ],
+          "response": "以下是当前所有可用的 Agent 技能列表：\n\n```html\n{\n  \"type\": \"skill_list\",\n  \"message\": \"当前可用的 Agent 技能列表（共10项）：\",\n  \"skills\": [\n    { \"name\": \"知识库检索\", \"desc\": \"从企业知识库中智能检索相关文档\" },\n    { \"name\": \"实时数据\", \"desc\": \"实时采集与展示业务运行关键指标\" },\n    { \"name\": \"图纸定位\", \"desc\": \"在工程图纸中快速定位设备与部件位置\" },\n    { \"name\": \"历史趋势\", \"desc\": \"分析历史数据变化趋势\" },\n    { \"name\": \"关联研判\", \"desc\": \"多维度数据关联分析与研判\" },\n    { \"name\": \"预测计算\", \"desc\": \"基于算法模型预测未来业务指标\" },\n    { \"name\": \"模板规则\", \"desc\": \"内置业务模板与规则库\" },\n    { \"name\": \"指令下发\", \"desc\": \"快速下发工作指令至指定部门\" },\n    { \"name\": \"文档生成\", \"desc\": \"自动生成各类业务文档与报告\" },\n    { \"name\": \"交互确认\", \"desc\": \"关键操作需人工确认\" }\n  ],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认\", \"color\": { \"backgroundColor\": \"#409EFF\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"取消\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
           "nextState": "user_skill_list_confirm"
         },
         {
-          "keywords": ["技能", "skill", "选择技能", "配置技能"],
+          "keywords": [
+            "技能",
+            "skill",
+            "选择技能",
+            "配置技能"
+          ],
           "response": "你好，请选择你需要的技能类型：\n\n```html\n{\n  \"type\": \"skill_select\",\n  \"message\": \"你好，请选择你需要的技能类型\",\n  \"skills\": [\n    { \"name\": \"知识库检索\", \"desc\": \"从企业知识库中智能检索相关文档\" },\n    { \"name\": \"实时数据\", \"desc\": \"实时采集与展示业务运行关键指标\" },\n    { \"name\": \"图纸定位\", \"desc\": \"在工程图纸中快速定位设备与部件位置\" },\n    { \"name\": \"历史趋势\", \"desc\": \"分析历史数据变化趋势\" },\n    { \"name\": \"关联研判\", \"desc\": \"多维度数据关联分析与研判\" },\n    { \"name\": \"预测计算\", \"desc\": \"基于算法模型预测未来业务指标\" },\n    { \"name\": \"模板规则\", \"desc\": \"内置业务模板与规则库\" },\n    { \"name\": \"指令下发\", \"desc\": \"快速下发工作指令至指定部门\" },\n    { \"name\": \"文档生成\", \"desc\": \"自动生成各类业务文档与报告\" },\n    { \"name\": \"交互确认\", \"desc\": \"关键操作需人工确认\" }\n  ],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认屏蔽\" },\n    { \"type\": \"cancel\", \"text\": \"取消\" }\n  ]\n}\n```",
           "nextState": "backend_ops_skill_confirm"
         },
         {
-          "keywords": ["运维任务", "任务", "task"],
+          "keywords": [
+            "运维任务",
+            "任务",
+            "task"
+          ],
           "response": "📋 当前运维任务列表：\n1. 系统巡检（每日 02:00）\n2. 数据备份（每日 03:00）\n3. 日志清理（每周日 04:00）\n4. 安全扫描（每月 1 日）\n\n输入\"技能\"可配置 Agent 技能。",
           "nextState": "backend_ops"
         },
         {
-          "keywords": ["退出", "切换角色"],
+          "keywords": [
+            "退出",
+            "切换角色"
+          ],
           "response": "已退出后台运维人员模式，请重新选择角色。",
           "nextState": "welcome"
         }
@@ -295,17 +479,27 @@
       "name": "技能选择确认",
       "rules": [
         {
-          "keywords": ["已选择技能", "确认技能", "确认选择"],
+          "keywords": [
+            "已选择技能",
+            "确认技能",
+            "确认选择"
+          ],
           "response": "✅ 技能配置成功！已将所选技能添加到 Agent。\n\nAgent 将根据所选技能为您提供相应能力。您可以继续输入\"技能\"重新配置，或输入\"退出\"切换角色。",
           "nextState": "backend_ops"
         },
         {
-          "keywords": ["取消选择", "取消"],
+          "keywords": [
+            "取消选择",
+            "取消"
+          ],
           "response": "❌ 已取消技能选择。输入\"技能\"可重新选择。",
           "nextState": "backend_ops"
         },
         {
-          "keywords": ["退出", "切换角色"],
+          "keywords": [
+            "退出",
+            "切换角色"
+          ],
           "response": "已退出后台运维人员模式，请重新选择角色。",
           "nextState": "welcome"
         }

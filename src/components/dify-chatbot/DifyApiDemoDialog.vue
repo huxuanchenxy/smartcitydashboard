@@ -109,6 +109,7 @@
                                   :key="btn.type"
                                   class="skill-btn"
                                   :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                  :style="getButtonInlineStyle(btn)"
                                   @click="btn.type === 'confirm' ? confirmSkillSelection(index) : cancelSkillSelection(index)"
                                   :disabled="message.interactionResolved"
                                 >
@@ -143,6 +144,7 @@
                                   :key="btn.type"
                                   class="skill-btn"
                                   :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                  :style="getButtonInlineStyle(btn)"
                                   @click="btn.type === 'confirm' ? confirmSkillList(index) : cancelSkillList(index)"
                                   :disabled="message.interactionResolved"
                                 >
@@ -296,6 +298,14 @@ interface FlintSpec {
   echartsOption: any;
 }
 
+// 按钮颜色配置接口
+interface ButtonColorConfig {
+  backgroundColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  hoverBackgroundColor?: string;
+}
+
 // HTML 交互内容接口
 interface HtmlInteraction {
   type: string;
@@ -307,6 +317,7 @@ interface HtmlInteraction {
   buttons?: Array<{
     type: 'confirm' | 'cancel';
     text: string;
+    color?: ButtonColorConfig;
   }>;
 }
 
@@ -1100,6 +1111,24 @@ export default defineComponent({
       ];
     };
 
+    // 获取按钮的内联样式（用于每个按钮单独配置颜色）
+    const getButtonInlineStyle = (btn: { type: 'confirm' | 'cancel'; text: string; color?: ButtonColorConfig }) => {
+      if (!btn.color) {
+        return {};
+      }
+      const style: Record<string, string> = {};
+      if (btn.color.backgroundColor) {
+        style.background = btn.color.backgroundColor;
+      }
+      if (btn.color.textColor) {
+        style.color = btn.color.textColor;
+      }
+      if (btn.type === 'cancel' && btn.color.borderColor) {
+        style.border = `1px solid ${btn.color.borderColor}`;
+      }
+      return style;
+    };
+
     return {
       dialogVisible,
       userQuery,
@@ -1132,6 +1161,7 @@ export default defineComponent({
       confirmSkillList,
       cancelSkillList,
       getButtons,
+      getButtonInlineStyle,
     };
   },
 });
