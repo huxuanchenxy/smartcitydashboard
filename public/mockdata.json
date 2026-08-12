@@ -187,7 +187,7 @@
       "rules": [
         {
           "keywords": ["烟感L1Y01报警，帮我研判是真实火情还是误报" ],
-          "response": "研判结果：\n 📝 已调取 📝 点位知识库 ▪️ 图例知识库 ▪️ 历史误报记录\n结论：判定为❌误报警（非真实火情）❌\n 研判依据：\n▪️  该点位近一个月产生4次灰尘误报\n▪️  相邻温感点位温度无上升\n ```html\n{\n  \"type\": \"skill_list\",\n  \"message\": \"处置方案：\",\n  \"skills\": [{ \"name\": \"🔷  屏蔽点位L1Y01 30 分钟\", \"desc\": \"\" },\n   { \"name\": \"🔶  提醒运维人员择期清洁探测器)\", \"desc\": \"\" }\n],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认屏蔽\", \"resolvedText\": \"已确认查看\", \"color\": { \"backgroundColor\": \"#FC1E1E\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"生成清洁工单\", \"resolvedText\": \"已取消查看\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
+          "response": "研判结果：\n 📝 已调取 📝 点位知识库 ▪️ 图例知识库 ▪️ 历史误报记录\n结论：判定为❌误报警（非真实火情）❌\n 研判依据：\n▪️  该点位近一个月产生4次灰尘误报\n▪️  相邻温感点位温度无上升\n ```html\n{\n  \"type\": \"skill_list\",\n  \"message\": \"处置方案：\",\n  \"skills\": [{ \"name\": \"🔷  屏蔽点位L1Y01 30 分钟\", \"desc\": \"\" },\n   { \"name\": \"🔶  提醒运维人员择期清洁探测器)\", \"desc\": \"\" }\n],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认屏蔽\", \"resolvedText\": \" \", \"color\": { \"backgroundColor\": \"#FC1E1E\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"生成清洁工单\", \"resolvedText\": \"已取消查看\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
           "nextState": "user_fas_block_confirm"
         },
         {
