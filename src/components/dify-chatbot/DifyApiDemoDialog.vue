@@ -145,14 +145,14 @@
                                   class="skill-btn"
                                   :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
                                   :style="getButtonInlineStyle(btn)"
-                                  @click="btn.type === 'confirm' ? confirmSkillList(index) : cancelSkillList(index)"
+                                  @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
                                   :disabled="message.interactionResolved"
                                 >
                                   {{ btn.text }}
                                 </button>
                               </div>
-                              <div v-if="message.interactionResolved" class="skill-selected-summary">
-                                {{ message.interactionText || '已确认' }}
+                              <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
+                                {{ message.interactionText }}
                               </div>
                             </div>
                           </div>
@@ -307,6 +307,15 @@ interface ButtonColorConfig {
   hoverBackgroundColor?: string;
 }
 
+// 按钮配置接口
+interface ButtonConfig {
+  type: 'confirm' | 'cancel';
+  text: string;
+  // 点击该按钮后，在面板下方显示的提示文本；为空/不配置则不显示
+  resolvedText?: string;
+  color?: ButtonColorConfig;
+}
+
 // HTML 交互内容接口
 interface HtmlInteraction {
   type: string;
@@ -315,11 +324,7 @@ interface HtmlInteraction {
     name: string;
     desc: string;
   }>;
-  buttons?: Array<{
-    type: 'confirm' | 'cancel';
-    text: string;
-    color?: ButtonColorConfig;
-  }>;
+  buttons?: ButtonConfig[];
 }
 
 interface ChartMessage {
@@ -994,21 +999,27 @@ export default defineComponent({
     };
 
     // 确认技能列表
-    const confirmSkillList = (messageIndex: number) => {
+    // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的确认按钮
+    // （如"确认联动"、"确认屏蔽"、"确认"等）都能匹配对应状态的关键词
+    const confirmSkillList = (messageIndex: number, btn?: ButtonConfig) => {
       const msg = messages.value[messageIndex];
       if (!msg || msg.interactionResolved) return;
       msg.interactionResolved = true;
-      msg.interactionText = '已确认查看';
-      sendInteractionMessage('确认查看技能列表');
+      // 优先使用 mockdata.json 中按钮配置的 resolvedText；为空则不展示提示文本
+      msg.interactionText = btn?.resolvedText || undefined;
+      sendInteractionMessage(btn?.text || '确认');
     };
 
     // 取消技能列表
-    const cancelSkillList = (messageIndex: number) => {
+    // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的取消按钮
+    // （如"取消"、"生成清洁工单"等）都能匹配对应状态的关键词
+    const cancelSkillList = (messageIndex: number, btn?: ButtonConfig) => {
       const msg = messages.value[messageIndex];
       if (!msg || msg.interactionResolved) return;
       msg.interactionResolved = true;
-      msg.interactionText = '已取消查看';
-      sendInteractionMessage('取消');
+      // 优先使用 mockdata.json 中按钮配置的 resolvedText；为空则不展示提示文本
+      msg.interactionText = btn?.resolvedText || undefined;
+      sendInteractionMessage(btn?.text || '取消');
     };
 
     // 发送交互结果消息（不显示用户消息，直接触发脚本引擎返回结果）
@@ -1113,7 +1124,7 @@ export default defineComponent({
     };
 
     // 获取按钮的内联样式（用于每个按钮单独配置颜色）
-    const getButtonInlineStyle = (btn: { type: 'confirm' | 'cancel'; text: string; color?: ButtonColorConfig }) => {
+    const getButtonInlineStyle = (btn: ButtonConfig) => {
       if (!btn.color) {
         return {};
       }
