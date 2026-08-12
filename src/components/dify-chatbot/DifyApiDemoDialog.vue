@@ -996,6 +996,47 @@ export default defineComponent({
             : [titleGraphic];
         }
 
+        // 双 Y 轴支持：当 chartProperties.dualYAxis 为 true 时，
+        // 将数组形式 y 编码的各系列分配到左右两个 y 轴
+        if (rawChartProps.dualYAxis && Array.isArray(rawYEnc) && chartOption.series) {
+          const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean);
+          const leftLabel = customYAxisLabel || fieldNames[0] || 'Y1';
+          const rightLabel = (rawChartProps.yAxis2Label as string) || fieldNames[1] || 'Y2';
+          const leftYAxis = Array.isArray(chartOption.yAxis) ? chartOption.yAxis[0] : chartOption.yAxis;
+          chartOption.yAxis = [
+            {
+              ...leftYAxis,
+              name: leftLabel,
+              nameGap: 55,
+              nameLocation: 'middle',
+              position: 'left',
+            },
+            {
+              type: 'value',
+              name: rightLabel,
+              nameGap: 55,
+              nameLocation: 'middle',
+              nameRotate: 90,
+              position: 'right',
+              axisTick: { show: true },
+              axisLabel: { rotate: 0 },
+            },
+          ];
+          // 将第 2 个系列分配到右轴
+          if (chartOption.series.length >= 2) {
+            chartOption.series[1].yAxisIndex = 1;
+          }
+          // 右轴需要额外的 grid 右边距
+          if (chartOption.grid) {
+            const grids = Array.isArray(chartOption.grid) ? chartOption.grid : [chartOption.grid];
+            for (const g of grids) {
+              if (g) g.right = (typeof g.right === 'number' ? g.right : 40) + 50;
+            }
+          } else {
+            chartOption.grid = { right: 70 };
+          }
+        }
+
         // 补充图例（flint-chart 默认不生成 legend）
         if (!chartOption.legend && chartOption.series) {
           const hasPie = chartOption.series.some((s: any) => s.type === 'pie');
