@@ -920,30 +920,80 @@ export default defineComponent({
           }
         }
 
+        // 读取 chartProperties 中的自定义配置（mockdata 可配）
+        const rawChartProps = spec.rawInput?.chart_spec?.chartProperties || {};
+        const customYAxisLabel = rawChartProps.yAxisLabel as string | undefined;
+        const customXAxisLabel = rawChartProps.xAxisLabel as string | undefined;
+        const customLegendTitle = rawChartProps.legendTitle as string | undefined;
+
         // 修正 static series（数组形式 y 编码）产生的合成轴名
         // flint-chart 内部用 __flint_series_value 作为 unpivot 后的值列名，
-        // 折线图模板直接将其作为 y 轴标签，此处替换为原始字段名
+        // 折线图模板直接将其作为 y 轴标签，此处替换为原始字段名或自定义标签
         const yAxisArr = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis];
         const rawYEnc = spec.rawInput?.chart_spec?.encodings?.y;
         if (Array.isArray(rawYEnc)) {
           const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean);
-          const yLabel = fieldNames.length > 0 ? fieldNames.join(' / ') : '值';
+          const yLabel = customYAxisLabel || (fieldNames.length > 0 ? fieldNames.join(' / ') : '值');
           for (const ya of yAxisArr) {
             if (ya && typeof ya.name === 'string' && ya.name.includes('flint_series_value')) {
               ya.name = yLabel;
+              ya.nameGap = 55;
             }
+          }
+        } else if (customYAxisLabel) {
+          for (const ya of yAxisArr) {
+            if (ya) ya.name = customYAxisLabel;
           }
         }
         const xAxisArr = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis];
         const rawXEnc = spec.rawInput?.chart_spec?.encodings?.x;
         if (Array.isArray(rawXEnc)) {
           const xFieldNames = rawXEnc.map((e: any) => e?.field || '').filter(Boolean);
-          const xLabel = xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值';
+          const xLabel = customXAxisLabel || (xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值');
           for (const xa of xAxisArr) {
             if (xa && typeof xa.name === 'string' && xa.name.includes('flint_series_value')) {
               xa.name = xLabel;
             }
           }
+        } else if (customXAxisLabel) {
+          for (const xa of xAxisArr) {
+            if (xa) xa.name = customXAxisLabel;
+          }
+        }
+
+        // 清除 flint-chart 自动生成的合成列名图例标题（如 __flint_series_key）
+        // ecApplyLayoutToSpec 会用 color 字段名作为 graphic 文本添加到右上角
+        if (chartOption.graphic) {
+          const graphics = Array.isArray(chartOption.graphic) ? chartOption.graphic : [chartOption.graphic];
+          const filtered = graphics.filter((g: any) => {
+            const text = g?.style?.text;
+            if (typeof text === 'string' && text.includes('flint_series_key')) {
+              return false;
+            }
+            return true;
+          });
+          chartOption.graphic = filtered.length > 0 ? filtered : undefined;
+        }
+        // 如果用户配置了自定义图例标题，添加到 graphic 中
+        if (customLegendTitle && chartOption.legend) {
+          const legendTop = chartOption.legend.top ?? 0;
+          const legendLeft = chartOption.legend.left ?? 'right';
+          const titleGraphic = {
+            type: 'text' as const,
+            left: legendLeft,
+            top: Math.max(0, legendTop - 18),
+            z: 100,
+            style: {
+              text: customLegendTitle,
+              fontSize: 12,
+              fontWeight: 'bold',
+              fill: '#333',
+              textAlign: 'left',
+            },
+          };
+          chartOption.graphic = chartOption.graphic
+            ? [...(Array.isArray(chartOption.graphic) ? chartOption.graphic : [chartOption.graphic]), titleGraphic]
+            : [titleGraphic];
         }
 
         // 补充图例（flint-chart 默认不生成 legend）
