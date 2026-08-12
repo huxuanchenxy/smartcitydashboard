@@ -1004,23 +1004,93 @@ export default defineComponent({
           const leftLabel = customYAxisLabel || fieldNames[0] || 'Y1';
           const rightLabel = (rawChartProps.yAxis2Label as string) || fieldNames[1] || 'Y2';
           const leftYAxis = Array.isArray(chartOption.yAxis) ? chartOption.yAxis[0] : chartOption.yAxis;
+
+          // 从两个系列中提取数据值，计算对齐的刻度
+          const getSeriesValues = (s: any): number[] => {
+            if (!s || !Array.isArray(s.data)) return [];
+            return s.data.map((d: any) => {
+              if (typeof d === 'number') return d;
+              if (d && typeof d === 'object' && 'value' in d) return d.value;
+              return 0;
+            });
+          };
+
+          const leftValues = getSeriesValues(chartOption.series[0]);
+          const rightValues = getSeriesValues(chartOption.series[1]);
+
+          // 计算"美观"的刻度范围和间隔，使双轴刻度对齐
+          const computeNiceScale = (values: number[]) => {
+            if (values.length === 0) {
+              return { min: 0, max: 100, interval: 25 };
+            }
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            if (min === max) {
+              const pad = Math.abs(max) * 0.1 || 1;
+              return { min: min - pad, max: max + pad, interval: pad * 2 };
+            }
+            const range = max - min;
+            const roughInterval = range / 5;
+            const mag = Math.pow(10, Math.floor(Math.log10(roughInterval)));
+            const norm = roughInterval / mag;
+            let niceInterval: number;
+            if (norm < 1.5) niceInterval = mag;
+            else if (norm < 3) niceInterval = 2 * mag;
+            else if (norm < 7) niceInterval = 5 * mag;
+            else niceInterval = 10 * mag;
+            const niceMin = Math.floor(min / niceInterval) * niceInterval;
+            const niceMax = Math.ceil(max / niceInterval) * niceInterval;
+            return { min: niceMin, max: niceMax, interval: niceInterval };
+          };
+
+          const leftScale = computeNiceScale(leftValues);
+          const rightScale = computeNiceScale(rightValues);
+
+          // 使用相同的分割数使双轴刻度对齐
+          const leftTickCount = Math.round((leftScale.max - leftScale.min) / leftScale.interval);
+          const rightInterval = (rightScale.max - rightScale.min) / leftTickCount;
+
+          // 确保右轴的最小值与左轴对齐（都是 interval 的整数倍）
+          const rightMin = Math.floor(rightScale.min / rightInterval) * rightInterval;
+          const rightMax = Math.ceil(rightScale.max / rightInterval) * rightInterval;
+
+          // 从左轴继承视觉样式，确保右轴样式一致
+          const leftAxisStyle = {
+            axisLine: leftYAxis?.axisLine ?? { show: true, lineStyle: {} },
+            axisTick: leftYAxis?.axisTick ?? { show: true, lineStyle: {} },
+            axisLabel: leftYAxis?.axisLabel ?? { show: true },
+            splitLine: leftYAxis?.splitLine ?? { show: true, lineStyle: {} },
+            nameTextStyle: leftYAxis?.nameTextStyle ?? {},
+          };
+
           chartOption.yAxis = [
             {
               ...leftYAxis,
+              type: 'value',
               name: leftLabel,
               nameGap: 55,
               nameLocation: 'middle',
               position: 'left',
+              min: leftScale.min,
+              max: leftScale.max,
+              interval: leftScale.interval,
+              axisLine: leftAxisStyle.axisLine,
+              axisTick: leftAxisStyle.axisTick,
+              axisLabel: leftAxisStyle.axisLabel,
+              nameTextStyle: leftAxisStyle.nameTextStyle,
             },
             {
+              ...leftAxisStyle,
               type: 'value',
               name: rightLabel,
               nameGap: 55,
               nameLocation: 'middle',
               nameRotate: 90,
               position: 'right',
-              axisTick: { show: true },
-              axisLabel: { rotate: 0 },
+              min: rightMin,
+              max: rightMax,
+              interval: rightInterval,
+              splitLine: { show: false },
             },
           ];
           // 将第 2 个系列分配到右轴
