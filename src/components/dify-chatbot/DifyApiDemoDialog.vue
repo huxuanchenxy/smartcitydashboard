@@ -947,17 +947,18 @@ export default defineComponent({
         }
         const xAxisArr = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis];
         const rawXEnc = spec.rawInput?.chart_spec?.encodings?.x;
-        if (Array.isArray(rawXEnc)) {
+        if (customXAxisLabel !== undefined) {
+          // 显式配置了 x 轴标签（空字符串表示隐藏字段名标题）
+          for (const xa of xAxisArr) {
+            if (xa) xa.name = customXAxisLabel;
+          }
+        } else if (Array.isArray(rawXEnc)) {
           const xFieldNames = rawXEnc.map((e: any) => e?.field || '').filter(Boolean);
-          const xLabel = customXAxisLabel || (xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值');
+          const xLabel = xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值';
           for (const xa of xAxisArr) {
             if (xa && typeof xa.name === 'string' && xa.name.includes('flint_series_value')) {
               xa.name = xLabel;
             }
-          }
-        } else if (customXAxisLabel) {
-          for (const xa of xAxisArr) {
-            if (xa) xa.name = customXAxisLabel;
           }
         }
 
