@@ -898,8 +898,77 @@ export default defineComponent({
           existingInstance.dispose();
         }
 
+        // 根据容器实际尺寸重新生成 ECharts 配置，
+        // 确保 flint-chart 计算的像素值（如饼图半径）与容器匹配
+        const actualW = domEl.clientWidth || 400;
+        const actualH = domEl.clientHeight || 300;
+        let chartOption = spec.echartsOption;
+        const specW = chartOption._width || 0;
+        const specH = chartOption._height || 0;
+        if (Math.abs(actualW - specW) > 20 || Math.abs(actualH - specH) > 20) {
+          try {
+            const reassembled = assembleECharts({
+              ...spec.rawInput,
+              chart_spec: {
+                ...spec.rawInput.chart_spec,
+                canvasSize: { width: actualW, height: actualH },
+              },
+            });
+            chartOption = reassembled;
+          } catch (e) {
+            console.warn('Failed to re-assemble Flint chart:', e);
+          }
+        }
+
+        // 修正 static series（数组形式 y 编码）产生的合成轴名
+        // flint-chart 内部用 __flint_series_value 作为 unpivot 后的值列名，
+        // 折线图模板直接将其作为 y 轴标签，此处替换为原始字段名
+        const yAxisArr = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis];
+        const rawYEnc = spec.rawInput?.chart_spec?.encodings?.y;
+        if (Array.isArray(rawYEnc)) {
+          const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean);
+          const yLabel = fieldNames.length > 0 ? fieldNames.join(' / ') : '值';
+          for (const ya of yAxisArr) {
+            if (ya && typeof ya.name === 'string' && ya.name.includes('flint_series_value')) {
+              ya.name = yLabel;
+            }
+          }
+        }
+        const xAxisArr = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis];
+        const rawXEnc = spec.rawInput?.chart_spec?.encodings?.x;
+        if (Array.isArray(rawXEnc)) {
+          const xFieldNames = rawXEnc.map((e: any) => e?.field || '').filter(Boolean);
+          const xLabel = xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值';
+          for (const xa of xAxisArr) {
+            if (xa && typeof xa.name === 'string' && xa.name.includes('flint_series_value')) {
+              xa.name = xLabel;
+            }
+          }
+        }
+
+        // 补充图例（flint-chart 默认不生成 legend）
+        if (!chartOption.legend && chartOption.series) {
+          const hasPie = chartOption.series.some((s: any) => s.type === 'pie');
+          if (hasPie) {
+            chartOption.legend = {
+              orient: 'horizontal',
+              bottom: 0,
+              icon: 'circle',
+              itemWidth: 10,
+              itemHeight: 10,
+              textStyle: { fontSize: 12 },
+            };
+          } else {
+            chartOption.legend = {
+              orient: 'horizontal',
+              bottom: 0,
+              textStyle: { fontSize: 12 },
+            };
+          }
+        }
+
         const chartInstance = echarts.init(domEl);
-        chartInstance.setOption(spec.echartsOption);
+        chartInstance.setOption(chartOption);
         flintChartInstances.value.set(key, chartInstance);
 
         // 使用 ResizeObserver 监听容器尺寸变化
@@ -1761,13 +1830,12 @@ export default defineComponent({
 
 .flint-chart-item {
   width: 100%;
-  height: 280px;
-  min-height: 220px;
+  height: 320px;
+  min-height: 260px;
   box-sizing: border-box;
   flex-shrink: 0;
   background-color: #f8fafc;
   border-radius: 12px;
-  padding: 12px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease;
