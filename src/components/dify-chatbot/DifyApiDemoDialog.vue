@@ -110,17 +110,17 @@
                                   class="skill-btn"
                                   :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
                                   :style="getButtonInlineStyle(btn)"
-                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index) : cancelSkillSelection(index)"
+                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
                                   :disabled="message.interactionResolved"
                                 >
                                   {{ btn.text }}
                                 </button>
                               </div>
-                              <div v-if="message.interactionResolved && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
-                                已选择：{{ message.selectedSkills.join('、') }}
+                              <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
+                                {{ message.interactionText }}
                               </div>
-                              <div v-if="message.interactionResolved && (!message.selectedSkills || message.selectedSkills.length === 0)" class="skill-selected-summary">
-                                已取消选择
+                              <div v-if="message.interactionResolved && !message.interactionText && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
+                                已选择：{{ message.selectedSkills.join('、') }}
                               </div>
                             </div>
                             <!-- 技能列表面板（只读列表，不可勾选） -->
@@ -1208,25 +1208,36 @@ export default defineComponent({
     };
 
     // 确认技能选择
-    const confirmSkillSelection = (messageIndex: number) => {
+    // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的确认按钮
+    // （如"确认"等）都能匹配对应状态的关键词
+    const confirmSkillSelection = (messageIndex: number, btn?: ButtonConfig) => {
       const msg = messages.value[messageIndex];
       if (!msg || msg.interactionResolved) return;
       const selected = msg.selectedSkills || [];
       msg.interactionResolved = true;
-      // 将选择结果作为用户消息发送给脚本引擎
-      const selectionText = selected.length > 0
-        ? `已选择技能：${selected.join('、')}`
-        : '取消选择';
-      sendInteractionMessage(selectionText);
+      // 优先使用 mockdata.json 中按钮配置的 resolvedText；
+      // 若 resolvedText 为空但有选中项，仍显示选中项摘要；否则不显示提示文本
+      if (btn?.resolvedText) {
+        msg.interactionText = btn.resolvedText;
+      } else if (selected.length > 0) {
+        msg.interactionText = `已选择：${selected.join('、')}`;
+      } else {
+        msg.interactionText = undefined;
+      }
+      sendInteractionMessage(btn?.text || '确认');
     };
 
     // 取消技能选择
-    const cancelSkillSelection = (messageIndex: number) => {
+    // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的取消按钮
+    // 都能匹配对应状态的关键词
+    const cancelSkillSelection = (messageIndex: number, btn?: ButtonConfig) => {
       const msg = messages.value[messageIndex];
       if (!msg || msg.interactionResolved) return;
       msg.interactionResolved = true;
       msg.selectedSkills = [];
-      sendInteractionMessage('取消选择');
+      // 优先使用 mockdata.json 中按钮配置的 resolvedText；为空则不展示提示文本
+      msg.interactionText = btn?.resolvedText || undefined;
+      sendInteractionMessage(btn?.text || '取消');
     };
 
     // 确认技能列表

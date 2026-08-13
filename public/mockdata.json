@@ -224,6 +224,11 @@
           "keywords": ["退出", "切换角色"],
           "response": "已退出使用人员模式，请重新选择角色。",
           "nextState": "welcome"
+        },
+        {
+          "keywords": ["早高峰站台人多闷热，请通过PA和PIS播报客流高峰提示，引导乘客分散候车、错峰上下车","错峰" ],
+          "response": "📝 结果核对\n\n - PA  ✅已播放客流高峰提示\n - PIS   ✅已播放客流高峰提示\n```html\n{\n  \"type\": \"skill_select\",\n  \"message\": \" 📊 支持设置阈值模板\",\n  \"skills\": [    { \"name\": \"🔶 高峰模式D2（800 ppm ≤CO2 ＜ 1000ppm）\", \"desc\": \"\" },\n    { \"name\": \"🔷 平峰模式D1（CO2 ＜ 800ppm）\", \"desc\": \"\" }\n],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认\", \"color\": { \"backgroundColor\": \"#2563EB\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"取消\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
+          "nextState": "user_bas_confirm"
         }
       ],
       "defaultResponse": "👁️ 使用人员模式：请打开发布画面、查询运维信息，或输入\"图表\"生成数据可视化。"
@@ -276,6 +281,22 @@
       ],
       "defaultResponse": "请在面板中点击\"确认联动\"或\"取消\"按钮。"
     },
+    "user_bas_confirm": {
+      "name": "确认开启模式",
+      "rules": [
+        {
+          "keywords": ["确认"],
+          "response": "✅ 已切换至D2模式",
+          "nextState": "user"
+        },
+        {
+          "keywords": ["取消"],
+          "response": "❌ 已取消",
+          "nextState": "user"
+        }
+      ],
+      "defaultResponse": "请在面板中点击\"确认\"或\"取消\"按钮。"
+    },
     "flint_chart_demo": {
       "name": "Flint图表演示",
       "rules": [
@@ -295,9 +316,9 @@
           "response": "📈 月度能耗趋势折线图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"month\": \"2024-01\", \"kwh\": 12400, \"cost\": 8900 },\n      { \"month\": \"2024-02\", \"kwh\": 11800, \"cost\": 8500 },\n      { \"month\": \"2024-03\", \"kwh\": 13200, \"cost\": 9500 },\n      { \"month\": \"2024-04\", \"kwh\": 14100, \"cost\": 10200 },\n      { \"month\": \"2024-05\", \"kwh\": 15800, \"cost\": 11400 },\n      { \"month\": \"2024-06\", \"kwh\": 17200, \"cost\": 12500 },\n      { \"month\": \"2024-07\", \"kwh\": 18500, \"cost\": 13400 }\n    ]\n  },\n  \"semantic_types\": { \"month\": \"YearMonth\", \"kwh\": \"Quantity\", \"cost\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Line Chart\",\n    \"encodings\": { \"x\": { \"field\": \"month\" }, \"y\": [{ \"field\": \"kwh\" }, { \"field\": \"cost\" }] },\n    \"chartProperties\": { \"smooth\": true, \"yAxisLabel\": \"kwh / cost\", \"legendTitle\": \"\" }\n  }\n}\n```",
           "nextState": "flint_chart_demo"
         },
-		{
-          "keywords": ["若站内温度或CO2超标影响舒适度，请提醒环控加开新风", "dual", "双Y轴", "双y轴", "温度", "用电量对比"],
-          "response": "📊 CO2浓度与温度分时变化折线图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"t\": \"07:00\", \"ppm\": 450, \"temp\": 23.5 },\n      { \"t\": \"07:15\", \"ppm\": 510, \"temp\": 23.8 },\n      { \"t\": \"07:30\", \"ppm\": 600, \"temp\": 24.3 },\n      { \"t\": \"07:45\", \"ppm\": 720, \"temp\": 24.9 },\n      { \"t\": \"08:00\", \"ppm\": 810, \"temp\": 25.6 },\n      { \"t\": \"08:15\", \"ppm\": 880, \"temp\": 26.2 }\n    ]\n  },\n  \"semantic_types\": { \"t\": \"Time\", \"ppm\": \"Quantity\", \"temp\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Line Chart\",\n    \"encodings\": { \"x\": { \"field\": \"t\" }, \"y\": [{ \"field\": \"ppm\" }, { \"field\": \"temp\" }] },\n    \"chartProperties\": { \"smooth\": true, \"dualYAxis\": true, \"xAxisLabel\": \"\", \"yAxisLabel\": \"CO2浓度(ppm)\", \"yAxis2Label\": \"温度(°C)\", \"legendTitle\": \"\" }\n  }\n}\n```",
+{
+          "keywords": ["早高峰时段站内客流及CO2浓度变化情况", "dual", "双Y轴", "双y轴", "温度", "用电量对比"],
+          "response": "📈 早高峰时段站内客流与CO2浓度分时变化折线图：\n\n```flint\n{\n  \"data\": {\n    \"values\": [\n      { \"t\": \"07:00\", \"ppm\": 450, \"num\": 150 },\n      { \"t\": \"07:15\", \"ppm\": 510, \"num\": 280 },\n      { \"t\": \"07:30\", \"ppm\": 600, \"num\": 520 },\n      { \"t\": \"07:45\", \"ppm\": 720, \"num\": 780 },\n      { \"t\": \"08:00\", \"ppm\": 810, \"num\": 980 },\n      { \"t\": \"08:15\", \"ppm\": 880, \"num\": 1150 }\n    ]\n  },\n  \"semantic_types\": { \"t\": \"Time\", \"ppm\": \"Quantity\", \"num\": \"Quantity\" },\n  \"chart_spec\": {\n    \"chartType\": \"Line Chart\",\n    \"encodings\": { \"x\": { \"field\": \"t\" }, \"y\": [{ \"field\": \"ppm\" }, { \"field\": \"num\" }] },\n    \"chartProperties\": { \"smooth\": true, \"dualYAxis\": true, \"xAxisLabel\": \"\", \"yAxisLabel\": \"CO2浓度(ppm)\", \"yAxis2Label\": \"站台客流（人/5min）\", \"legendTitle\": \"\" }\n  }\n}\n```",
           "nextState": "flint_chart_demo"
         },
         {
