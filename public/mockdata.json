@@ -225,9 +225,9 @@
           "response": "已退出使用人员模式，请重新选择角色。",
           "nextState": "welcome"
         },
-        {
-          "keywords": ["早高峰站台人多闷热，请通过PA和PIS播报客流高峰提示，引导乘客分散候车、错峰上下车","错峰" ],
-          "response": "📝 结果核对\n\n - PA  ✅已播放客流高峰提示\n - PIS   ✅已播放客流高峰提示\n```html\n{\n  \"type\": \"skill_select\",\n  \"message\": \" 📊 支持设置阈值模板\",\n  \"skills\": [    { \"name\": \"🔶 高峰模式D2（800 ppm ≤CO2 ＜ 1000ppm）\", \"desc\": \"\" },\n    { \"name\": \"🔷 平峰模式D1（CO2 ＜ 800ppm）\", \"desc\": \"\" }\n],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认\", \"color\": { \"backgroundColor\": \"#2563EB\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"取消\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
+{
+          "keywords": ["早高峰站台人多闷热，请通过PA和PIS播报客流高峰提示，引导乘客分散候车、错峰上下车" ],
+          "response": "📝 结果核对\n\n - PA  ✅已播放客流高峰提示\n - PIS   ✅已播放客流高峰提示\n - 小新风模式D1   ✅已启动\n```html\n{\n  \"type\": \"skill_select\",\n  \"message\": \" 📊 检测到当前CO2浓度已超过800ppm,为您推荐以下环控模式：\",\n  \"skills\": [    { \"name\": \"🔷 小新风模式D2（800 ppm ≤CO2 ＜ 1000ppm）\", \"desc\": \"\" },\n   { \"name\": \"🔷 小新风模式D3（1000 ppm ≤CO2 ＜ 1500ppm）\", \"desc\": \"\" },\n  { \"name\": \"🔷 小新风模式D4（CO2 ≥ 1500ppm）\", \"desc\": \"\" }\n],\n  \"buttons\": [\n    { \"type\": \"confirm\", \"text\": \"确认\", \"color\": { \"backgroundColor\": \"#2563EB\", \"textColor\": \"#ffffff\" } },\n    { \"type\": \"cancel\", \"text\": \"取消\", \"color\": { \"backgroundColor\": \"#ffffff\", \"textColor\": \"#606266\", \"borderColor\": \"#dcdfe6\" } }\n  ]\n}\n```",
           "nextState": "user_bas_confirm"
         }
       ],
