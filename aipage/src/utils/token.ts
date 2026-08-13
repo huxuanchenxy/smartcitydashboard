@@ -1,6 +1,7 @@
-// 与 dashboard 保持同一个 key：
-// 1. 同域部署时 localStorage 共享，可直接读取 dashboard 写入的 token
-// 2. iframe 跨域嵌入时由 dashboard 通过 URL query 传入，解析后写入本地
+// token key 与 dashboard 保持同名（仅为命名约定，不代表数据共享）：
+// - 当前方案（跨域独立站点）：两边 localStorage 互相不可见，
+//   aipage 的 token 由 dashboard 通过 iframe URL query 传入，解析后写入 aipage 自己的 localStorage
+// - 若未来改回同域部署：localStorage 天然共享，此代码无需改动即可直接读取
 const TokenKey = 'DataS-Token'
 
 export function getToken(): string | null {
@@ -56,4 +57,35 @@ export function redirectToDashboardLogin() {
     return
   }
   window.location.href = getDashboardLoginUrl()
+}
+
+/** dashboard 站点 origin（用于校验 postMessage 来源，防止伪造） */
+export function getDashboardOrigin(): string {
+  const base = String(import.meta.env.VITE_APP_DASHBOARD_URL || '').replace(/\/$/, '')
+  if (base) {
+    try {
+      return new URL(base).origin
+    } catch {
+      return ''
+    }
+  }
+  // 未配置 dashboard 地址时按同站部署处理
+  return window.location.origin
+}
+
+/**
+ * 监听 dashboard 主动推送的 token 同步（aipage-sync-token）。
+ * URL query 只在 iframe 首次加载时携带，此后 token 变化（如重新登录）依赖此通道更新。
+ */
+export function startTokenSyncListener() {
+  const expectedOrigin = getDashboardOrigin()
+  window.addEventListener('message', (event: MessageEvent) => {
+    if (!expectedOrigin || event.origin !== expectedOrigin) {
+      return
+    }
+    const data = event.data
+    if (data && data.type === 'aipage-sync-token' && typeof data.token === 'string' && data.token) {
+      setToken(data.token)
+    }
+  })
 }

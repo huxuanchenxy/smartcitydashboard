@@ -1,9 +1,9 @@
 <template>
-  <iframe class="aipage-frame" :src="aipageUrl" frameborder="0" allow="fullscreen"></iframe>
+  <iframe ref="iframeRef" class="aipage-frame" :src="aipageUrl" frameborder="0" allow="fullscreen" @load="sendTokenToAipage"></iframe>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onMounted, onUnmounted } from 'vue'
+import { defineComponent, computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getToken } from '@/utils/token-util'
 
@@ -16,6 +16,7 @@ export default defineComponent({
   name: 'AiPageView',
   setup() {
     const router = useRouter()
+    const iframeRef = ref<HTMLIFrameElement>()
 
     // 跨域 iframe 不共享 localStorage，token 只能通过 URL query 传递
     const aipageUrl = computed(() => {
@@ -23,6 +24,22 @@ export default defineComponent({
       // 可调整 #/home 以控制进入 aipage 的具体页面
       return `${AIPAGE_URL}/index.html?token=${encodeURIComponent(token)}#/home`
     })
+
+    // 主动向 iframe 推送最新 token（指定 targetOrigin，跨域安全）：
+    // URL query 只在 iframe 首次加载时携带，此后 token 变化（如重新登录）依赖此通道
+    const sendTokenToAipage = () => {
+      const token = getToken() || ''
+      if (token) {
+        iframeRef.value?.contentWindow?.postMessage({ type: 'aipage-sync-token', token }, AIPAGE_ORIGIN)
+      }
+    }
+
+    // 其他标签页重新登录导致 token 变化时，同步推送给 iframe
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'DataS-Token') {
+        sendTokenToAipage()
+      }
+    }
 
     // 监听 aipage 登录失效通知，校验来源 origin 防止伪造（跨域安全）
     const onMessage = (event: MessageEvent) => {
@@ -36,13 +53,15 @@ export default defineComponent({
 
     onMounted(() => {
       window.addEventListener('message', onMessage)
+      window.addEventListener('storage', onStorage)
     })
 
     onUnmounted(() => {
       window.removeEventListener('message', onMessage)
+      window.removeEventListener('storage', onStorage)
     })
 
-    return { aipageUrl }
+    return { aipageUrl, iframeRef, sendTokenToAipage }
   },
 })
 </script>
