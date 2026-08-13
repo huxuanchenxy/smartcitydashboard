@@ -2,7 +2,7 @@
   <div class="home">
     <h1>AI 页面</h1>
     <p>aipage 项目运行正常。当前登录状态：{{ token ? '已登录' : '未登录' }}</p>
-    <p class="tip">本页面可独立运行（http://localhost:9091/aipage/），也可被 dashboard 通过 iframe 嵌入。</p>
+    <p class="tip">本页面可独立运行（http://localhost:9091/），也可被 dashboard 通过 iframe 嵌入。</p>
   </div>
 </template>
 

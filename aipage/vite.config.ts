@@ -9,11 +9,10 @@ function pathResolve(dir: string) {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // 开发与生产统一 /aipage/ 前缀：
-  // - 独立运行：http://localhost:9091/aipage/
-  // - dashboard 开发态代理：dashboard /aipage/* -> http://localhost:9091/aipage/*（不 rewrite）
-  // - 生产 Nginx：location /aipage/ alias 到本项目构建产物
-  base: '/aipage/',
+  // aipage 作为独立站点部署，独占域名/端口，使用根路径：
+  // - 独立运行：http://localhost:9091/#/home
+  // - 生产部署：站点根路径直接放构建产物
+  base: '/',
   plugins: [
     vue(),
   ],
