@@ -27,3 +27,6 @@ pnpm-debug.log*
 website.zip
 /video/*.mp4
 /src/components/dify-chatbot/cad/dxf/*.lck
+
+# aipage 子项目构建产物
+aipage/dist

@@ -43,7 +43,7 @@ import { defineComponent, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   IconArrowDown, IconPassword, IconProject, IconSystem, IconUserManage, IconNext, IconXmlb, IconJsgl, IconYhgl, IconCspz, IconSbglqpz,
-  IconSbgl, IconJqpz, IconHb, IconHmgl, IconBl, IconBlgl, IconBb, IconBb2, IconPf, IconPf2, IconDatarecord, IcondeviceLocation, IconBj, IconBjgz, IconLsbj, IconKz, IconKzq, IconHome, IconCavansLocation
+  IconSbgl, IconJqpz, IconHb, IconHmgl, IconBl, IconBlgl, IconBb, IconBb2, IconPf, IconPf2, IconDatarecord, IcondeviceLocation, IconBj, IconBjgz, IconLsbj, IconKz, IconKzq, IconHome, IconCavansLocation, IconAi
 } from '@/icons'
 import type { PropType } from 'vue'
 
@@ -67,7 +67,7 @@ export default defineComponent({
   name: 'NavHeader',
   components: {
     IconArrowDown, IconPassword, IconProject, IconSystem, IconUserManage, IconNext, IconXmlb, IconJsgl, IconYhgl, IconCspz, IconSbglqpz, IconSbgl, IconJqpz,
-    IconHb, IconDatarecord, IcondeviceLocation, IconHmgl, IconBl, IconBlgl, IconBb, IconBb2, IconPf, IconPf2, IconBj, IconBjgz, IconLsbj, IconKz, IconKzq, IconHome, IconCavansLocation
+    IconHb, IconDatarecord, IcondeviceLocation, IconHmgl, IconBl, IconBlgl, IconBb, IconBb2, IconPf, IconPf2, IconBj, IconBjgz, IconLsbj, IconKz, IconKzq, IconHome, IconCavansLocation, IconAi
   },
   props: {
     navs: {

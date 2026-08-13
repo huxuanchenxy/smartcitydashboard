@@ -152,6 +152,12 @@ const navRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/views/cavans-user/user-location/index.vue'),
         meta: { title: '点位设置' },
       },
+      {
+        path: 'aipage',
+        name: 'AiPage',
+        component: () => import('@/views/aipage/index.vue'),
+        meta: { title: 'AI页面' },
+      },
 
       //   path: 'data',
       //   name: 'MyData',

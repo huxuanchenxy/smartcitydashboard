@@ -57,6 +57,15 @@
       { "id": 9, "icon": "IconYhgl", "name": "用户管理", "path": "CavansUser" },
       { "id": 10, "icon": "IconCavansLocation", "name": "点位设置", "path": "CavansUserLocation" }
     ]
+  },
+  {
+    "id": 7,
+    "key": "IconAi",
+    "name": "AI",
+    "enabled": true,
+    "children": [
+      { "id": 12, "icon": "IconAi", "name": "AI页面", "path": "AiPage", "enabled": true }
+    ]
   }
 
 ]

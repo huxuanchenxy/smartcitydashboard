@@ -1,0 +1,29 @@
+{
+    "name": "aipage",
+    "version": "0.0.1",
+    "description": "AI Page - standalone frontend project, embedded into dashboard via iframe",
+    "scripts": {
+        "dev": "cross-env NODE_ENV=development vite",
+        "build": "vue-tsc --noEmit && vite build",
+        "build:fast": "vite build",
+        "serve": "vite preview"
+    },
+    "dependencies": {
+        "axios": "^0.21.1",
+        "vue": "3.2.20",
+        "vue-router": "4.0.12"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^1.9.3",
+        "@vue/compiler-sfc": "3.2.20",
+        "cross-env": "^7.0.3",
+        "typescript": "4.4.3",
+        "vite": "^2.6.7",
+        "vue-tsc": "^0.28.6"
+    },
+    "browserslist": [
+        "> 2%",
+        "last 2 versions",
+        "not IE 11"
+    ]
+}
