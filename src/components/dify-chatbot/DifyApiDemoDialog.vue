@@ -1284,9 +1284,10 @@ export default defineComponent({
       const selected = msg.selectedSkills || [];
       msg.interactionResolved = true;
       // 优先使用 mockdata.json 中按钮配置的 resolvedText；
+      // resolvedText 支持 {selected} 占位符，自动替换为用户实际勾选的技能；
       // 若 resolvedText 为空但有选中项，仍显示选中项摘要；否则不显示提示文本
       if (btn?.resolvedText) {
-        msg.interactionText = btn.resolvedText;
+        msg.interactionText = btn.resolvedText.replace(/\{selected\}/g, selected.length > 0 ? selected.join('、') : '（未选择）');
       } else if (selected.length > 0) {
         msg.interactionText = `已选择：${selected.join('、')}`;
       } else {
