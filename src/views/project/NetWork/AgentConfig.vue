@@ -8,10 +8,21 @@
         :fixed="true"
         :initial-position="initialPosition"
         :initial-size="initialSize"
+        :font-scale="fontScale"
         role="backend_ops"
       />
     </div>
     <div class="right-panel">
+      <div v-if="fontConfigVisible" class="font-config-card">
+        <span class="font-config-label">对话字体大小</span>
+        <div class="font-config-controls">
+          <button class="font-scale-btn" :disabled="fontScale <= minFontScale" @click="decreaseFontScale">A−</button>
+          <span class="font-scale-value">{{ Math.round(fontScale * 100) }}%</span>
+          <button class="font-scale-btn" :disabled="fontScale >= maxFontScale" @click="increaseFontScale">A＋</button>
+          <button class="font-scale-reset" @click="handleResetFontScale">重置</button>
+        </div>
+        <span class="font-config-hint">按 Ctrl+空格（若被输入法占用则用 Ctrl+Shift+空格）保存并收起；应用于对话页眉、消息内容、输入框及页脚区域</span>
+      </div>
       <div class="panel-header">
         <h3>技能库</h3>
         <span class="panel-subtitle">选择技能添加到 Agent</span>
@@ -38,8 +49,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
+import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
 import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import {
+  getFontScale,
+  setFontScale,
+  MIN_FONT_SCALE,
+  MAX_FONT_SCALE,
+  FONT_SCALE_STEP,
+} from '@/components/dify-chatbot/font-scale'
 
 interface Skill {
   name: string
@@ -114,7 +132,52 @@ export default defineComponent({
       console.log('添加技能:', skill.name)
     }
 
+    // 字体整体缩放配置：默认隐藏，Ctrl+空格 唤起；再次按 Ctrl+空格 保存到 localStorage 并收起
+    const fontConfigVisible = ref(false)
+    const fontScale = ref(getFontScale())
+
+    // 调整时仅实时预览，不落盘
+    const changeFontScale = (delta: number) => {
+      // 规避 0.1 步长的浮点误差
+      const next = Math.round((fontScale.value + delta) * 10) / 10
+      fontScale.value = Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, next))
+    }
+
+    const increaseFontScale = () => {
+      changeFontScale(FONT_SCALE_STEP)
+    }
+
+    const decreaseFontScale = () => {
+      changeFontScale(-FONT_SCALE_STEP)
+    }
+
+    const handleResetFontScale = () => {
+      fontScale.value = 1
+    }
+
+    const toggleFontConfig = () => {
+      if (fontConfigVisible.value) {
+        // 收起时保存当前配置，下次打开仍生效
+        setFontScale(fontScale.value)
+        fontScale.value = getFontScale()
+        fontConfigVisible.value = false
+      } else {
+        fontConfigVisible.value = true
+      }
+    }
+
+    const onKeydown = (event: KeyboardEvent) => {
+      const isSpace = event.code === 'Space' || event.key === ' ' || event.keyCode === 32
+      // Ctrl+空格 可能被 Windows 输入法切换热键拦截而到不了页面，
+      // 因此同时放行 Ctrl+Shift+空格 作为备用组合
+      if (isSpace && event.ctrlKey && !event.altKey) {
+        event.preventDefault()
+        toggleFontConfig()
+      }
+    }
+
     onMounted(() => {
+      window.addEventListener('keydown', onKeydown)
       if (leftPanelRef.value) {
         const rect = leftPanelRef.value.getBoundingClientRect()
         initialPosition.value = { x: rect.left, y: rect.top }
@@ -125,6 +188,10 @@ export default defineComponent({
       }
     })
 
+    onUnmounted(() => {
+      window.removeEventListener('keydown', onKeydown)
+    })
+
     return {
       showDialog,
       leftPanelRef,
@@ -132,6 +199,13 @@ export default defineComponent({
       initialSize,
       skills,
       addSkill,
+      fontConfigVisible,
+      fontScale,
+      minFontScale: MIN_FONT_SCALE,
+      maxFontScale: MAX_FONT_SCALE,
+      increaseFontScale,
+      decreaseFontScale,
+      handleResetFontScale,
     }
   },
 })
@@ -159,6 +233,85 @@ export default defineComponent({
   overflow: hidden;
   background-color: #f8fafc;
   border-radius:16px;
+}
+
+.font-config-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.font-config-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.font-config-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.font-scale-btn {
+  min-width: 40px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.font-scale-btn:hover:not(:disabled) {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.font-scale-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.font-scale-value {
+  min-width: 44px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.font-scale-reset {
+  height: 30px;
+  padding: 0 12px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.font-scale-reset:hover {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.font-config-hint {
+  width: 100%;
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .skills-grid {

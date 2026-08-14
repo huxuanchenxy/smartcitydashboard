@@ -24,7 +24,7 @@
           <div class="resize-handle resize-se" @mousedown.stop="startResize('se', $event)"></div>
           <div class="resize-handle resize-sw" @mousedown.stop="startResize('sw', $event)"></div>
         </div>
-        <div class="custom-dialog" :class="{ 'custom-dialog-fixed': fixed }" @mousedown="handleMouseDown">
+        <div class="custom-dialog" :class="{ 'custom-dialog-fixed': fixed }" :style="chatFontStyle" @mousedown="handleMouseDown">
           <div class="custom-dialog-header">
             <span class="custom-dialog-title">{{ title }}</span>
             <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
@@ -288,6 +288,7 @@ import ChatCopy from "@/icons/chat-copy.vue";
 import ChatUpload from "@/icons/chat-upload.vue";
 import ChatStop from "@/icons/chat-stop.vue";
 import ChatSend from "@/icons/chat-send.vue";
+import { getFontScale } from "./font-scale";
 import { assembleECharts } from "flint-chart";
 import type { ChartAssemblyInput } from "flint-chart";
 import * as echarts from "echarts";
@@ -384,6 +385,11 @@ export default defineComponent({
       type: String,
       default: "",
     },
+    // 字体整体缩放倍率；<=0 表示未设置，回退读取 localStorage 中的持久化配置
+    fontScale: {
+      type: Number,
+      default: 0,
+    },
     com: {
       type: Object as () => {
         buttonImage: string;
@@ -415,6 +421,11 @@ export default defineComponent({
     const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 });
     const dragOffset = ref({ x: 0, y: 0 });
     const isDragging = ref(false);
+
+    // 字体整体缩放：优先使用外部传入的 fontScale（实时联动），否则读取 localStorage
+    const chatFontScale = computed(() => (props.fontScale > 0 ? props.fontScale : getFontScale()));
+    // 通过 CSS 变量下发缩放倍率；as any 规避 CSSProperties 不识别自定义属性名的类型限制
+    const chatFontStyle = computed(() => ({ '--chat-font-scale': chatFontScale.value } as any));
 
     const uploadedFiles = ref<
       Array<{
@@ -1416,6 +1427,8 @@ export default defineComponent({
       cancelSkillList,
       getButtons,
       getButtonInlineStyle,
+      chatFontScale,
+      chatFontStyle,
     };
   },
 });
@@ -1454,6 +1467,8 @@ export default defineComponent({
   border-radius: 16px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  /* 基准字号随缩放倍率变化，未单独声明字号的文字（如空消息提示）也跟随缩放 */
+  font-size: calc(14px * var(--chat-font-scale, 1));
 }
 
 .custom-dialog-fixed .custom-dialog-header {
@@ -1472,7 +1487,7 @@ export default defineComponent({
 }
 
 .custom-dialog-title {
-  font-size: 16px;
+  font-size: calc(16px * var(--chat-font-scale, 1));
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1481,14 +1496,14 @@ export default defineComponent({
 
 .custom-dialog-title::before {
   content: "🤖";
-  font-size: 18px;
+  font-size: calc(18px * var(--chat-font-scale, 1));
 }
 
 .custom-dialog-close {
   background: rgba(255, 255, 255, 0.15);
   border: none;
   color: white;
-  font-size: 18px;
+  font-size: calc(18px * var(--chat-font-scale, 1));
   cursor: pointer;
   padding: 6px;
   width: 32px;
@@ -1552,7 +1567,7 @@ export default defineComponent({
 }
 
 .empty-icon {
-  font-size: 56px;
+  font-size: calc(56px * var(--chat-font-scale, 1));
   margin-bottom: 16px;
   opacity: 0.6;
 }
@@ -1590,7 +1605,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: calc(18px * var(--chat-font-scale, 1));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -1603,7 +1618,7 @@ export default defineComponent({
 }
 
 .message-role {
-  font-size: 13px;
+  font-size: calc(13px * var(--chat-font-scale, 1));
   color: #64748b;
   font-weight: 500;
 }
@@ -1677,12 +1692,12 @@ export default defineComponent({
 }
 
 .thinking-text {
-  font-size: 13px;
+  font-size: calc(13px * var(--chat-font-scale, 1));
   color: #94a3b8;
 }
 
 .content-text {
-  font-size: 15px;
+  font-size: calc(15px * var(--chat-font-scale, 1));
   line-height: 1.7;
 }
 
@@ -1690,7 +1705,7 @@ export default defineComponent({
   background-color: #f1f5f9;
   padding: 3px 8px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: calc(13px * var(--chat-font-scale, 1));
   font-family: "SF Mono", Monaco, "Courier New", monospace;
 }
 
@@ -1705,14 +1720,14 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--chat-font-scale, 1));
   padding: 8px 12px;
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 8px;
 }
 
 .file-icon {
-  font-size: 16px;
+  font-size: calc(16px * var(--chat-font-scale, 1));
 }
 
 .file-name {
@@ -1751,7 +1766,7 @@ export default defineComponent({
 }
 
 .message-time {
-  font-size: 11px;
+  font-size: calc(11px * var(--chat-font-scale, 1));
   color: #cbd5e1;
   margin-top: 6px;
 }
@@ -1760,6 +1775,11 @@ export default defineComponent({
   padding: 22px 16px;
   background-color: white;
   border-top: 1px solid #e2e8f0;
+}
+
+/* 输入框内文字跟随整体缩放 */
+.input-section :deep(.el-textarea__inner) {
+  font-size: calc(14px * var(--chat-font-scale, 1));
 }
 
 .input-wrapper {
@@ -1787,7 +1807,7 @@ export default defineComponent({
   padding: 8px 12px;
   background-color: #f8fafc;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--chat-font-scale, 1));
   border: 1px solid #e2e8f0;
 }
 
@@ -1796,7 +1816,7 @@ export default defineComponent({
   border: none;
   cursor: pointer;
   color: #ef4444;
-  font-size: 16px;
+  font-size: calc(16px * var(--chat-font-scale, 1));
   line-height: 1;
   padding: 4px;
   width: 24px;
@@ -1828,7 +1848,7 @@ export default defineComponent({
 }
 
 .hint {
-  font-size: 13px;
+  font-size: calc(13px * var(--chat-font-scale, 1));
   color: #94a3b8;
 }
 
