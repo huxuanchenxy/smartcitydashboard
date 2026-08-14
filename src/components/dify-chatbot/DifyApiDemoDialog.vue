@@ -1140,6 +1140,63 @@ export default defineComponent({
           }
         }
 
+        // 对话框场景布局压缩：flint-chart 默认边距偏保守，这里收紧让图表尽量铺满容器
+        const seriesList = Array.isArray(chartOption.series)
+          ? chartOption.series
+          : chartOption.series
+            ? [chartOption.series]
+            : [];
+        const hasPieSeries = seriesList.some((s: any) => s && s.type === 'pie');
+        if (hasPieSeries) {
+          // 饼图：放大半径（flint 保守比例在对话框容器里留白过多），
+          // 上下预留外部标签空间，左右预留标签文字空间
+          for (const s of seriesList) {
+            if (!s || s.type !== 'pie') continue;
+            const r = s.radius;
+            let innerPx = 0;
+            let outerPx = 0;
+            if (Array.isArray(r)) {
+              innerPx = parseFloat(r[0]) || 0;
+              outerPx = parseFloat(r[1]) || 0;
+            } else if (typeof r === 'string') {
+              outerPx = parseFloat(r) || 0;
+            }
+            if (outerPx > 0) {
+              const maxOuter = Math.min((actualH - 84) / 2, (actualW - 160) / 2);
+              const newOuter = Math.round(Math.max(outerPx, maxOuter));
+              const ratio = innerPx > 0 ? innerPx / outerPx : 0;
+              s.radius = ratio > 0 ? [`${Math.round(newOuter * ratio)}px`, `${newOuter}px`] : `${newOuter}px`;
+            }
+          }
+        } else if (chartOption.xAxis || chartOption.yAxis) {
+          // 笛卡尔图表：图例移到底部居中（释放右侧整列留白），收紧四周 grid
+          if (chartOption.legend) {
+            delete chartOption.legend.right;
+            chartOption.legend = {
+              ...chartOption.legend,
+              orient: 'horizontal',
+              left: 'center',
+              top: 'auto',
+              bottom: 0,
+            };
+          }
+          const yAxisList = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis];
+          const xAxisList = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis];
+          const isDualY = yAxisList.filter(Boolean).length > 1;
+          const hasYTitle = yAxisList.some((y: any) => y && y.name);
+          const hasXTitle = xAxisList.some((x: any) => x && x.name);
+          const grids = Array.isArray(chartOption.grid) ? chartOption.grid : [chartOption.grid || {}];
+          for (const g of grids) {
+            if (!g) continue;
+            g.containLabel = true;
+            // 轴标题（nameGap 40/55）在 grid 之外，需额外预留
+            g.left = isDualY ? 70 : hasYTitle ? 56 : 10;
+            g.right = isDualY ? 64 : 10;
+            g.top = 16;
+            g.bottom = (hasXTitle ? 48 : 28) + 24; // x 轴标题 + 底部图例
+          }
+        }
+
         const chartInstance = echarts.init(domEl);
         chartInstance.setOption(chartOption);
         flintChartInstances.value.set(key, chartInstance);
@@ -2023,8 +2080,8 @@ export default defineComponent({
 
 .flint-chart-item {
   width: 100%;
-  height: 320px;
-  min-height: 260px;
+  height: 360px;
+  min-height: 300px;
   box-sizing: border-box;
   flex-shrink: 0;
   background-color: #f8fafc;
