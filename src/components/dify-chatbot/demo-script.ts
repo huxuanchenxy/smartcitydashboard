@@ -72,11 +72,13 @@ export class DemoScriptEngine {
       return { response: '未知状态', stateChanged: false };
     }
 
-    const lowerInput = input.toLowerCase();
+    // 关键词需与用户输入完全相等（去首尾空格、忽略大小写）才命中，
+    // 避免短关键词（如"设备"）误命中包含它的长句
+    const normalizedInput = input.trim().toLowerCase();
 
     for (const rule of state.rules) {
       const matched = rule.keywords.some(keyword =>
-        lowerInput.includes(keyword.toLowerCase())
+        normalizedInput === keyword.trim().toLowerCase()
       );
       if (matched) {
         const previousState = this.currentState;
