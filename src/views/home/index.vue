@@ -55,21 +55,20 @@ export default defineComponent({
       const storedMenu = JSON.parse(getMainMenu()) as any[];
       const templateMenu = (mainMenuJson.default as unknown) as any[];
 
+      // 模板提供图标/名称等静态配置，仅从权限数据（menu/permissions）取 enabled，未授权项不显示
       const mergedMenu = templateMenu.map(templateItem => {
         const storedItem = storedMenu?.find(s => s.id === templateItem.id);
         if (storedItem) {
           const mergedChildren = templateItem.children.map(tc => {
             const sc = storedItem.children?.find(s => s.id === tc.id);
-            return { ...tc, ...sc, enabled: true };
+            return { ...tc, enabled: !!sc?.enabled };
           });
-          return { ...templateItem, ...storedItem, children: mergedChildren, enabled: true };
+          return { ...templateItem, enabled: !!storedItem.enabled, children: mergedChildren };
         }
-        const children = templateItem.children.map(c => ({ ...c, enabled: true }));
-        return { ...templateItem, enabled: true, children };
+        return { ...templateItem, enabled: false };
       });
 
       navs.value = mergedMenu.filter(r => r.enabled);
-      console.log('navs.value', navs.value);
       window.addEventListener('scroll', scroll)
     })
 
