@@ -29,14 +29,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/ragflow-api/, ''),
         },
-        // IC 后端（用户/权限体系，与 dashboard 共用）同源代理，规避 CORS；
-        // 生产部署需 nginx 配置等价 location /device/ { proxy_pass http://<IC_HOST>:<IC_PORT>/device/; }
-        '/device': {
-          target: env.VITE_APP_IC_HOST
-            ? `http://${env.VITE_APP_IC_HOST}:${env.VITE_APP_IC_PORT || '39100'}`
-            : 'http://10.89.33.97:39100',
-          changeOrigin: true,
-        },
       },
     },
     resolve: {
