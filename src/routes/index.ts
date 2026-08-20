@@ -152,13 +152,6 @@ const navRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/views/cavans-user/user-location/index.vue'),
         meta: { title: '点位设置' },
       },
-      {
-        path: 'aipage',
-        name: 'AiPage',
-        component: () => import('@/views/aipage/index.vue'),
-        meta: { title: 'AI页面' },
-      },
-
       //   path: 'data',
       //   name: 'MyData',
       //   component: () => import('@/views/my-data/index.vue'),
@@ -195,6 +188,13 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: '登录' },
   },
   ...navRoutes,
+  {
+    // AI 页面为纯 iframe 嵌入页，不套左侧菜单布局，独立顶层路由全屏展示
+    path: '/aipage',
+    name: 'AiPage',
+    component: () => import('@/views/aipage/index.vue'),
+    meta: { title: 'AI页面' },
+  },
   {
     path: '/create-screen',
     name: 'CreateScreen',
