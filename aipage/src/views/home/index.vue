@@ -3,6 +3,9 @@
     <h1>AI 页面</h1>
     <p>aipage 项目运行正常。当前登录状态：{{ token ? '已登录' : '未登录' }}</p>
     <p class="tip">本页面可独立运行（http://localhost:9091/），也可被 dashboard 通过 iframe 嵌入。</p>
+    <p class="console-entry">
+      <router-link to="/console/datasets">进入知识库管理台 →</router-link>
+    </p>
 
     <section class="auth-panel">
       <h2>登录凭证与菜单权限</h2>
@@ -120,6 +123,21 @@ export default defineComponent({
 .tip {
   color: #999;
   font-size: 13px;
+}
+
+.console-entry {
+  margin: 4px 0 16px;
+}
+
+.console-entry a {
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.console-entry a:hover {
+  text-decoration: underline;
 }
 
 .auth-panel {

@@ -20,6 +20,38 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: '无权限' },
   },
   {
+    // 知识库管理台（演示环境，假数据）：数据集 / 文档 / chunks / 召回测试
+    path: '/console',
+    component: () => import('@/views/console/layout.vue'),
+    children: [
+      { path: '', redirect: '/console/datasets' },
+      {
+        path: 'datasets',
+        name: 'ConsoleDatasets',
+        component: () => import('@/views/console/datasets.vue'),
+        meta: { title: '数据集' },
+      },
+      {
+        path: 'datasets/:id',
+        name: 'ConsoleDocuments',
+        component: () => import('@/views/console/documents.vue'),
+        meta: { title: '文档管理' },
+      },
+      {
+        path: 'datasets/:id/docs/:docId/chunks',
+        name: 'ConsoleChunks',
+        component: () => import('@/views/console/chunks.vue'),
+        meta: { title: 'Chunks' },
+      },
+      {
+        path: 'retrieval',
+        name: 'ConsoleRetrieval',
+        component: () => import('@/views/console/retrieval.vue'),
+        meta: { title: '召回测试' },
+      },
+    ],
+  },
+  {
     path: '/:catchAll(.*)*',
     redirect: '/home',
   },
