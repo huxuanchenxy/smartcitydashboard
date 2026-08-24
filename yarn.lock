@@ -2755,6 +2755,11 @@
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.182.tgz#05301a4d5e62963227eaafe0ce04dd77c54ea5c2"
   integrity sha512-/THyiqyQAP9AfARo4pF+aCGcyiQ94tX/Is2I7HofNRqoYLgN1PBoOWu2/zTA5zMxzP5EFutMtWtGAFRKUe961Q==
 
+"@types/marked@^4.0.3":
+  version "4.3.2"
+  resolved "https://registry.npmjs.org/@types/marked/-/marked-4.3.2.tgz#e2e0ad02ebf5626bd215c5bae2aff6aff0ce9eac"
+  integrity sha512-a79Yc3TOk6dGdituy8hmTTJXjOkZ7zsFYV10L337ttq/rec8lRMDBpV7fL3uLx6TgbFCa5DU/h8FmIBQPSbU0w==
+
 "@types/mdast@^3.0.0":
   version "3.0.3"
   resolved "https://registry.npmjs.org/@types/mdast/-/mdast-3.0.3.tgz#2d7d671b1cd1ea3deb306ea75036c2a0407d2deb"
@@ -6981,6 +6986,13 @@ mathml-tag-names@^2.1.3:
   version "2.1.3"
   resolved "https://registry.npmjs.org/mathml-tag-names/-/mathml-tag-names-2.1.3.tgz#4ddadd67308e780cf16a47685878ee27b736a0a3"
   integrity sha512-APMBEanjybaPzUrfqU0IMU5I0AswKMH7k8OTLs0vvV4KZpExkTkY87nR/zpbuTPj+gARop7aGUbl11pnDfW6xg==
+
+md-editor-v3@2.2.0:
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/md-editor-v3/-/md-editor-v3-2.2.0.tgz#5879f6c03447b3e146d3f77c2ef95261ca471743"
+  integrity sha512-HedYbNnYSaF3Pc9xIccEP9di+vCYim7f3oy0RpuORU1nAcEP7G7h4RUjjbXPpOMkF0JS0T9Ghn8c1o3d/GS49Q==
+  dependencies:
+    "@types/marked" "^4.0.3"
 
 mdast-util-from-markdown@^0.8.0:
   version "0.8.5"
