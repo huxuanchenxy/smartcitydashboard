@@ -235,7 +235,7 @@ export default defineComponent({
   padding: 24px;
   overflow: hidden;
   background-color: #f8fafc;
-  border-radius:16px;
+  border-radius: 16px;
 }
 
 .font-config-card {
@@ -320,7 +320,9 @@ export default defineComponent({
 .skills-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+
+  /* 每列至少占容器一半宽 → 宽度充裕时最多两列（8 个技能正好 4×2 无空格）；容器过窄时回落到 280px 单列 */
+  grid-template-columns: repeat(auto-fill, minmax(max(280px, calc((100% - 16px) / 2)), 1fr));
   gap: 16px;
   overflow-y: auto;
   padding: 4px 8px 4px 4px;
