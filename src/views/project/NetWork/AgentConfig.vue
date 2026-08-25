@@ -178,20 +178,28 @@ export default defineComponent({
       }
     }
 
+    // 按左面板实时尺寸测量对话窗位置/大小；窗口缩放时重测，避免对话窗遮住技能库或留出空隙
+    const measurePanel = () => {
+      if (!leftPanelRef.value) {
+        return
+      }
+      const rect = leftPanelRef.value.getBoundingClientRect()
+      initialPosition.value = { x: rect.left, y: rect.top }
+      initialSize.value = {
+        width: rect.width,
+        height: rect.height,
+      }
+    }
+
     onMounted(() => {
       window.addEventListener('keydown', onKeydown)
-      if (leftPanelRef.value) {
-        const rect = leftPanelRef.value.getBoundingClientRect()
-        initialPosition.value = { x: rect.left, y: rect.top }
-        initialSize.value = {
-          width: rect.width,
-          height: rect.height,
-        }
-      }
+      measurePanel()
+      window.addEventListener('resize', measurePanel)
     })
 
     onUnmounted(() => {
       window.removeEventListener('keydown', onKeydown)
+      window.removeEventListener('resize', measurePanel)
     })
 
     return {

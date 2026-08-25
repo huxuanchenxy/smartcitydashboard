@@ -691,6 +691,26 @@ export default defineComponent({
     const dialogWidth = ref(props.initialSize?.width ?? 600)
     const dialogHeight = ref(props.initialSize?.height ?? 600)
 
+    // 宿主重新测量（如窗口缩放）时同步对话窗位置/尺寸，避免只在初始化时读一次
+    watch(
+      () => props.initialPosition,
+      pos => {
+        if (pos) {
+          dialogPosition.value = { x: pos.x, y: pos.y }
+        }
+      },
+    )
+
+    watch(
+      () => props.initialSize,
+      size => {
+        if (size) {
+          dialogWidth.value = size.width
+          dialogHeight.value = size.height
+        }
+      },
+    )
+
     const startResize = (direction: string, e: MouseEvent) => {
       isResizing.value = true
       resizeDirection.value = direction
