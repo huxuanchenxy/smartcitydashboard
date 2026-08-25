@@ -24,16 +24,32 @@
           <div class="resize-handle resize-se" @mousedown.stop="startResize('se', $event)"></div>
           <div class="resize-handle resize-sw" @mousedown.stop="startResize('sw', $event)"></div>
         </div>
-        <div class="custom-dialog" :class="{ 'custom-dialog-fixed': fixed }" :style="chatFontStyle" @mousedown="handleMouseDown">
+        <div
+          class="custom-dialog"
+          :class="{ 'custom-dialog-fixed': fixed }"
+          :style="chatFontStyle"
+          @mousedown="handleMouseDown"
+        >
           <div class="custom-dialog-header">
             <span class="custom-dialog-title">{{ title }}</span>
-            <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
-              ×
-            </button>
+            <div class="custom-dialog-header-actions">
+              <button
+                v-if="mdEditor"
+                class="md-editor-toggle"
+                :class="{ active: mdEditorVisible }"
+                :title="mdEditorVisible ? '收起 Markdown 编辑器' : '打开 Markdown 编辑器'"
+                @click="mdEditorVisible = !mdEditorVisible"
+              >
+                📝
+              </button>
+              <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
+                ×
+              </button>
+            </div>
           </div>
           <div class="dify-api-container">
             <div class="message-section-wrapper">
-              <div class="message-section" ref="messageContainer">
+              <div ref="messageContainer" class="message-section">
                 <div v-if="messages.length === 0" class="empty-message">
                   <div class="empty-icon">💬</div>
                   <div>暂无消息，开始您的对话吧！</div>
@@ -110,8 +126,8 @@
                                   class="skill-btn"
                                   :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
                                   :style="getButtonInlineStyle(btn)"
-                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
                                   :disabled="message.interactionResolved"
+                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
                                 >
                                   {{ btn.text }}
                                 </button>
@@ -145,8 +161,8 @@
                                   class="skill-btn"
                                   :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
                                   :style="getButtonInlineStyle(btn)"
-                                  @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
                                   :disabled="message.interactionResolved"
+                                  @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
                                 >
                                   {{ btn.text }}
                                 </button>
@@ -172,15 +188,15 @@
                     </div>
                     <div class="message-actions">
                       <button
-                        class="copy-btn"
-                        @click="copyMessageContent(message)"
-                        :title="'复制内容'"
                         v-if="!message.isThinking"
+                        class="copy-btn"
+                        :title="'复制内容'"
+                        @click="copyMessageContent(message)"
                       >
                         <ChatCopy />
                       </button>
                     </div>
-                    <div class="message-time" v-if="!message.isThinking">
+                    <div v-if="!message.isThinking" class="message-time">
                       {{ formatTime(message.timestamp) }}
                     </div>
                   </div>
@@ -217,21 +233,21 @@
                     resize="none"
                     :disabled="isLoading"
                     @keydown.enter.prevent="handleEnter"
-                  ></el-input>
+                  />
                   <div class="input-actions">
                     <div class="actions-row">
                       <el-button
+                        v-show="!isLoading"
                         type="default"
                         size="small"
-                        @click="openFileDialog"
                         :disabled="isLoading"
                         class="upload-button"
                         title="上传文件"
-                        v-show="!isLoading"
+                        @click="openFileDialog"
                       >
-                      <ChatUpload />
-                        </el-button>
-                      <span class="hint" v-if="isLoading">AI 正在思考中，请稍候...</span>
+                        <ChatUpload />
+                      </el-button>
+                      <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
                       <el-button
                         v-if="isLoading"
                         type="danger"
@@ -242,13 +258,13 @@
                         <ChatStop />
                       </el-button>
                       <el-button
+                        v-show="!isLoading"
                         type="success"
                         size="small"
-                        @click="sendMessage"
                         :disabled="isLoading || (!userQuery.trim() && uploadedFiles.length === 0)"
                         class="send-button"
                         title="发送"
-                        v-show="!isLoading"
+                        @click="sendMessage"
                       >
                         <ChatSend />
                       </el-button>
@@ -261,12 +277,23 @@
                   multiple
                   class="hidden-file-input"
                   @change="handleFileSelect"
-                />
+                >
               </div>
             </div>
           </div>
         </div>
       </div>
+      <!-- Markdown 编辑器：停靠在本对话窗右侧，锚点随拖拽/缩放同步变化 -->
+      <MdEditorDialog
+        v-if="mdEditor"
+        v-model:visible="mdEditorVisible"
+        :dock-left="dialogPosition.x + dialogWidth"
+        :dock-top="dialogPosition.y"
+        :dock-height="dialogHeight"
+        title="Agent 说明文档"
+        file-name="agent.md"
+        :storage-key="mdEditorStorageKey"
+      />
     </div>
   </Teleport>
 </template>
@@ -280,74 +307,75 @@ import {
   onMounted,
   onUnmounted,
   nextTick,
-} from "vue";
-import { ElButton, ElInput } from "element-plus";
-import { DemoScriptEngine } from "./demo-script";
-import type { DemoScript } from "./demo-script";
-import ChatCopy from "@/icons/chat-copy.vue";
-import ChatUpload from "@/icons/chat-upload.vue";
-import ChatStop from "@/icons/chat-stop.vue";
-import ChatSend from "@/icons/chat-send.vue";
-import { getFontScale } from "./font-scale";
-import { assembleECharts } from "flint-chart";
-import type { ChartAssemblyInput } from "flint-chart";
-import * as echarts from "echarts";
+} from 'vue'
+import { ElButton, ElInput } from 'element-plus'
+import { DemoScriptEngine } from './demo-script'
+import type { DemoScript } from './demo-script'
+import ChatCopy from '@/icons/chat-copy.vue'
+import ChatUpload from '@/icons/chat-upload.vue'
+import ChatStop from '@/icons/chat-stop.vue'
+import ChatSend from '@/icons/chat-send.vue'
+import MdEditorDialog from './MdEditorDialog.vue'
+import { getFontScale } from './font-scale'
+import { assembleECharts } from 'flint-chart'
+import type { ChartAssemblyInput } from 'flint-chart'
+import * as echarts from 'echarts'
 
-const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || "/mockdata.json";
+const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || '/mockdata.json'
 // Flint 图表相关接口
 interface FlintSpec {
-  rawInput: ChartAssemblyInput;
-  echartsOption: any;
+  rawInput: ChartAssemblyInput
+  echartsOption: any
 }
 
 // 按钮颜色配置接口
 interface ButtonColorConfig {
-  backgroundColor?: string;
-  textColor?: string;
-  borderColor?: string;
-  hoverBackgroundColor?: string;
+  backgroundColor?: string
+  textColor?: string
+  borderColor?: string
+  hoverBackgroundColor?: string
 }
 
 // 按钮配置接口
 interface ButtonConfig {
-  type: 'confirm' | 'cancel';
-  text: string;
+  type: 'confirm' | 'cancel'
+  text: string
   // 点击该按钮后，在面板下方显示的提示文本；为空/不配置则不显示
-  resolvedText?: string;
-  color?: ButtonColorConfig;
+  resolvedText?: string
+  color?: ButtonColorConfig
 }
 
 // HTML 交互内容接口
 interface HtmlInteraction {
-  type: string;
-  message: string;
+  type: string
+  message: string
   skills?: Array<{
-    name: string;
-    desc: string;
-  }>;
-  buttons?: ButtonConfig[];
+    name: string
+    desc: string
+  }>
+  buttons?: ButtonConfig[]
 }
 
 interface ChartMessage {
-  role: "user" | "assistant";
-  content: string;
-  timestamp: number;
-  isThinking?: boolean;
-  thinkingContent?: string;
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: number
+  isThinking?: boolean
+  thinkingContent?: string
   files?: Array<{
-    id: string;
-    name: string;
-    size: number;
-  }>;
-  flintSpecs?: FlintSpec[];
-  htmlInteractions?: HtmlInteraction[];
-  selectedSkills?: string[];
-  interactionResolved?: boolean;
-  interactionText?: string;
+    id: string
+    name: string
+    size: number
+  }>
+  flintSpecs?: FlintSpec[]
+  htmlInteractions?: HtmlInteraction[]
+  selectedSkills?: string[]
+  interactionResolved?: boolean
+  interactionText?: string
 }
 
 export default defineComponent({
-  name: "DifyApiDemoDialog",
+  name: 'DifyApiDemoDialog',
   components: {
     ElButton,
     ElInput,
@@ -355,11 +383,12 @@ export default defineComponent({
     ChatUpload,
     ChatStop,
     ChatSend,
+    MdEditorDialog,
   },
   props: {
     title: {
       type: String,
-      default: "AI 智能助手",
+      default: 'AI 智能助手',
     },
     visible: {
       type: Boolean,
@@ -374,16 +403,25 @@ export default defineComponent({
       default: false,
     },
     initialPosition: {
-      type: Object as () => { x: number; y: number },
+      type: Object as () => { x: number; y: number; },
       default: null,
     },
     initialSize: {
-      type: Object as () => { width: number; height: number },
+      type: Object as () => { width: number; height: number; },
       default: null,
     },
     role: {
       type: String,
-      default: "",
+      default: '',
+    },
+    // 是否在头部显示 Markdown 编辑器入口（停靠在本对话窗右侧）
+    mdEditor: {
+      type: Boolean,
+      default: false,
+    },
+    mdEditorStorageKey: {
+      type: String,
+      default: '',
     },
     // 字体整体缩放倍率；<=0 表示未设置，回退读取 localStorage 中的持久化配置
     fontScale: {
@@ -392,269 +430,270 @@ export default defineComponent({
     },
     com: {
       type: Object as () => {
-        buttonImage: string;
+        buttonImage: string
         buttonStyle: {
-          backgroundColor: string;
-          hoverBackgroundColor: string;
-        };
-        role: string;
+          backgroundColor: string
+          hoverBackgroundColor: string
+        }
+        role: string
       },
       default: () => ({
-        buttonImage: "",
+        buttonImage: '',
         buttonStyle: {
-          backgroundColor: "#409eff",
-          hoverBackgroundColor: "#66b1ff",
+          backgroundColor: '#409eff',
+          hoverBackgroundColor: '#66b1ff',
         },
-        role: "",
+        role: '',
       }),
     },
   },
-  emits: ["close", "update:visible", "message-received", "message-sent"],
+  emits: ['close', 'update:visible', 'message-received', 'message-sent'],
   setup(props, { emit }) {
-    const dialogVisible = ref(false);
-    const userQuery = ref("");
-    const messages = ref<ChartMessage[]>([]);
-    const flintChartRefs = ref<Map<string, HTMLElement>>(new Map());
-    const flintChartInstances = ref<Map<string, echarts.ECharts>>(new Map());
-    const isLoading = ref(false);
-    const messageContainer = ref<HTMLElement | null>(null);
-    const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 });
-    const dragOffset = ref({ x: 0, y: 0 });
-    const isDragging = ref(false);
+    const dialogVisible = ref(false)
+    const userQuery = ref('')
+    const messages = ref<ChartMessage[]>([])
+    const flintChartRefs = ref<Map<string, HTMLElement>>(new Map())
+    const flintChartInstances = ref<Map<string, echarts.ECharts>>(new Map())
+    const isLoading = ref(false)
+    const messageContainer = ref<HTMLElement | null>(null)
+    const mdEditorVisible = ref(false)
+    const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 })
+    const dragOffset = ref({ x: 0, y: 0 })
+    const isDragging = ref(false)
 
     // 字体整体缩放：优先使用外部传入的 fontScale（实时联动），否则读取 localStorage
-    const chatFontScale = computed(() => (props.fontScale > 0 ? props.fontScale : getFontScale()));
+    const chatFontScale = computed(() => (props.fontScale > 0 ? props.fontScale : getFontScale()))
     // 通过 CSS 变量下发缩放倍率；as any 规避 CSSProperties 不识别自定义属性名的类型限制
-    const chatFontStyle = computed(() => ({ '--chat-font-scale': chatFontScale.value } as any));
+    const chatFontStyle = computed(() => ({ '--chat-font-scale': chatFontScale.value } as any))
 
     const uploadedFiles = ref<
       Array<{
-        id: string;
-        name: string;
-        size: number;
+        id: string
+        name: string
+        size: number
       }>
-    >([]);
-    const fileInputRef = ref<HTMLInputElement | null>(null);
+    >([])
+    const fileInputRef = ref<HTMLInputElement | null>(null)
 
-    const scriptEngine = new DemoScriptEngine();
-    const scriptLoaded = ref(false);
-    const scriptLoadError = ref<string | null>(null);
+    const scriptEngine = new DemoScriptEngine()
+    const scriptLoaded = ref(false)
+    const scriptLoadError = ref<string | null>(null)
 
     const loadScriptFromMock = async (): Promise<void> => {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
         // 加 timestamp 防止浏览器/CDN 缓存旧 mockdata.json
-        const url = `${SCRIPT_MOCK_URL}?t=${Date.now()}`;
-        console.log('[Mock脚本] 请求URL:', url);
+        const url = `${SCRIPT_MOCK_URL}?t=${Date.now()}`
+        console.log('[Mock脚本] 请求URL:', url)
         const response = await fetch(url, {
           signal: controller.signal,
           cache: 'no-cache',
-        });
-        clearTimeout(timeoutId);
+        })
+        clearTimeout(timeoutId)
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}`)
         }
 
-        const data = await response.json();
-        console.log('mockdata.json 返回：', data);
+        const data = await response.json()
+        console.log('mockdata.json 返回：', data)
 
         if (data && data.states && data.initialState) {
-          scriptEngine.setScript(data as DemoScript);
-          scriptLoaded.value = true;
-          scriptLoadError.value = null;
+          scriptEngine.setScript(data as DemoScript)
+          scriptLoaded.value = true
+          scriptLoadError.value = null
         } else {
-          scriptLoaded.value = true;
-          scriptLoadError.value = '返回数据格式无效（缺少 states 或 initialState），使用内置脚本';
+          scriptLoaded.value = true
+          scriptLoadError.value = '返回数据格式无效（缺少 states 或 initialState），使用内置脚本'
         }
       } catch (e: any) {
-        scriptLoaded.value = true;
+        scriptLoaded.value = true
         if (e?.name === 'AbortError') {
-          scriptLoadError.value = '加载 mock 脚本超时，使用内置脚本';
+          scriptLoadError.value = '加载 mock 脚本超时，使用内置脚本'
         } else if (e?.message?.includes('CORS') || e?.message?.includes('Failed to fetch')) {
-          scriptLoadError.value = '跨域或网络错误（CORS/无法连接 10.89.33.97:5000），使用内置脚本';
+          scriptLoadError.value = '跨域或网络错误（CORS/无法连接 10.89.33.97:5000），使用内置脚本'
         } else {
-          scriptLoadError.value = (e?.message || '加载 mock 脚本失败') + '，使用内置脚本';
+          scriptLoadError.value = `${e?.message || '加载 mock 脚本失败'  }，使用内置脚本`
         }
       }
-    };
+    }
 
     const currentRole = computed(() => {
-      return props.role || props.com.role;
-    });
+      return props.role || props.com.role
+    })
 
     const config = ref({
       buttonImage: props.com.buttonImage,
       buttonStyle: props.com.buttonStyle,
       role: currentRole.value,
-    });
+    })
 
     watch(
       () => props.com,
-      (newCom) => {
+      newCom => {
         config.value = {
           buttonImage: newCom.buttonImage,
           buttonStyle: newCom.buttonStyle,
           role: currentRole.value,
-        };
+        }
       },
-      { deep: true }
-    );
+      { deep: true },
+    )
 
     watch(
       () => props.role,
-      (newRole) => {
-        config.value.role = newRole || props.com.role;
-      }
-    );
+      newRole => {
+        config.value.role = newRole || props.com.role
+      },
+    )
 
     const scrollToBottom = async () => {
-      await nextTick();
+      await nextTick()
       if (messageContainer.value) {
-        messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+        messageContainer.value.scrollTop = messageContainer.value.scrollHeight
       }
-    };
+    }
 
     const showWelcomeMessage = async () => {
       if (!scriptLoaded.value) {
-        await new Promise<void>((resolve) => {
+        await new Promise<void>(resolve => {
           const timer = setInterval(() => {
             if (scriptLoaded.value) {
-              clearInterval(timer);
-              resolve();
+              clearInterval(timer)
+              resolve()
             }
-          }, 50);
+          }, 50)
           setTimeout(() => {
-            clearInterval(timer);
-            resolve();
-          }, 10000);
-        });
+            clearInterval(timer)
+            resolve()
+          }, 10000)
+        })
       }
 
-      const role = currentRole.value;
-      const welcomeMessage = scriptEngine.getWelcomeMessage(role);
-      const errorSuffix = scriptLoadError.value ? `\n\n⚠️ ${scriptLoadError.value}` : '';
+      const role = currentRole.value
+      const welcomeMessage = scriptEngine.getWelcomeMessage(role)
+      const errorSuffix = scriptLoadError.value ? `\n\n⚠️ ${scriptLoadError.value}` : ''
       if (welcomeMessage || errorSuffix) {
         messages.value = [{
-          role: "assistant",
+          role: 'assistant',
           content: (welcomeMessage || '') + errorSuffix,
           timestamp: Date.now(),
-        }];
-        setTimeout(scrollToBottom, 100);
+        }]
+        setTimeout(scrollToBottom, 100)
       }
-    };
+    }
 
     // 窗口 resize 时同步调整图表大小
     const handleWindowResize = () => {
-      flintChartInstances.value.forEach((instance) => {
-        instance.resize();
-      });
-    };
+      flintChartInstances.value.forEach(instance => {
+        instance.resize()
+      })
+    }
 
     onMounted(() => {
-      dialogVisible.value = props.visible;
-      window.addEventListener('resize', handleWindowResize);
-      loadScriptFromMock();
+      dialogVisible.value = props.visible
+      window.addEventListener('resize', handleWindowResize)
+      loadScriptFromMock()
       if (dialogVisible.value) {
-        showWelcomeMessage();
+        showWelcomeMessage()
       }
-    });
+    })
 
     watch(
       () => props.visible,
-      (newVisible) => {
-        dialogVisible.value = newVisible;
+      newVisible => {
+        dialogVisible.value = newVisible
         if (newVisible) {
-          showWelcomeMessage();
+          showWelcomeMessage()
         }
-      }
-    );
+      },
+    )
 
     watch(
       () => props.initialPosition,
-      (newPos) => {
+      newPos => {
         if (newPos) {
-          dialogPosition.value = { ...newPos };
+          dialogPosition.value = { ...newPos }
         }
-      }
-    );
+      },
+    )
 
     watch(
       () => props.initialSize,
-      (newSize) => {
+      newSize => {
         if (newSize) {
-          dialogWidth.value = newSize.width;
-          dialogHeight.value = newSize.height;
+          dialogWidth.value = newSize.width
+          dialogHeight.value = newSize.height
         }
-      }
-    );
+      },
+    )
 
     // 清理所有 Flint 图表实例
     const disposeAllCharts = () => {
       // 清理 ResizeObserver
-      resizeObservers.forEach((observer) => {
-        observer.disconnect();
-      });
-      resizeObservers.length = 0;
+      resizeObservers.forEach(observer => {
+        observer.disconnect()
+      })
+      resizeObservers.length = 0
 
-      flintChartInstances.value.forEach((instance) => {
-        instance.dispose();
-      });
-      flintChartInstances.value.clear();
-      flintChartRefs.value.clear();
-    };
+      flintChartInstances.value.forEach(instance => {
+        instance.dispose()
+      })
+      flintChartInstances.value.clear()
+      flintChartRefs.value.clear()
+    }
 
     onUnmounted(() => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("mousemove", handleResize);
-      document.removeEventListener("mouseup", stopResize);
-      window.removeEventListener('resize', handleWindowResize);
-      disposeAllCharts();
-    });
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.removeEventListener('mousemove', handleResize)
+      document.removeEventListener('mouseup', stopResize)
+      window.removeEventListener('resize', handleWindowResize)
+      disposeAllCharts()
+    })
 
     const handleClose = () => {
-      dialogVisible.value = false;
-      emit("update:visible", false);
-      emit("close");
-    };
+      dialogVisible.value = false
+      emit('update:visible', false)
+      emit('close')
+    }
 
     const handleMouseDown = (e: MouseEvent) => {
-      if (props.fixed) return;
-      if (isResizing.value) return;
-      isDragging.value = true;
+      if (props.fixed) return
+      if (isResizing.value) return
+      isDragging.value = true
       dragOffset.value = {
         x: e.clientX - dialogPosition.value.x,
         y: e.clientY - dialogPosition.value.y,
-      };
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    };
+      }
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.value) return;
+      if (!isDragging.value) return
       dialogPosition.value = {
         x: e.clientX - dragOffset.value.x,
         y: e.clientY - dragOffset.value.y,
-      };
-    };
+      }
+    }
 
     const handleMouseUp = () => {
-      isDragging.value = false;
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+      isDragging.value = false
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
 
-    const isResizing = ref(false);
-    const resizeDirection = ref('');
-    const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 });
-    const dialogWidth = ref(props.initialSize?.width ?? 600);
-    const dialogHeight = ref(props.initialSize?.height ?? 600);
+    const isResizing = ref(false)
+    const resizeDirection = ref('')
+    const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
+    const dialogWidth = ref(props.initialSize?.width ?? 600)
+    const dialogHeight = ref(props.initialSize?.height ?? 600)
 
     const startResize = (direction: string, e: MouseEvent) => {
-      isResizing.value = true;
-      resizeDirection.value = direction;
+      isResizing.value = true
+      resizeDirection.value = direction
       resizeStart.value = {
         x: e.clientX,
         y: e.clientY,
@@ -662,155 +701,155 @@ export default defineComponent({
         height: dialogHeight.value,
         left: dialogPosition.value.x,
         top: dialogPosition.value.y,
-      };
-      document.addEventListener("mousemove", handleResize);
-      document.addEventListener("mouseup", stopResize);
-    };
+      }
+      document.addEventListener('mousemove', handleResize)
+      document.addEventListener('mouseup', stopResize)
+    }
 
     const handleResize = (e: MouseEvent) => {
-      if (!isResizing.value) return;
+      if (!isResizing.value) return
 
-      const dx = e.clientX - resizeStart.value.x;
-      const dy = e.clientY - resizeStart.value.y;
-      const minWidth = 400;
-      const minHeight = 600;
+      const dx = e.clientX - resizeStart.value.x
+      const dy = e.clientY - resizeStart.value.y
+      const minWidth = 400
+      const minHeight = 600
 
       switch (resizeDirection.value) {
         case 'n': {
-          const newHeight = Math.max(minHeight, resizeStart.value.height - dy);
-          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight);
-          dialogHeight.value = newHeight;
-          dialogPosition.value.y = newTop;
-          break;
+          const newHeight = Math.max(minHeight, resizeStart.value.height - dy)
+          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight)
+          dialogHeight.value = newHeight
+          dialogPosition.value.y = newTop
+          break
         }
         case 's': {
-          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy);
-          break;
+          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy)
+          break
         }
         case 'e': {
-          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx);
-          break;
+          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx)
+          break
         }
         case 'w': {
-          const newWidth = Math.max(minWidth, resizeStart.value.width - dx);
-          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth);
-          dialogWidth.value = newWidth;
-          dialogPosition.value.x = newLeft;
-          break;
+          const newWidth = Math.max(minWidth, resizeStart.value.width - dx)
+          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth)
+          dialogWidth.value = newWidth
+          dialogPosition.value.x = newLeft
+          break
         }
         case 'ne': {
-          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx);
-          const newHeight = Math.max(minHeight, resizeStart.value.height - dy);
-          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight);
-          dialogHeight.value = newHeight;
-          dialogPosition.value.y = newTop;
-          break;
+          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx)
+          const newHeight = Math.max(minHeight, resizeStart.value.height - dy)
+          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight)
+          dialogHeight.value = newHeight
+          dialogPosition.value.y = newTop
+          break
         }
         case 'nw': {
-          const newWidth = Math.max(minWidth, resizeStart.value.width - dx);
-          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth);
-          const newHeight = Math.max(minHeight, resizeStart.value.height - dy);
-          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight);
-          dialogWidth.value = newWidth;
-          dialogPosition.value.x = newLeft;
-          dialogHeight.value = newHeight;
-          dialogPosition.value.y = newTop;
-          break;
+          const newWidth = Math.max(minWidth, resizeStart.value.width - dx)
+          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth)
+          const newHeight = Math.max(minHeight, resizeStart.value.height - dy)
+          const newTop = resizeStart.value.top + (resizeStart.value.height - newHeight)
+          dialogWidth.value = newWidth
+          dialogPosition.value.x = newLeft
+          dialogHeight.value = newHeight
+          dialogPosition.value.y = newTop
+          break
         }
         case 'se': {
-          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx);
-          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy);
-          break;
+          dialogWidth.value = Math.max(minWidth, resizeStart.value.width + dx)
+          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy)
+          break
         }
         case 'sw': {
-          const newWidth = Math.max(minWidth, resizeStart.value.width - dx);
-          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth);
-          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy);
-          dialogWidth.value = newWidth;
-          dialogPosition.value.x = newLeft;
-          break;
+          const newWidth = Math.max(minWidth, resizeStart.value.width - dx)
+          const newLeft = resizeStart.value.left + (resizeStart.value.width - newWidth)
+          dialogHeight.value = Math.max(minHeight, resizeStart.value.height + dy)
+          dialogWidth.value = newWidth
+          dialogPosition.value.x = newLeft
+          break
         }
       }
-    };
+    }
 
     const stopResize = () => {
-      isResizing.value = false;
-      resizeDirection.value = '';
-      document.removeEventListener("mousemove", handleResize);
-      document.removeEventListener("mouseup", stopResize);
-    };
+      isResizing.value = false
+      resizeDirection.value = ''
+      document.removeEventListener('mousemove', handleResize)
+      document.removeEventListener('mouseup', stopResize)
+    }
 
     const sendMessage = async () => {
       if (!userQuery.value.trim() && uploadedFiles.value.length === 0) {
-        return;
+        return
       }
 
       const userMessage = {
-        role: "user" as const,
+        role: 'user' as const,
         content: userQuery.value.trim(),
         timestamp: Date.now(),
         files: uploadedFiles.value.length > 0 ? [...uploadedFiles.value] : undefined,
-      };
+      }
 
-      messages.value.push(userMessage);
-      userQuery.value = "";
-      uploadedFiles.value = [];
+      messages.value.push(userMessage)
+      userQuery.value = ''
+      uploadedFiles.value = []
 
-      isLoading.value = true;
+      isLoading.value = true
 
       setTimeout(async () => {
         const thinkingMessage = {
-          role: "assistant" as const,
-          content: "",
+          role: 'assistant' as const,
+          content: '',
           timestamp: Date.now(),
           isThinking: true,
-          thinkingContent: "AI 正在思考中，请稍候...",
-        };
-        messages.value.push(thinkingMessage);
-        await scrollToBottom();
-      }, 500);
+          thinkingContent: 'AI 正在思考中，请稍候...',
+        }
+        messages.value.push(thinkingMessage)
+        await scrollToBottom()
+      }, 500)
 
       setTimeout(async () => {
-        const response = scriptEngine.getResponse(userMessage.content);
-        const flintSpecs = parseFlintSpecs(response);
-        const htmlInteractions = parseHtmlInteractions(response);
+        const response = scriptEngine.getResponse(userMessage.content)
+        const flintSpecs = parseFlintSpecs(response)
+        const htmlInteractions = parseHtmlInteractions(response)
         // 关键：先清除 Flint/HTML 块，获取纯文本内容
-        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim();
+        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim()
 
-        const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
+        const thinkingIndex = messages.value.findIndex(msg => msg.isThinking)
         if (thinkingIndex !== -1) {
           messages.value[thinkingIndex] = {
-            role: "assistant" as const,
-            content: "",
+            role: 'assistant' as const,
+            content: '',
             timestamp: Date.now(),
             isThinking: false,
             flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
             htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
             selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
             interactionResolved: false,
-          };
-          await scrollToBottom();
+          }
+          await scrollToBottom()
 
-          const typingSpeed = 50;
-          let index = 0;
+          const typingSpeed = 50
+          let index = 0
           const interval = setInterval(() => {
             // 使用纯文本内容（不含 Flint/HTML JSON）进行打字
             if (index < textContent.length) {
-              messages.value[thinkingIndex].content = textContent.slice(0, index + 1);
-              index++;
-              scrollToBottom();
+              messages.value[thinkingIndex].content = textContent.slice(0, index + 1)
+              index++
+              scrollToBottom()
             } else {
-              clearInterval(interval);
-              isLoading.value = false;
+              clearInterval(interval)
+              isLoading.value = false
               // 打字完成后渲染 Flint 图表
               if (flintSpecs.length > 0) {
-                renderFlintCharts(thinkingIndex);
+                renderFlintCharts(thinkingIndex)
               }
             }
-          }, typingSpeed);
+          }, typingSpeed)
         } else {
           const assistantMessage: ChartMessage = {
-            role: "assistant" as const,
+            role: 'assistant' as const,
             // 使用纯文本内容（不含 Flint/HTML JSON）
             content: textContent,
             timestamp: Date.now(),
@@ -818,104 +857,104 @@ export default defineComponent({
             htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
             selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
             interactionResolved: false,
-          };
-          messages.value.push(assistantMessage);
-          isLoading.value = false;
-          await scrollToBottom();
+          }
+          messages.value.push(assistantMessage)
+          isLoading.value = false
+          await scrollToBottom()
           // 立即渲染 Flint 图表
           if (flintSpecs.length > 0) {
-            renderFlintCharts(messages.value.length - 1);
+            renderFlintCharts(messages.value.length - 1)
           }
         }
-      }, 5000 + Math.random() * 1000);
-    };
+      }, 5000 + Math.random() * 1000)
+    }
 
     const handleEnter = () => {
-      sendMessage();
-    };
+      sendMessage()
+    }
 
     // 从消息内容中解析 Flint spec
     const parseFlintSpecs = (content: string): FlintSpec[] => {
-      const specs: FlintSpec[] = [];
-      const regex = /```flint\s*\n([\s\S]*?)\n```/g;
-      let match;
+      const specs: FlintSpec[] = []
+      const regex = /```flint\s*\n([\s\S]*?)\n```/g
+      let match
       while ((match = regex.exec(content)) !== null) {
         try {
-          const rawInput = JSON.parse(match[1]) as ChartAssemblyInput;
-          const echartsOption = assembleECharts(rawInput);
-          specs.push({ rawInput, echartsOption });
+          const rawInput = JSON.parse(match[1]) as ChartAssemblyInput
+          const echartsOption = assembleECharts(rawInput)
+          specs.push({ rawInput, echartsOption })
         } catch (e) {
-          console.warn('Failed to parse Flint spec:', e);
+          console.warn('Failed to parse Flint spec:', e)
         }
       }
-      return specs;
-    };
+      return specs
+    }
 
     // 从消息内容中解析 HTML 交互内容
     const parseHtmlInteractions = (content: string): HtmlInteraction[] => {
-      const interactions: HtmlInteraction[] = [];
-      const regex = /```html\s*\n([\s\S]*?)\n```/g;
-      let match;
+      const interactions: HtmlInteraction[] = []
+      const regex = /```html\s*\n([\s\S]*?)\n```/g
+      let match
       while ((match = regex.exec(content)) !== null) {
         try {
-          const interaction = JSON.parse(match[1]) as HtmlInteraction;
-          interactions.push(interaction);
+          const interaction = JSON.parse(match[1]) as HtmlInteraction
+          interactions.push(interaction)
         } catch (e) {
-          console.warn('Failed to parse HTML interaction:', e);
+          console.warn('Failed to parse HTML interaction:', e)
         }
       }
-      return interactions;
-    };
+      return interactions
+    }
 
     // 清理消息内容中的 Flint 代码块
     const stripFlintBlocks = (content: string): string => {
-      return content.replace(/```flint\s*\n[\s\S]*?\n```/g, '');
-    };
+      return content.replace(/```flint\s*\n[\s\S]*?\n```/g, '')
+    }
 
     // 清理消息内容中的 HTML 代码块
     const stripHtmlBlocks = (content: string): string => {
-      return content.replace(/```html\s*\n[\s\S]*?\n```/g, '');
-    };
+      return content.replace(/```html\s*\n[\s\S]*?\n```/g, '')
+    }
 
     // 设置图表 DOM 引用
     const setFlintChartRef = (el: any, messageIndex: number, chartIdx: number) => {
       if (el) {
-        const key = `${messageIndex}-${chartIdx}`;
-        flintChartRefs.value.set(key, el as HTMLElement);
+        const key = `${messageIndex}-${chartIdx}`
+        flintChartRefs.value.set(key, el as HTMLElement)
       }
-    };
+    }
 
     // 渲染 Flint 图表
     const renderFlintCharts = async (messageIndex: number) => {
-      await nextTick();
-      const msg = messages.value[messageIndex];
-      if (!msg || !msg.flintSpecs || msg.flintSpecs.length === 0) return;
+      await nextTick()
+      const msg = messages.value[messageIndex]
+      if (!msg || !msg.flintSpecs || msg.flintSpecs.length === 0) return
 
       msg.flintSpecs.forEach((spec, chartIdx) => {
-        const key = `${messageIndex}-${chartIdx}`;
-        const domEl = flintChartRefs.value.get(key);
-        if (!domEl) return;
+        const key = `${messageIndex}-${chartIdx}`
+        const domEl = flintChartRefs.value.get(key)
+        if (!domEl) return
 
         // 确保容器有正确的宽度
-        const rect = domEl.getBoundingClientRect();
+        const rect = domEl.getBoundingClientRect()
         if (rect.width === 0) {
           // 宽度为0，等待下一帧再试
-          requestAnimationFrame(() => renderFlintCharts(messageIndex));
-          return;
+          requestAnimationFrame(() => renderFlintCharts(messageIndex))
+          return
         }
 
-        const existingInstance = flintChartInstances.value.get(key);
+        const existingInstance = flintChartInstances.value.get(key)
         if (existingInstance) {
-          existingInstance.dispose();
+          existingInstance.dispose()
         }
 
         // 根据容器实际尺寸重新生成 ECharts 配置，
         // 确保 flint-chart 计算的像素值（如饼图半径）与容器匹配
-        const actualW = domEl.clientWidth || 400;
-        const actualH = domEl.clientHeight || 300;
-        let chartOption = spec.echartsOption;
-        const specW = chartOption._width || 0;
-        const specH = chartOption._height || 0;
+        const actualW = domEl.clientWidth || 400
+        const actualH = domEl.clientHeight || 300
+        let chartOption = spec.echartsOption
+        const specW = chartOption._width || 0
+        const specH = chartOption._height || 0
         if (Math.abs(actualW - specW) > 20 || Math.abs(actualH - specH) > 20) {
           try {
             const reassembled = assembleECharts({
@@ -924,51 +963,51 @@ export default defineComponent({
                 ...spec.rawInput.chart_spec,
                 canvasSize: { width: actualW, height: actualH },
               },
-            });
-            chartOption = reassembled;
+            })
+            chartOption = reassembled
           } catch (e) {
-            console.warn('Failed to re-assemble Flint chart:', e);
+            console.warn('Failed to re-assemble Flint chart:', e)
           }
         }
 
         // 读取 chartProperties 中的自定义配置（mockdata 可配）
-        const rawChartProps = spec.rawInput?.chart_spec?.chartProperties || {};
-        const customYAxisLabel = rawChartProps.yAxisLabel as string | undefined;
-        const customXAxisLabel = rawChartProps.xAxisLabel as string | undefined;
-        const customLegendTitle = rawChartProps.legendTitle as string | undefined;
+        const rawChartProps = spec.rawInput?.chart_spec?.chartProperties || {}
+        const customYAxisLabel = rawChartProps.yAxisLabel as string | undefined
+        const customXAxisLabel = rawChartProps.xAxisLabel as string | undefined
+        const customLegendTitle = rawChartProps.legendTitle as string | undefined
 
         // 修正 static series（数组形式 y 编码）产生的合成轴名
         // flint-chart 内部用 __flint_series_value 作为 unpivot 后的值列名，
         // 折线图模板直接将其作为 y 轴标签，此处替换为原始字段名或自定义标签
-        const yAxisArr = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis];
-        const rawYEnc = spec.rawInput?.chart_spec?.encodings?.y;
+        const yAxisArr = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis]
+        const rawYEnc = spec.rawInput?.chart_spec?.encodings?.y
         if (Array.isArray(rawYEnc)) {
-          const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean);
-          const yLabel = customYAxisLabel || (fieldNames.length > 0 ? fieldNames.join(' / ') : '值');
+          const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean)
+          const yLabel = customYAxisLabel || (fieldNames.length > 0 ? fieldNames.join(' / ') : '值')
           for (const ya of yAxisArr) {
             if (ya && typeof ya.name === 'string' && ya.name.includes('flint_series_value')) {
-              ya.name = yLabel;
-              ya.nameGap = 55;
+              ya.name = yLabel
+              ya.nameGap = 55
             }
           }
         } else if (customYAxisLabel) {
           for (const ya of yAxisArr) {
-            if (ya) ya.name = customYAxisLabel;
+            if (ya) ya.name = customYAxisLabel
           }
         }
-        const xAxisArr = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis];
-        const rawXEnc = spec.rawInput?.chart_spec?.encodings?.x;
+        const xAxisArr = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis]
+        const rawXEnc = spec.rawInput?.chart_spec?.encodings?.x
         if (customXAxisLabel !== undefined) {
           // 显式配置了 x 轴标签（空字符串表示隐藏字段名标题）
           for (const xa of xAxisArr) {
-            if (xa) xa.name = customXAxisLabel;
+            if (xa) xa.name = customXAxisLabel
           }
         } else if (Array.isArray(rawXEnc)) {
-          const xFieldNames = rawXEnc.map((e: any) => e?.field || '').filter(Boolean);
-          const xLabel = xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值';
+          const xFieldNames = rawXEnc.map((e: any) => e?.field || '').filter(Boolean)
+          const xLabel = xFieldNames.length > 0 ? xFieldNames.join(' / ') : '值'
           for (const xa of xAxisArr) {
             if (xa && typeof xa.name === 'string' && xa.name.includes('flint_series_value')) {
-              xa.name = xLabel;
+              xa.name = xLabel
             }
           }
         }
@@ -976,20 +1015,20 @@ export default defineComponent({
         // 清除 flint-chart 自动生成的合成列名图例标题（如 __flint_series_key）
         // ecApplyLayoutToSpec 会用 color 字段名作为 graphic 文本添加到右上角
         if (chartOption.graphic) {
-          const graphics = Array.isArray(chartOption.graphic) ? chartOption.graphic : [chartOption.graphic];
+          const graphics = Array.isArray(chartOption.graphic) ? chartOption.graphic : [chartOption.graphic]
           const filtered = graphics.filter((g: any) => {
-            const text = g?.style?.text;
+            const text = g?.style?.text
             if (typeof text === 'string' && text.includes('flint_series_key')) {
-              return false;
+              return false
             }
-            return true;
-          });
-          chartOption.graphic = filtered.length > 0 ? filtered : undefined;
+            return true
+          })
+          chartOption.graphic = filtered.length > 0 ? filtered : undefined
         }
         // 如果用户配置了自定义图例标题，添加到 graphic 中
         if (customLegendTitle && chartOption.legend) {
-          const legendTop = chartOption.legend.top ?? 0;
-          const legendLeft = chartOption.legend.left ?? 'right';
+          const legendTop = chartOption.legend.top ?? 0
+          const legendLeft = chartOption.legend.left ?? 'right'
           const titleGraphic = {
             type: 'text' as const,
             left: legendLeft,
@@ -1002,68 +1041,68 @@ export default defineComponent({
               fill: '#333',
               textAlign: 'left',
             },
-          };
+          }
           chartOption.graphic = chartOption.graphic
             ? [...(Array.isArray(chartOption.graphic) ? chartOption.graphic : [chartOption.graphic]), titleGraphic]
-            : [titleGraphic];
+            : [titleGraphic]
         }
 
         // 双 Y 轴支持：当 chartProperties.dualYAxis 为 true 时，
         // 将数组形式 y 编码的各系列分配到左右两个 y 轴
         if (rawChartProps.dualYAxis && Array.isArray(rawYEnc) && chartOption.series) {
-          const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean);
-          const leftLabel = customYAxisLabel || fieldNames[0] || 'Y1';
-          const rightLabel = (rawChartProps.yAxis2Label as string) || fieldNames[1] || 'Y2';
-          const leftYAxis = Array.isArray(chartOption.yAxis) ? chartOption.yAxis[0] : chartOption.yAxis;
+          const fieldNames = rawYEnc.map((e: any) => e?.field || '').filter(Boolean)
+          const leftLabel = customYAxisLabel || fieldNames[0] || 'Y1'
+          const rightLabel = (rawChartProps.yAxis2Label as string) || fieldNames[1] || 'Y2'
+          const leftYAxis = Array.isArray(chartOption.yAxis) ? chartOption.yAxis[0] : chartOption.yAxis
 
           // 从两个系列中提取数据值，计算对齐的刻度
           const getSeriesValues = (s: any): number[] => {
-            if (!s || !Array.isArray(s.data)) return [];
+            if (!s || !Array.isArray(s.data)) return []
             return s.data.map((d: any) => {
-              if (typeof d === 'number') return d;
-              if (d && typeof d === 'object' && 'value' in d) return d.value;
-              return 0;
-            });
-          };
+              if (typeof d === 'number') return d
+              if (d && typeof d === 'object' && 'value' in d) return d.value
+              return 0
+            })
+          }
 
-          const leftValues = getSeriesValues(chartOption.series[0]);
-          const rightValues = getSeriesValues(chartOption.series[1]);
+          const leftValues = getSeriesValues(chartOption.series[0])
+          const rightValues = getSeriesValues(chartOption.series[1])
 
           // 计算"美观"的刻度范围和间隔，使双轴刻度对齐
           const computeNiceScale = (values: number[]) => {
             if (values.length === 0) {
-              return { min: 0, max: 100, interval: 25 };
+              return { min: 0, max: 100, interval: 25 }
             }
-            const min = Math.min(...values);
-            const max = Math.max(...values);
+            const min = Math.min(...values)
+            const max = Math.max(...values)
             if (min === max) {
-              const pad = Math.abs(max) * 0.1 || 1;
-              return { min: min - pad, max: max + pad, interval: pad * 2 };
+              const pad = Math.abs(max) * 0.1 || 1
+              return { min: min - pad, max: max + pad, interval: pad * 2 }
             }
-            const range = max - min;
-            const roughInterval = range / 5;
-            const mag = Math.pow(10, Math.floor(Math.log10(roughInterval)));
-            const norm = roughInterval / mag;
-            let niceInterval: number;
-            if (norm < 1.5) niceInterval = mag;
-            else if (norm < 3) niceInterval = 2 * mag;
-            else if (norm < 7) niceInterval = 5 * mag;
-            else niceInterval = 10 * mag;
-            const niceMin = Math.floor(min / niceInterval) * niceInterval;
-            const niceMax = Math.ceil(max / niceInterval) * niceInterval;
-            return { min: niceMin, max: niceMax, interval: niceInterval };
-          };
+            const range = max - min
+            const roughInterval = range / 5
+            const mag = Math.pow(10, Math.floor(Math.log10(roughInterval)))
+            const norm = roughInterval / mag
+            let niceInterval: number
+            if (norm < 1.5) niceInterval = mag
+            else if (norm < 3) niceInterval = 2 * mag
+            else if (norm < 7) niceInterval = 5 * mag
+            else niceInterval = 10 * mag
+            const niceMin = Math.floor(min / niceInterval) * niceInterval
+            const niceMax = Math.ceil(max / niceInterval) * niceInterval
+            return { min: niceMin, max: niceMax, interval: niceInterval }
+          }
 
-          const leftScale = computeNiceScale(leftValues);
-          const rightScale = computeNiceScale(rightValues);
+          const leftScale = computeNiceScale(leftValues)
+          const rightScale = computeNiceScale(rightValues)
 
           // 使用相同的分割数使双轴刻度对齐
-          const leftTickCount = Math.round((leftScale.max - leftScale.min) / leftScale.interval);
-          const rightInterval = (rightScale.max - rightScale.min) / leftTickCount;
+          const leftTickCount = Math.round((leftScale.max - leftScale.min) / leftScale.interval)
+          const rightInterval = (rightScale.max - rightScale.min) / leftTickCount
 
           // 确保右轴的最小值与左轴对齐（都是 interval 的整数倍）
-          const rightMin = Math.floor(rightScale.min / rightInterval) * rightInterval;
-          const rightMax = Math.ceil(rightScale.max / rightInterval) * rightInterval;
+          const rightMin = Math.floor(rightScale.min / rightInterval) * rightInterval
+          const rightMax = Math.ceil(rightScale.max / rightInterval) * rightInterval
 
           // 从左轴继承视觉样式，确保右轴样式一致
           const leftAxisStyle = {
@@ -1072,7 +1111,7 @@ export default defineComponent({
             axisLabel: leftYAxis?.axisLabel ?? { show: true },
             splitLine: leftYAxis?.splitLine ?? { show: true, lineStyle: {} },
             nameTextStyle: leftYAxis?.nameTextStyle ?? {},
-          };
+          }
 
           chartOption.yAxis = [
             {
@@ -1103,25 +1142,25 @@ export default defineComponent({
               interval: rightInterval,
               splitLine: { show: false },
             },
-          ];
+          ]
           // 将第 2 个系列分配到右轴
           if (chartOption.series.length >= 2) {
-            chartOption.series[1].yAxisIndex = 1;
+            chartOption.series[1].yAxisIndex = 1
           }
           // 右轴需要额外的 grid 右边距
           if (chartOption.grid) {
-            const grids = Array.isArray(chartOption.grid) ? chartOption.grid : [chartOption.grid];
+            const grids = Array.isArray(chartOption.grid) ? chartOption.grid : [chartOption.grid]
             for (const g of grids) {
-              if (g) g.right = (typeof g.right === 'number' ? g.right : 40) + 50;
+              if (g) g.right = (typeof g.right === 'number' ? g.right : 40) + 50
             }
           } else {
-            chartOption.grid = { right: 70 };
+            chartOption.grid = { right: 70 }
           }
         }
 
         // 补充图例（flint-chart 默认不生成 legend）
         if (!chartOption.legend && chartOption.series) {
-          const hasPie = chartOption.series.some((s: any) => s.type === 'pie');
+          const hasPie = chartOption.series.some((s: any) => s.type === 'pie')
           if (hasPie) {
             chartOption.legend = {
               orient: 'horizontal',
@@ -1130,13 +1169,13 @@ export default defineComponent({
               itemWidth: 10,
               itemHeight: 10,
               textStyle: { fontSize: 12 },
-            };
+            }
           } else {
             chartOption.legend = {
               orient: 'horizontal',
               bottom: 0,
               textStyle: { fontSize: 12 },
-            };
+            }
           }
         }
 
@@ -1145,312 +1184,312 @@ export default defineComponent({
           ? chartOption.series
           : chartOption.series
             ? [chartOption.series]
-            : [];
-        const hasPieSeries = seriesList.some((s: any) => s && s.type === 'pie');
+            : []
+        const hasPieSeries = seriesList.some((s: any) => s && s.type === 'pie')
         if (hasPieSeries) {
           // 饼图：放大半径（flint 保守比例在对话框容器里留白过多），
           // 上下预留外部标签空间，左右预留标签文字空间
           for (const s of seriesList) {
-            if (!s || s.type !== 'pie') continue;
-            const r = s.radius;
-            let innerPx = 0;
-            let outerPx = 0;
+            if (!s || s.type !== 'pie') continue
+            const r = s.radius
+            let innerPx = 0
+            let outerPx = 0
             if (Array.isArray(r)) {
-              innerPx = parseFloat(r[0]) || 0;
-              outerPx = parseFloat(r[1]) || 0;
+              innerPx = parseFloat(r[0]) || 0
+              outerPx = parseFloat(r[1]) || 0
             } else if (typeof r === 'string') {
-              outerPx = parseFloat(r) || 0;
+              outerPx = parseFloat(r) || 0
             }
             if (outerPx > 0) {
-              const maxOuter = Math.min((actualH - 84) / 2, (actualW - 160) / 2);
-              const newOuter = Math.round(Math.max(outerPx, maxOuter));
-              const ratio = innerPx > 0 ? innerPx / outerPx : 0;
-              s.radius = ratio > 0 ? [`${Math.round(newOuter * ratio)}px`, `${newOuter}px`] : `${newOuter}px`;
+              const maxOuter = Math.min((actualH - 84) / 2, (actualW - 160) / 2)
+              const newOuter = Math.round(Math.max(outerPx, maxOuter))
+              const ratio = innerPx > 0 ? innerPx / outerPx : 0
+              s.radius = ratio > 0 ? [`${Math.round(newOuter * ratio)}px`, `${newOuter}px`] : `${newOuter}px`
             }
           }
         } else if (chartOption.xAxis || chartOption.yAxis) {
           // 笛卡尔图表：图例移到底部居中（释放右侧整列留白），收紧四周 grid
           if (chartOption.legend) {
-            delete chartOption.legend.right;
+            delete chartOption.legend.right
             chartOption.legend = {
               ...chartOption.legend,
               orient: 'horizontal',
               left: 'center',
               top: 'auto',
               bottom: 0,
-            };
+            }
           }
-          const yAxisList = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis];
-          const xAxisList = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis];
-          const isDualY = yAxisList.filter(Boolean).length > 1;
-          const hasYTitle = yAxisList.some((y: any) => y && y.name);
-          const hasXTitle = xAxisList.some((x: any) => x && x.name);
-          const grids = Array.isArray(chartOption.grid) ? chartOption.grid : [chartOption.grid || {}];
+          const yAxisList = Array.isArray(chartOption.yAxis) ? chartOption.yAxis : [chartOption.yAxis]
+          const xAxisList = Array.isArray(chartOption.xAxis) ? chartOption.xAxis : [chartOption.xAxis]
+          const isDualY = yAxisList.filter(Boolean).length > 1
+          const hasYTitle = yAxisList.some((y: any) => y && y.name)
+          const hasXTitle = xAxisList.some((x: any) => x && x.name)
+          const grids = Array.isArray(chartOption.grid) ? chartOption.grid : [chartOption.grid || {}]
           for (const g of grids) {
-            if (!g) continue;
-            g.containLabel = true;
+            if (!g) continue
+            g.containLabel = true
             // 轴标题（nameGap 40/55）在 grid 之外，需额外预留
-            g.left = isDualY ? 70 : hasYTitle ? 56 : 10;
-            g.right = isDualY ? 64 : 10;
-            g.top = 16;
-            g.bottom = (hasXTitle ? 48 : 28) + 24; // x 轴标题 + 底部图例
+            g.left = isDualY ? 70 : hasYTitle ? 56 : 10
+            g.right = isDualY ? 64 : 10
+            g.top = 16
+            g.bottom = (hasXTitle ? 48 : 28) + 24 // x 轴标题 + 底部图例
           }
         }
 
-        const chartInstance = echarts.init(domEl);
-        chartInstance.setOption(chartOption);
-        flintChartInstances.value.set(key, chartInstance);
+        const chartInstance = echarts.init(domEl)
+        chartInstance.setOption(chartOption)
+        flintChartInstances.value.set(key, chartInstance)
 
         // 使用 ResizeObserver 监听容器尺寸变化
         if (typeof ResizeObserver !== 'undefined') {
           const observer = new ResizeObserver(() => {
-            chartInstance.resize();
-          });
-          observer.observe(domEl);
-          resizeObservers.push(observer);
+            chartInstance.resize()
+          })
+          observer.observe(domEl)
+          resizeObservers.push(observer)
         }
-      });
-    };
+      })
+    }
 
     // 存储 ResizeObserver 以便清理
-    const resizeObservers: ResizeObserver[] = [];
+    const resizeObservers: ResizeObserver[] = []
 
     // 格式化内容（清理 Flint/HTML 块 + 标准格式化）
     const formatContent = (content: string): string => {
-      const cleaned = stripHtmlBlocks(stripFlintBlocks(content));
+      const cleaned = stripHtmlBlocks(stripFlintBlocks(content))
       return cleaned
-        .replace(/\n/g, "<br />")
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/`(.*?)`/g, "<code>$1</code>");
-    };
+        .replace(/\n/g, '<br />')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+    }
 
     const formatTime = (timestamp: number): string => {
-      const date = new Date(timestamp);
-      const hours = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
-      return `${hours}:${minutes}`;
-    };
+      const date = new Date(timestamp)
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${hours}:${minutes}`
+    }
 
-    const copyMessageContent = (message: { content: string }) => {
+    const copyMessageContent = (message: { content: string; }) => {
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(message.content).then(() => {
         }).catch(() => {
-          fallbackCopy(message.content);
-        });
+          fallbackCopy(message.content)
+        })
       } else {
-        fallbackCopy(message.content);
+        fallbackCopy(message.content)
       }
-    };
+    }
 
     const fallbackCopy = (text: string) => {
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-9999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-9999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
       try {
-        document.execCommand("copy");
+        document.execCommand('copy')
       } catch (err) {
       }
-      document.body.removeChild(textArea);
-    };
+      document.body.removeChild(textArea)
+    }
 
     const clearMessages = () => {
-      disposeAllCharts();
-      messages.value = [];
-      showWelcomeMessage();
-    };
+      disposeAllCharts()
+      messages.value = []
+      showWelcomeMessage()
+    }
 
     // 切换技能选中状态
     const toggleSkill = (messageIndex: number, skillName: string) => {
-      const msg = messages.value[messageIndex];
-      if (!msg || !msg.selectedSkills || msg.interactionResolved) return;
-      const idx = msg.selectedSkills.indexOf(skillName);
+      const msg = messages.value[messageIndex]
+      if (!msg || !msg.selectedSkills || msg.interactionResolved) return
+      const idx = msg.selectedSkills.indexOf(skillName)
       if (idx === -1) {
-        msg.selectedSkills.push(skillName);
+        msg.selectedSkills.push(skillName)
       } else {
-        msg.selectedSkills.splice(idx, 1);
+        msg.selectedSkills.splice(idx, 1)
       }
-    };
+    }
 
     // 确认技能选择
     // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的确认按钮
     // （如"确认"等）都能匹配对应状态的关键词
     const confirmSkillSelection = (messageIndex: number, btn?: ButtonConfig) => {
-      const msg = messages.value[messageIndex];
-      if (!msg || msg.interactionResolved) return;
-      const selected = msg.selectedSkills || [];
-      msg.interactionResolved = true;
+      const msg = messages.value[messageIndex]
+      if (!msg || msg.interactionResolved) return
+      const selected = msg.selectedSkills || []
+      msg.interactionResolved = true
       // 优先使用 mockdata.json 中按钮配置的 resolvedText；
       // resolvedText 支持 {selected} 占位符，自动替换为用户实际勾选的技能；
       // 若 resolvedText 为空但有选中项，仍显示选中项摘要；否则不显示提示文本
       if (btn?.resolvedText) {
-        msg.interactionText = btn.resolvedText.replace(/\{selected\}/g, selected.length > 0 ? selected.join('、') : '（未选择）');
+        msg.interactionText = btn.resolvedText.replace(/\{selected\}/g, selected.length > 0 ? selected.join('、') : '（未选择）')
       } else if (selected.length > 0) {
-        msg.interactionText = `已选择：${selected.join('、')}`;
+        msg.interactionText = `已选择：${selected.join('、')}`
       } else {
-        msg.interactionText = undefined;
+        msg.interactionText = undefined
       }
-      sendInteractionMessage(btn?.text || '确认');
-    };
+      sendInteractionMessage(btn?.text || '确认')
+    }
 
     // 取消技能选择
     // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的取消按钮
     // 都能匹配对应状态的关键词
     const cancelSkillSelection = (messageIndex: number, btn?: ButtonConfig) => {
-      const msg = messages.value[messageIndex];
-      if (!msg || msg.interactionResolved) return;
-      msg.interactionResolved = true;
-      msg.selectedSkills = [];
+      const msg = messages.value[messageIndex]
+      if (!msg || msg.interactionResolved) return
+      msg.interactionResolved = true
+      msg.selectedSkills = []
       // 优先使用 mockdata.json 中按钮配置的 resolvedText；为空则不展示提示文本
-      msg.interactionText = btn?.resolvedText || undefined;
-      sendInteractionMessage(btn?.text || '取消');
-    };
+      msg.interactionText = btn?.resolvedText || undefined
+      sendInteractionMessage(btn?.text || '取消')
+    }
 
     // 确认技能列表
     // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的确认按钮
     // （如"确认联动"、"确认屏蔽"、"确认"等）都能匹配对应状态的关键词
     const confirmSkillList = (messageIndex: number, btn?: ButtonConfig) => {
-      const msg = messages.value[messageIndex];
-      if (!msg || msg.interactionResolved) return;
-      msg.interactionResolved = true;
+      const msg = messages.value[messageIndex]
+      if (!msg || msg.interactionResolved) return
+      msg.interactionResolved = true
       // 优先使用 mockdata.json 中按钮配置的 resolvedText；为空则不展示提示文本
-      msg.interactionText = btn?.resolvedText || undefined;
-      sendInteractionMessage(btn?.text || '确认');
-    };
+      msg.interactionText = btn?.resolvedText || undefined
+      sendInteractionMessage(btn?.text || '确认')
+    }
 
     // 取消技能列表
     // 使用按钮实际文本作为消息发送给脚本引擎，使不同场景的取消按钮
     // （如"取消"、"生成清洁工单"等）都能匹配对应状态的关键词
     const cancelSkillList = (messageIndex: number, btn?: ButtonConfig) => {
-      const msg = messages.value[messageIndex];
-      if (!msg || msg.interactionResolved) return;
-      msg.interactionResolved = true;
+      const msg = messages.value[messageIndex]
+      if (!msg || msg.interactionResolved) return
+      msg.interactionResolved = true
       // 优先使用 mockdata.json 中按钮配置的 resolvedText；为空则不展示提示文本
-      msg.interactionText = btn?.resolvedText || undefined;
-      sendInteractionMessage(btn?.text || '取消');
-    };
+      msg.interactionText = btn?.resolvedText || undefined
+      sendInteractionMessage(btn?.text || '取消')
+    }
 
     // 发送交互结果消息（不显示用户消息，直接触发脚本引擎返回结果）
     const sendInteractionMessage = (text: string) => {
-      isLoading.value = true;
+      isLoading.value = true
       setTimeout(async () => {
         const thinkingMessage = {
-          role: "assistant" as const,
-          content: "",
+          role: 'assistant' as const,
+          content: '',
           timestamp: Date.now(),
           isThinking: true,
-          thinkingContent: "AI 正在思考中，请稍候...",
-        };
-        messages.value.push(thinkingMessage);
-        await scrollToBottom();
-      }, 300);
+          thinkingContent: 'AI 正在思考中，请稍候...',
+        }
+        messages.value.push(thinkingMessage)
+        await scrollToBottom()
+      }, 300)
 
       setTimeout(async () => {
-        const response = scriptEngine.getResponse(text);
-        const flintSpecs = parseFlintSpecs(response);
-        const htmlInteractions = parseHtmlInteractions(response);
-        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim();
+        const response = scriptEngine.getResponse(text)
+        const flintSpecs = parseFlintSpecs(response)
+        const htmlInteractions = parseHtmlInteractions(response)
+        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim()
 
-        const thinkingIndex = messages.value.findIndex((msg) => msg.isThinking);
+        const thinkingIndex = messages.value.findIndex(msg => msg.isThinking)
         if (thinkingIndex !== -1) {
           messages.value[thinkingIndex] = {
-            role: "assistant" as const,
-            content: "",
+            role: 'assistant' as const,
+            content: '',
             timestamp: Date.now(),
             isThinking: false,
             flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
             htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
             selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
             interactionResolved: false,
-          };
-          await scrollToBottom();
+          }
+          await scrollToBottom()
 
-          const typingSpeed = 50;
-          let index = 0;
+          const typingSpeed = 50
+          let index = 0
           const interval = setInterval(() => {
             if (index < textContent.length) {
-              messages.value[thinkingIndex].content = textContent.slice(0, index + 1);
-              index++;
-              scrollToBottom();
+              messages.value[thinkingIndex].content = textContent.slice(0, index + 1)
+              index++
+              scrollToBottom()
             } else {
-              clearInterval(interval);
-              isLoading.value = false;
+              clearInterval(interval)
+              isLoading.value = false
               if (flintSpecs.length > 0) {
-                renderFlintCharts(thinkingIndex);
+                renderFlintCharts(thinkingIndex)
               }
             }
-          }, typingSpeed);
+          }, typingSpeed)
         }
-      }, 2500 + Math.random() * 500);
-    };
+      }, 2500 + Math.random() * 500)
+    }
 
     const handleFileSelect = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const files = target.files;
-      if (!files) return;
+      const target = event.target as HTMLInputElement
+      const files = target.files
+      if (!files) return
 
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        const file = files[i]
         uploadedFiles.value.push({
           id: `${Date.now()}-${i}`,
           name: file.name,
           size: file.size,
-        });
+        })
       }
 
-      target.value = "";
-    };
+      target.value = ''
+    }
 
     const removeFile = (id: string) => {
-      uploadedFiles.value = uploadedFiles.value.filter((file) => file.id !== id);
-    };
+      uploadedFiles.value = uploadedFiles.value.filter(file => file.id !== id)
+    }
 
     const openFileDialog = () => {
-      fileInputRef.value?.click();
-    };
+      fileInputRef.value?.click()
+    }
 
     const formatFileSize = (size: number): string => {
       if (size < 1024) {
-        return `${size} B`;
+        return `${size} B`
       } else if (size < 1024 * 1024) {
-        return `${(size / 1024).toFixed(1)} KB`;
+        return `${(size / 1024).toFixed(1)} KB`
       } else {
-        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`
       }
-    };
+    }
 
     // 获取按钮配置，如果未配置则使用默认值
     const getButtons = (interaction: HtmlInteraction) => {
       if (interaction.buttons && interaction.buttons.length > 0) {
-        return interaction.buttons;
+        return interaction.buttons
       }
       // 默认按钮配置
       return [
         { type: 'confirm' as const, text: '确定' },
-        { type: 'cancel' as const, text: '取消' }
-      ];
-    };
+        { type: 'cancel' as const, text: '取消' },
+      ]
+    }
 
     // 获取按钮的内联样式（用于每个按钮单独配置颜色）
     const getButtonInlineStyle = (btn: ButtonConfig) => {
       if (!btn.color) {
-        return {};
+        return {}
       }
-      const style: Record<string, string> = {};
+      const style: Record<string, string> = {}
       if (btn.color.backgroundColor) {
-        style.background = btn.color.backgroundColor;
+        style.background = btn.color.backgroundColor
       }
       if (btn.color.textColor) {
-        style.color = btn.color.textColor;
+        style.color = btn.color.textColor
       }
       if (btn.type === 'cancel' && btn.color.borderColor) {
-        style.border = `1px solid ${btn.color.borderColor}`;
+        style.border = `1px solid ${btn.color.borderColor}`
       }
-      return style;
-    };
+      return style
+    }
 
     return {
       dialogVisible,
@@ -1458,6 +1497,7 @@ export default defineComponent({
       messages,
       isLoading,
       messageContainer,
+      mdEditorVisible,
       sendMessage,
       clearMessages,
       handleClose,
@@ -1487,9 +1527,9 @@ export default defineComponent({
       getButtonInlineStyle,
       chatFontScale,
       chatFontStyle,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="scss" scoped>
@@ -1576,6 +1616,36 @@ export default defineComponent({
 
 .custom-dialog-close:hover {
   background-color: rgba(255, 255, 255, 0.25);
+}
+
+.custom-dialog-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.md-editor-toggle {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  font-size: calc(15px * var(--chat-font-scale, 1));
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.md-editor-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.md-editor-toggle.active {
+  background-color: rgba(255, 255, 255, 0.35);
 }
 
 .dify-api-container {

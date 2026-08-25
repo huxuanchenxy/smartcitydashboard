@@ -10,6 +10,8 @@
         :initial-size="initialSize"
         :font-scale="fontScale"
         role="backend_ops"
+        :md-editor="true"
+        md-editor-storage-key="agent-config-md-doc"
       />
     </div>
     <div class="right-panel">
@@ -24,11 +26,8 @@
         <span class="font-config-hint">按 Ctrl+空格（若被输入法占用则用 Ctrl+Shift+空格）保存并收起；应用于对话页眉、消息内容、输入框及页脚区域</span>
       </div>
       <div class="panel-header">
-        <div class="panel-header-info">
-          <h3>技能库</h3>
-          <span class="panel-subtitle">选择技能添加到 Agent</span>
-        </div>
-        <button class="md-editor-btn" @click="mdDialogVisible = true">📝 Markdown 编辑器</button>
+        <h3>技能库</h3>
+        <span class="panel-subtitle">选择技能添加到 Agent</span>
       </div>
       <div class="skills-grid">
         <div
@@ -48,20 +47,12 @@
         </div>
       </div>
     </div>
-    <MdEditorDialog
-      v-model:visible="mdDialogVisible"
-      v-model="mdContent"
-      title="Agent 说明文档"
-      file-name="agent.md"
-      @save="handleMdSave"
-    />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
 import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
-import MdEditorDialog from '@/components/dify-chatbot/MdEditorDialog.vue'
 import {
   getFontScale,
   setFontScale,
@@ -81,7 +72,6 @@ export default defineComponent({
   name: 'AgentConfig',
   components: {
     DifyApiDemoDialog,
-    MdEditorDialog,
   },
   setup() {
     const showDialog = ref(true)
@@ -142,17 +132,6 @@ export default defineComponent({
 
     const addSkill = (skill: Skill) => {
       console.log('添加技能:', skill.name)
-    }
-
-    // Markdown 说明文档编辑：内容持久化到 localStorage，与字体缩放配置保持一致的存储策略
-    const AGENT_MD_KEY = 'agent-config-md-doc'
-    const DEFAULT_MD = '# Agent 说明文档\n\n在这里编辑 Agent 的说明文档...\n\n- 支持 **Markdown** 语法\n- 左侧编辑，右侧实时预览\n'
-    const mdDialogVisible = ref(false)
-    const mdContent = ref(window.localStorage.getItem(AGENT_MD_KEY) || DEFAULT_MD)
-
-    const handleMdSave = (content: string) => {
-      mdContent.value = content
-      window.localStorage.setItem(AGENT_MD_KEY, content)
     }
 
     // 字体整体缩放配置：默认隐藏，Ctrl+空格 唤起；再次按 Ctrl+空格 保存到 localStorage 并收起
@@ -222,9 +201,6 @@ export default defineComponent({
       initialSize,
       skills,
       addSkill,
-      mdDialogVisible,
-      mdContent,
-      handleMdSave,
       fontConfigVisible,
       fontScale,
       minFontScale: MIN_FONT_SCALE,
@@ -351,13 +327,10 @@ export default defineComponent({
 }
 
 .panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   margin-bottom: 20px;
 }
 
-.panel-header-info h3 {
+.panel-header h3 {
   margin: 0 0 4px 0;
   font-size: 20px;
   font-weight: 600;
@@ -367,25 +340,6 @@ export default defineComponent({
 .panel-subtitle {
   font-size: 13px;
   color: #94a3b8;
-}
-
-.md-editor-btn {
-  height: 36px;
-  padding: 0 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background-color: #fff;
-  color: #334155;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.md-editor-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
 }
 
 .skills-grid::-webkit-scrollbar {

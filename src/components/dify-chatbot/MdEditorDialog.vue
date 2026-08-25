@@ -1,8 +1,13 @@
 <template>
   <Teleport to="body">
     <transition name="md-dialog-fade">
-      <div v-if="visible" class="md-editor-dialog-mask" @mousedown.self="handleClose">
-        <div class="md-editor-dialog">
+      <div
+        v-if="visible"
+        class="md-editor-dialog-mask"
+        :class="{ 'md-mask-docked': isDocked }"
+        @mousedown.self="handleClose"
+      >
+        <div class="md-editor-dialog" :class="{ 'md-editor-dialog-docked': isDocked }" :style="dialogStyle">
           <div class="md-editor-dialog-header">
             <div class="md-editor-dialog-title">
               <span class="title-icon">📝</span>
@@ -45,12 +50,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, onUnmounted } from 'vue'
+import { defineComponent, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 // md-editor-v3@2.2.0 仅提供默认导出
 import MdEditor from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { saveAs } from 'file-saver'
 import type { ToolbarNames } from 'md-editor-v3/lib/MdEditor/type'
+
+const DEFAULT_CONTENT = '# Markdown 文档\n\n在这里开始编辑...\n\n- 支持 **Markdown** 语法\n- 左侧编辑，右侧实时预览\n'
 
 export default defineComponent({
   name: 'MdEditorDialog',
@@ -74,22 +81,82 @@ export default defineComponent({
       type: String,
       default: 'document.md',
     },
+    // 停靠锚点：三个都传入时，编辑器吸附在锚点右侧（用于紧靠 DifyApiDemoDialog），否则居中弹窗
+    dockLeft: {
+      type: Number,
+      default: null,
+    },
+    dockTop: {
+      type: Number,
+      default: null,
+    },
+    dockHeight: {
+      type: Number,
+      default: null,
+    },
+    // 传入后内容自行持久化到 localStorage，宿主无需管理内容
+    storageKey: {
+      type: String,
+      default: '',
+    },
   },
   emits: ['update:visible', 'update:modelValue', 'save'],
   setup(props, { emit }) {
-    const draft = ref(props.modelValue)
-    const initial = ref(props.modelValue)
+    const isDocked = computed(
+      () => props.dockLeft !== null && props.dockTop !== null && props.dockHeight !== null,
+    )
+
+    const loadContent = () => {
+      if (props.storageKey) {
+        return window.localStorage.getItem(props.storageKey) || props.modelValue || DEFAULT_CONTENT
+      }
+      return props.modelValue
+    }
+
+    const draft = ref(loadContent())
+    const initial = ref(draft.value)
     const fileInputRef = ref<HTMLInputElement | null>(null)
 
     const dirty = computed(() => draft.value !== initial.value)
+
+    // 停靠模式下视口尺寸变化时需重新计算宽度
+    const viewportTick = ref(0)
+    const onViewportResize = () => {
+      viewportTick.value += 1
+    }
+
+    onMounted(() => {
+      window.addEventListener('resize', onViewportResize)
+    })
+
+    const dialogStyle = computed(() => {
+      // 访问 tick 以便窗口缩放时重新计算
+      void viewportTick.value
+      if (!isDocked.value) {
+        return {}
+      }
+      const gap = 12
+      const margin = 16
+      const preferred = 640
+      const minWidth = 360
+      const available = window.innerWidth - (props.dockLeft + gap) - margin
+      const width = Math.max(Math.min(preferred, available), minWidth)
+      return {
+        left: `${props.dockLeft + gap}px`,
+        top: `${props.dockTop}px`,
+        height: `${props.dockHeight}px`,
+        width: `${width}px`,
+      }
+    })
 
     watch(
       () => props.visible,
       val => {
         if (val) {
           // 每次打开时与外部内容同步，避免弹层内残留上次草稿
-          draft.value = props.modelValue
-          initial.value = props.modelValue
+          const content = loadContent()
+          draft.value = content
+          initial.value = content
         }
       },
     )
@@ -106,6 +173,9 @@ export default defineComponent({
     }
 
     const handleSave = () => {
+      if (props.storageKey) {
+        window.localStorage.setItem(props.storageKey, draft.value)
+      }
       emit('update:modelValue', draft.value)
       emit('save', draft.value)
       initial.value = draft.value
@@ -159,11 +229,14 @@ export default defineComponent({
 
     onUnmounted(() => {
       document.removeEventListener('keydown', onKeydown)
+      window.removeEventListener('resize', onViewportResize)
     })
 
     return {
       draft,
       dirty,
+      isDocked,
+      dialogStyle,
       fileInputRef,
       // github、save 为用不到的工具栏按钮；save 的默认行为是往 localStorage 存草稿，保存由页脚按钮接管
       toolbarsExclude: ['github', 'save'] as ToolbarNames[],
@@ -191,6 +264,13 @@ export default defineComponent({
   backdrop-filter: blur(4px);
 }
 
+/* 停靠模式：不遮罩页面、不拦截事件，保证对话窗仍可操作；关闭走 ✕ / Esc / 头部开关 */
+.md-mask-docked {
+  background-color: transparent;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
 .md-editor-dialog {
   display: flex;
   flex-direction: column;
@@ -200,6 +280,15 @@ export default defineComponent({
   background-color: #fff;
   border-radius: 16px;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
+}
+
+/* 停靠模式：尺寸由 dialogStyle 内联控制，额外加描边与页面区分；恢复被遮罩禁用的事件 */
+.md-editor-dialog-docked {
+  position: fixed;
+  width: auto;
+  height: auto;
+  border: 1px solid #e2e8f0;
+  pointer-events: auto;
 }
 
 .md-editor-dialog-header {
