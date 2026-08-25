@@ -283,7 +283,7 @@
           </div>
         </div>
       </div>
-      <!-- Markdown 编辑器：停靠在本对话窗右侧，锚点随拖拽/缩放同步变化 -->
+      <!-- Markdown 编辑器：停靠在本对话窗右侧并向右铺满视口，锚点随拖拽/缩放同步变化 -->
       <MdEditorDialog
         v-if="mdEditor"
         v-model:visible="mdEditorVisible"

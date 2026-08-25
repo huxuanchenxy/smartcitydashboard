@@ -222,13 +222,14 @@ export default defineComponent({
 }
 
 .left-panel {
-  flex: 1;
+  /* 与 right-panel 3:5 分屏：对话窗比早期对半分缩小 1/4，腾出的宽度给技能库 */
+  flex: 3;
   position: relative;
   min-width: 0;
 }
 
 .right-panel {
-  flex: 1;
+  flex: 5;
   display: flex;
   flex-direction: column;
   padding: 24px;

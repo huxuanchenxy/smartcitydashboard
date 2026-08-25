@@ -137,10 +137,10 @@ export default defineComponent({
       }
       const gap = 12
       const margin = 16
-      const preferred = 640
       const minWidth = 360
+      // dockLeft 为对话窗右边缘，编辑器停靠其后并向右铺满至视口右侧留白处
       const available = window.innerWidth - (props.dockLeft + gap) - margin
-      const width = Math.max(Math.min(preferred, available), minWidth)
+      const width = Math.max(available, minWidth)
       return {
         left: `${props.dockLeft + gap}px`,
         top: `${props.dockTop}px`,
