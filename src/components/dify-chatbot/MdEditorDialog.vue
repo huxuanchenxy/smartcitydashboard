@@ -24,7 +24,7 @@
             <MdEditor
               :model-value="draft"
               style="height: 100%"
-              :toolbars-exclude="toolbarsExclude"
+              :toolbars="toolbars"
               preview-theme="default"
               @update:model-value="onInput"
             />
@@ -238,8 +238,41 @@ export default defineComponent({
       isDocked,
       dialogStyle,
       fileInputRef,
-      // github、save 为用不到的工具栏按钮；save 的默认行为是往 localStorage 存草稿，保存由页脚按钮接管
-      toolbarsExclude: ['github', 'save'] as ToolbarNames[],
+      // 工具栏白名单：只保留常用核心功能，去掉下划线/删除线/上下标/图片/mermaid/公式/目录等低频按钮
+      toolbars: [
+        'bold',
+        'italic',
+        '-',
+        'title',
+        'quote',
+        'unorderedList',
+        'orderedList',
+        '-',
+        'code',
+        'link',
+        'table',
+        '-',
+        'revoke',
+        'next',
+        '=',
+        'pageFullscreen',
+        'preview',
+        // ---- 以下为被排除的低频按钮，需要时去掉对应行的注释即可加回 ----
+        // 'underline', // 下划线
+        // 'strikeThrough', // 删除线
+        // 'sub', // 下标
+        // 'sup', // 上标
+        // 'codeRow', // 行内代码
+        // 'image', // 图片（未配置上传处理器）
+        // 'mermaid', // mermaid 图表
+        // 'katex', // KaTeX 公式
+        // 'save', // 保存草稿到 localStorage（已由页脚保存按钮接管）
+        // 'prettier', // prettier 文本美化
+        // 'fullscreen', // 浏览器全屏
+        // 'htmlPreview', // HTML 预览
+        // 'catalog', // 目录
+        // 'github', // GitHub 链接
+      ] as ToolbarNames[],
       onInput,
       handleClose,
       handleSave,
