@@ -30,7 +30,7 @@
             />
           </div>
           <div class="md-editor-dialog-footer">
-            <span class="word-count">共 {{ draft.length }} 字符</span>
+            <!-- 字数统计使用编辑器自带的底栏显示，此处不再重复 -->
             <div class="footer-actions">
               <button class="btn btn-cancel" @click="handleClose">取消</button>
               <button class="btn btn-save" @click="handleSave">保存</button>
@@ -405,15 +405,10 @@ export default defineComponent({
 .md-editor-dialog-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px 20px;
   border-top: 1px solid #e2e8f0;
   background-color: #f8fafc;
-}
-
-.word-count {
-  font-size: 12px;
-  color: #94a3b8;
 }
 
 .footer-actions {
