@@ -820,6 +820,11 @@ export default defineComponent({
       userQuery.value = ''
       uploadedFiles.value = []
 
+      // 立即滚动到底部，确保刚发送的消息在可视区域内
+      await scrollToBottom()
+      // 附件图片等异步渲染完成后再次校准滚动位置
+      setTimeout(scrollToBottom, 100)
+
       isLoading.value = true
 
       setTimeout(async () => {

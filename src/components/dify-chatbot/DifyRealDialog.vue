@@ -1176,6 +1176,11 @@ export default defineComponent({
       userQuery.value = ''
       uploadedFiles.value = []
 
+      // 立即滚动到底部，确保刚发送的消息在可视区域内
+      await scrollToBottom()
+      // 附件图片等异步渲染完成后再次校准滚动位置
+      setTimeout(scrollToBottom, 100)
+
       isLoading.value = true
 
       // 尚无会话：先握手拿后端 sessionId（首条消息内容用作列表标题）
