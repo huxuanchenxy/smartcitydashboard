@@ -242,8 +242,8 @@ export default defineComponent({
 }
 
 .left-panel {
-  /* 默认与 right-panel 1:1 分屏；MD 编辑器展开时通过 .md-editor-open 切为 3:5 */
-  flex: 1;
+  /* 默认 2:1 分屏（对话窗占 2 份，技能库占 1 份）；MD 编辑器展开时通过 .md-editor-open 切为 3:5 给停靠的编辑器腾地方 */
+  flex: 2;
   position: relative;
   min-width: 0;
   transition: flex 0.25s ease;
@@ -351,8 +351,8 @@ export default defineComponent({
   flex: 1;
   display: grid;
 
-  /* 每列至少占容器一半宽 → 宽度充裕时最多两列（8 个技能正好 4×2 无空格）；容器过窄时回落到 280px 单列 */
-  grid-template-columns: repeat(auto-fill, minmax(max(280px, calc((100% - 16px) / 2)), 1fr));
+  /* 单列布局：技能卡片纵向排列，腾出的横向空间留给左侧对话窗 */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   overflow-y: auto;
   padding: 4px 8px 4px 4px;
