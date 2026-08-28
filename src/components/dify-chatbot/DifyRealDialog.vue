@@ -806,6 +806,11 @@ export default defineComponent({
           }
           // 普通助手回复
           if (data.content != null) {
+            // 用真实回复替换「思考中」占位消息
+            const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+            if (thinkingIdx !== -1) {
+              messages.value.splice(thinkingIdx, 1)
+            }
             messages.value.push({
               role: 'assistant',
               content: String(data.content),
@@ -1183,6 +1188,16 @@ export default defineComponent({
 
       isLoading.value = true
 
+      // 插入「思考中」占位消息，等待 WS 回复后替换
+      messages.value.push({
+        role: 'assistant' as const,
+        content: '',
+        timestamp: Date.now(),
+        isThinking: true,
+        thinkingContent: 'AI 正在思考中...',
+      })
+      await scrollToBottom()
+
       // 尚无会话：先握手拿后端 sessionId（首条消息内容用作列表标题）
       if (!currentSessionId.value) {
         convSource.value = 'new'
@@ -1194,6 +1209,9 @@ export default defineComponent({
         const socket = await ensureChatSocket()
         socket.send(JSON.stringify({ content: text }))
       } catch (e) {
+        // 发送失败：移除「思考中」占位消息
+        const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+        if (thinkingIdx !== -1) messages.value.splice(thinkingIdx, 1)
         isLoading.value = false
         pendingTitle = '' // 发送失败，清掉待用标题，避免下次误入列表
         ElMessage({ message: '发送失败，连接异常', type: 'error' })
@@ -2284,17 +2302,17 @@ export default defineComponent({
 .thinking-indicator {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .thinking-dots {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .thinking-dots span {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
   border-radius: 50%;
   animation: thinking 1.4s infinite ease-in-out both;
@@ -2322,7 +2340,7 @@ export default defineComponent({
 }
 
 .thinking-text {
-  font-size: calc(13px * var(--chat-font-scale, 1));
+  font-size: calc(11px * var(--chat-font-scale, 1));
   color: #94a3b8;
 }
 
