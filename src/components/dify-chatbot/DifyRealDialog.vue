@@ -340,7 +340,7 @@ import {
   onUnmounted,
   nextTick,
 } from 'vue'
-import { ElButton, ElInput } from 'element-plus'
+import { ElButton, ElInput, ElMessage } from 'element-plus'
 import { DemoScriptEngine } from './demo-script'
 import type { DemoScript } from './demo-script'
 import ChatCopy from '@/icons/chat-copy.vue'
@@ -1447,17 +1447,19 @@ export default defineComponent({
     }
 
     const copyMessageContent = (message: { content: string; }) => {
+      const onCopied = () => {
+        ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500 })
+      }
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(message.content).then(() => {
-        }).catch(() => {
-          fallbackCopy(message.content)
+        navigator.clipboard.writeText(message.content).then(onCopied).catch(() => {
+          fallbackCopy(message.content, onCopied)
         })
       } else {
-        fallbackCopy(message.content)
+        fallbackCopy(message.content, onCopied)
       }
     }
 
-    const fallbackCopy = (text: string) => {
+    const fallbackCopy = (text: string, onCopied?: () => void) => {
       const textArea = document.createElement('textarea')
       textArea.value = text
       textArea.style.position = 'fixed'
@@ -1466,8 +1468,14 @@ export default defineComponent({
       textArea.focus()
       textArea.select()
       try {
-        document.execCommand('copy')
+        const ok = document.execCommand('copy')
+        if (ok) {
+          onCopied && onCopied()
+        } else {
+          ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500 })
+        }
       } catch (err) {
+        ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500 })
       }
       document.body.removeChild(textArea)
     }
