@@ -598,15 +598,9 @@ export default defineComponent({
     // 后端接口就绪前用本地数据占位，保证 UI 可交互；
     // 接口到位后只需替换下方「预留接口」函数体中的注释实现，UI 无需改动。
     const conversationList = ref<ConversationItem[]>([])
-    const currentConversationId = ref<string>('') // 空字符串代表「尚未选择历史对话」
-
-    const formatConversationTime = (date: Date = new Date()): string => {
-      const pad = (n: number) => String(n).padStart(2, '0')
-      return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-    }
-
-    const genConversationId = (): string =>
-      `local-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
+    const currentConversationId = ref<string>('') // 当前选中的会话项 id（本地生成或后端 id）
+    // 当前对话绑定的后端 sessionId；空字符串代表「尚未关联到后端（新对话）」
+    const currentSessionId = ref<string>('')
 
     // 真实接口：拉取对话历史列表（直连，不走代理）
     // 后端地址 http://10.89.34.77:8080/session/list，返回 { code, msg, data: [...] }
@@ -637,16 +631,17 @@ export default defineComponent({
       }
     }
 
-    // 预留接口：新建对话
-    // TODO(后端): POST /api/conversations -> { id, title, ... }，用后端返回的 id/title 覆盖下方本地占位
+    // 新建对话：仅在「当前处于某个历史会话」时才真正新建；否则（刷新后初次 / 已处于新会话态）提示「已是最新对话」
+    // 新建时不会往历史列表插入「新会话」item，而是直接回到「未绑定后端」的空白态，由后端在首次发送时分配 sessionId
     const createNewConversation = async (): Promise<void> => {
-      const item: ConversationItem = {
-        id: genConversationId(),
-        title: '新对话',
-        updateTime: formatConversationTime(),
+      // 当前没有绑定后端 sessionId（刷新初次、或已处于新会话态）→ 已是最新对话，无需再建
+      if (!currentSessionId.value) {
+        ElMessage({ message: '已是最新对话', type: 'info', duration: 1500 })
+        return
       }
-      conversationList.value = [item, ...conversationList.value] // 置顶
-      currentConversationId.value = item.id
+      // 从某个历史会话切换到「新建」：清空消息、取消历史项高亮、置为未绑定状态
+      currentConversationId.value = '' // 取消历史项高亮（历史列表中没有对应的本地项）
+      currentSessionId.value = '' // 新对话尚未绑定后端会话
       clearMessages() // 清空当前消息，开始一段新对话
     }
 
@@ -682,11 +677,21 @@ export default defineComponent({
     const selectConversation = async (conv: ConversationItem): Promise<void> => {
       if (conv.id === currentConversationId.value) return
       currentConversationId.value = conv.id
+      // 同步当前会话的 sessionId：有则绑定，无（本地新建）则置空
+      currentSessionId.value = conv.sessionId || ''
       if (conv.sessionId) {
         await loadConversationMessages(conv.sessionId)
       } else {
         clearMessages()
       }
+    }
+
+    // 回填当前对话的 sessionId（后端「发送消息」接口返回新会话时调用）
+    // 新建对话首次发送后，后端会下发 sessionId，需要回填到会话项，避免重复新建
+    const bindCurrentSession = (sessionId: string) => {
+      currentSessionId.value = sessionId
+      const cur = conversationList.value.find(c => c.id === currentConversationId.value)
+      if (cur) cur.sessionId = sessionId
     }
 
     watch(
@@ -1686,8 +1691,10 @@ export default defineComponent({
       clearMessages,
       conversationList,
       currentConversationId,
+      currentSessionId,
       createNewConversation,
       selectConversation,
+      bindCurrentSession,
       handleClose,
       handleEnter,
       formatContent,
