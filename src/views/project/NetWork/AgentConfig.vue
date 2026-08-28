@@ -1,7 +1,7 @@
 <template>
   <div class="agent-config-page" :class="{ 'md-editor-open': mdEditorOpen }">
     <div ref="leftPanelRef" class="left-panel">
-      <DifyApiDemoDialog
+      <DifyRealDialog
         v-model:visible="showDialog"
         title="Agent 配置助手"
         :no-mask="true"
@@ -53,7 +53,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
-import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
 import {
   getFontScale,
   setFontScale,
@@ -72,7 +72,7 @@ interface Skill {
 export default defineComponent({
   name: 'AgentConfig',
   components: {
-    DifyApiDemoDialog,
+    DifyRealDialog,
   },
   setup() {
     const showDialog = ref(true)
