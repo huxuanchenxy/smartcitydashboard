@@ -49,7 +49,10 @@
           </div>
           <div class="dify-api-container">
             <!-- 左侧对话历史侧栏（接口预留，当前本地占位） -->
-            <aside class="conversation-sidebar">
+            <aside
+              class="conversation-sidebar"
+              :style="{ width: sidebarWidth + 'px', flexBasis: sidebarWidth + 'px' }"
+            >
               <div class="sidebar-header">
                 <button class="new-conversation-btn" @click="createNewConversation">
                   <span class="new-conversation-icon">＋</span>
@@ -465,6 +468,11 @@ export default defineComponent({
     fontScale: {
       type: Number,
       default: 0,
+    },
+    // 左侧对话历史侧栏宽度（px）；默认 180，即 240 缩减 1/4
+    sidebarWidth: {
+      type: Number,
+      default: 180,
     },
     com: {
       type: Object as () => {
@@ -1769,7 +1777,7 @@ export default defineComponent({
 
 /* ===== 左侧对话历史侧栏（参考 WorkBuddy / 豆包 风格） ===== */
 .conversation-sidebar {
-  width: 240px;
+  /* 宽度由 prop sidebarWidth 经 :style 动态控制（默认 180px） */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
