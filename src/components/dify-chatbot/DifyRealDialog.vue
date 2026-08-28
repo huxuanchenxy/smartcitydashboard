@@ -48,7 +48,36 @@
             </div>
           </div>
           <div class="dify-api-container">
-            <div class="message-section-wrapper">
+            <!-- 左侧对话历史侧栏（接口预留，当前本地占位） -->
+            <aside class="conversation-sidebar">
+              <div class="sidebar-header">
+                <button class="new-conversation-btn" @click="createNewConversation">
+                  <span class="new-conversation-icon">＋</span>
+                  <span class="new-conversation-text">新建对话</span>
+                </button>
+              </div>
+              <div class="conversation-list">
+                <div
+                  v-for="conv in conversationList"
+                  :key="conv.id"
+                  class="conversation-item"
+                  :class="{ active: conv.id === currentConversationId }"
+                  @click="selectConversation(conv.id)"
+                >
+                  <div class="conversation-item-icon">💬</div>
+                  <div class="conversation-item-body">
+                    <div class="conversation-item-title">{{ conv.title }}</div>
+                    <div class="conversation-item-time">{{ conv.updateTime }}</div>
+                  </div>
+                </div>
+                <div v-if="conversationList.length === 0" class="conversation-empty">
+                  暂无历史对话
+                </div>
+              </div>
+            </aside>
+            <!-- 右侧聊天主区域 -->
+            <div class="chat-main">
+              <div class="message-section-wrapper">
               <div ref="messageContainer" class="message-section">
                 <div v-if="messages.length === 0" class="empty-message">
                   <div class="empty-icon">💬</div>
@@ -280,6 +309,7 @@
                 >
               </div>
             </div>
+            </div>
           </div>
         </div>
       </div>
@@ -326,6 +356,14 @@ const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || '/mockdata.j
 interface FlintSpec {
   rawInput: ChartAssemblyInput
   echartsOption: any
+}
+
+// 对话历史列表项（侧栏用，与后端约定保持一致）
+interface ConversationItem {
+  id: string
+  title: string
+  updateTime: string // 展示用时间，如 "08-28 14:30"
+  // 接口返回时可能还有：createTime / preview / messageCount 等
 }
 
 // 按钮颜色配置接口
@@ -546,6 +584,49 @@ export default defineComponent({
       { deep: true },
     )
 
+    // ===== 对话历史侧栏（接口预留） =====
+    // 后端接口就绪前用本地数据占位，保证 UI 可交互；
+    // 接口到位后只需替换下方「预留接口」函数体中的注释实现，UI 无需改动。
+    const conversationList = ref<ConversationItem[]>([])
+    const currentConversationId = ref<string>('') // 空字符串代表「尚未选择历史对话」
+
+    const formatConversationTime = (date: Date = new Date()): string => {
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+    }
+
+    const genConversationId = (): string =>
+      `local-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
+
+    // 预留接口：拉取对话历史列表
+    // TODO(后端): GET /api/conversations -> ConversationItem[]（按 updateTime 倒序）
+    // 接口就绪后改为：const res = await request.get<ConversationItem[]>('/api/conversations'); conversationList.value = res.data
+    const fetchConversationList = async (): Promise<void> => {
+      conversationList.value = [] // 占位：暂无历史
+    }
+
+    // 预留接口：新建对话
+    // TODO(后端): POST /api/conversations -> { id, title, ... }，用后端返回的 id/title 覆盖下方本地占位
+    const createNewConversation = async (): Promise<void> => {
+      const item: ConversationItem = {
+        id: genConversationId(),
+        title: '新对话',
+        updateTime: formatConversationTime(),
+      }
+      conversationList.value = [item, ...conversationList.value] // 置顶
+      currentConversationId.value = item.id
+      clearMessages() // 清空当前消息，开始一段新对话
+    }
+
+    // 预留接口：切换 / 加载某条历史对话
+    // TODO(后端): GET /api/conversations/:id/messages -> 该对话消息数组，加载后渲染到 messages
+    // 当前仅切换高亮并清空占位，接口就绪后改为拉取并回填历史消息
+    const selectConversation = async (id: string): Promise<void> => {
+      if (id === currentConversationId.value) return
+      currentConversationId.value = id
+      clearMessages()
+    }
+
     watch(
       () => props.role,
       newRole => {
@@ -600,6 +681,7 @@ export default defineComponent({
       dialogVisible.value = props.visible
       window.addEventListener('resize', handleWindowResize)
       loadScriptFromMock()
+      fetchConversationList()
       if (dialogVisible.value) {
         showWelcomeMessage()
       }
@@ -1525,6 +1607,10 @@ export default defineComponent({
       mdEditorVisible,
       sendMessage,
       clearMessages,
+      conversationList,
+      currentConversationId,
+      createNewConversation,
+      selectConversation,
       handleClose,
       handleEnter,
       formatContent,
@@ -1675,9 +1761,151 @@ export default defineComponent({
 
 .dify-api-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: calc(100% - 56px);
   background-color: #f8fafc;
+  overflow: hidden;
+}
+
+/* ===== 左侧对话历史侧栏（参考 WorkBuddy / 豆包 风格） ===== */
+.conversation-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-right: 1px solid #edf0f5;
+  height: 100%;
+}
+
+.sidebar-header {
+  padding: 14px 12px;
+  border-bottom: 1px solid #f1f4f8;
+}
+
+.new-conversation-btn {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d8e2f5;
+  border-radius: 10px;
+  background-color: #f0f5ff;
+  color: #2563eb;
+  font-size: calc(14px * var(--chat-font-scale, 1));
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.new-conversation-btn:hover {
+  background-color: #e4edff;
+  border-color: #b9d0ff;
+}
+
+.new-conversation-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: calc(15px * var(--chat-font-scale, 1));
+  line-height: 1;
+}
+
+.conversation-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 8px;
+}
+
+.conversation-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.conversation-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  margin-bottom: 4px;
+}
+
+.conversation-item:hover {
+  background-color: #f1f5f9;
+}
+
+.conversation-item.active {
+  background-color: #e8f1ff;
+}
+
+.conversation-item-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(15px * var(--chat-font-scale, 1));
+}
+
+.conversation-item.active .conversation-item-icon {
+  background-color: #dbe7ff;
+}
+
+.conversation-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-item-title {
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-item-time {
+  margin-top: 2px;
+  font-size: calc(11px * var(--chat-font-scale, 1));
+  color: #94a3b8;
+}
+
+.conversation-empty {
+  margin-top: 32px;
+  text-align: center;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: #94a3b8;
+}
+
+/* 右侧聊天主区域 */
+.chat-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .message-section-wrapper {
