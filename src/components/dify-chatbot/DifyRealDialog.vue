@@ -70,7 +70,6 @@
                   <div class="conversation-item-icon">💬</div>
                   <div class="conversation-item-body">
                     <div class="conversation-item-title">{{ conv.title }}</div>
-                    <div class="conversation-item-time">{{ conv.updateTime }}</div>
                   </div>
                 </div>
                 <div v-if="conversationList.length === 0" class="conversation-empty">
@@ -353,6 +352,7 @@ import { getFontScale } from './font-scale'
 import { assembleECharts } from 'flint-chart'
 import type { ChartAssemblyInput } from 'flint-chart'
 import * as echarts from 'echarts'
+import request from '@/utils/request'
 
 const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || '/mockdata.json'
 // Flint 图表相关接口
@@ -366,7 +366,9 @@ interface ConversationItem {
   id: string
   title: string
   updateTime: string // 展示用时间，如 "08-28 14:30"
-  // 接口返回时可能还有：createTime / preview / messageCount 等
+  // 以下为真实会话接口（/session/list）返回字段的映射承载
+  sessionId?: string | null // 后端会话标识，可为 null
+  state?: number // 后端状态位（0/1）
 }
 
 // 按钮颜色配置接口
@@ -606,11 +608,33 @@ export default defineComponent({
     const genConversationId = (): string =>
       `local-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
 
-    // 预留接口：拉取对话历史列表
-    // TODO(后端): GET /api/conversations -> ConversationItem[]（按 updateTime 倒序）
-    // 接口就绪后改为：const res = await request.get<ConversationItem[]>('/api/conversations'); conversationList.value = res.data
+    // 真实接口：拉取对话历史列表（直连，不走代理）
+    // 后端地址 http://10.89.34.77:8080/session/list，返回 { code, msg, data: [...] }
+    // 地址可通过环境变量 VITE_APP_DIFY_SESSION_HOST 覆盖；直连方式下请确保后端已开启 CORS
+    // 接口字段：id(number) / cache / content / sessionId(string|null) / state(0|1)
+    // 列表仅展示 content（按需求），其余字段透存备用；接口无时间字段，updateTime 留空
     const fetchConversationList = async (): Promise<void> => {
-      conversationList.value = [] // 占位：暂无历史
+      try {
+        const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
+        const resp = await request.get(`${base}/session/list`)
+        const rawList = (resp.data?.data || []) as Array<{
+          cache: string
+          content: string
+          id: number
+          sessionId: string | null
+          state: number
+        }>
+        conversationList.value = rawList.map(item => ({
+          id: String(item.id),
+          title: item.content || '',
+          updateTime: '',
+          sessionId: item.sessionId,
+          state: item.state,
+        }))
+      } catch (e) {
+        console.error('[DifyRealDialog] 拉取会话列表失败', e)
+        conversationList.value = []
+      }
     }
 
     // 预留接口：新建对话
