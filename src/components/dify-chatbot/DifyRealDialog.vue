@@ -279,6 +279,8 @@
                         <ChatUpload />
                       </el-button>
                       <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
+                      <span v-else-if="wsStatus === 'connecting'" class="hint ws-hint">正在连接...</span>
+                      <span v-else-if="wsStatus === 'error' || wsStatus === 'closed'" class="hint ws-hint ws-hint-error">连接已断开</span>
                       <el-button
                         v-if="isLoading"
                         type="danger"
@@ -601,6 +603,8 @@ export default defineComponent({
     const currentConversationId = ref<string>('') // 当前选中的会话项 id（本地生成或后端 id）
     // 当前对话绑定的后端 sessionId；空字符串代表「尚未关联到后端（新对话）」
     const currentSessionId = ref<string>('')
+    // 当前会话来源：none=尚未开始 / history=历史会话 / new=已新建（本地空白态）
+    const convSource = ref<'none' | 'history' | 'new'>('none')
 
     // 真实接口：拉取对话历史列表（直连，不走代理）
     // 后端地址 http://10.89.34.77:8080/session/list，返回 { code, msg, data: [...] }
@@ -618,13 +622,19 @@ export default defineComponent({
           sessionId: string | null
           state: number
         }>
-        conversationList.value = rawList.map(item => ({
+        const fetched = rawList.map(item => ({
           id: String(item.id),
           title: item.content || '',
           updateTime: '',
           sessionId: item.sessionId,
           state: item.state,
         }))
+        // 保留本地占位项（pending- 前缀）：后端尚未收录刚发起的新会话，避免刷新后消失
+        const known = new Set(fetched.map(i => i.sessionId).filter(Boolean))
+        const pending = conversationList.value.filter(
+          c => c.id.startsWith('pending-') && c.sessionId && !known.has(c.sessionId),
+        )
+        conversationList.value = [...pending, ...fetched]
       } catch (e) {
         console.error('[DifyRealDialog] 拉取会话列表失败', e)
         conversationList.value = []
@@ -632,17 +642,18 @@ export default defineComponent({
     }
 
     // 新建对话：仅在「当前处于某个历史会话」时才真正新建；否则（刷新后初次 / 已处于新会话态）提示「已是最新对话」
-    // 新建时不会往历史列表插入「新会话」item，而是直接回到「未绑定后端」的空白态，由后端在首次发送时分配 sessionId
+    // 新建时既不往历史列表插入 item，也不预先建立 WS：只有真正发出第一条消息后才由 session_ready 入列表
     const createNewConversation = async (): Promise<void> => {
-      // 当前没有绑定后端 sessionId（刷新初次、或已处于新会话态）→ 已是最新对话，无需再建
-      if (!currentSessionId.value) {
+      if (convSource.value !== 'history') {
         ElMessage({ message: '已是最新对话', type: 'info', duration: 1500 })
         return
       }
-      // 从某个历史会话切换到「新建」：清空消息、取消历史项高亮、置为未绑定状态
+      // 从历史会话切换到「新建」：断开旧连接、清空消息、取消历史项高亮
+      convSource.value = 'new'
       currentConversationId.value = '' // 取消历史项高亮（历史列表中没有对应的本地项）
       currentSessionId.value = '' // 新对话尚未绑定后端会话
-      clearMessages() // 清空当前消息，开始一段新对话
+      closeWs() // 关闭上一会话的 WS，避免复用旧连接
+      resetMessages() // 清空当前消息（不插入欢迎语）
     }
 
     // 加载某条历史对话的真实消息：GET /session/sessionId?sessionId=xxx
@@ -669,7 +680,7 @@ export default defineComponent({
         setTimeout(scrollToBottom, 100)
       } catch (e) {
         console.error('[DifyRealDialog] 拉取会话消息失败', e)
-        clearMessages()
+        resetMessages()
       }
     }
 
@@ -677,12 +688,13 @@ export default defineComponent({
     const selectConversation = async (conv: ConversationItem): Promise<void> => {
       if (conv.id === currentConversationId.value) return
       currentConversationId.value = conv.id
-      // 同步当前会话的 sessionId：有则绑定，无（本地新建）则置空
       currentSessionId.value = conv.sessionId || ''
+      convSource.value = 'history'
       if (conv.sessionId) {
         await loadConversationMessages(conv.sessionId)
+        connectChat(conv.sessionId).catch(() => {}) // 预热连接，便于后续发送
       } else {
-        clearMessages()
+        resetMessages()
       }
     }
 
@@ -692,6 +704,189 @@ export default defineComponent({
       currentSessionId.value = sessionId
       const cur = conversationList.value.find(c => c.id === currentConversationId.value)
       if (cur) cur.sessionId = sessionId
+    }
+
+    // 新会话首条消息后，把该会话插入/更新到历史列表顶部并高亮
+    // 列表数据来自后端 /session/list，后端尚未落库时先本地占位展示，避免用户看不到刚发起的对话
+    const upsertNewConversation = (sessionId: string) => {
+      const existing = conversationList.value.find(c => c.sessionId === sessionId)
+      if (existing) {
+        // 已存在则置顶并高亮
+        conversationList.value = [existing, ...conversationList.value.filter(c => c !== existing)]
+        currentConversationId.value = existing.id
+        convSource.value = 'history'
+        return
+      }
+      // 仅当已发出过用户消息（pendingTitle 非空）才入列表：
+      // 空白新建时不会触发这里，避免列表里冒出空的「新对话」
+      if (!pendingTitle) return
+      const item: ConversationItem = {
+        id: `pending-${sessionId}`,
+        title: pendingTitle,
+        updateTime: '',
+        sessionId,
+      }
+      conversationList.value = [item, ...conversationList.value]
+      currentConversationId.value = item.id
+      convSource.value = 'history' // 已发起真实会话，后续可再次「新建会话」
+      pendingTitle = '' // 用完即清，避免影响下一次新建
+    }
+
+    // ===== WebSocket 连接管理 =====
+    // 与服务端交互的唯一通道：ws://<host>/ws/chat?sessionId=xxx
+    // 连接成功后服务端先回 session_ready 携带 session_id；之后发送 {content} 即可收到助手回复
+    const WS_BASE = import.meta.env.VITE_APP_DIFY_WS_HOST || 'ws://10.89.34.77:8080'
+    const MAX_RECONNECT = 3
+
+    const ws = ref<WebSocket | null>(null)
+    const wsStatus = ref<'idle' | 'connecting' | 'open' | 'closed' | 'error'>('idle')
+    let wsSessionId = ''           // 当前 ws 所绑定的 sessionId，用于判断「复用 / 切换 / 是否仍需重连」
+    let connectPromise: Promise<WebSocket> | null = null
+    let reconnectCount = 0
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    let pendingTitle = ''          // 新会话首条消息内容，用作历史列表标题（后端落库前）
+    let handshakeResolve: ((sid: string) => void) | null = null // 两段式握手：接收后端下发的 sessionId
+
+    // 确保已建立连接：复用同一会话的连接，否则关闭旧连接并新建、等待 open
+    // sessionId 为空时连接不带参数的 /ws/chat，由后端下发 sessionId（两段式握手）
+    const connectChat = (sessionId: string): Promise<WebSocket> => {
+      // 同一会话且处于连接/连接中状态，直接复用
+      if (
+        ws.value &&
+        wsSessionId === sessionId &&
+        (ws.value.readyState === WebSocket.OPEN || ws.value.readyState === WebSocket.CONNECTING)
+      ) {
+        return connectPromise || Promise.resolve(ws.value)
+      }
+      // 切换到不同会话：放弃旧连接，随后建立新连接
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+      if (ws.value) {
+        ws.value.close()
+        ws.value = null
+      }
+      connectPromise = null
+      wsSessionId = ''
+
+      wsStatus.value = 'connecting'
+      wsSessionId = sessionId
+      const url = sessionId
+        ? `${WS_BASE}/ws/chat?sessionId=${encodeURIComponent(sessionId)}`
+        : `${WS_BASE}/ws/chat`
+      const socket = new WebSocket(url)
+      connectPromise = new Promise<WebSocket>((resolve, reject) => {
+        socket.onopen = () => {
+          wsStatus.value = 'open'
+          reconnectCount = 0
+          connectPromise = null
+          resolve(socket)
+        }
+        socket.onmessage = (ev: MessageEvent) => {
+          let data: any
+          try {
+            data = JSON.parse(ev.data as string)
+          } catch (e) {
+            console.error('[DifyRealDialog] 收到无法解析的消息', ev.data)
+            return
+          }
+          // 服务端确认会话就绪：sessionId 完全以后端下发为准
+          if (data.type === 'session_ready' && data.session_id) {
+            const readyId = String(data.session_id)
+            currentSessionId.value = readyId
+            // 两段式握手：当前是无参数连接 → 关闭它，改用 ?sessionId=xxx 重连
+            if (!sessionId) {
+              handshakeResolve && handshakeResolve(readyId)
+            } else {
+              upsertNewConversation(readyId)
+            }
+            return
+          }
+          // 普通助手回复
+          if (data.content != null) {
+            messages.value.push({
+              role: 'assistant',
+              content: String(data.content),
+              timestamp: Date.now(),
+            })
+            isLoading.value = false
+            scrollToBottom()
+          }
+        }
+        socket.onerror = () => {
+          wsStatus.value = 'error'
+          connectPromise = null
+          ElMessage({ message: '对话连接出错，请稍后重试', type: 'error' })
+          reject(new Error('websocket error'))
+        }
+        socket.onclose = () => {
+          wsStatus.value = 'closed'
+          connectPromise = null
+          if (wsSessionId === sessionId) {
+            attemptReconnect()
+          }
+        }
+      })
+      ws.value = socket
+      return connectPromise
+    }
+
+    // 两段式握手：先连无参数 /ws/chat 拿后端下发的 sessionId，再关闭它、用 ?sessionId=xxx 重连
+    const handshakeNewSession = (): Promise<string> => {
+      return new Promise<string>((resolve, reject) => {
+        handshakeResolve = resolve
+        connectChat('')
+          .catch(reject)
+      }).then((sid: string) => {
+        handshakeResolve = null
+        return sid
+      })
+    }
+
+    // 确保可用于发送的连接：无 sessionId 时先握手获取，再用真实 sessionId 建连
+    const ensureChatSocket = async (): Promise<WebSocket> => {
+      let sid = currentSessionId.value
+      if (!sid) {
+        sid = await handshakeNewSession()
+      }
+      // 关闭握手用的无参数连接，改用带 sessionId 的地址重连
+      if (ws.value && wsSessionId !== sid) {
+        wsSessionId = '' // 标记旧连接已作废，避免触发重连
+        ws.value.close()
+        ws.value = null
+      }
+      return connectChat(sid)
+    }
+
+    // 异常断开后的自动重连（有限次数，避免无效重试）
+    const attemptReconnect = () => {
+      if (reconnectCount >= MAX_RECONNECT) {
+        ElMessage({ message: '连接已断开，重连失败', type: 'error' })
+        return
+      }
+      const sid = currentSessionId.value
+      if (!sid) return
+      reconnectCount++
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      reconnectTimer = setTimeout(() => {
+        if (ws.value && ws.value.readyState === WebSocket.OPEN) return
+        connectChat(sid).catch(() => { /* 失败由 onerror/onclose 继续处理 */ })
+      }, 2000)
+    }
+
+    // 主动关闭连接（切换会话 / 关闭弹窗 / 卸载时调用）
+    const closeWs = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+      if (ws.value) {
+        ws.value.close()
+        ws.value = null
+      }
+      wsSessionId = ''
+      wsStatus.value = 'closed'
     }
 
     watch(
@@ -728,6 +923,8 @@ export default defineComponent({
       const welcomeMessage = scriptEngine.getWelcomeMessage(role)
       const errorSuffix = scriptLoadError.value ? `\n\n⚠️ ${scriptLoadError.value}` : ''
       if (welcomeMessage || errorSuffix) {
+        // 已切换到历史会话或已新建会话时，不要覆盖真实对话内容
+        if (convSource.value !== 'none') return
         messages.value = [{
           role: 'assistant',
           content: (welcomeMessage || '') + errorSuffix,
@@ -805,12 +1002,14 @@ export default defineComponent({
       document.removeEventListener('mouseup', stopResize)
       window.removeEventListener('resize', handleWindowResize)
       disposeAllCharts()
+      closeWs()
     })
 
     const handleClose = () => {
       dialogVisible.value = false
       emit('update:visible', false)
       emit('close')
+      closeWs()
     }
 
     const handleMouseDown = (e: MouseEvent) => {
@@ -958,9 +1157,11 @@ export default defineComponent({
         return
       }
 
+      const text = userQuery.value.trim()
+
       const userMessage = {
         role: 'user' as const,
-        content: userQuery.value.trim(),
+        content: text,
         timestamp: Date.now(),
         files: uploadedFiles.value.length > 0 ? [...uploadedFiles.value] : undefined,
       }
@@ -971,76 +1172,21 @@ export default defineComponent({
 
       isLoading.value = true
 
-      setTimeout(async () => {
-        const thinkingMessage = {
-          role: 'assistant' as const,
-          content: '',
-          timestamp: Date.now(),
-          isThinking: true,
-          thinkingContent: 'AI 正在思考中，请稍候...',
-        }
-        messages.value.push(thinkingMessage)
-        await scrollToBottom()
-      }, 500)
+      // 尚无会话：先握手拿后端 sessionId（首条消息内容用作列表标题）
+      if (!currentSessionId.value) {
+        convSource.value = 'new'
+        pendingTitle = text
+      }
 
-      setTimeout(async () => {
-        const response = scriptEngine.getResponse(userMessage.content)
-        const flintSpecs = parseFlintSpecs(response)
-        const htmlInteractions = parseHtmlInteractions(response)
-        // 关键：先清除 Flint/HTML 块，获取纯文本内容
-        const textContent = stripHtmlBlocks(stripFlintBlocks(response)).trim()
-
-        const thinkingIndex = messages.value.findIndex(msg => msg.isThinking)
-        if (thinkingIndex !== -1) {
-          messages.value[thinkingIndex] = {
-            role: 'assistant' as const,
-            content: '',
-            timestamp: Date.now(),
-            isThinking: false,
-            flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
-            htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
-            selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
-            interactionResolved: false,
-          }
-          await scrollToBottom()
-
-          const typingSpeed = 50
-          let index = 0
-          const interval = setInterval(() => {
-            // 使用纯文本内容（不含 Flint/HTML JSON）进行打字
-            if (index < textContent.length) {
-              messages.value[thinkingIndex].content = textContent.slice(0, index + 1)
-              index++
-              scrollToBottom()
-            } else {
-              clearInterval(interval)
-              isLoading.value = false
-              // 打字完成后渲染 Flint 图表
-              if (flintSpecs.length > 0) {
-                renderFlintCharts(thinkingIndex)
-              }
-            }
-          }, typingSpeed)
-        } else {
-          const assistantMessage: ChartMessage = {
-            role: 'assistant' as const,
-            // 使用纯文本内容（不含 Flint/HTML JSON）
-            content: textContent,
-            timestamp: Date.now(),
-            flintSpecs: flintSpecs.length > 0 ? flintSpecs : undefined,
-            htmlInteractions: htmlInteractions.length > 0 ? htmlInteractions : undefined,
-            selectedSkills: htmlInteractions.length > 0 ? [] : undefined,
-            interactionResolved: false,
-          }
-          messages.value.push(assistantMessage)
-          isLoading.value = false
-          await scrollToBottom()
-          // 立即渲染 Flint 图表
-          if (flintSpecs.length > 0) {
-            renderFlintCharts(messages.value.length - 1)
-          }
-        }
-      }, 5000 + Math.random() * 1000)
+      try {
+        // sessionId 完全由后端下发：无则先连无参数 /ws/chat 握手，拿到后再用 ?sessionId=xxx 发送
+        const socket = await ensureChatSocket()
+        socket.send(JSON.stringify({ content: text }))
+      } catch (e) {
+        isLoading.value = false
+        pendingTitle = '' // 发送失败，清掉待用标题，避免下次误入列表
+        ElMessage({ message: '发送失败，连接异常', type: 'error' })
+      }
     }
 
     const handleEnter = () => {
@@ -1491,6 +1637,12 @@ export default defineComponent({
       showWelcomeMessage()
     }
 
+    // 仅清空消息、不插入欢迎语（切换会话 / 新建会话 / 加载历史时使用）
+    const resetMessages = () => {
+      disposeAllCharts()
+      messages.value = []
+    }
+
     // 切换技能选中状态
     const toggleSkill = (messageIndex: number, skillName: string) => {
       const msg = messages.value[messageIndex]
@@ -1689,12 +1841,15 @@ export default defineComponent({
       mdEditorVisible,
       sendMessage,
       clearMessages,
+      resetMessages,
       conversationList,
       currentConversationId,
       currentSessionId,
       createNewConversation,
       selectConversation,
       bindCurrentSession,
+      wsStatus,
+      closeWs,
       handleClose,
       handleEnter,
       formatContent,
@@ -2315,6 +2470,14 @@ export default defineComponent({
 .hint {
   font-size: calc(13px * var(--chat-font-scale, 1));
   color: #94a3b8;
+}
+
+.ws-hint {
+  margin-left: 4px;
+}
+
+.ws-hint-error {
+  color: #f56c6c;
 }
 
 .send-button {
