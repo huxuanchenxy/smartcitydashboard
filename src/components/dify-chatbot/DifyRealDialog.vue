@@ -65,7 +65,7 @@
                   :key="conv.id"
                   class="conversation-item"
                   :class="{ active: conv.id === currentConversationId }"
-                  @click="selectConversation(conv.id)"
+                  @click="selectConversation(conv)"
                 >
                   <div class="conversation-item-icon">💬</div>
                   <div class="conversation-item-body">
@@ -650,13 +650,43 @@ export default defineComponent({
       clearMessages() // 清空当前消息，开始一段新对话
     }
 
-    // 预留接口：切换 / 加载某条历史对话
-    // TODO(后端): GET /api/conversations/:id/messages -> 该对话消息数组，加载后渲染到 messages
-    // 当前仅切换高亮并清空占位，接口就绪后改为拉取并回填历史消息
-    const selectConversation = async (id: string): Promise<void> => {
-      if (id === currentConversationId.value) return
-      currentConversationId.value = id
-      clearMessages()
+    // 加载某条历史对话的真实消息：GET /session/sessionId?sessionId=xxx
+    // 接口字段：type(0=用户 1=助手) / content / chatTime(用于时间戳) / sort(排序)
+    const loadConversationMessages = async (sessionId: string): Promise<void> => {
+      try {
+        const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
+        const resp = await request.get(`${base}/session/sessionId`, { params: { sessionId } })
+        const raw = (resp.data?.data || []) as Array<{
+          id: number
+          content: string
+          chatTime: string
+          type: number
+          sort?: number
+        }>
+        messages.value = raw
+          .slice()
+          .sort((a, b) => (a.sort ?? a.id) - (b.sort ?? b.id))
+          .map(item => ({
+            role: item.type === 0 ? 'user' : 'assistant',
+            content: item.content || '',
+            timestamp: parseChatTime(item.chatTime),
+          }))
+        setTimeout(scrollToBottom, 100)
+      } catch (e) {
+        console.error('[DifyRealDialog] 拉取会话消息失败', e)
+        clearMessages()
+      }
+    }
+
+    // 切换 / 加载某条历史对话
+    const selectConversation = async (conv: ConversationItem): Promise<void> => {
+      if (conv.id === currentConversationId.value) return
+      currentConversationId.value = conv.id
+      if (conv.sessionId) {
+        await loadConversationMessages(conv.sessionId)
+      } else {
+        clearMessages()
+      }
     }
 
     watch(
@@ -1407,6 +1437,13 @@ export default defineComponent({
       const hours = date.getHours().toString().padStart(2, '0')
       const minutes = date.getMinutes().toString().padStart(2, '0')
       return `${hours}:${minutes}`
+    }
+
+    // 将接口 chatTime（"2026-08-28 09:00:00"）转为数值时间戳；解析失败回退当前时间
+    const parseChatTime = (chatTime: string): number => {
+      const t = chatTime ? chatTime.replace(' ', 'T') : ''
+      const parsed = t ? new Date(t).getTime() : NaN
+      return Number.isNaN(parsed) ? Date.now() : parsed
     }
 
     const copyMessageContent = (message: { content: string; }) => {
