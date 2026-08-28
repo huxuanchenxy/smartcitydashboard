@@ -69,7 +69,7 @@
                 >
                   <div class="conversation-item-icon">💬</div>
                   <div class="conversation-item-body">
-                    <div class="conversation-item-title">{{ conv.title }}</div>
+                    <div class="conversation-item-title" :title="conv.title">{{ conv.title }}</div>
                   </div>
                 </div>
                 <div v-if="conversationList.length === 0" class="conversation-empty">
@@ -474,7 +474,7 @@ export default defineComponent({
     // 左侧对话历史侧栏宽度（px）；默认 180，即 240 缩减 1/4
     sidebarWidth: {
       type: Number,
-      default: 180,
+      default: 200,
     },
     com: {
       type: Object as () => {
