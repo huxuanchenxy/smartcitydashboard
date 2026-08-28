@@ -279,8 +279,6 @@
                         <ChatUpload />
                       </el-button>
                       <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
-                      <span v-else-if="wsStatus === 'connecting'" class="hint ws-hint">正在连接...</span>
-                      <span v-else-if="wsStatus === 'error' || wsStatus === 'closed'" class="hint ws-hint ws-hint-error">连接已断开</span>
                       <el-button
                         v-if="isLoading"
                         type="danger"
@@ -775,12 +773,14 @@ export default defineComponent({
       const url = sessionId
         ? `${WS_BASE}/ws/chat?sessionId=${encodeURIComponent(sessionId)}`
         : `${WS_BASE}/ws/chat`
+      console.log('[DifyRealDialog][WS] 连接中:', url)
       const socket = new WebSocket(url)
       connectPromise = new Promise<WebSocket>((resolve, reject) => {
         socket.onopen = () => {
           wsStatus.value = 'open'
           reconnectCount = 0
           connectPromise = null
+          console.log('[DifyRealDialog][WS] 已连接:', url)
           resolve(socket)
         }
         socket.onmessage = (ev: MessageEvent) => {
@@ -795,6 +795,7 @@ export default defineComponent({
           if (data.type === 'session_ready' && data.session_id) {
             const readyId = String(data.session_id)
             currentSessionId.value = readyId
+            console.log('[DifyRealDialog][WS] 会话就绪 sessionId:', readyId)
             // 两段式握手：当前是无参数连接 → 关闭它，改用 ?sessionId=xxx 重连
             if (!sessionId) {
               handshakeResolve && handshakeResolve(readyId)
@@ -817,12 +818,14 @@ export default defineComponent({
         socket.onerror = () => {
           wsStatus.value = 'error'
           connectPromise = null
+          console.error('[DifyRealDialog][WS] 连接出错:', url)
           ElMessage({ message: '对话连接出错，请稍后重试', type: 'error' })
           reject(new Error('websocket error'))
         }
         socket.onclose = () => {
           wsStatus.value = 'closed'
           connectPromise = null
+          console.warn('[DifyRealDialog][WS] 连接关闭:', url)
           if (wsSessionId === sessionId) {
             attemptReconnect()
           }
@@ -852,6 +855,7 @@ export default defineComponent({
       }
       // 关闭握手用的无参数连接，改用带 sessionId 的地址重连
       if (ws.value && wsSessionId !== sid) {
+        console.log('[DifyRealDialog][WS] 握手完成，关闭临时连接，改用 sessionId 重连:', sid)
         wsSessionId = '' // 标记旧连接已作废，避免触发重连
         ws.value.close()
         ws.value = null
@@ -862,12 +866,14 @@ export default defineComponent({
     // 异常断开后的自动重连（有限次数，避免无效重试）
     const attemptReconnect = () => {
       if (reconnectCount >= MAX_RECONNECT) {
+        console.error('[DifyRealDialog][WS] 重连次数已达上限，放弃重连')
         ElMessage({ message: '连接已断开，重连失败', type: 'error' })
         return
       }
       const sid = currentSessionId.value
       if (!sid) return
       reconnectCount++
+      console.warn(`[DifyRealDialog][WS] 尝试重连 ${reconnectCount}/${MAX_RECONNECT}...`)
       if (reconnectTimer) clearTimeout(reconnectTimer)
       reconnectTimer = setTimeout(() => {
         if (ws.value && ws.value.readyState === WebSocket.OPEN) return
@@ -1848,7 +1854,6 @@ export default defineComponent({
       createNewConversation,
       selectConversation,
       bindCurrentSession,
-      wsStatus,
       closeWs,
       handleClose,
       handleEnter,
@@ -2470,14 +2475,6 @@ export default defineComponent({
 .hint {
   font-size: calc(13px * var(--chat-font-scale, 1));
   color: #94a3b8;
-}
-
-.ws-hint {
-  margin-left: 4px;
-}
-
-.ws-hint-error {
-  color: #f56c6c;
 }
 
 .send-button {
