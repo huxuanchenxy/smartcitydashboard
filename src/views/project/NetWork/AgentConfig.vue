@@ -1,5 +1,5 @@
 <template>
-  <div class="agent-config-page">
+  <div class="agent-config-page" :class="{ 'md-editor-open': mdEditorOpen }">
     <div ref="leftPanelRef" class="left-panel">
       <DifyApiDemoDialog
         v-model:visible="showDialog"
@@ -12,6 +12,7 @@
         role="backend_ops"
         :md-editor="true"
         md-editor-storage-key="agent-config-md-doc"
+        @md-editor-visible-change="handleMdEditorVisibleChange"
       />
     </div>
     <div class="right-panel">
@@ -191,6 +192,15 @@ export default defineComponent({
       }
     }
 
+    // MD 编辑器是否展开：展开时面板切为 3:5，给停靠的编辑器腾出空间；默认 1:1 对半分
+    const mdEditorOpen = ref(false)
+
+    const handleMdEditorVisibleChange = (open: boolean) => {
+      mdEditorOpen.value = open
+      // 等面板 flex 过渡结束后重测，使对话窗同步新面板尺寸（兼做无过渡时的兜底）
+      window.setTimeout(measurePanel, 300)
+    }
+
     onMounted(() => {
       window.addEventListener('keydown', onKeydown)
       measurePanel()
@@ -205,6 +215,8 @@ export default defineComponent({
     return {
       showDialog,
       leftPanelRef,
+      mdEditorOpen,
+      handleMdEditorVisibleChange,
       initialPosition,
       initialSize,
       skills,
@@ -230,20 +242,30 @@ export default defineComponent({
 }
 
 .left-panel {
-  /* 与 right-panel 3:5 分屏：对话窗比早期对半分缩小 1/4，腾出的宽度给技能库 */
-  flex: 3;
+  /* 默认与 right-panel 1:1 分屏；MD 编辑器展开时通过 .md-editor-open 切为 3:5 */
+  flex: 1;
   position: relative;
   min-width: 0;
+  transition: flex 0.25s ease;
 }
 
 .right-panel {
-  flex: 5;
+  flex: 1;
   display: flex;
   flex-direction: column;
   padding: 24px;
   overflow: hidden;
   background-color: #f8fafc;
   border-radius: 16px;
+  transition: flex 0.25s ease;
+}
+
+.agent-config-page.md-editor-open .left-panel {
+  flex: 3;
+}
+
+.agent-config-page.md-editor-open .right-panel {
+  flex: 5;
 }
 
 .font-config-card {

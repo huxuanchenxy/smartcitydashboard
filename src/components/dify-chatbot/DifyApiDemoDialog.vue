@@ -447,7 +447,7 @@ export default defineComponent({
       }),
     },
   },
-  emits: ['close', 'update:visible', 'message-received', 'message-sent'],
+  emits: ['close', 'update:visible', 'message-received', 'message-sent', 'md-editor-visible-change'],
   setup(props, { emit }) {
     const dialogVisible = ref(false)
     const userQuery = ref('')
@@ -457,6 +457,11 @@ export default defineComponent({
     const isLoading = ref(false)
     const messageContainer = ref<HTMLElement | null>(null)
     const mdEditorVisible = ref(false)
+
+    // 编辑器开关状态变化时通知宿主，供宿主调整页面布局（如面板分屏比例）
+    watch(mdEditorVisible, val => {
+      emit('md-editor-visible-change', val)
+    })
     const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 })
     const dragOffset = ref({ x: 0, y: 0 })
     const isDragging = ref(false)
