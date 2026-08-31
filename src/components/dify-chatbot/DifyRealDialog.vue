@@ -2314,14 +2314,14 @@ export default defineComponent({
 
 .conversation-item-icon {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   background-color: #eef2f7;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(15px * var(--chat-font-scale, 1));
+  font-size: calc(13px * var(--chat-font-scale, 1));
 }
 
 .conversation-item.active .conversation-item-icon {
