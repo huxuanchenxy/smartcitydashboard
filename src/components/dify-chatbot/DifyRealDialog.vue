@@ -71,6 +71,13 @@
                   <div class="conversation-item-body">
                     <div class="conversation-item-title" :title="conv.title">{{ conv.title }}</div>
                   </div>
+                  <button
+                    class="conversation-delete-btn"
+                    title="删除该对话"
+                    @click.stop="confirmDeleteConversation(conv)"
+                  >
+                    🗑
+                  </button>
                 </div>
                 <div v-if="conversationList.length === 0" class="conversation-empty">
                   暂无历史对话
@@ -332,6 +339,22 @@
         file-name="agent.md"
         :storage-key="mdEditorStorageKey"
       />
+
+      <!-- 自定义二次确认弹窗：替换 ElMessageBox，避免被自绘对话框遮挡 / 左上角错位 -->
+      <div
+        v-if="confirmDialogVisible"
+        class="dify-real-confirm-mask"
+        @click.self="closeConfirmDialog"
+      >
+        <div class="dify-real-confirm">
+          <div class="dify-real-confirm__title">{{ confirmDialogTitle }}</div>
+          <div class="dify-real-confirm__message">{{ confirmDialogMessage }}</div>
+          <div class="dify-real-confirm__actions">
+            <button class="dify-real-confirm__btn cancel" @click="closeConfirmDialog">取消</button>
+            <button class="dify-real-confirm__btn danger" @click="onConfirmDelete">删除</button>
+          </div>
+        </div>
+      </div>
     </div>
   </Teleport>
 </template>
@@ -577,24 +600,30 @@ export default defineComponent({
     // 当前会话来源：none=尚未开始 / history=历史会话 / new=已新建（本地空白态）
     const convSource = ref<'none' | 'history' | 'new'>('none')
 
+    // 自定义二次确认弹窗状态（替换 ElMessageBox，避免被自绘对话框遮挡 / 左上角错位）
+    const confirmDialogVisible = ref(false)
+    const confirmDialogTitle = ref('')
+    const confirmDialogMessage = ref('')
+    const pendingDeleteConv = ref<ConversationItem | null>(null)
+
     // 真实接口：拉取对话历史列表（直连，不走代理）
     // 后端地址 http://10.89.34.77:8080/api/session/list，返回 { code, msg, data: [...] }
     // 地址可通过环境变量 VITE_APP_DIFY_SESSION_HOST 覆盖；直连方式下请确保后端已开启 CORS
-    // 接口字段：id(number) / cache / name / sessionId(string|null) / state(0|1)
-    // 列表仅展示 name（按需求），其余字段透存备用；接口无时间字段，updateTime 留空
+    // 实际返回字段：autoId(主键) / name / sessionId / tSessionId / createdOn 等，无 id 字段
+    // 列表项唯一标识取 autoId（缺失时兜底 sessionId / 索引），避免多条记录 id 相同导致全选/Key 冲突
     const fetchConversationList = async (): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
         const resp = await request.get(`${base}/api/session/list`)
         const rawList = (resp.data?.data || []) as Array<{
-          cache: string
+          autoId?: number
+          cache?: string
           name: string
-          id: number
           sessionId: string | null
-          state: number
+          state?: number
         }>
-        const fetched = rawList.map(item => ({
-          id: String(item.id),
+        const fetched = rawList.map((item, index) => ({
+          id: item.autoId != null ? String(item.autoId) : item.sessionId || `hist-${index}`,
           title: item.name || '',
           updateTime: '',
           sessionId: item.sessionId,
@@ -667,6 +696,59 @@ export default defineComponent({
       } else {
         resetMessages()
       }
+    }
+
+    // 删除某条会话后本地收尾：若删的是当前选中会话，回退到「新建对话」空白态
+    const removeConversationLocally = (convId: string): void => {
+      if (currentConversationId.value === convId) {
+        currentConversationId.value = ''
+        currentSessionId.value = ''
+        convSource.value = 'new'
+        closeWs() // 关闭该会话的 WS，避免复用已删除会话的连接
+        resetMessages()
+      }
+      conversationList.value = conversationList.value.filter(c => c.id !== convId)
+    }
+
+    // 删除历史对话：悬停出现的删除按钮 → 自定义二次确认弹窗 → DELETE /api/session/delete/{sessionId}
+    const openConfirmDialog = (title: string, message: string, conv: ConversationItem): void => {
+      confirmDialogTitle.value = title
+      confirmDialogMessage.value = message
+      pendingDeleteConv.value = conv
+      confirmDialogVisible.value = true
+    }
+
+    const closeConfirmDialog = (): void => {
+      confirmDialogVisible.value = false
+      pendingDeleteConv.value = null
+    }
+
+    const onConfirmDelete = async (): Promise<void> => {
+      const conv = pendingDeleteConv.value
+      closeConfirmDialog()
+      if (!conv) return
+      // 本地 pending 项（sessionId 为空，后端尚未落库）：只做本地移除
+      if (!conv.sessionId) {
+        removeConversationLocally(conv.id)
+        return
+      }
+      try {
+        const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
+        await request.delete(`${base}/api/session/delete/${encodeURIComponent(conv.sessionId)}`)
+        removeConversationLocally(conv.id)
+        ElMessage({ message: '对话已删除', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
+      } catch (e) {
+        console.error('[DifyRealDialog] 删除会话失败', e)
+        ElMessage({ message: '删除失败，请稍后重试', type: 'error', customClass: 'dify-real-toast' })
+      }
+    }
+
+    const confirmDeleteConversation = (conv: ConversationItem): void => {
+      openConfirmDialog(
+        '删除对话',
+        `确定要删除对话「${conv.title || '未命名对话'}」吗？删除后无法恢复。`,
+        conv,
+      )
     }
 
     // 回填当前对话的 sessionId（后端「发送消息」接口返回新会话时调用）
@@ -2064,6 +2146,12 @@ export default defineComponent({
       currentSessionId,
       createNewConversation,
       selectConversation,
+      confirmDeleteConversation,
+      confirmDialogVisible,
+      confirmDialogTitle,
+      confirmDialogMessage,
+      closeConfirmDialog,
+      onConfirmDelete,
       bindCurrentSession,
       closeWs,
       handleClose,
@@ -2331,6 +2419,34 @@ export default defineComponent({
 .conversation-item-body {
   flex: 1;
   min-width: 0;
+}
+
+/* 删除按钮：默认隐藏，悬停会话项时显示 */
+.conversation-delete-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.conversation-item:hover .conversation-delete-btn {
+  opacity: 1;
+}
+
+.conversation-delete-btn:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
 }
 
 .conversation-item-title {
@@ -3065,8 +3181,10 @@ export default defineComponent({
 </style>
 
 <style lang="scss">
-/* 本组件所有 ElMessage 的公共样式（ElMessage 挂载在 body 下，需非 scoped 全局样式）：
-   1. 抬高 z-index 到自绘对话框（9999/10000）之上，否则 toast 会被对话框遮住；
+/* 本组件所有 ElMessage 的公共样式（ElMessage 挂载在 body 下，需非 scoped 全局样式）
+   与自定义二次确认弹窗（直接渲染在 custom-dialog 内，fixed 居中覆盖） */
+
+/* 1. toast 抬高 z-index 到自绘对话框（9999/10000）之上，否则会被对话框遮住；
    2. 错误详情 toast 保留换行、限制宽度，完整展示后端透出的错误堆栈 */
 .dify-real-toast {
   z-index: 10050 !important; /* 覆盖 ElMessage 内联的默认层级（约 2000+） */
@@ -3078,5 +3196,91 @@ export default defineComponent({
     max-height: 40vh;
     overflow-y: auto;
   }
+}
+
+/* 自定义二次确认弹窗：替换 ElMessageBox，避免被自绘对话框遮挡 / 左上角错位
+   注意：弹窗挂在外层 .custom-dialog-mask 下，no-mask 模式时该遮罩为 pointer-events: none，
+   pointer-events 会被继承导致按钮点不了，必须显式恢复 auto */
+.dify-real-confirm-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 10100;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.45);
+  animation: dify-confirm-fade-in 0.15s ease;
+}
+
+.dify-real-confirm {
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  animation: dify-confirm-zoom-in 0.15s ease;
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 12px;
+  }
+
+  &__message {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #475569;
+    margin-bottom: 24px;
+    word-break: break-all;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  &__btn {
+    height: 34px;
+    padding: 0 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+
+    &.cancel {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #475569;
+
+      &:hover {
+        background: #e2e8f0;
+      }
+    }
+
+    &.danger {
+      background: #ef4444;
+      color: #ffffff;
+
+      &:hover {
+        background: #dc2626;
+      }
+    }
+  }
+}
+
+@keyframes dify-confirm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dify-confirm-zoom-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 </style>
