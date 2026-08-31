@@ -619,24 +619,24 @@ export default defineComponent({
     const convSource = ref<'none' | 'history' | 'new'>('none')
 
     // 真实接口：拉取对话历史列表（直连，不走代理）
-    // 后端地址 http://10.89.34.77:8080/session/list，返回 { code, msg, data: [...] }
+    // 后端地址 http://10.89.34.77:8080/api/session/list，返回 { code, msg, data: [...] }
     // 地址可通过环境变量 VITE_APP_DIFY_SESSION_HOST 覆盖；直连方式下请确保后端已开启 CORS
-    // 接口字段：id(number) / cache / content / sessionId(string|null) / state(0|1)
-    // 列表仅展示 content（按需求），其余字段透存备用；接口无时间字段，updateTime 留空
+    // 接口字段：id(number) / cache / name / sessionId(string|null) / state(0|1)
+    // 列表仅展示 name（按需求），其余字段透存备用；接口无时间字段，updateTime 留空
     const fetchConversationList = async (): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        const resp = await request.get(`${base}/session/list`)
+        const resp = await request.get(`${base}/api/session/list`)
         const rawList = (resp.data?.data || []) as Array<{
           cache: string
-          content: string
+          name: string
           id: number
           sessionId: string | null
           state: number
         }>
         const fetched = rawList.map(item => ({
           id: String(item.id),
-          title: item.content || '',
+          title: item.name || '',
           updateTime: '',
           sessionId: item.sessionId,
           state: item.state,
@@ -673,7 +673,7 @@ export default defineComponent({
     const loadConversationMessages = async (sessionId: string): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        const resp = await request.get(`${base}/session/sessionId`, { params: { sessionId } })
+        const resp = await request.get(`${base}/api/chat/sessionId`, { params: { sessionId } })
         const raw = (resp.data?.data || []) as Array<{
           id: number
           content: string
@@ -719,7 +719,7 @@ export default defineComponent({
     }
 
     // 新会话首条消息后，把该会话插入/更新到历史列表顶部并高亮
-    // 列表数据来自后端 /session/list，后端尚未落库时先本地占位展示，避免用户看不到刚发起的对话
+    // 列表数据来自后端 /api/session/list，后端尚未落库时先本地占位展示，避免用户看不到刚发起的对话
     const upsertNewConversation = (sessionId: string) => {
       const existing = conversationList.value.find(c => c.sessionId === sessionId)
       if (existing) {
