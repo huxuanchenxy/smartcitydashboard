@@ -348,7 +348,6 @@ import {
 } from 'vue'
 import { ElButton, ElInput, ElMessage } from 'element-plus'
 import { DemoScriptEngine } from './demo-script'
-import type { DemoScript } from './demo-script'
 import ChatCopy from '@/icons/chat-copy.vue'
 import ChatUpload from '@/icons/chat-upload.vue'
 import ChatStop from '@/icons/chat-stop.vue'
@@ -360,7 +359,6 @@ import type { ChartAssemblyInput } from 'flint-chart'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
 
-const SCRIPT_MOCK_URL = import.meta.env.VITE_APP_SCRIPT_MOCK_URL || '/mockdata.json'
 // Flint 图表相关接口
 interface FlintSpec {
   rawInput: ChartAssemblyInput
@@ -543,48 +541,9 @@ export default defineComponent({
     const isUploadingFiles = computed(() => uploadedFiles.value.some(file => !!file.uploading))
 
     const scriptEngine = new DemoScriptEngine()
-    const scriptLoaded = ref(false)
+    // 不再请求 mockdata.json：真实对话走 WS，scriptEngine 仅作为技能按钮交互的内置兜底
+    const scriptLoaded = ref(true)
     const scriptLoadError = ref<string | null>(null)
-
-    const loadScriptFromMock = async (): Promise<void> => {
-      try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 8000)
-        // 加 timestamp 防止浏览器/CDN 缓存旧 mockdata.json
-        const url = `${SCRIPT_MOCK_URL}?t=${Date.now()}`
-        console.log('[Mock脚本] 请求URL:', url)
-        const response = await fetch(url, {
-          signal: controller.signal,
-          cache: 'no-cache',
-        })
-        clearTimeout(timeoutId)
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log('mockdata.json 返回：', data)
-
-        if (data && data.states && data.initialState) {
-          scriptEngine.setScript(data as DemoScript)
-          scriptLoaded.value = true
-          scriptLoadError.value = null
-        } else {
-          scriptLoaded.value = true
-          scriptLoadError.value = '返回数据格式无效（缺少 states 或 initialState），使用内置脚本'
-        }
-      } catch (e: any) {
-        scriptLoaded.value = true
-        if (e?.name === 'AbortError') {
-          scriptLoadError.value = '加载 mock 脚本超时，使用内置脚本'
-        } else if (e?.message?.includes('CORS') || e?.message?.includes('Failed to fetch')) {
-          scriptLoadError.value = '跨域或网络错误（CORS/无法连接 10.89.33.97:5000），使用内置脚本'
-        } else {
-          scriptLoadError.value = `${e?.message || '加载 mock 脚本失败'  }，使用内置脚本`
-        }
-      }
-    }
 
     const currentRole = computed(() => {
       return props.role || props.com.role
@@ -1105,7 +1064,6 @@ export default defineComponent({
     onMounted(() => {
       dialogVisible.value = props.visible
       window.addEventListener('resize', handleWindowResize)
-      loadScriptFromMock()
       fetchConversationList()
       if (dialogVisible.value) {
         showWelcomeMessage()
