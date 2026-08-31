@@ -254,6 +254,7 @@
                         size="small"
                         class="stop-button"
                         title="停止"
+                        @click="stopGeneration"
                       >
                         <ChatStop />
                       </el-button>
@@ -455,6 +456,12 @@ export default defineComponent({
     const flintChartRefs = ref<Map<string, HTMLElement>>(new Map())
     const flintChartInstances = ref<Map<string, echarts.ECharts>>(new Map())
     const isLoading = ref(false)
+    // 生成流程句柄：思考提示定时器 / 响应定时器 / 打字机定时器，停止或卸载时用于中止
+    let thinkingTimer: ReturnType<typeof setTimeout> | null = null
+    let responseTimer: ReturnType<typeof setTimeout> | null = null
+    let typingTimer: ReturnType<typeof setInterval> | null = null
+    // 当前正在打字输出的消息索引（sendMessage 与 sendInteractionMessage 共用）
+    let typingMessageIndex = -1
     const messageContainer = ref<HTMLElement | null>(null)
     const mdEditorVisible = ref(false)
 
@@ -650,6 +657,8 @@ export default defineComponent({
     }
 
     onUnmounted(() => {
+      // 卸载时中止生成流程，防止定时器在组件销毁后继续操作响应式数据
+      stopGeneration()
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
       document.removeEventListener('mousemove', handleResize)
@@ -659,6 +668,8 @@ export default defineComponent({
     })
 
     const handleClose = () => {
+      // 关闭窗口时停止生成，避免后台定时器继续输出
+      stopGeneration()
       dialogVisible.value = false
       emit('update:visible', false)
       emit('close')
@@ -804,6 +815,42 @@ export default defineComponent({
       document.removeEventListener('mouseup', stopResize)
     }
 
+    // 停止生成：中止思考提示/响应定时器与打字机输出，保留已输出内容
+    const stopGeneration = () => {
+      if (thinkingTimer !== null) {
+        clearTimeout(thinkingTimer)
+        thinkingTimer = null
+      }
+      if (responseTimer !== null) {
+        clearTimeout(responseTimer)
+        responseTimer = null
+      }
+      if (typingTimer !== null) {
+        clearInterval(typingTimer)
+        typingTimer = null
+      }
+
+      const thinkingIndex = messages.value.findIndex(msg => msg.isThinking)
+      if (thinkingIndex !== -1) {
+        // 还在"思考中"，直接移除占位消息
+        messages.value.splice(thinkingIndex, 1)
+      } else if (typingMessageIndex !== -1 && messages.value[typingMessageIndex]) {
+        // 正在打字输出：保留已输出内容，补停止标记并渲染已解析的图表
+        const msg = messages.value[typingMessageIndex]
+        if (!msg.content) {
+          msg.content = '（已停止生成）'
+        } else if (!msg.content.endsWith('（已停止生成）')) {
+          msg.content += '\n\n（已停止生成）'
+        }
+        if (msg.flintSpecs && msg.flintSpecs.length > 0) {
+          renderFlintCharts(typingMessageIndex)
+        }
+      }
+      typingMessageIndex = -1
+      isLoading.value = false
+      scrollToBottom()
+    }
+
     const sendMessage = async () => {
       if (!userQuery.value.trim() && uploadedFiles.value.length === 0) {
         return
@@ -827,7 +874,8 @@ export default defineComponent({
 
       isLoading.value = true
 
-      setTimeout(async () => {
+      thinkingTimer = setTimeout(async () => {
+        thinkingTimer = null
         const thinkingMessage = {
           role: 'assistant' as const,
           content: '',
@@ -839,7 +887,8 @@ export default defineComponent({
         await scrollToBottom()
       }, 500)
 
-      setTimeout(async () => {
+      responseTimer = setTimeout(async () => {
+        responseTimer = null
         const response = scriptEngine.getResponse(userMessage.content)
         const flintSpecs = parseFlintSpecs(response)
         const htmlInteractions = parseHtmlInteractions(response)
@@ -862,6 +911,7 @@ export default defineComponent({
 
           const typingSpeed = 50
           let index = 0
+          typingMessageIndex = thinkingIndex
           const interval = setInterval(() => {
             // 使用纯文本内容（不含 Flint/HTML JSON）进行打字
             if (index < textContent.length) {
@@ -870,6 +920,8 @@ export default defineComponent({
               scrollToBottom()
             } else {
               clearInterval(interval)
+              typingTimer = null
+              typingMessageIndex = -1
               isLoading.value = false
               // 打字完成后渲染 Flint 图表
               if (flintSpecs.length > 0) {
@@ -877,6 +929,7 @@ export default defineComponent({
               }
             }
           }, typingSpeed)
+          typingTimer = interval
         } else {
           const assistantMessage: ChartMessage = {
             role: 'assistant' as const,
@@ -1327,6 +1380,8 @@ export default defineComponent({
     }
 
     const clearMessages = () => {
+      // 若仍在生成中，先停止输出，避免残留的打字机/响应定时器继续写入已清空的消息列表
+      stopGeneration()
       disposeAllCharts()
       messages.value = []
       showWelcomeMessage()
@@ -1405,7 +1460,8 @@ export default defineComponent({
     // 发送交互结果消息（不显示用户消息，直接触发脚本引擎返回结果）
     const sendInteractionMessage = (text: string) => {
       isLoading.value = true
-      setTimeout(async () => {
+      thinkingTimer = setTimeout(async () => {
+        thinkingTimer = null
         const thinkingMessage = {
           role: 'assistant' as const,
           content: '',
@@ -1417,7 +1473,8 @@ export default defineComponent({
         await scrollToBottom()
       }, 300)
 
-      setTimeout(async () => {
+      responseTimer = setTimeout(async () => {
+        responseTimer = null
         const response = scriptEngine.getResponse(text)
         const flintSpecs = parseFlintSpecs(response)
         const htmlInteractions = parseHtmlInteractions(response)
@@ -1439,6 +1496,7 @@ export default defineComponent({
 
           const typingSpeed = 50
           let index = 0
+          typingMessageIndex = thinkingIndex
           const interval = setInterval(() => {
             if (index < textContent.length) {
               messages.value[thinkingIndex].content = textContent.slice(0, index + 1)
@@ -1446,12 +1504,15 @@ export default defineComponent({
               scrollToBottom()
             } else {
               clearInterval(interval)
+              typingTimer = null
+              typingMessageIndex = -1
               isLoading.value = false
               if (flintSpecs.length > 0) {
                 renderFlintCharts(thinkingIndex)
               }
             }
           }, typingSpeed)
+          typingTimer = interval
         }
       }, 2500 + Math.random() * 500)
     }
@@ -1529,6 +1590,7 @@ export default defineComponent({
       messageContainer,
       mdEditorVisible,
       sendMessage,
+      stopGeneration,
       clearMessages,
       handleClose,
       handleEnter,

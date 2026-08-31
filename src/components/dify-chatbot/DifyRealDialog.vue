@@ -110,7 +110,11 @@
                         <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
                       </div>
                       <div v-else>
-                        <div class="content-text" v-html="formatContent(message.content)"></div>
+                        <div
+                          class="content-text"
+                          :class="{ 'error-text': message.isError }"
+                          v-html="formatContent(message.content)"
+                        ></div>
                         <div v-if="message.flintSpecs && message.flintSpecs.length > 0" class="flint-charts-container">
                           <div
                             v-for="(spec, chartIdx) in message.flintSpecs"
@@ -247,10 +251,11 @@
                       v-for="file in uploadedFiles"
                       :key="file.id"
                       class="uploaded-file-item"
+                      :class="{ uploading: file.uploading }"
                     >
                       <span class="file-icon">📄</span>
                       <span class="file-name">{{ file.name }}</span>
-                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                      <span class="file-size">{{ file.uploading ? '上传中…' : formatFileSize(file.size) }}</span>
                       <button class="remove-file-btn" @click="removeFile(file.id)">
                         ×
                       </button>
@@ -285,6 +290,7 @@
                         size="small"
                         class="stop-button"
                         title="停止"
+                        @click="stopGeneration"
                       >
                         <ChatStop />
                       </el-button>
@@ -292,7 +298,7 @@
                         v-show="!isLoading"
                         type="success"
                         size="small"
-                        :disabled="isLoading || (!userQuery.trim() && uploadedFiles.length === 0)"
+                        :disabled="isLoading || isUploadingFiles || (!userQuery.trim() && uploadedFiles.length === 0)"
                         class="send-button"
                         title="发送"
                         @click="sendMessage"
@@ -405,6 +411,8 @@ interface ChartMessage {
   timestamp: number
   isThinking?: boolean
   thinkingContent?: string
+  // 服务端返回错误时的提示消息（样式与普通回复区分）
+  isError?: boolean
   files?: Array<{
     id: string
     name: string
@@ -524,9 +532,15 @@ export default defineComponent({
         id: string
         name: string
         size: number
+        // Dify 风格附件：上传后端返回的文件引用 id；后端上传接口就绪前用前端模拟 uuid
+        fileId?: string
+        // 是否仍在"上传"中（模拟）；上传完成后置 false 并回填 fileId
+        uploading?: boolean
       }>
     >([])
     const fileInputRef = ref<HTMLInputElement | null>(null)
+    // 是否存在仍在"上传中"的附件（发送前需等待其完成）
+    const isUploadingFiles = computed(() => uploadedFiles.value.some(file => !!file.uploading))
 
     const scriptEngine = new DemoScriptEngine()
     const scriptLoaded = ref(false)
@@ -744,6 +758,83 @@ export default defineComponent({
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let pendingTitle = ''          // 新会话首条消息内容，用作历史列表标题（后端落库前）
     let handshakeResolve: ((sid: string) => void) | null = null // 两段式握手：接收后端下发的 sessionId
+    let replyWatchdog: ReturnType<typeof setTimeout> | null = null // 发送后等待回复的看门狗，超时结束思考态
+    // 技能按钮交互链路（本地脚本引擎）的定时器句柄与打字机状态，停止时用于中止
+    let interactionThinkingTimer: ReturnType<typeof setTimeout> | null = null
+    let interactionResponseTimer: ReturnType<typeof setTimeout> | null = null
+    let typingTimer: ReturnType<typeof setInterval> | null = null
+    let typingMessageIndex = -1
+
+    const clearReplyWatchdog = () => {
+      if (replyWatchdog) {
+        clearTimeout(replyWatchdog)
+        replyWatchdog = null
+      }
+    }
+
+    // 统一结束「思考中」状态：移除占位消息、复位 isLoading、可选弹出 toast / 插入聊天内错误提示
+    // 任何异常路径（服务端 error 帧、连接断开、响应超时、帧解析失败）都必须走到这里，避免界面卡死
+    const endThinkingState = (chatText?: string, toast?: string) => {
+      clearReplyWatchdog()
+      const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+      if (thinkingIdx !== -1) {
+        messages.value.splice(thinkingIdx, 1)
+      }
+      if (chatText) {
+        messages.value.push({
+          role: 'assistant',
+          content: chatText,
+          timestamp: Date.now(),
+          isError: true,
+        })
+      }
+      isLoading.value = false
+      if (toast) {
+        ElMessage({ message: toast, type: 'error' })
+      }
+      scrollToBottom()
+    }
+
+    // 停止生成：
+    // 1) WS 链路——清除看门狗并结束思考态；连接保持不断开（后续可继续发消息），
+    //    停止后到达的迟到回复帧由 onmessage 中的 isLoading 判断丢弃；
+    // 2) 技能交互链路（本地脚本引擎）——中止思考/响应定时器与打字机输出，保留已输出内容
+    const stopGeneration = () => {
+      clearReplyWatchdog()
+      if (interactionThinkingTimer !== null) {
+        clearTimeout(interactionThinkingTimer)
+        interactionThinkingTimer = null
+      }
+      if (interactionResponseTimer !== null) {
+        clearTimeout(interactionResponseTimer)
+        interactionResponseTimer = null
+      }
+      if (typingTimer !== null) {
+        clearInterval(typingTimer)
+        typingTimer = null
+      }
+
+      const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+      if (thinkingIdx !== -1) {
+        // 还在“思考中”，直接移除占位消息
+        messages.value.splice(thinkingIdx, 1)
+      } else if (typingMessageIndex !== -1 && messages.value[typingMessageIndex]) {
+        // 正在打字输出：保留已输出内容，补停止标记并渲染已解析的图表
+        const msg = messages.value[typingMessageIndex]
+        if (!msg.content) {
+          msg.content = '（已停止生成）'
+        } else if (!msg.content.endsWith('（已停止生成）')) {
+          msg.content += '\n\n（已停止生成）'
+        }
+        if (msg.flintSpecs && msg.flintSpecs.length > 0) {
+          renderFlintCharts(typingMessageIndex)
+        }
+      }
+      typingMessageIndex = -1
+      isLoading.value = false
+      console.log('[DifyRealDialog] 已停止生成')
+      scrollToBottom()
+    }
 
     // 确保已建立连接：复用同一会话的连接，否则关闭旧连接并新建、等待 open
     // sessionId 为空时连接不带参数的 /ws/chat，由后端下发 sessionId（两段式握手）
@@ -788,7 +879,21 @@ export default defineComponent({
           try {
             data = JSON.parse(ev.data as string)
           } catch (e) {
+            // 帧本身非法（如 msg 内含未转义换行导致 JSON 断裂）：结束思考态并提示，避免卡死
             console.error('[DifyRealDialog] 收到无法解析的消息', ev.data)
+            if (isLoading.value) {
+              endThinkingState('消息处理失败，请稍后重试', '消息发送失败，请重试')
+            }
+            return
+          }
+          // 服务端业务错误（如消息落库失败）：优先于其它分支判断，
+          // 防止错误帧若同时携带 content 等字段被当作普通回复处理
+          if (data.type === 'error' || data.error) {
+            console.error('[DifyRealDialog][WS] 服务端错误:', data.msg || data.error)
+            // 已停止/非等待回复状态下不弹提示，避免迟到错误帧打扰
+            if (isLoading.value) {
+              endThinkingState('消息处理失败，请稍后重试', '消息发送失败，请重试')
+            }
             return
           }
           // 服务端确认会话就绪：sessionId 完全以后端下发为准
@@ -806,6 +911,11 @@ export default defineComponent({
           }
           // 普通助手回复
           if (data.content != null) {
+            // 已停止生成（或不在等待回复）时丢弃迟到帧，避免停止后内容又突然出现
+            if (!isLoading.value) {
+              console.log('[DifyRealDialog][WS] 非等待回复状态，忽略迟到帧')
+              return
+            }
             // 用真实回复替换「思考中」占位消息
             const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
             if (thinkingIdx !== -1) {
@@ -817,6 +927,7 @@ export default defineComponent({
               timestamp: Date.now(),
             })
             isLoading.value = false
+            clearReplyWatchdog()
             scrollToBottom()
           }
         }
@@ -831,6 +942,11 @@ export default defineComponent({
           wsStatus.value = 'closed'
           connectPromise = null
           console.warn('[DifyRealDialog][WS] 连接关闭:', url)
+          // 正在等回复时当前活跃连接被断开（服务端异常/落库失败后直接关连接）：
+          // 结束思考态并提示；两段式握手主动换连接时 ws.value 已置 null，不会误触
+          if (socket === ws.value && isLoading.value) {
+            endThinkingState('连接已断开，消息可能未送达', '连接已断开，请重试')
+          }
           if (wsSessionId === sessionId) {
             attemptReconnect()
           }
@@ -892,6 +1008,7 @@ export default defineComponent({
         clearTimeout(reconnectTimer)
         reconnectTimer = null
       }
+      clearReplyWatchdog()
       if (ws.value) {
         ws.value.close()
         ws.value = null
@@ -1007,6 +1124,8 @@ export default defineComponent({
     }
 
     onUnmounted(() => {
+      // 卸载时中止生成流程，防止定时器在组件销毁后继续操作响应式数据
+      stopGeneration()
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
       document.removeEventListener('mousemove', handleResize)
@@ -1017,6 +1136,8 @@ export default defineComponent({
     })
 
     const handleClose = () => {
+      // 关闭窗口时停止生成，避免后台定时器/迟到回复继续输出
+      stopGeneration()
       dialogVisible.value = false
       emit('update:visible', false)
       emit('close')
@@ -1168,13 +1289,36 @@ export default defineComponent({
         return
       }
 
+      // 有附件仍在上传中时，先等待全部拿到 fileId，保证 files 数组完整
+      if (uploadedFiles.value.some(file => file.uploading)) {
+        await new Promise<void>(resolve => {
+          const timer = setInterval(() => {
+            if (!uploadedFiles.value.some(file => file.uploading)) {
+              clearInterval(timer)
+              resolve()
+            }
+          }, 100)
+        })
+        // 等待期间附件全部上传失败被移除且无文本，则取消本次发送
+        if (!userQuery.value.trim() && uploadedFiles.value.length === 0) {
+          return
+        }
+      }
+
       const text = userQuery.value.trim()
+
+      // Dify 风格：附件以 { fileId, name } 数组随文本一起发送
+      const sendFiles = uploadedFiles.value
+        .filter(file => file.fileId)
+        .map(file => ({ fileId: file.fileId as string, name: file.name }))
 
       const userMessage = {
         role: 'user' as const,
         content: text,
         timestamp: Date.now(),
-        files: uploadedFiles.value.length > 0 ? [...uploadedFiles.value] : undefined,
+        files: uploadedFiles.value.length > 0
+          ? uploadedFiles.value.map(file => ({ id: file.id, name: file.name, size: file.size }))
+          : undefined,
       }
 
       messages.value.push(userMessage)
@@ -1198,16 +1342,25 @@ export default defineComponent({
       })
       await scrollToBottom()
 
-      // 尚无会话：先握手拿后端 sessionId（首条消息内容用作列表标题）
+      // 尚无会话：先握手拿后端 sessionId（首条消息内容用作列表标题；纯附件消息取首个文件名兜底）
       if (!currentSessionId.value) {
         convSource.value = 'new'
-        pendingTitle = text
+        pendingTitle = text || sendFiles.map(f => f.name).join('、') || '新对话'
       }
 
       try {
         // sessionId 完全由后端下发：无则先连无参数 /ws/chat 握手，拿到后再用 ?sessionId=xxx 发送
         const socket = await ensureChatSocket()
-        socket.send(JSON.stringify({ content: text }))
+        // 附件（若有）以数组形式与文本一起发送
+        socket.send(JSON.stringify({ content: text, files: sendFiles }))
+        // 看门狗：服务端异常时可能不回任何帧（或错误帧发到了已关闭的握手连接），
+        // 超时未收到回复则结束思考态并提示，避免永远卡在「正在思考中」
+        clearReplyWatchdog()
+        replyWatchdog = setTimeout(() => {
+          if (isLoading.value) {
+            endThinkingState('长时间未收到响应', '响应超时，请重试')
+          }
+        }, 60000)
       } catch (e) {
         // 发送失败：移除「思考中」占位消息
         const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
@@ -1661,6 +1814,8 @@ export default defineComponent({
     }
 
     const clearMessages = () => {
+      // 若仍在生成中，先停止输出，避免残留定时器继续写入已清空的消息列表
+      stopGeneration()
       disposeAllCharts()
       messages.value = []
       showWelcomeMessage()
@@ -1668,6 +1823,8 @@ export default defineComponent({
 
     // 仅清空消息、不插入欢迎语（切换会话 / 新建会话 / 加载历史时使用）
     const resetMessages = () => {
+      // 切换会话前若仍在生成中，先停止输出
+      stopGeneration()
       disposeAllCharts()
       messages.value = []
     }
@@ -1745,7 +1902,8 @@ export default defineComponent({
     // 发送交互结果消息（不显示用户消息，直接触发脚本引擎返回结果）
     const sendInteractionMessage = (text: string) => {
       isLoading.value = true
-      setTimeout(async () => {
+      interactionThinkingTimer = setTimeout(async () => {
+        interactionThinkingTimer = null
         const thinkingMessage = {
           role: 'assistant' as const,
           content: '',
@@ -1757,7 +1915,8 @@ export default defineComponent({
         await scrollToBottom()
       }, 300)
 
-      setTimeout(async () => {
+      interactionResponseTimer = setTimeout(async () => {
+        interactionResponseTimer = null
         const response = scriptEngine.getResponse(text)
         const flintSpecs = parseFlintSpecs(response)
         const htmlInteractions = parseHtmlInteractions(response)
@@ -1779,6 +1938,7 @@ export default defineComponent({
 
           const typingSpeed = 50
           let index = 0
+          typingMessageIndex = thinkingIndex
           const interval = setInterval(() => {
             if (index < textContent.length) {
               messages.value[thinkingIndex].content = textContent.slice(0, index + 1)
@@ -1786,14 +1946,34 @@ export default defineComponent({
               scrollToBottom()
             } else {
               clearInterval(interval)
+              typingTimer = null
+              typingMessageIndex = -1
               isLoading.value = false
               if (flintSpecs.length > 0) {
                 renderFlintCharts(thinkingIndex)
               }
             }
           }, typingSpeed)
+          typingTimer = interval
         }
       }, 2500 + Math.random() * 500)
+    }
+
+    // 模拟 Dify 文件上传接口：真实接口就绪后替换为 request.post(<upload-url>, FormData)
+    // 并返回后端下发的 file_id
+    const uploadFileMock = (file: File): Promise<string> => {
+      return new Promise(resolve => {
+        // 模拟网络耗时，便于观察"上传中"状态
+        setTimeout(() => {
+          let fileId = ''
+          if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            fileId = crypto.randomUUID()
+          } else {
+            fileId = `file-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+          }
+          resolve(fileId)
+        }, 400 + Math.random() * 300)
+      })
     }
 
     const handleFileSelect = (event: Event) => {
@@ -1803,11 +1983,26 @@ export default defineComponent({
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        uploadedFiles.value.push({
+        const item = {
           id: `${Date.now()}-${i}`,
           name: file.name,
           size: file.size,
-        })
+          uploading: true,
+        }
+        uploadedFiles.value.push(item)
+        // 并行模拟上传，完成后按 id 回填（避免失败移除导致索引错位）
+        uploadFileMock(file)
+          .then(fileId => {
+            const entry = uploadedFiles.value.find(f => f.id === item.id)
+            if (entry) {
+              entry.fileId = fileId
+              entry.uploading = false
+            }
+          })
+          .catch(() => {
+            uploadedFiles.value = uploadedFiles.value.filter(f => f.id !== item.id)
+            ElMessage({ message: `附件「${file.name}」上传失败`, type: 'error' })
+          })
       }
 
       target.value = ''
@@ -1869,6 +2064,7 @@ export default defineComponent({
       messageContainer,
       mdEditorVisible,
       sendMessage,
+      stopGeneration,
       clearMessages,
       resetMessages,
       conversationList,
@@ -1891,6 +2087,7 @@ export default defineComponent({
       removeFile,
       openFileDialog,
       formatFileSize,
+      isUploadingFiles,
       dialogWidth,
       dialogHeight,
       startResize,
@@ -2349,6 +2546,11 @@ export default defineComponent({
   line-height: 1.7;
 }
 
+/* 服务端错误提示消息 */
+.content-text.error-text {
+  color: #ef4444;
+}
+
 .content-text code {
   background-color: #f1f5f9;
   padding: 3px 8px;
@@ -2457,6 +2659,12 @@ export default defineComponent({
   border-radius: 10px;
   font-size: calc(13px * var(--chat-font-scale, 1));
   border: 1px solid #e2e8f0;
+}
+
+/* 上传中的附件：半透明 + 虚线边框，视觉上与已上传区分 */
+.uploaded-file-item.uploading {
+  opacity: 0.65;
+  border-style: dashed;
 }
 
 .remove-file-btn {
