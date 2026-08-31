@@ -934,6 +934,7 @@ export default defineComponent({
         socket.onerror = () => {
           wsStatus.value = 'error'
           connectPromise = null
+          // 连接错误的用户提示统一在这里弹出；sendMessage 的 catch 只记日志，避免双重报警
           console.error('[DifyRealDialog][WS] 连接出错:', url)
           ElMessage({ message: '对话连接出错，请稍后重试', type: 'error' })
           reject(new Error('websocket error'))
@@ -1362,12 +1363,13 @@ export default defineComponent({
           }
         }, 60000)
       } catch (e) {
-        // 发送失败：移除「思考中」占位消息
+        // 发送失败：移除「思考中」占位消息；连接错误提示统一由 socket.onerror
+        // （“对话连接出错，请稍后重试”）弹出，这里只记录日志，避免双重报警
         const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
         if (thinkingIdx !== -1) messages.value.splice(thinkingIdx, 1)
         isLoading.value = false
         pendingTitle = '' // 发送失败，清掉待用标题，避免下次误入列表
-        ElMessage({ message: '发送失败，连接异常', type: 'error' })
+        console.error('[DifyRealDialog] 消息发送失败:', e)
       }
     }
 
