@@ -657,7 +657,7 @@ export default defineComponent({
     // 新建时既不往历史列表插入 item，也不预先建立 WS：只有真正发出第一条消息后才由 session_ready 入列表
     const createNewConversation = async (): Promise<void> => {
       if (convSource.value !== 'history') {
-        ElMessage({ message: '已是最新对话', type: 'info', duration: 1500 })
+        ElMessage({ message: '已是最新对话', type: 'info', duration: 1500, customClass: 'dify-real-toast' })
         return
       }
       // 从历史会话切换到「新建」：断开旧连接、清空消息、取消历史项高亮
@@ -790,9 +790,37 @@ export default defineComponent({
       }
       isLoading.value = false
       if (toast) {
-        ElMessage({ message: toast, type: 'error' })
+        // 长错误详情（如后端透出的 SQL 异常堆栈）给更长的阅读时间，但也会自动消失；
+        // 带关闭按钮，可提前关掉。阅读时长随内容长度增加，上限 15 秒
+        const isLong = toast.length > 80
+        const duration = isLong
+          ? Math.min(5000 + Math.ceil(toast.length / 40) * 1000, 15000)
+          : 3000
+        ElMessage({
+          message: toast,
+          type: 'error',
+          duration,
+          showClose: isLong,
+          // 自绘对话框 z-index 高达 9999/10000，ElMessage 默认层级会被压在下面，
+          // 统一挂自定义 class 抬高 z-index 到对话框之上
+          customClass: 'dify-real-toast',
+        })
       }
       scrollToBottom()
+    }
+
+    // 尽力从非法 JSON 帧中提取 msg 字段（后端错误信息含未转义换行导致 JSON.parse 失败时使用）
+    // 返回还原转义后的 msg 文本；提取不到返回 null
+    const extractErrorMsg = (raw: string): string | null => {
+      const m = raw.match(/"msg"\s*:\s*"([\s\S]*)"\s*}\s*$/)
+      if (!m) return null
+      return m[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '')
+        .replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\')
+        .trim() || null
     }
 
     // 停止生成：
@@ -882,7 +910,9 @@ export default defineComponent({
             // 帧本身非法（如 msg 内含未转义换行导致 JSON 断裂）：结束思考态并提示，避免卡死
             console.error('[DifyRealDialog] 收到无法解析的消息', ev.data)
             if (isLoading.value) {
-              endThinkingState('消息处理失败，请稍后重试', '消息发送失败，请重试')
+              // 尽力从原始帧中还原 msg 字段，完整透出后端错误详情
+              const detail = extractErrorMsg(String(ev.data))
+              endThinkingState('消息处理失败，请稍后重试', detail ? `消息处理失败：${detail}` : '消息发送失败，请重试')
             }
             return
           }
@@ -892,7 +922,9 @@ export default defineComponent({
             console.error('[DifyRealDialog][WS] 服务端错误:', data.msg || data.error)
             // 已停止/非等待回复状态下不弹提示，避免迟到错误帧打扰
             if (isLoading.value) {
-              endThinkingState('消息处理失败，请稍后重试', '消息发送失败，请重试')
+              // 对话框内保留友好提示；toast 完整透出后端返回的 msg 错误详情
+              const detail = String(data.msg || data.error || '')
+              endThinkingState('消息处理失败，请稍后重试', detail ? `消息处理失败：${detail}` : '消息发送失败，请重试')
             }
             return
           }
@@ -936,7 +968,7 @@ export default defineComponent({
           connectPromise = null
           // 连接错误的用户提示统一在这里弹出；sendMessage 的 catch 只记日志，避免双重报警
           console.error('[DifyRealDialog][WS] 连接出错:', url)
-          ElMessage({ message: '对话连接出错，请稍后重试', type: 'error' })
+          ElMessage({ message: '对话连接出错，请稍后重试', type: 'error', customClass: 'dify-real-toast' })
           reject(new Error('websocket error'))
         }
         socket.onclose = () => {
@@ -989,7 +1021,7 @@ export default defineComponent({
     const attemptReconnect = () => {
       if (reconnectCount >= MAX_RECONNECT) {
         console.error('[DifyRealDialog][WS] 重连次数已达上限，放弃重连')
-        ElMessage({ message: '连接已断开，重连失败', type: 'error' })
+        ElMessage({ message: '连接已断开，重连失败', type: 'error', customClass: 'dify-real-toast' })
         return
       }
       const sid = currentSessionId.value
@@ -1783,7 +1815,7 @@ export default defineComponent({
 
     const copyMessageContent = (message: { content: string; }) => {
       const onCopied = () => {
-        ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500 })
+        ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
       }
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(message.content).then(onCopied).catch(() => {
@@ -1807,7 +1839,7 @@ export default defineComponent({
         if (ok) {
           onCopied && onCopied()
         } else {
-          ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500 })
+          ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500, customClass: 'dify-real-toast' })
         }
       } catch (err) {
         ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500 })
@@ -2003,7 +2035,7 @@ export default defineComponent({
           })
           .catch(() => {
             uploadedFiles.value = uploadedFiles.value.filter(f => f.id !== item.id)
-            ElMessage({ message: `附件「${file.name}」上传失败`, type: 'error' })
+            ElMessage({ message: `附件「${file.name}」上传失败`, type: 'error', customClass: 'dify-real-toast' })
           })
       }
 
@@ -3071,5 +3103,22 @@ export default defineComponent({
 .skill-list-info {
   flex: 1;
   min-width: 0;
+}
+</style>
+
+<style lang="scss">
+/* 本组件所有 ElMessage 的公共样式（ElMessage 挂载在 body 下，需非 scoped 全局样式）：
+   1. 抬高 z-index 到自绘对话框（9999/10000）之上，否则 toast 会被对话框遮住；
+   2. 错误详情 toast 保留换行、限制宽度，完整展示后端透出的错误堆栈 */
+.dify-real-toast {
+  z-index: 10050 !important; /* 覆盖 ElMessage 内联的默认层级（约 2000+） */
+  max-width: 560px;
+
+  .el-message__content {
+    white-space: pre-line;
+    word-break: break-all;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
 }
 </style>
