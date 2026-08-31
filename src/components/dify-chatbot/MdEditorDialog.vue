@@ -402,6 +402,25 @@ export default defineComponent({
   border-radius: 0;
 }
 
+/* 修复窄窗口下「浏览器全屏 / 预览」按钮被截断不可见的问题：
+   md-editor-v3 自带 .md-toolbar 固定 min-width:850px 且隐藏滚动条，
+   窗口变窄时右侧按钮超出可视区且无法滚动。这里取消最小宽度并允许换行，
+   保证任何宽度下右侧按钮都始终可见（宽窗口布局与原来一致）。 */
+.md-editor-dialog-body :deep(.md-toolbar-wrapper) {
+  height: auto;
+  overflow: visible;
+}
+
+.md-editor-dialog-body :deep(.md-toolbar) {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* 停靠模式最小宽度 360px 时左侧按钮组仍可能放不下，同样允许换行 */
+.md-editor-dialog-body :deep(.md-toolbar-left) {
+  flex-wrap: wrap;
+}
+
 .md-editor-dialog-footer {
   display: flex;
   align-items: center;
