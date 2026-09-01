@@ -116,9 +116,9 @@
                         </span>
                         <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
                       </div>
-                      <div v-else>
-                        <div
-                          class="content-text"
+                  <div v-else-if="!message.isInterrupted">
+                    <div
+                      class="content-text"
                           :class="{ 'error-text': message.isError }"
                           v-html="formatContent(message.content)"
                         ></div>
@@ -224,6 +224,40 @@
                             <span class="file-icon">📄</span>
                             <span class="file-name">{{ file.name }}</span>
                             <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="interrupted-panel">
+                        <div class="interrupted-header">
+                          <span class="interrupted-badge">待确认</span>
+                          <span v-if="message.intentCode" class="interrupted-intent">{{ message.intentCode }}</span>
+                        </div>
+                        <div
+                          v-if="message.pendingQuestion"
+                          class="interrupted-question"
+                          v-html="formatContent(message.pendingQuestion)"
+                        ></div>
+                        <div v-if="message.pendingContext" class="interrupted-context">
+                          <div class="interrupted-context-title">上下文信息</div>
+                          <div
+                            v-for="(entry, ci) in normalizePendingContext(message.pendingContext)"
+                            :key="ci"
+                            class="pending-context-item"
+                          >
+                            <div class="pending-context-key">{{ entry.key }}</div>
+                            <pre v-if="entry.isCode" class="pending-context-code">{{ entry.text }}</pre>
+                            <table v-else-if="entry.isTable" class="pending-context-table">
+                              <thead>
+                                <tr>
+                                  <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr v-for="(row, ri) in entry.tableRows" :key="ri">
+                                  <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </div>
@@ -444,6 +478,12 @@ interface ChartMessage {
   selectedSkills?: string[]
   interactionResolved?: boolean
   interactionText?: string
+  // AI 主动挂起、等待用户确认（status=interrupted）相关字段
+  // 后端目前仅返回这一种 status，pending_question / pending_context 两个字段不一定每次都下发
+  isInterrupted?: boolean
+  intentCode?: string
+  pendingQuestion?: string
+  pendingContext?: Record<string, any> | null
 }
 
 export default defineComponent({
@@ -978,6 +1018,37 @@ export default defineComponent({
             }
             return
           }
+          // AI 主动挂起、等待用户确认（status=interrupted）：
+          // 展示 pending_question（提示文案）与 pending_context（中间产物上下文）；
+          // 两个字段后端不一定每次都下发，需健壮判空；其它 status 暂不处理
+          if (data.status === 'interrupted') {
+            console.log('[DifyRealDialog][WS] 收到 interrupted 挂起帧:', data)
+            if (!isLoading.value) {
+              // 已停止 / 非等待回复状态的迟到帧：仅记录，不重复插入，避免打扰
+              console.log('[DifyRealDialog][WS] 非等待回复状态，忽略迟到 interrupted 帧')
+              return
+            }
+            const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+            if (thinkingIdx !== -1) {
+              // 用挂起提示替换「思考中」占位消息
+              messages.value.splice(thinkingIdx, 1)
+            }
+            const pendingQuestion = typeof data.pending_question === 'string' ? data.pending_question : undefined
+            messages.value.push({
+              role: 'assistant',
+              // content 保留 pending_question，便于「复制」按钮直接复制提问文案
+              content: pendingQuestion ?? '',
+              timestamp: Date.now(),
+              isInterrupted: true,
+              intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
+              pendingQuestion,
+              pendingContext: data.pending_context != null ? data.pending_context : undefined,
+            })
+            isLoading.value = false
+            clearReplyWatchdog()
+            scrollToBottom()
+            return
+          }
           // 服务端确认会话就绪：sessionId 完全以后端下发为准
           if (data.type === 'session_ready' && data.session_id) {
             const readyId = String(data.session_id)
@@ -1499,6 +1570,60 @@ export default defineComponent({
     // 清理消息内容中的 HTML 代码块
     const stripHtmlBlocks = (content: string): string => {
       return content.replace(/```html\s*\n[\s\S]*?\n```/g, '')
+    }
+
+    // 将 interrupted 帧的 pending_context 对象规整为可渲染的条目数组
+    // 每个条目对应一个中间产物步骤（如 SQL_COMPOSER.sql / SQL_EXEC_AGENT.json）
+    //   - 字符串值（如 SQL）：按代码块展示
+    //   - 数组值（如记录列表）：按表格展示
+    //   - 其它对象/基本类型：降级为 JSON / 文本展示
+    // 字段缺失、类型异常、或 context 本身非法时一律安全降级，不抛错、不渲染空面板
+    interface PendingContextEntry {
+      key: string
+      text: string
+      isCode: boolean
+      isTable: boolean
+      tableColumns?: string[]
+      tableRows?: Array<Record<string, any>>
+    }
+
+    const normalizePendingContext = (ctx: any): PendingContextEntry[] => {
+      if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) return []
+      return Object.keys(ctx).map(key => {
+        const val = ctx[key]
+        if (Array.isArray(val)) {
+          const rows = val as Array<Record<string, any>>
+          const first = rows[0]
+          const columns = first && typeof first === 'object' && !Array.isArray(first)
+            ? Object.keys(first as Record<string, any>)
+            : []
+          return { key, text: '', isCode: false, isTable: true, tableColumns: columns, tableRows: rows }
+        }
+        if (typeof val === 'string') {
+          return { key, text: val, isCode: true, isTable: false }
+        }
+        if (val && typeof val === 'object') {
+          try {
+            return { key, text: JSON.stringify(val, null, 2), isCode: true, isTable: false }
+          } catch (e) {
+            return { key, text: String(val), isCode: true, isTable: false }
+          }
+        }
+        return { key, text: String(val ?? ''), isCode: true, isTable: false }
+      })
+    }
+
+    // 表格单元格文本：对象 / 数组降级为 JSON，其它转为字符串，避免显示 [object Object]
+    const pendingCellText = (val: any): string => {
+      if (val === null || val === undefined) return ''
+      if (typeof val === 'object') {
+        try {
+          return JSON.stringify(val)
+        } catch (e) {
+          return String(val)
+        }
+      }
+      return String(val)
     }
 
     // 设置图表 DOM 引用
@@ -2168,6 +2293,8 @@ export default defineComponent({
       formatContent,
       formatTime,
       copyMessageContent,
+      normalizePendingContext,
+      pendingCellText,
       dialogPosition,
       handleMouseDown,
       uploadedFiles,
@@ -3186,6 +3313,121 @@ export default defineComponent({
 .skill-list-info {
   flex: 1;
   min-width: 0;
+}
+
+/* AI 等待确认（status=interrupted）面板 */
+.interrupted-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.interrupted-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interrupted-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  font-weight: 600;
+}
+
+.interrupted-intent {
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: #92400e;
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
+}
+
+.interrupted-question {
+  font-size: calc(15px * var(--chat-font-scale, 1));
+  line-height: 1.7;
+  color: #1e293b;
+}
+
+.interrupted-context {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 12px;
+}
+
+.interrupted-context-title {
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  color: #475569;
+}
+
+.pending-context-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #f8fafc;
+}
+
+.pending-context-key {
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  color: #334155;
+  padding: 8px 12px;
+  background-color: #eef2f7;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
+}
+
+.pending-context-code {
+  margin: 0;
+  padding: 12px;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  line-height: 1.5;
+  color: #0f172a;
+  background-color: #f1f5f9;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
+}
+
+.pending-context-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+
+  th,
+  td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    color: #334155;
+  }
+
+  th {
+    background-color: #eef2f7;
+    font-weight: 600;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td:last-child,
+  th:last-child {
+    border-right: none;
+  }
 }
 </style>
 
