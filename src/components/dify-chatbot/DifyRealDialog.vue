@@ -606,6 +606,15 @@ export default defineComponent({
     const confirmDialogMessage = ref('')
     const pendingDeleteConv = ref<ConversationItem | null>(null)
 
+    // 从 localStorage 读取当前登录账号（与登录页 nav-header 等处共用同一个 key）
+    const getLoginAccount = (): string => localStorage.getItem('loginAccount') || ''
+    // 给接口地址追加 loginAccount 查询参数（自动判断用 ? 还是 &）；未登录时返回原地址
+    const withLoginAccount = (url: string): string => {
+      const account = getLoginAccount()
+      if (!account) return url
+      return `${url}${url.includes('?') ? '&' : '?'}loginAccount=${encodeURIComponent(account)}`
+    }
+
     // 真实接口：拉取对话历史列表（直连，不走代理）
     // 后端地址 http://10.89.34.77:8080/api/session/list，返回 { code, msg, data: [...] }
     // 地址可通过环境变量 VITE_APP_DIFY_SESSION_HOST 覆盖；直连方式下请确保后端已开启 CORS
@@ -614,7 +623,7 @@ export default defineComponent({
     const fetchConversationList = async (): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        const resp = await request.get(`${base}/api/session/list`)
+        const resp = await request.get(withLoginAccount(`${base}/api/session/list`))
         const rawList = (resp.data?.data || []) as Array<{
           autoId?: number
           cache?: string
@@ -661,7 +670,7 @@ export default defineComponent({
     const loadConversationMessages = async (sessionId: string): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        const resp = await request.get(`${base}/api/chat/sessionId`, { params: { sessionId } })
+        const resp = await request.get(withLoginAccount(`${base}/api/chat/sessionId`), { params: { sessionId } })
         const raw = (resp.data?.data || []) as Array<{
           id: number
           content: string
@@ -734,7 +743,7 @@ export default defineComponent({
       }
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        await request.delete(`${base}/api/session/delete/${encodeURIComponent(conv.sessionId)}`)
+        await request.delete(withLoginAccount(`${base}/api/session/delete/${encodeURIComponent(conv.sessionId)}`))
         removeConversationLocally(conv.id)
         ElMessage({ message: '对话已删除', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
       } catch (e) {
@@ -930,9 +939,9 @@ export default defineComponent({
 
       wsStatus.value = 'connecting'
       wsSessionId = sessionId
-      const url = sessionId
+      const url = withLoginAccount(sessionId
         ? `${WS_BASE}/ws/chat?sessionId=${encodeURIComponent(sessionId)}`
-        : `${WS_BASE}/ws/chat`
+        : `${WS_BASE}/ws/chat`)
       console.log('[DifyRealDialog][WS] 连接中:', url)
       const socket = new WebSocket(url)
       connectPromise = new Promise<WebSocket>((resolve, reject) => {
