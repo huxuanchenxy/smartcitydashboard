@@ -116,7 +116,7 @@
                         </span>
                         <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
                       </div>
-                  <div v-else-if="!message.isInterrupted">
+                  <div v-else-if="!message.isInterrupted && !message.isCompleted">
                     <div
                       class="content-text"
                           :class="{ 'error-text': message.isError }"
@@ -227,7 +227,7 @@
                           </div>
                         </div>
                       </div>
-                      <div v-else class="interrupted-panel">
+                      <div v-else-if="message.isInterrupted" class="interrupted-panel">
                         <div class="interrupted-header">
                           <span class="interrupted-badge">待确认</span>
                           <span v-if="message.intentCode" class="interrupted-intent">{{ message.intentCode }}</span>
@@ -241,6 +241,35 @@
                           <div class="interrupted-context-title">上下文信息</div>
                           <div
                             v-for="(entry, ci) in normalizePendingContext(message.pendingContext)"
+                            :key="ci"
+                            class="pending-context-item"
+                          >
+                            <div class="pending-context-key">{{ entry.key }}</div>
+                            <pre v-if="entry.isCode" class="pending-context-code">{{ entry.text }}</pre>
+                            <table v-else-if="entry.isTable" class="pending-context-table">
+                              <thead>
+                                <tr>
+                                  <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr v-for="(row, ri) in entry.tableRows" :key="ri">
+                                  <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else-if="message.isCompleted" class="result-panel">
+                        <div class="result-header">
+                          <span class="result-badge">已完成</span>
+                          <span v-if="message.intentCode" class="result-intent">{{ message.intentCode }}</span>
+                        </div>
+                        <div v-if="message.resultPayload" class="interrupted-context">
+                          <div class="interrupted-context-title">结果</div>
+                          <div
+                            v-for="(entry, ci) in normalizePendingContext(message.resultPayload)"
                             :key="ci"
                             class="pending-context-item"
                           >
@@ -479,11 +508,15 @@ interface ChartMessage {
   interactionResolved?: boolean
   interactionText?: string
   // AI 主动挂起、等待用户确认（status=interrupted）相关字段
-  // 后端目前仅返回这一种 status，pending_question / pending_context 两个字段不一定每次都下发
+  // pending_question / pending_context 两个字段不一定每次都下发
   isInterrupted?: boolean
   intentCode?: string
   pendingQuestion?: string
   pendingContext?: Record<string, any> | null
+  // 任务完成（status=completed）相关字段：展示 result 中的最终产物
+  // result 结构与 pending_context 一致（含 SQL_COMPOSER.sql / SQL_EXEC_AGENT.json 等），同样不一定每次下发
+  isCompleted?: boolean
+  resultPayload?: Record<string, any> | null
 }
 
 export default defineComponent({
@@ -1049,6 +1082,32 @@ export default defineComponent({
             scrollToBottom()
             return
           }
+          // 任务完成（status=completed）：展示 result 中的最终产物
+          // result 结构与 pending_context 一致，同样不一定每次下发；不展示提问（pending_question 为 null）
+          if (data.status === 'completed') {
+            console.log('[DifyRealDialog][WS] 收到 completed 完成帧:', data)
+            if (!isLoading.value) {
+              console.log('[DifyRealDialog][WS] 非等待回复状态，忽略迟到 completed 帧')
+              return
+            }
+            const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+            if (thinkingIdx !== -1) {
+              // 用完成结果替换「思考中」占位消息
+              messages.value.splice(thinkingIdx, 1)
+            }
+            messages.value.push({
+              role: 'assistant',
+              content: '',
+              timestamp: Date.now(),
+              isCompleted: true,
+              intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
+              resultPayload: data.result != null ? data.result : undefined,
+            })
+            isLoading.value = false
+            clearReplyWatchdog()
+            scrollToBottom()
+            return
+          }
           // 服务端确认会话就绪：sessionId 完全以后端下发为准
           if (data.type === 'session_ready' && data.session_id) {
             const readyId = String(data.session_id)
@@ -1077,6 +1136,31 @@ export default defineComponent({
             messages.value.push({
               role: 'assistant',
               content: String(data.content),
+              timestamp: Date.now(),
+            })
+            isLoading.value = false
+            clearReplyWatchdog()
+            scrollToBottom()
+          }
+          // ===== 兜底：以上分支均未命中（返回的数据未在代码里预处理 / 新结构） =====
+          // 绝不能让对话一直卡在「思考中」：把原始返回数据原样渲染成一条助手消息
+          if (isLoading.value) {
+            console.warn('[DifyRealDialog][WS] 收到未在代码中预处理的帧，原样展示避免卡在思考中:', data)
+            const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
+            if (thinkingIdx !== -1) {
+              // 用原始数据替换「思考中」占位消息
+              messages.value.splice(thinkingIdx, 1)
+            }
+            let rawText = ''
+            try {
+              rawText = JSON.stringify(data, null, 2)
+            } catch (e) {
+              rawText = String(data)
+            }
+            const statusHint = typeof data.status === 'string' ? `（status=${data.status}）` : ''
+            messages.value.push({
+              role: 'assistant',
+              content: `（收到未在代码中预处理的返回数据${statusHint}，已原样展示）\n\n${rawText}`,
               timestamp: Date.now(),
             })
             isLoading.value = false
@@ -1513,7 +1597,7 @@ export default defineComponent({
           if (isLoading.value) {
             endThinkingState('长时间未收到响应', '响应超时，请重试')
           }
-        }, 60000)
+        }, 6000000)
       } catch (e) {
         // 发送失败：移除「思考中」占位消息；连接错误提示统一由 socket.onerror
         // （“对话连接出错，请稍后重试”）弹出，这里只记录日志，避免双重报警
@@ -3428,6 +3512,40 @@ export default defineComponent({
   th:last-child {
     border-right: none;
   }
+}
+
+/* AI 任务完成（status=completed）结果面板：复用上下文条目样式，仅头部徽标不同 */
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  font-weight: 600;
+}
+
+.result-intent {
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: #065f46;
+  background-color: #d1fae5;
+  border: 1px solid #a7f3d0;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
 }
 </style>
 
