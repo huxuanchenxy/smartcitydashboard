@@ -27,6 +27,8 @@
 - 跨组件通讯：mitter 事件总线 + window.ue.interface（对接 UE 底座）
 - i18n：vue-i18n，目前仅登录页国际化
 - 包管理器：项目用 yarn；本机无 yarn，启动用托管 node v22.22.2 直接跑 ./node_modules/.bin/vite
+- Element Plus 在 main.ts 全局注册（import from '@/components/element-plus'），组件里直接用 el-* 标签，无需单独 import；el-tooltip 不生成额外 wrapper，包裹 flex 子项不会破坏布局
+- AgentConfig（src/views/project/NetWork/AgentConfig.vue）技能库：必须保持单列布局，不要再改成两列/多列；卡片文字被截断时用 el-tooltip 悬停展示全文而非放开行数
 
 ## 启动命令（本机）
 无 yarn 时：

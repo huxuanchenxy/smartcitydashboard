@@ -28,23 +28,30 @@
       </div>
       <div class="panel-header">
         <h3>技能库</h3>
-        <span class="panel-subtitle">选择技能添加到 Agent</span>
+        <!-- <span class="panel-subtitle">选择技能添加到 Agent</span> -->
       </div>
       <div class="skills-grid">
         <div
           v-for="skill in skills"
-          :key="skill.name"
+          :key="skill.skillId || skill.name"
           class="skill-card"
           @click="addSkill(skill)"
         >
           <div class="skill-avatar" :style="{ background: skill.color }">
             {{ skill.letter }}
           </div>
-          <div class="skill-info">
-            <div class="skill-name">{{ skill.name }}</div>
-            <div class="skill-desc">{{ skill.desc }}</div>
-          </div>
-          <div class="skill-add">+</div>
+          <el-tooltip placement="top-start" effect="dark" :show-after="300">
+            <template #content>
+              <div class="skill-tip">
+                <div class="skill-tip-name">{{ skill.name }}</div>
+                <div v-if="skill.desc" class="skill-tip-desc">{{ skill.desc }}</div>
+              </div>
+            </template>
+            <div class="skill-info">
+              <div class="skill-name">{{ skill.name }}</div>
+              <div class="skill-desc">{{ skill.desc }}</div>
+            </div>
+          </el-tooltip>
         </div>
       </div>
     </div>
@@ -53,6 +60,8 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
+import { ElTooltip } from 'element-plus'
+import request from '@/utils/request'
 import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
 import {
   getFontScale,
@@ -63,16 +72,30 @@ import {
 } from '@/components/dify-chatbot/font-scale'
 
 interface Skill {
+  skillId: string
   name: string
   desc: string
   letter: string
   color: string
 }
 
+// 头像渐变色板：接口只返回 icon 单字，颜色按索引循环取用，保持卡片视觉不单调
+const SKILL_COLORS = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+  'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+  'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)',
+]
+
 export default defineComponent({
   name: 'AgentConfig',
   components: {
     DifyRealDialog,
+    ElTooltip,
   },
   setup() {
     const showDialog = ref(true)
@@ -80,59 +103,40 @@ export default defineComponent({
     const initialPosition = ref<{ x: number; y: number; } | null>(null)
     const initialSize = ref<{ width: number; height: number; } | null>(null)
 
-    const skills = ref<Skill[]>([
-      {
-        name: '文字转SQL',
-        desc: '把自然语言转换为可执行的SQL查询',
-        letter: '文',
-        color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      },
-      {
-        name: '设备别名归一',
-        desc: '把多种设备说法自动归一为设备知识库唯一ID',
-        letter: '设',
-        color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      },
-      {
-        name: '时间语义解析',
-        desc: '将自然时间说法解析为标准时间范围，供历史检索限定时间窗',
-        letter: '时',
-        color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      },
-      {
-        name: '数值条件结构化抽取',
-        desc: '将数值条件输出为「字段-操作符-值」三元组，用于生成查询条件或联动规则',
-        letter: '数',
-        color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      },
-      {
-        name: '相似故障检索',
-        desc: '输入故障描述，从历史故障库召回相似案例，为根因研判提供参照',
-        letter: '相',
-        color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      },
-      {
-        name: '故障根因概率推断',
-        desc: '结合故障现象与实时数据，输出可能根因并按概率排序，辅助快速定位故障',
-        letter: '故',
-        color: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-      },
-      {
-        name: '图纸符号识别',
-        desc: '从图纸区域切片中识别标准图例符号并映射到图例库编码',
-        letter: '图',
-        color: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-      },
-      {
-        name: '查询边界判定与澄清',
-        desc: '判断查询是否超出 AI 能力范围，输出「可回答/需澄清/拒答」及缺失槽位，防止错误作答',
-        letter: '查',
-        color: 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)',
-      },
-    ])
+    // 技能库列表：全部来自接口，无本地静态兜底
+    const skills = ref<Skill[]>([])
+
+    // 技能库接口 GET /api/skill/list，返回 { code, msg, data: [...] }，
+    // 地址可通过环境变量 VITE_APP_DIFY_SESSION_HOST 覆盖；直连方式下请确保后端已开启 CORS
+    const fetchSkillList = async (): Promise<void> => {
+      try {
+        const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
+        const resp = await request.get(`${base}/api/skill/list`)
+        const body = resp?.data
+        const list = body?.data
+        if (body?.code === 200 && Array.isArray(list)) {
+          const fetched = list
+            .filter((item: any) => item && !item.isDeleted && item.name)
+            .map((item: any, index: number) => ({
+              skillId: item.skillId || '',
+              name: item.name,
+              desc: item.description || '',
+              letter: item.icon || (item.name || '').slice(0, 1),
+              color: SKILL_COLORS[index % SKILL_COLORS.length],
+            }))
+          skills.value = fetched
+          console.log('[AgentConfig] 技能库加载完成，共', fetched.length, '个技能')
+        } else {
+          console.warn('[AgentConfig] 技能库接口返回异常:', resp)
+        }
+      } catch (error) {
+        // 接口失败保持空列表，调试信息只走 console
+        console.error('[AgentConfig] 技能库接口请求失败:', error)
+      }
+    }
 
     const addSkill = (skill: Skill) => {
-      console.log('添加技能:', skill.name)
+      console.log('添加技能:', skill.name, 'skillId:', skill.skillId)
     }
 
     // 字体整体缩放配置：默认隐藏，Ctrl+空格 唤起；再次按 Ctrl+空格 保存到 localStorage 并收起
@@ -205,6 +209,7 @@ export default defineComponent({
       window.addEventListener('keydown', onKeydown)
       measurePanel()
       window.addEventListener('resize', measurePanel)
+      fetchSkillList()
     })
 
     onUnmounted(() => {
@@ -253,7 +258,7 @@ export default defineComponent({
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 16px;
   overflow: hidden;
   background-color: #f8fafc;
   border-radius: 16px;
@@ -353,19 +358,19 @@ export default defineComponent({
 
   /* 单列布局：技能卡片纵向排列，腾出的横向空间留给左侧对话窗 */
   grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
+  gap: 8px;
   overflow-y: auto;
-  padding: 4px 8px 4px 4px;
+  padding: 4px 8px 8px 4px;
   margin: -4px;
 }
 
 .panel-header {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .panel-header h3 {
-  margin: 0 0 4px 0;
-  font-size: 20px;
+  margin: 0 0 2px 0;
+  font-size: 18px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -391,10 +396,10 @@ export default defineComponent({
 .skill-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 10px;
   background-color: white;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -409,15 +414,15 @@ export default defineComponent({
 }
 
 .skill-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
@@ -427,10 +432,11 @@ export default defineComponent({
 }
 
 .skill-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #1e293b;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -439,30 +445,31 @@ export default defineComponent({
 .skill-desc {
   font-size: 12px;
   color: #64748b;
-  line-height: 1.4;
+  line-height: 1.3;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.skill-add {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background-color: #f1f5f9;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 400;
-  transition: all 0.2s;
-  flex-shrink: 0;
+/* 悬停提示：卡片内文字被截断时，完整内容在气泡中展示 */
+.skill-tip {
+  max-width: 240px;
 }
 
-.skill-card:hover .skill-add {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
+.skill-tip-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
 }
+
+.skill-tip-desc {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: normal;
+  word-break: break-word;
+}
+
 </style>
