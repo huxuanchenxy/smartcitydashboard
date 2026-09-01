@@ -402,6 +402,13 @@ export default defineComponent({
   border-radius: 0;
 }
 
+.md-editor-dialog-body :deep(.md-editor-input-wrapper textarea),
+.md-editor-dialog-body :deep(.md-editor-content textarea),
+.md-editor-dialog-body :deep(textarea) {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 /* 修复窄窗口下「浏览器全屏 / 预览」按钮被截断不可见的问题：
    md-editor-v3 自带 .md-toolbar 固定 min-width:850px 且隐藏滚动条，
    窗口变窄时右侧按钮超出可视区且无法滚动。这里取消最小宽度并允许换行，
