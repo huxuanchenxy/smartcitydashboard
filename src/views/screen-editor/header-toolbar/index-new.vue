@@ -261,10 +261,10 @@
   <formula />
   <device/>
   
-  <!-- Dify API 聊天机器人弹框 -->
-  <DifyApiDialog
+  <!-- AI 助手聊天弹框（DifyRealDialog） -->
+  <DifyRealDialog
     v-model:visible="difyApiDialogVisible"
-    :data="difyData"
+    title="AI 智能助手"
     @close="handleDifyApiDialogClose"
     @message-received="handleDifyApiMessageReceived"
     @message-sent="handleDifyApiMessageSent"
@@ -289,7 +289,7 @@ import Snapshot from '../../my-project/Snapshot.vue'
 import PublishScreen from '../../my-project/publish.vue'
 import Formula from '../../screen-editor/formula-panel/index.vue'
 import Device from '../../screen-editor/device-panel/index.vue'
-import DifyApiDialog from '@/components/dify-chatbot/DifyApiDialog.vue'
+import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
 import * as configImagePropJson from '@/../public/templates/configImageProp.json'
 import {
   configImagePropModel,
@@ -312,7 +312,7 @@ export default defineComponent({
     Snapshot,
     Formula,
     Device,
-    DifyApiDialog,
+    DifyRealDialog,
     IconEditorCanvas, IconBox, IconRpanel, IconToolbox, IconFilter, IconWorkspace, IconSnapshot, IconLayer, IconRelease, IconPreview,
     IconSave, IconExport, IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt, IconAi,
     ToolboxPanel: loadAsyncComponent(() => import('../toolbox-panel/index-new.vue')),
@@ -326,9 +326,8 @@ export default defineComponent({
     const visiblePublish = ref(false)
     const visibleFormula = ref(false);
     
-    // Dify API 聊天机器人相关状态
+    // AI 助手（DifyRealDialog）相关状态
     const difyApiDialogVisible = ref(false)
-    const difyData = ref({})
     const closeFormula = () => {
       visibleFormula.value = false;
     };
@@ -610,9 +609,8 @@ export default defineComponent({
       middleJustifying,
       bottomJustifying,
       nMessage,
-      // Dify API 聊天机器人相关
+      // AI 助手（DifyRealDialog）相关
       difyApiDialogVisible,
-      difyData,
       openDifyApiDialog,
       handleDifyApiDialogClose,
       handleDifyApiMessageReceived,
