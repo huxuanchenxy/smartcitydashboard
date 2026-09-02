@@ -34,4 +34,8 @@ interface ImportMetaEnv {
   VITE_APP_DIFY_SSE_TIMEOUT_MS: string; // SSE 连接超时时间
   VITE_APP_DIFY_STEP2_TRANSFER_MODE: string; // 步骤2传输模式
   VITE_APP_DIFY_BASE_URL: string;
+  VITE_APP_DIFY_USER_ID: string; // Dify 用户ID（用于对话标识）
+  VITE_APP_DIFY_SESSION_HOST: string; // 会话历史服务地址
+  VITE_APP_DIFY_WS_HOST: string; // 对话 WebSocket 服务地址
+  VITE_APP_DIFY_UPLOAD_HOST: string; // 附件上传服务地址（/api/file/upload/batch）
 }

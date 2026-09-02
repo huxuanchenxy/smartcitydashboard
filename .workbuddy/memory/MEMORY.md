@@ -30,6 +30,12 @@
 - Element Plus 在 main.ts 全局注册（import from '@/components/element-plus'），组件里直接用 el-* 标签，无需单独 import；el-tooltip 不生成额外 wrapper，包裹 flex 子项不会破坏布局
 - AgentConfig（src/views/project/NetWork/AgentConfig.vue）技能库：必须保持单列布局，不要再改成两列/多列；卡片文字被截断时用 el-tooltip 悬停展示全文而非放开行数
 
+## AI 对话后端（10.89.34.77:8080，DifyRealDialog.vue / AgentConfig.vue 直连）
+- GET /api/session/list（列表字段 name 而非 content，主键 autoId）、GET /api/session/{sessionId}、DELETE /api/session/delete/{id}
+- GET /api/skill/list（技能列表）、POST /api/file/upload/batch（FormData: loginAccount + files，返回 data:[{accessUrl, filesId, originalFileName}]）
+- WS ws://.../ws/chat，消息字段 type(0用户/1助手)/chatTime/content/sort/sessionId（sessionId 由后端分配）
+- 相关 env：VITE_APP_DIFY_SESSION_HOST / WS_HOST / UPLOAD_HOST；上传失败条目标 error 保留、发送时按 fileId 过滤
+
 ## 启动命令（本机）
 无 yarn 时：
 export PATH="/c/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2:$PATH"

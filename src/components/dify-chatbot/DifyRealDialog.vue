@@ -321,11 +321,11 @@
                       v-for="file in uploadedFiles"
                       :key="file.id"
                       class="uploaded-file-item"
-                      :class="{ uploading: file.uploading }"
+                      :class="{ uploading: file.uploading, 'upload-error': file.error }"
                     >
                       <span class="file-icon">📄</span>
                       <span class="file-name">{{ file.name }}</span>
-                      <span class="file-size">{{ file.uploading ? '上传中…' : formatFileSize(file.size) }}</span>
+                      <span class="file-size">{{ file.error ? '上传失败' : (file.uploading ? '上传中…' : formatFileSize(file.size)) }}</span>
                       <button class="remove-file-btn" @click="removeFile(file.id)">
                         ×
                       </button>
@@ -489,6 +489,13 @@ interface HtmlInteraction {
   buttons?: ButtonConfig[]
 }
 
+// 附件上传接口返回项（/api/file/upload/batch）
+interface UploadedFileMeta {
+  accessUrl: string
+  filesId: string
+  originalFileName: string
+}
+
 interface ChartMessage {
   role: 'user' | 'assistant'
   content: string
@@ -621,15 +628,20 @@ export default defineComponent({
     // 通过 CSS 变量下发缩放倍率；as any 规避 CSSProperties 不识别自定义属性名的类型限制
     const chatFontStyle = computed(() => ({ '--chat-font-scale': chatFontScale.value } as any))
 
+    // 聊天输入区待发送的附件：选好文件即调用真实上传接口，回填 filesId / accessUrl
     const uploadedFiles = ref<
       Array<{
         id: string
         name: string
         size: number
-        // Dify 风格附件：上传后端返回的文件引用 id；后端上传接口就绪前用前端模拟 uuid
+        // 上传接口返回的附件引用 id（filesId）
         fileId?: string
-        // 是否仍在"上传"中（模拟）；上传完成后置 false 并回填 fileId
+        // 上传接口返回的可访问地址（accessUrl），本地留存备用
+        accessUrl?: string
+        // 是否仍在上传中；上传完成后置 false 并回填 fileId / accessUrl
         uploading?: boolean
+        // 上传失败：条目保留由用户手动移除，发送时自动忽略
+        error?: boolean
       }>
     >([])
     const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -1563,31 +1575,32 @@ export default defineComponent({
             }
           }, 100)
         })
-        // 等待期间附件全部上传失败被移除且无文本，则取消本次发送
-        if (!userQuery.value.trim() && uploadedFiles.value.length === 0) {
+        // 等待期间附件全部上传失败且无文本，则取消本次发送（失败条目保留在输入区，由用户手动移除）
+        if (!userQuery.value.trim() && uploadedFiles.value.every(file => !file.fileId)) {
           return
         }
       }
 
       const text = userQuery.value.trim()
+      // 只有上传成功（拿到 fileId）的附件才会随消息发送
+      const validFiles = uploadedFiles.value.filter(file => !!file.fileId)
 
       // Dify 风格：附件以 { fileId, name } 数组随文本一起发送
-      const sendFiles = uploadedFiles.value
-        .filter(file => file.fileId)
-        .map(file => ({ fileId: file.fileId as string, name: file.name }))
+      const sendFiles = validFiles.map(file => ({ fileId: file.fileId as string, name: file.name }))
 
       const userMessage = {
         role: 'user' as const,
         content: text,
         timestamp: Date.now(),
-        files: uploadedFiles.value.length > 0
-          ? uploadedFiles.value.map(file => ({ id: file.id, name: file.name, size: file.size }))
+        files: validFiles.length > 0
+          ? validFiles.map(file => ({ id: file.id, name: file.name, size: file.size }))
           : undefined,
       }
 
       messages.value.push(userMessage)
       userQuery.value = ''
-      uploadedFiles.value = []
+      // 仅清除上传成功的附件，失败条目保留在输入区由用户手动处理
+      uploadedFiles.value = uploadedFiles.value.filter(file => !file.fileId)
 
       // 立即滚动到底部，确保刚发送的消息在可视区域内
       await scrollToBottom()
@@ -2278,53 +2291,73 @@ export default defineComponent({
       }, 2500 + Math.random() * 500)
     }
 
-    // 模拟 Dify 文件上传接口：真实接口就绪后替换为 request.post(<upload-url>, FormData)
-    // 并返回后端下发的 file_id
-    const uploadFileMock = (file: File): Promise<string> => {
-      return new Promise(resolve => {
-        // 模拟网络耗时，便于观察"上传中"状态
-        setTimeout(() => {
-          let fileId = ''
-          if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-            fileId = crypto.randomUUID()
-          } else {
-            fileId = `file-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-          }
-          resolve(fileId)
-        }, 400 + Math.random() * 300)
+    // ===== 附件上传（真实接口） =====
+    // POST {UPLOAD_HOST}/api/file/upload/batch，multipart/form-data：loginAccount + files
+    // 返回 { code, msg, data: [{ accessUrl, filesId, originalFileName }] }
+    // 地址可用 VITE_APP_DIFY_UPLOAD_HOST 覆盖，未配置时回退 VITE_APP_DIFY_SESSION_HOST
+    const UPLOAD_HOST =
+      import.meta.env.VITE_APP_DIFY_UPLOAD_HOST ||
+      import.meta.env.VITE_APP_DIFY_SESSION_HOST ||
+      'http://10.89.34.77:8080'
+
+    // 上传单个文件（一个文件一个请求）；失败直接抛出，由调用方标记错误态
+    const uploadFile = async (file: File): Promise<UploadedFileMeta> => {
+      const form = new FormData()
+      // 登录账号：未登录时兜底 admin，与 Postman 调试取值保持一致
+      form.append('loginAccount', getLoginAccount() || 'admin')
+      form.append('files', file, file.name)
+
+      // axios 检测到 FormData 会自动删除 Content-Type，由浏览器补上 multipart boundary
+      const resp = await request.post(`${UPLOAD_HOST}/api/file/upload/batch`, form)
+      const meta = ((resp.data?.data || []) as UploadedFileMeta[])[0]
+      if (!meta || !meta.filesId) {
+        throw new Error('上传返回数据为空')
+      }
+      console.log('[DifyRealDialog] 附件上传成功:', {
+        name: file.name,
+        filesId: meta.filesId,
+        accessUrl: meta.accessUrl,
       })
+      return meta
     }
 
-    const handleFileSelect = (event: Event) => {
+    // 选好文件立即上传：逐个串行调用上传接口，避免并发抢占
+    const handleFileSelect = async (event: Event) => {
       const target = event.target as HTMLInputElement
-      const files = target.files
-      if (!files) return
+      if (!target.files || target.files.length === 0) return
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
+      // 先拷贝再清空 input，保证同一文件可重复选择并再次触发 change
+      const fileList = Array.from(target.files)
+      target.value = ''
+
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i]
         const item = {
-          id: `${Date.now()}-${i}`,
+          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
           name: file.name,
           size: file.size,
           uploading: true,
         }
         uploadedFiles.value.push(item)
-        // 并行模拟上传，完成后按 id 回填（避免失败移除导致索引错位）
-        uploadFileMock(file)
-          .then(fileId => {
-            const entry = uploadedFiles.value.find(f => f.id === item.id)
-            if (entry) {
-              entry.fileId = fileId
-              entry.uploading = false
-            }
-          })
-          .catch(() => {
-            uploadedFiles.value = uploadedFiles.value.filter(f => f.id !== item.id)
-            ElMessage({ message: `附件「${file.name}」上传失败`, type: 'error', customClass: 'dify-real-toast' })
-          })
+        try {
+          const meta = await uploadFile(file)
+          // 按 id 回填（用户可能在上传过程中手动移除该附件）
+          const entry = uploadedFiles.value.find(f => f.id === item.id)
+          if (entry) {
+            entry.fileId = meta.filesId
+            entry.accessUrl = meta.accessUrl
+            entry.uploading = false
+          }
+        } catch (e) {
+          console.error('[DifyRealDialog] 附件上传失败:', file.name, e)
+          const entry = uploadedFiles.value.find(f => f.id === item.id)
+          if (entry) {
+            entry.uploading = false
+            entry.error = true
+          }
+          ElMessage({ message: `附件「${file.name}」上传失败`, type: 'error', customClass: 'dify-real-toast' })
+        }
       }
-
-      target.value = ''
     }
 
     const removeFile = (id: string) => {
@@ -3020,6 +3053,16 @@ export default defineComponent({
 .uploaded-file-item.uploading {
   opacity: 0.65;
   border-style: dashed;
+}
+
+/* 上传失败的附件：红色边框 + 红色状态文字，保留在输入区由用户手动移除 */
+.uploaded-file-item.upload-error {
+  border-color: rgba(239, 68, 68, 0.5);
+  background-color: rgba(239, 68, 68, 0.06);
+}
+
+.uploaded-file-item.upload-error .file-size {
+  color: #ef4444;
 }
 
 .remove-file-btn {
