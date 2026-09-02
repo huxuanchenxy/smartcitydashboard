@@ -237,16 +237,16 @@
                           class="interrupted-question"
                           v-html="formatContent(message.pendingQuestion)"
                         ></div>
-                        <div v-if="message.pendingContext" class="interrupted-context">
+                        <div v-if="message.pendingContextEntries && message.pendingContextEntries.length" class="interrupted-context">
                           <div class="interrupted-context-title">上下文信息</div>
                           <div
-                            v-for="(entry, ci) in normalizePendingContext(message.pendingContext)"
+                            v-for="(entry, ci) in message.pendingContextEntries"
                             :key="ci"
                             class="pending-context-item"
                           >
-                            <div class="pending-context-key">{{ entry.key }}</div>
-                            <pre v-if="entry.isCode" class="pending-context-code">{{ entry.text }}</pre>
-                            <table v-else-if="entry.isTable" class="pending-context-table">
+                            <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
+                            <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
+                            <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
                               <thead>
                                 <tr>
                                   <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
@@ -266,16 +266,16 @@
                           <span class="result-badge">已完成</span>
                           <span v-if="message.intentCode" class="result-intent">{{ message.intentCode }}</span>
                         </div>
-                        <div v-if="message.resultPayload" class="interrupted-context">
+                        <div v-if="message.resultEntries && message.resultEntries.length" class="interrupted-context">
                           <div class="interrupted-context-title">结果</div>
                           <div
-                            v-for="(entry, ci) in normalizePendingContext(message.resultPayload)"
+                            v-for="(entry, ci) in message.resultEntries"
                             :key="ci"
                             class="pending-context-item"
                           >
-                            <div class="pending-context-key">{{ entry.key }}</div>
-                            <pre v-if="entry.isCode" class="pending-context-code">{{ entry.text }}</pre>
-                            <table v-else-if="entry.isTable" class="pending-context-table">
+                            <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
+                            <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
+                            <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
                               <thead>
                                 <tr>
                                   <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
@@ -496,6 +496,16 @@ interface UploadedFileMeta {
   originalFileName: string
 }
 
+// pending_context / result 归一化后的单条展示项
+interface PendingContextEntry {
+  key: string
+  text: string
+  isCode: boolean
+  isTable: boolean
+  tableColumns?: string[]
+  tableRows?: Array<Record<string, any>>
+}
+
 interface ChartMessage {
   role: 'user' | 'assistant'
   content: string
@@ -520,10 +530,13 @@ interface ChartMessage {
   intentCode?: string
   pendingQuestion?: string
   pendingContext?: Record<string, any> | null
+  // 归一化后的展示条目（构建消息时算好，模板只按 length 判断是否渲染面板）
+  pendingContextEntries?: PendingContextEntry[]
   // 任务完成（status=completed）相关字段：展示 result 中的最终产物
   // result 结构与 pending_context 一致（含 SQL_COMPOSER.sql / SQL_EXEC_AGENT.json 等），同样不一定每次下发
   isCompleted?: boolean
   resultPayload?: Record<string, any> | null
+  resultEntries?: PendingContextEntry[]
 }
 
 export default defineComponent({
@@ -755,22 +768,29 @@ export default defineComponent({
     const buildAssistantFrameFields = (data: any): Partial<ChartMessage> | null => {
       if (data.status === 'interrupted') {
         // pending_question / pending_context 不一定每次都下发，判空后使用
-        const pendingQuestion = typeof data.pending_question === 'string' ? data.pending_question : undefined
+        // 空白字符串同样视为空，避免渲染出空白的提问区
+        const rawQuestion = typeof data.pending_question === 'string' ? data.pending_question.trim() : ''
+        const pendingQuestion = rawQuestion || undefined
+        const pendingContext = data.pending_context != null ? data.pending_context : undefined
         return {
           // content 保留 pending_question，便于「复制」按钮直接复制提问文案
           content: pendingQuestion ?? '',
           isInterrupted: true,
           intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
           pendingQuestion,
-          pendingContext: data.pending_context != null ? data.pending_context : undefined,
+          pendingContext,
+          // 归一化一次存好：空字段已被过滤，模板按 length 决定是否显示「上下文信息」面板
+          pendingContextEntries: normalizePendingContext(pendingContext),
         }
       }
       if (data.status === 'completed') {
+        const resultPayload = data.result != null ? data.result : undefined
         return {
           content: '',
           isCompleted: true,
           intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
-          resultPayload: data.result != null ? data.result : undefined,
+          resultPayload,
+          resultEntries: normalizePendingContext(resultPayload),
         }
       }
       // 其它未预处理的 status：返回 null，由调用方原样展示
@@ -1702,18 +1722,20 @@ export default defineComponent({
     //   - 数组值（如记录列表）：按表格展示
     //   - 其它对象/基本类型：降级为 JSON / 文本展示
     // 字段缺失、类型异常、或 context 本身非法时一律安全降级，不抛错、不渲染空面板
-    interface PendingContextEntry {
-      key: string
-      text: string
-      isCode: boolean
-      isTable: boolean
-      tableColumns?: string[]
-      tableRows?: Array<Record<string, any>>
+    // 无实质内容的字段（null / 空串 / 空白串 / 空数组 / {}）直接过滤，避免出现空标题
+    const isEmptyContextValue = (val: any): boolean => {
+      if (val === null || val === undefined) return true
+      if (typeof val === 'string') return val.trim() === ''
+      if (Array.isArray(val)) return val.length === 0
+      if (typeof val === 'object') return Object.keys(val).length === 0
+      return false
     }
 
     const normalizePendingContext = (ctx: any): PendingContextEntry[] => {
       if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) return []
-      return Object.keys(ctx).map(key => {
+      return Object.keys(ctx)
+        .filter(key => !isEmptyContextValue(ctx[key]))
+        .map(key => {
         const val = ctx[key]
         if (Array.isArray(val)) {
           const rows = val as Array<Record<string, any>>
