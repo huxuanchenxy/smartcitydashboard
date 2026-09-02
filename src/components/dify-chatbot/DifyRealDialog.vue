@@ -1000,7 +1000,7 @@ export default defineComponent({
     const WS_BASE = import.meta.env.VITE_APP_DIFY_WS_HOST || 'ws://10.89.34.77:8080'
     const MAX_RECONNECT = 10
     // 重连间隔（ms）：固定值，共 10 次机会；如需指数退避在这里改
-    const RECONNECT_DELAY = 2000
+    const RECONNECT_DELAY = 60000
 
     const ws = ref<WebSocket | null>(null)
     const wsStatus = ref<'idle' | 'connecting' | 'open' | 'closed' | 'error'>('idle')
@@ -1138,8 +1138,13 @@ export default defineComponent({
       ) {
         return connectPromise || Promise.resolve(ws.value)
       }
-      // 切换到不同会话：放弃旧连接并复位重连状态，随后建立新连接
-      resetReconnect()
+      // 建新连接前清掉待执行的重连定时器（避免与本次连接竞争同一个 ws.value）
+      // 注意：这里只能清定时器，不能调 resetReconnect() 清零计数——重连走的也是这条路径，
+      // 清零会导致重连计数永远停在 1/MAX_RECONNECT，重连次数上限形同虚设
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
       if (ws.value) {
         ws.value.close()
         ws.value = null
@@ -1723,6 +1728,8 @@ export default defineComponent({
       try {
         // sessionId 完全由后端下发：无则先连无参数 /ws/chat 握手，拿到后再用 ?sessionId=xxx 发送
         const socket = await ensureChatSocket()
+        // 用户主动发消息成功：重置重连计数，避免历史残留次数占掉后续断线时的重连机会
+        resetReconnect()
         // 附件（若有）以数组形式与文本一起发送
         socket.send(JSON.stringify({ content: text, files: sendFiles }))
         // 看门狗：服务端异常时可能不回任何帧（或错误帧发到了已关闭的握手连接），
