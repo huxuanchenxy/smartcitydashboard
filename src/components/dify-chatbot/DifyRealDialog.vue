@@ -738,6 +738,47 @@ export default defineComponent({
       resetMessages() // 清空当前消息（不插入欢迎语）
     }
 
+    // 结构化帧（status=interrupted 待确认 / completed 已完成）→ 消息字段映射
+    // 实时 WS 分支与历史会话解析共用同一套逻辑，保证两条链路渲染一致
+    const buildAssistantFrameFields = (data: any): Partial<ChartMessage> | null => {
+      if (data.status === 'interrupted') {
+        // pending_question / pending_context 不一定每次都下发，判空后使用
+        const pendingQuestion = typeof data.pending_question === 'string' ? data.pending_question : undefined
+        return {
+          // content 保留 pending_question，便于「复制」按钮直接复制提问文案
+          content: pendingQuestion ?? '',
+          isInterrupted: true,
+          intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
+          pendingQuestion,
+          pendingContext: data.pending_context != null ? data.pending_context : undefined,
+        }
+      }
+      if (data.status === 'completed') {
+        return {
+          content: '',
+          isCompleted: true,
+          intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
+          resultPayload: data.result != null ? data.result : undefined,
+        }
+      }
+      // 其它未预处理的 status：返回 null，由调用方原样展示
+      return null
+    }
+
+    // 历史会话里的助手消息，content 可能是后端落库的 WS 原始 JSON 帧（status=interrupted/completed）
+    // 非结构化内容（普通文本 / JSON 解析失败 / 未预处理 status）一律原样文本展示
+    const parseAssistantHistoryContent = (content: string): Partial<ChartMessage> => {
+      const text = (content || '').trim()
+      if (!text || !text.startsWith('{')) return {}
+      try {
+        const data = JSON.parse(text)
+        if (!data || typeof data !== 'object') return {}
+        return buildAssistantFrameFields(data) ?? {}
+      } catch (e) {
+        return {}
+      }
+    }
+
     // 加载某条历史对话的真实消息：GET /session/sessionId?sessionId=xxx
     // 接口字段：type(0=用户 1=助手) / content / chatTime(用于时间戳) / sort(排序)
     const loadConversationMessages = async (sessionId: string): Promise<void> => {
@@ -754,11 +795,18 @@ export default defineComponent({
         messages.value = raw
           .slice()
           .sort((a, b) => (a.sort ?? a.id) - (b.sort ?? b.id))
-          .map(item => ({
-            role: item.type === 0 ? 'user' : 'assistant',
-            content: item.content || '',
-            timestamp: parseChatTime(item.chatTime),
-          }))
+          .map(item => {
+            const base2: ChartMessage = {
+              role: item.type === 0 ? 'user' : 'assistant',
+              content: item.content || '',
+              timestamp: parseChatTime(item.chatTime),
+            }
+            // 助手消息尝试解析结构化帧（interrupted / completed 面板等）
+            if (item.type !== 0) {
+              Object.assign(base2, parseAssistantHistoryContent(item.content || ''))
+            }
+            return base2
+          })
         setTimeout(scrollToBottom, 100)
       } catch (e) {
         console.error('[DifyRealDialog] 拉取会话消息失败', e)
@@ -1051,58 +1099,37 @@ export default defineComponent({
             }
             return
           }
-          // AI 主动挂起、等待用户确认（status=interrupted）：
-          // 展示 pending_question（提示文案）与 pending_context（中间产物上下文）；
-          // 两个字段后端不一定每次都下发，需健壮判空；其它 status 暂不处理
-          if (data.status === 'interrupted') {
-            console.log('[DifyRealDialog][WS] 收到 interrupted 挂起帧:', data)
+          // 结构化结果帧：status=interrupted（挂起待确认，展示 pending_question + pending_context）
+          // 或 status=completed（任务完成，展示 result）。字段映射与历史会话解析共用
+          // buildAssistantFrameFields()，保证两条链路渲染一致
+          if (data.status === 'interrupted' || data.status === 'completed') {
             if (!isLoading.value) {
               // 已停止 / 非等待回复状态的迟到帧：仅记录，不重复插入，避免打扰
-              console.log('[DifyRealDialog][WS] 非等待回复状态，忽略迟到 interrupted 帧')
+              console.log('[DifyRealDialog][WS] 非等待回复状态，忽略迟到帧', data.status)
               return
             }
+            // 用结果面板替换「思考中」占位消息
             const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
             if (thinkingIdx !== -1) {
-              // 用挂起提示替换「思考中」占位消息
               messages.value.splice(thinkingIdx, 1)
             }
-            const pendingQuestion = typeof data.pending_question === 'string' ? data.pending_question : undefined
-            messages.value.push({
-              role: 'assistant',
-              // content 保留 pending_question，便于「复制」按钮直接复制提问文案
-              content: pendingQuestion ?? '',
-              timestamp: Date.now(),
-              isInterrupted: true,
-              intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
-              pendingQuestion,
-              pendingContext: data.pending_context != null ? data.pending_context : undefined,
-            })
-            isLoading.value = false
-            clearReplyWatchdog()
-            scrollToBottom()
-            return
-          }
-          // 任务完成（status=completed）：展示 result 中的最终产物
-          // result 结构与 pending_context 一致，同样不一定每次下发；不展示提问（pending_question 为 null）
-          if (data.status === 'completed') {
-            console.log('[DifyRealDialog][WS] 收到 completed 完成帧:', data)
-            if (!isLoading.value) {
-              console.log('[DifyRealDialog][WS] 非等待回复状态，忽略迟到 completed 帧')
-              return
+            const frameFields = buildAssistantFrameFields(data)
+            if (frameFields) {
+              messages.value.push({
+                role: 'assistant',
+                content: '',
+                timestamp: Date.now(),
+                ...frameFields,
+              })
+            } else {
+              // 理论不可达（上面已限定两种 status），保险起见仍走原样展示
+              console.warn('[DifyRealDialog][WS] 结构化帧字段映射失败，原样展示:', data)
+              messages.value.push({
+                role: 'assistant',
+                content: `（收到未在代码中预处理的返回数据（status=${data.status}），已原样展示）\n\n${JSON.stringify(data, null, 2)}`,
+                timestamp: Date.now(),
+              })
             }
-            const thinkingIdx = messages.value.findIndex(msg => msg.isThinking)
-            if (thinkingIdx !== -1) {
-              // 用完成结果替换「思考中」占位消息
-              messages.value.splice(thinkingIdx, 1)
-            }
-            messages.value.push({
-              role: 'assistant',
-              content: '',
-              timestamp: Date.now(),
-              isCompleted: true,
-              intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
-              resultPayload: data.result != null ? data.result : undefined,
-            })
             isLoading.value = false
             clearReplyWatchdog()
             scrollToBottom()
