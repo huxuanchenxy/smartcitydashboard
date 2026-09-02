@@ -4,7 +4,7 @@
       <IconAi class="ai-icon" :style="iconStyle" />
     </button>
     
-    <DifyApiDemoDialog
+    <DifyRealDialog
       v-model:visible="difyApiDialogVisible"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
       @close="handleDifyApiDialogClose"
@@ -19,12 +19,12 @@ import { defineComponent, PropType, computed, toRef, ref } from 'vue'
 import type { CSSProperties } from 'vue'
 import { AiDifyDemo } from './ai-dify-demo'
 import { useDataCenter } from '@/mixins/data-center'
-import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
 import { IconAi } from '@/icons'
 
 export default defineComponent({
   name: 'VAiDifyDemo',
-  components: { DifyApiDemoDialog, IconAi },
+  components: { DifyRealDialog, IconAi },
   props: {
     com: {
       type: Object as PropType<AiDifyDemo>,
@@ -40,7 +40,6 @@ export default defineComponent({
     const comid = toRef(props.com, 'id').value
     
     const difyApiDialogVisible = ref(false)
-    const difyData = ref({})
 
     const buttonImage = computed(() => {
       return config.value.buttonImage
@@ -109,7 +108,6 @@ export default defineComponent({
       handleClick,
       comid,
       difyApiDialogVisible,
-      difyData,
       handleDifyApiDialogClose,
       handleDifyApiMessageReceived,
       handleDifyApiMessageSent,
