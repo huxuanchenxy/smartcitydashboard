@@ -215,17 +215,6 @@
                             </div>
                           </div>
                         </div>
-                        <div v-if="message.files && message.files.length > 0" class="message-files">
-                          <div
-                            v-for="file in message.files"
-                            :key="file.id"
-                            class="message-file-item"
-                          >
-                            <span class="file-icon">📄</span>
-                            <span class="file-name">{{ file.name }}</span>
-                            <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                          </div>
-                        </div>
                       </div>
                       <div v-else-if="message.isInterrupted" class="interrupted-panel">
                         <div class="interrupted-header">
@@ -289,6 +278,46 @@
                             </table>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                    <!-- 消息附件：与正文面板并列，历史会话与实时消息共用同一套渲染 -->
+                    <div v-if="message.files && message.files.length > 0" class="message-files">
+                      <div
+                        v-for="file in message.files"
+                        :key="file.id"
+                        class="message-file-item"
+                      >
+                        <!-- 图片类附件显示缩略图，点击打开原图；加载失败回退为图标 -->
+                        <a
+                          v-if="file.accessUrl && isImageFile(file.name) && !isThumbBroken(file.accessUrl)"
+                          class="file-thumb"
+                          :href="file.accessUrl"
+                          target="_blank"
+                          rel="noopener"
+                          :title="'点击查看原图：' + file.name"
+                        >
+                          <img :src="file.accessUrl" :alt="file.name" @error="onThumbError(file.accessUrl)">
+                        </a>
+                        <span v-else class="file-icon">{{ fileIcon(file.name) }}</span>
+                        <!-- 有访问地址时名称可点击打开；无地址（极端异常）则纯文本 -->
+                        <a
+                          v-if="file.accessUrl"
+                          class="file-name file-name-link"
+                          :href="file.accessUrl"
+                          target="_blank"
+                          rel="noopener"
+                          :title="file.name"
+                        >{{ file.name }}</a>
+                        <span v-else class="file-name" :title="file.name">{{ file.name }}</span>
+                        <!-- 历史接口不下发体积，缺省时不展示 -->
+                        <span v-if="file.size != null" class="file-size">{{ formatFileSize(file.size) }}</span>
+                        <a
+                          v-if="file.accessUrl"
+                          class="file-download"
+                          :href="file.accessUrl"
+                          :download="file.name"
+                          title="下载附件"
+                        >⬇</a>
                       </div>
                     </div>
                     <div class="message-actions">
@@ -496,6 +525,14 @@ interface UploadedFileMeta {
   originalFileName: string
 }
 
+// 历史消息里的附件项（/api/chat/sessionId 的 fileItemList[]）
+// 字段命名与上传接口不同（fileId / originalFileName / accessUrl），统一归一化到消息附件结构
+interface HistoryFileItem {
+  fileId?: string
+  originalFileName?: string
+  accessUrl?: string
+}
+
 // pending_context / result 归一化后的单条展示项
 interface PendingContextEntry {
   key: string
@@ -514,10 +551,16 @@ interface ChartMessage {
   thinkingContent?: string
   // 服务端返回错误时的提示消息（样式与普通回复区分）
   isError?: boolean
+  // 消息附件：发送侧（本地上传）与历史侧（后端 fileItemList）共用同一结构
   files?: Array<{
     id: string
     name: string
-    size: number
+    // 历史接口不下发文件大小，故可缺省；缺省时不展示体积
+    size?: number
+    // 后端附件引用 id（上传接口 filesId / 历史接口 fileId）
+    fileId?: string
+    // 附件可访问地址；存在时附件可点击预览 / 下载
+    accessUrl?: string
   }>
   flintSpecs?: FlintSpec[]
   htmlInteractions?: HtmlInteraction[]
@@ -811,27 +854,31 @@ export default defineComponent({
       }
     }
 
-    // 加载某条历史对话的真实消息：GET /session/sessionId?sessionId=xxx
-    // 接口字段：type(0=用户 1=助手) / content / chatTime(用于时间戳) / sort(排序)
+    // 加载某条历史对话的真实消息：GET /api/chat/sessionId?sessionId=xxx
+    // 接口字段：type(0=用户 1=助手) / content / chatTime(时间戳) / sort(排序) / fileItemList(附件)
     const loadConversationMessages = async (sessionId: string): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
         const resp = await request.get(withLoginAccount(`${base}/api/chat/sessionId`), { params: { sessionId } })
         const raw = (resp.data?.data || []) as Array<{
-          id: number
+          id?: number
+          chatId?: string
           content: string
           chatTime: string
           type: number
           sort?: number
+          fileItemList?: HistoryFileItem[]
         }>
         messages.value = raw
           .slice()
-          .sort((a, b) => (a.sort ?? a.id) - (b.sort ?? b.id))
+          .sort((a, b) => (a.sort ?? a.id ?? 0) - (b.sort ?? b.id ?? 0))
           .map(item => {
             const base2: ChartMessage = {
               role: item.type === 0 ? 'user' : 'assistant',
               content: item.content || '',
               timestamp: parseChatTime(item.chatTime),
+              // 附件：历史接口不下发体积，只展示名称并提供预览/下载入口
+              files: normalizeFileItems(item.fileItemList),
             }
             // 助手消息尝试解析结构化帧（interrupted / completed 面板等）
             if (item.type !== 0) {
@@ -951,7 +998,9 @@ export default defineComponent({
     // 与服务端交互的唯一通道：ws://<host>/ws/chat?sessionId=xxx
     // 连接成功后服务端先回 session_ready 携带 session_id；之后发送 {content} 即可收到助手回复
     const WS_BASE = import.meta.env.VITE_APP_DIFY_WS_HOST || 'ws://10.89.34.77:8080'
-    const MAX_RECONNECT = 3
+    const MAX_RECONNECT = 10
+    // 重连间隔（ms）：固定值，共 10 次机会；如需指数退避在这里改
+    const RECONNECT_DELAY = 2000
 
     const ws = ref<WebSocket | null>(null)
     const wsStatus = ref<'idle' | 'connecting' | 'open' | 'closed' | 'error'>('idle')
@@ -967,6 +1016,17 @@ export default defineComponent({
     let interactionResponseTimer: ReturnType<typeof setTimeout> | null = null
     let typingTimer: ReturnType<typeof setInterval> | null = null
     let typingMessageIndex = -1
+
+    // 重置重连状态：连接恢复 / 主动切换会话 / 主动关闭时都要调用。
+    // 只清定时器不清零计数的话，一次会话里累计的失败次数会被带到后续连接上，
+    // 导致新会话一开始就只剩很少的重连机会（改 10 次后这个残留更明显）
+    const resetReconnect = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+      reconnectCount = 0
+    }
 
     const clearReplyWatchdog = () => {
       if (replyWatchdog) {
@@ -1078,11 +1138,8 @@ export default defineComponent({
       ) {
         return connectPromise || Promise.resolve(ws.value)
       }
-      // 切换到不同会话：放弃旧连接，随后建立新连接
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer)
-        reconnectTimer = null
-      }
+      // 切换到不同会话：放弃旧连接并复位重连状态，随后建立新连接
+      resetReconnect()
       if (ws.value) {
         ws.value.close()
         ws.value = null
@@ -1100,7 +1157,7 @@ export default defineComponent({
       connectPromise = new Promise<WebSocket>((resolve, reject) => {
         socket.onopen = () => {
           wsStatus.value = 'open'
-          reconnectCount = 0
+          resetReconnect() // 连接成功即清零：后续再断开时重新拥有完整重连机会
           connectPromise = null
           console.log('[DifyRealDialog][WS] 已连接:', url)
           resolve(socket)
@@ -1152,6 +1209,8 @@ export default defineComponent({
                 content: '',
                 timestamp: Date.now(),
                 ...frameFields,
+                // 服务端若随结构化帧下发附件，一并渲染
+                files: normalizeFileItems(data.fileItemList),
               })
             } else {
               // 理论不可达（上面已限定两种 status），保险起见仍走原样展示
@@ -1196,6 +1255,8 @@ export default defineComponent({
               role: 'assistant',
               content: String(data.content),
               timestamp: Date.now(),
+              // 服务端若随回复下发附件（fileItemList），一并渲染
+              files: normalizeFileItems(data.fileItemList),
             })
             isLoading.value = false
             clearReplyWatchdog()
@@ -1284,7 +1345,7 @@ export default defineComponent({
     // 异常断开后的自动重连（有限次数，避免无效重试）
     const attemptReconnect = () => {
       if (reconnectCount >= MAX_RECONNECT) {
-        console.error('[DifyRealDialog][WS] 重连次数已达上限，放弃重连')
+        console.error(`[DifyRealDialog][WS] 重连次数已达上限（${MAX_RECONNECT}），放弃重连`)
         ElMessage({ message: '连接已断开，重连失败', type: 'error', customClass: 'dify-real-toast' })
         return
       }
@@ -1294,17 +1355,24 @@ export default defineComponent({
       console.warn(`[DifyRealDialog][WS] 尝试重连 ${reconnectCount}/${MAX_RECONNECT}...`)
       if (reconnectTimer) clearTimeout(reconnectTimer)
       reconnectTimer = setTimeout(() => {
-        if (ws.value && ws.value.readyState === WebSocket.OPEN) return
-        connectChat(sid).catch(() => { /* 失败由 onerror/onclose 继续处理 */ })
-      }, 2000)
+        // 等待期间连接已自行恢复（如别处已重建连接）：视为重连成功并复位
+        if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+          resetReconnect()
+          return
+        }
+        connectChat(sid)
+          .then(() => {
+            // 重连成功：清零计数，本次会话后续再断开可重新拿到完整的重试次数
+            resetReconnect()
+            console.log('[DifyRealDialog][WS] 重连成功，已重置重连次数')
+          })
+          .catch(() => { /* 失败由 onerror/onclose 继续处理 */ })
+      }, RECONNECT_DELAY)
     }
 
     // 主动关闭连接（切换会话 / 关闭弹窗 / 卸载时调用）
     const closeWs = () => {
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer)
-        reconnectTimer = null
-      }
+      resetReconnect() // 清掉待执行的重连并复位计数，新会话重新计次
       clearReplyWatchdog()
       if (ws.value) {
         ws.value.close()
@@ -1612,8 +1680,15 @@ export default defineComponent({
         role: 'user' as const,
         content: text,
         timestamp: Date.now(),
+        // 带上 fileId / accessUrl，使刚发出的附件在气泡里同样可点击预览 / 下载
         files: validFiles.length > 0
-          ? validFiles.map(file => ({ id: file.id, name: file.name, size: file.size }))
+          ? validFiles.map(file => ({
+              id: file.id,
+              name: file.name,
+              size: file.size,
+              fileId: file.fileId,
+              accessUrl: file.accessUrl,
+            }))
           : undefined,
       }
 
@@ -2133,16 +2208,32 @@ export default defineComponent({
       return Number.isNaN(parsed) ? Date.now() : parsed
     }
 
-    const copyMessageContent = (message: { content: string; }) => {
+    const copyMessageContent = (message: ChartMessage) => {
       const onCopied = () => {
         ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
       }
+      // 附件名一并复制；「已完成」面板正文通常为空，此时回退复制原始 result
+      const parts: string[] = []
+      if (message.content) {
+        parts.push(message.content)
+      } else if (message.resultPayload) {
+        try {
+          parts.push(JSON.stringify(message.resultPayload, null, 2))
+        } catch (e) {
+          parts.push(String(message.resultPayload))
+        }
+      }
+      const attachText = (message.files || []).map(file => file.name).join('、')
+      if (attachText) {
+        parts.push(`附件：${attachText}`)
+      }
+      const text = parts.join('\n')
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(message.content).then(onCopied).catch(() => {
-          fallbackCopy(message.content, onCopied)
+        navigator.clipboard.writeText(text).then(onCopied).catch(() => {
+          fallbackCopy(text, onCopied)
         })
       } else {
-        fallbackCopy(message.content, onCopied)
+        fallbackCopy(text, onCopied)
       }
     }
 
@@ -2400,6 +2491,51 @@ export default defineComponent({
       }
     }
 
+    // ===== 附件展示辅助 =====
+    // 后端 fileItemList[] → 消息附件结构；空数组返回 undefined，模板按缺省处理更省事
+    const normalizeFileItems = (list?: HistoryFileItem[] | null) => {
+      if (!Array.isArray(list) || list.length === 0) return undefined
+      const files = list
+        .filter(item => item && (item.originalFileName || item.fileId))
+        .map((item, index) => ({
+          id: item.fileId || `hist-file-${index}`,
+          name: item.originalFileName || item.fileId || '附件',
+          fileId: item.fileId,
+          accessUrl: item.accessUrl,
+        }))
+      return files.length > 0 ? files : undefined
+    }
+
+    // 取小写扩展名（含点），用于图标与图片判定
+    const getFileExt = (name: string): string => {
+      const idx = (name || '').lastIndexOf('.')
+      return idx === -1 ? '' : name.slice(idx).toLowerCase()
+    }
+
+    const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg']
+    const isImageFile = (name: string): boolean => IMAGE_EXTS.includes(getFileExt(name))
+
+    // 按扩展名给出对应图标，未命中走通用文件图标
+    const fileIcon = (name: string): string => {
+      const ext = getFileExt(name)
+      if (IMAGE_EXTS.includes(ext)) return '🖼️'
+      if (['.xls', '.xlsx', '.csv'].includes(ext)) return '📊'
+      if (['.doc', '.docx', '.txt', '.md'].includes(ext)) return '📝'
+      if (['.pdf'].includes(ext)) return '📕'
+      if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(ext)) return '🗜️'
+      if (['.json', '.xml', '.yaml', '.yml'].includes(ext)) return '🧩'
+      if (['.mp4', '.avi', '.mov', '.mkv'].includes(ext)) return '🎬'
+      return '📄'
+    }
+
+    // 图片缩略图加载失败（地址失效/无权限）时记录下来，回退成图标展示
+    const brokenThumbs = ref<Set<string>>(new Set())
+    const onThumbError = (url: string) => {
+      if (!url || brokenThumbs.value.has(url)) return
+      brokenThumbs.value = new Set(brokenThumbs.value).add(url)
+    }
+    const isThumbBroken = (url: string): boolean => !!url && brokenThumbs.value.has(url)
+
     // 获取按钮配置，如果未配置则使用默认值
     const getButtons = (interaction: HtmlInteraction) => {
       if (interaction.buttons && interaction.buttons.length > 0) {
@@ -2469,6 +2605,10 @@ export default defineComponent({
       removeFile,
       openFileDialog,
       formatFileSize,
+      isImageFile,
+      fileIcon,
+      onThumbError,
+      isThumbBroken,
       isUploadingFiles,
       dialogWidth,
       dialogHeight,
@@ -2984,21 +3124,66 @@ export default defineComponent({
   padding: 8px 12px;
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 8px;
+  min-width: 0;
 }
 
 .file-icon {
   font-size: calc(16px * var(--chat-font-scale, 1));
+  flex-shrink: 0;
+}
+
+/* 图片缩略图：固定尺寸 + 裁切填充，避免不同比例图片撑破气泡 */
+.file-thumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.06);
+  display: block;
+}
+
+.file-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .file-name {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* 可点击的附件名（有 accessUrl 时） */
+.file-name-link {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.file-name-link:hover {
+  text-decoration: underline;
+}
+
+/* 下载入口：默认弱化显示，悬停高亮 */
+.file-download {
+  flex-shrink: 0;
+  color: #94a3b8;
+  text-decoration: none;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.file-download:hover {
+  color: #2563eb;
+}
+
 .file-size {
   color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .message-actions {

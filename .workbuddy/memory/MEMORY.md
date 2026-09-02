@@ -33,6 +33,7 @@
 ## AI 对话后端（10.89.34.77:8080，DifyRealDialog.vue / AgentConfig.vue 直连）
 - GET /api/session/list（列表字段 name 而非 content，主键 autoId）、GET /api/session/{sessionId}、DELETE /api/session/delete/{id}
 - GET /api/skill/list（技能列表）、POST /api/file/upload/batch（FormData: loginAccount + files，返回 data:[{accessUrl, filesId, originalFileName}]）
+- GET /api/chat/sessionId?loginAccount=&sessionId=：历史消息，字段 chatId/chatTime/content/type(0用户1助手)/sort/fileItemList[{accessUrl,fileId,originalFileName}]（无 id 字段、无文件大小）
 - WS ws://.../ws/chat，消息字段 type(0用户/1助手)/chatTime/content/sort/sessionId（sessionId 由后端分配）
 - 相关 env：VITE_APP_DIFY_SESSION_HOST / WS_HOST / UPLOAD_HOST；上传失败条目标 error 保留、发送时按 fileId 过滤
 
