@@ -219,7 +219,6 @@
                       <div v-else-if="message.isInterrupted" class="interrupted-panel">
                         <div class="interrupted-header">
                           <span class="interrupted-badge">待确认</span>
-                          <span v-if="message.intentCode" class="interrupted-intent">{{ message.intentCode }}</span>
                         </div>
                         <div
                           v-if="message.pendingQuestion"
@@ -253,7 +252,6 @@
                       <div v-else-if="message.isCompleted" class="result-panel">
                         <div class="result-header">
                           <span class="result-badge">已完成</span>
-                          <span v-if="message.intentCode" class="result-intent">{{ message.intentCode }}</span>
                         </div>
                         <div v-if="message.resultEntries && message.resultEntries.length" class="interrupted-context">
                           <div class="interrupted-context-title">结果</div>
@@ -3707,16 +3705,6 @@ export default defineComponent({
   font-weight: 600;
 }
 
-.interrupted-intent {
-  font-size: calc(12px * var(--chat-font-scale, 1));
-  color: #92400e;
-  background-color: #fef3c7;
-  border: 1px solid #fde68a;
-  padding: 1px 8px;
-  border-radius: 6px;
-  font-family: "SF Mono", Monaco, "Courier New", monospace;
-}
-
 .interrupted-question {
   font-size: calc(15px * var(--chat-font-scale, 1));
   line-height: 1.7;
@@ -3820,16 +3808,6 @@ export default defineComponent({
   color: #ffffff;
   font-size: calc(12px * var(--chat-font-scale, 1));
   font-weight: 600;
-}
-
-.result-intent {
-  font-size: calc(12px * var(--chat-font-scale, 1));
-  color: #065f46;
-  background-color: #d1fae5;
-  border: 1px solid #a7f3d0;
-  padding: 1px 8px;
-  border-radius: 6px;
-  font-family: "SF Mono", Monaco, "Courier New", monospace;
 }
 </style>
 
