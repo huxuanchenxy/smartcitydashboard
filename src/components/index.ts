@@ -54,6 +54,7 @@ import VIframe from './iframe/iframe'
 import VAiIframe from './iframe/ai-iframe'
 import VAiDify from './iframe/ai-dify'
 import VAiDifyDemo from './iframe/ai-dify-demo'
+import VAiDifyReal from './iframe/ai-dify-real'
 
 import VDropDownList from './select/drop-down-list'
 
@@ -149,6 +150,7 @@ const components = [
   VAiIframe,
   VAiDify,
   VAiDifyDemo,
+  VAiDifyReal,
   VArcBar,
   VMArcBar,
   VDashboardPie,
