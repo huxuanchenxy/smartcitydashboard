@@ -1,11 +1,10 @@
 <template>
   <div :id="'div_' + comid" :style="wrapperStyle">
-    <button :style="buttonStyle" @click="handleClick">
-      <IconAi class="ai-icon" :style="iconStyle" />
-    </button>
-    
+    <!-- 内嵌模式：默认直接显示对话框，填满组件自身区域，不再通过按钮触发 -->
     <DifyRealDialog
       v-model:visible="difyApiDialogVisible"
+      :inline="true"
+      :fixed="true"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"
@@ -20,11 +19,10 @@ import type { CSSProperties } from 'vue'
 import { AiDifyReal } from './ai-dify-real'
 import { useDataCenter } from '@/mixins/data-center'
 import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
-import { IconAi } from '@/icons'
 
 export default defineComponent({
   name: 'VAiDifyReal',
-  components: { DifyRealDialog, IconAi },
+  components: { DifyRealDialog },
   props: {
     com: {
       type: Object as PropType<AiDifyReal>,
@@ -38,74 +36,34 @@ export default defineComponent({
     const config = toRef(props.com, 'config')
     const attr = toRef(props.com, 'attr')
     const comid = toRef(props.com, 'id').value
-    
-    const difyApiDialogVisible = ref(false)
 
-    const buttonImage = computed(() => {
-      return config.value.buttonImage
-    })
+    // 内嵌展示，默认即为显示状态
+    const difyApiDialogVisible = ref(true)
 
-    const handleClick = () => {
-      console.log('AiDifyReal button clicked')
-      difyApiDialogVisible.value = true
-    }
-    
     const handleDifyApiDialogClose = () => {
       console.log('Dify API dialog closed')
     }
-    
+
     const handleDifyApiMessageReceived = () => {
       console.log('Dify API message received')
     }
-    
+
     const handleDifyApiMessageSent = () => {
       console.log('Dify API message sent')
     }
 
-    const buttonSize = computed(() => {
-      return Math.min(attr.value.w, attr.value.h) - 20
-    })
-
-    const buttonStyle = computed(() => {
-      const style = {
-        padding: '5px',
-        border: 'none',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        backgroundColor: '#FFFFFF',
-        width: `${buttonSize.value}px`,
-        height: `${buttonSize.value}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }
-      return style as CSSProperties
-    })
-
-    const iconStyle = computed(() => {
-      const iconSize = Math.max(16, buttonSize.value - 10)
-      return {
-        width: `${iconSize}px`,
-        height: `${iconSize}px`,
-      } as CSSProperties
-    })
-
+    // 组件自身盒子：作为内嵌对话框的容器，铺满 attr 指定的宽高
     const wrapperStyle = computed(() => {
       return {
+        position: 'relative',
         width: `${attr.value.w}px`,
         height: `${attr.value.h}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        overflow: 'hidden',
       } as CSSProperties
     })
 
     return {
-      buttonImage,
-      buttonStyle,
-      iconStyle,
       wrapperStyle,
-      handleClick,
       comid,
       difyApiDialogVisible,
       handleDifyApiDialogClose,
@@ -116,33 +74,3 @@ export default defineComponent({
   },
 })
 </script>
-
-<style scoped>
-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-button:hover {
-  opacity: 0.8;
-}
-
-.ai-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.ai-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.ai-icon svg path {
-  fill: #333333;
-}
-
-button:hover .ai-icon svg path {
-  fill: #FFFFFF;
-}
-</style>

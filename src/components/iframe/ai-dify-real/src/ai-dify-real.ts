@@ -25,7 +25,8 @@ export class AiDifyReal extends DatavComponent {
   actions: Record<string, DataEventConfig>
 
   constructor() {
-    super('AiDifyReal', { w: 100, h: 60 })
+    // 内嵌聊天面板，默认给出适合对话展示的宽高
+    super('AiDifyReal', { w: 400, h: 600 })
 
     this.initData()
   }

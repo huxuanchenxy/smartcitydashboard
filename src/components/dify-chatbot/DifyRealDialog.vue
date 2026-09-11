@@ -1,18 +1,13 @@
 <template>
-  <Teleport to="body">
+  <Teleport to="body" :disabled="inline">
     <div
       v-if="dialogVisible"
       class="custom-dialog-mask"
-      :class="{ 'no-mask': noMask }"
+      :class="{ 'no-mask': noMask, 'inline-mode': inline }"
     >
       <div
         class="custom-dialog-wrapper"
-        :style="{
-          left: dialogPosition.x + 'px',
-          top: dialogPosition.y + 'px',
-          width: dialogWidth + 'px',
-          height: dialogHeight + 'px',
-        }"
+        :style="wrapperStyle"
       >
         <div v-if="!fixed" class="resize-handles">
           <div class="resize-handle resize-n" @mousedown.stop="startResize('n', $event)"></div>
@@ -42,7 +37,7 @@
               >
                 📝
               </button>
-              <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
+              <button v-if="!noMask && !inline" class="custom-dialog-close" @click="handleClose">
                 ×
               </button>
             </div>
@@ -605,6 +600,11 @@ export default defineComponent({
       default: false,
     },
     fixed: {
+      type: Boolean,
+      default: false,
+    },
+    // 内嵌模式：不传送到 body，就地渲染并填满父容器（供仪表盘组件内嵌使用）
+    inline: {
       type: Boolean,
       default: false,
     },
@@ -1542,6 +1542,19 @@ export default defineComponent({
     const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
     const dialogWidth = ref(props.initialSize?.width ?? 600)
     const dialogHeight = ref(props.initialSize?.height ?? 600)
+
+    // 对话窗定位样式：内嵌模式下填满父容器；否则使用浮动定位（left/top/width/height）
+    const wrapperStyle = computed(() => {
+      if (props.inline) {
+        return { position: 'relative', left: 'auto', top: 'auto', width: '100%', height: '100%' }
+      }
+      return {
+        left: dialogPosition.value.x + 'px',
+        top: dialogPosition.value.y + 'px',
+        width: dialogWidth.value + 'px',
+        height: dialogHeight.value + 'px',
+      }
+    })
 
     // 宿主重新测量（如窗口缩放）时同步对话窗位置/尺寸，避免只在初始化时读一次
     watch(
@@ -2617,6 +2630,7 @@ export default defineComponent({
       isUploadingFiles,
       dialogWidth,
       dialogHeight,
+      wrapperStyle,
       startResize,
       currentRole,
       setFlintChartRef,
@@ -2658,6 +2672,25 @@ export default defineComponent({
   position: absolute;
   background-color: transparent;
   z-index: 10000;
+}
+
+/* 内嵌模式：遮罩层不再固定全屏，改为填满宿主容器；窗体相对定位铺满 */
+.custom-dialog-mask.inline-mode {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  z-index: auto;
+  pointer-events: auto;
+}
+
+.custom-dialog-mask.inline-mode .custom-dialog-wrapper {
+  position: relative;
+  z-index: auto;
 }
 
 .custom-dialog {
