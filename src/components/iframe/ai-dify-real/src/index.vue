@@ -5,6 +5,7 @@
       v-model:visible="difyApiDialogVisible"
       :inline="true"
       :fixed="true"
+      :sidebar-width="config.sidebarWidth"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"

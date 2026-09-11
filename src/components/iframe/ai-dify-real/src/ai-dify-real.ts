@@ -15,6 +15,8 @@ export class AiDifyReal extends DatavComponent {
       hoverBackgroundColor: '#45a049',
     },
     role: '',
+    // 左侧历史会话栏宽度（px）
+    sidebarWidth: 300,
   }
 
   apis: Partial<ApiConfigMap>
@@ -25,8 +27,8 @@ export class AiDifyReal extends DatavComponent {
   actions: Record<string, DataEventConfig>
 
   constructor() {
-    // 内嵌聊天面板，默认给出适合对话展示的宽高
-    super('AiDifyReal', { w: 400, h: 600 })
+    // 内嵌聊天面板，默认给出适合对话展示的宽高（左侧历史栏 300px，主聊天区约 340px）
+    super('AiDifyReal', { w: 640, h: 600 })
 
     this.initData()
   }

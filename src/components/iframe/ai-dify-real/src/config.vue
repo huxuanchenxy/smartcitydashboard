@@ -3,6 +3,9 @@
     <g-field label="预设角色">
       <g-select v-model="config.role" :data="roleOptions" />
     </g-field>
+    <g-field label="历史栏宽度">
+      <g-input-number v-model="config.sidebarWidth" :min="0" :max="500" :step="10" suffix="px" />
+    </g-field>
     <g-field label="按钮图片">
       <g-input v-model="config.buttonImage" />
     </g-field>

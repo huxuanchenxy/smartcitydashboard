@@ -34,6 +34,35 @@
     "virtualPath": ""
   },
   {
+    "key": "sidebarWidth",
+    "config": {
+      "type": "number",
+      "component": "number",
+      "alias": "历史栏宽度",
+      "tip": "左侧历史会话栏的宽度（px），设为 0 可隐藏侧栏",
+      "displayMode": "single",
+      "features": [],
+      "layout": "horizontal",
+      "toggleCol": "",
+      "isHide": false,
+      "defaultValue": 300,
+      "min": 0,
+      "max": 500,
+      "step": 10,
+      "InfiniteMin": false,
+      "InfiniteMax": false,
+      "suffix": "px",
+      "enums": [],
+      "whichEnum": {
+        "field": "",
+        "value": ""
+      },
+      "flatValue": false
+    },
+    "path": "sidebarWidth",
+    "virtualPath": ""
+  },
+  {
     "key": "buttonImage",
     "config": {
       "type": "string",
