@@ -825,11 +825,22 @@ export default defineComponent({
         }
       }
       if (data.status === 'completed') {
+        const intentCode = data.intent_code != null ? String(data.intent_code) : undefined
+        // 意图为 OTHER（普通闲聊 / 兜底回答）时，直接展示 answer 文本作为常规助手回复，
+        // 避免用「已完成」结果面板包裹一句话答复，让对话更自然
+        // answer 为空时仍回退到结果面板，保证信息不丢失
+        const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
+        if (intentCode === 'OTHER' && answerText) {
+          return {
+            content: answerText,
+            intentCode,
+          }
+        }
         const resultPayload = data.result != null ? data.result : undefined
         return {
           content: '',
           isCompleted: true,
-          intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
+          intentCode,
           resultPayload,
           resultEntries: normalizePendingContext(resultPayload),
         }
