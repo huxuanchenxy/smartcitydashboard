@@ -32,7 +32,7 @@
                       <IconAdaptWidth v-else-if="zm.value === ZoomMode.width" />
                       <IconAdaptHeight v-else-if="zm.value === ZoomMode.height" />
                       <IconFullscreen v-else-if="zm.value === ZoomMode.full" />
-                      <IconAdaptAuto v-else-if="zm.value === ZoomMode.responsive" />
+                      <IconAdaptAutoResponsive v-else-if="zm.value === ZoomMode.responsive" />
                       <IconStop v-else />
                     </n-icon>
                   </template>
@@ -138,7 +138,7 @@ import { previewHost, validAllowImg, dataURLtoBlob, uploadCoverHost } from '@/ut
 import { upload } from '@/api/qiniu'
 import { getToken } from '@/utils/token-util'
 import { generateId } from '@/utils/util'
-import { IconFullscreen, IconAdaptAuto, IconAdaptWidth, IconAdaptHeight, IconStop, IconWarning } from '@/icons'
+import { IconFullscreen, IconAdaptAuto, IconAdaptWidth, IconAdaptHeight, IconStop, IconWarning,IconAdaptAutoResponsive } from '@/icons'
 import { createComponent } from '@/components/datav';
 import { TokenSetting } from '@/domains/editor'
 
@@ -147,6 +147,7 @@ export default defineComponent({
   components: {
     IconFullscreen,
     IconAdaptAuto,
+    IconAdaptAutoResponsive,
     IconAdaptWidth,
     IconAdaptHeight,
     IconStop,
