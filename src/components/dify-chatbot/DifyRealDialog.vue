@@ -826,16 +826,17 @@ export default defineComponent({
       }
       if (data.status === 'completed') {
         const intentCode = data.intent_code != null ? String(data.intent_code) : undefined
-        // 意图为 OTHER（普通闲聊 / 兜底回答）时，直接展示 answer 文本作为常规助手回复，
-        // 避免用「已完成」结果面板包裹一句话答复，让对话更自然
-        // answer 为空时仍回退到结果面板，保证信息不丢失
+        // answer 非空时直接作为常规助手回复展示（不区分 intent_code）
+        // formatContent 会处理其中的图片 markdown 转「点击打开图片」超链接、SQL 代码块、表格等
+        // 这样无论是 OTHER 闲聊还是 SQL_QUERY_GENERAL 等业务意图，用户都能看到完整的回答内容
         const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
-        if (intentCode === 'OTHER' && answerText) {
+        if (answerText) {
           return {
             content: answerText,
             intentCode,
           }
         }
+        // answer 为空时回退到结果面板展示结构化数据（如纯 JSON 结果）
         const resultPayload = data.result != null ? data.result : undefined
         return {
           content: '',
@@ -2240,10 +2241,25 @@ export default defineComponent({
     // 存储 ResizeObserver 以便清理
     const resizeObservers: ResizeObserver[] = []
 
+    // MCP 图片服务地址：后端 answer 中以 http://YOUR_SERVER_IP:MCP_PORT/images/xxx.png 形式下发，
+    // 前端用环境变量替换占位符，并把 markdown 图片语法转成「点击打开图片」超链接（新窗口打开）
+    const MCP_IMAGE_HOST = import.meta.env.VITE_APP_MCP_HOST || '10.89.33.93'
+    const MCP_IMAGE_PORT = import.meta.env.VITE_APP_MCP_PORT || '8001'
+    const MCP_IMAGE_BASE = `http://${MCP_IMAGE_HOST}:${MCP_IMAGE_PORT}`
+    const MCP_PLACEHOLDER_RE = /http:\/\/YOUR_SERVER_IP:MCP_PORT/g
+
     // 格式化内容（清理 Flint/HTML 块 + 标准格式化）
     const formatContent = (content: string): string => {
       const cleaned = stripHtmlBlocks(stripFlintBlocks(content))
       return cleaned
+        // 1) markdown 图片 ![alt](http://YOUR_SERVER_IP:MCP_PORT/xxx) → 「点击打开图片」超链接
+        //    后端下发的柱状图/饼图等结果图片不内联渲染，避免加载失败时留下破图占位
+        .replace(/!\[[^\]]*\]\((http:\/\/YOUR_SERVER_IP:MCP_PORT[^)]+)\)/g, (_m, rawUrl: string) => {
+          const url = rawUrl.replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
+          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="mcp-image-link">点击打开图片</a>`
+        })
+        // 2) 兜底：纯文本中残留的占位符 URL 也替换为真实地址（不转超链接，保持原文本形态）
+        .replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
         .replace(/\n/g, '<br />')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/`(.*?)`/g, '<code>$1</code>')
@@ -3195,6 +3211,34 @@ export default defineComponent({
   border-radius: 6px;
   font-size: calc(13px * var(--chat-font-scale, 1));
   font-family: "SF Mono", Monaco, "Courier New", monospace;
+}
+
+/* MCP 图片超链接：后端下发的柱状图/饼图等结果图片以「点击打开图片」链接展示 */
+.content-text .mcp-image-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #2563eb;
+  text-decoration: none;
+  padding: 2px 10px;
+  margin: 2px 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background-color: #eff6ff;
+  font-size: calc(14px * var(--chat-font-scale, 1));
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.content-text .mcp-image-link:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.content-text .mcp-image-link::before {
+  content: "\1F5BC\FE0F"; /* 🖼️ */
+  font-size: calc(14px * var(--chat-font-scale, 1));
 }
 
 .message-files {
