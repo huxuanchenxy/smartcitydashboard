@@ -1084,6 +1084,24 @@ export default defineComponent({
         .trim() || null
     }
 
+    // 尝试从后端错误信息中提取嵌套的 detail 字段
+    // 典型场景：msg="调用AI失败：AI接口异常响应体：{\"detail\":\"意图识别失败，请换一种表述\"}"
+    // 命中则返回反转义后的 detail 文本（更贴近用户可读提示），未命中原样返回，保证完整信息不丢失
+    const prettifyErrorDetail = (msg: string): string => {
+      const m = msg.match(/"detail"\s*:\s*"([^"]+)"/)
+      if (m && m[1]) {
+        const detail = m[1]
+          .replace(/\\n/g, '\n')
+          .replace(/\\r/g, '')
+          .replace(/\\t/g, '\t')
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\')
+          .trim()
+        if (detail) return detail
+      }
+      return msg
+    }
+
     // 停止生成：
     // 1) WS 链路——清除看门狗并结束思考态；连接保持不断开（后续可继续发消息），
     //    停止后到达的迟到回复帧由 onmessage 中的 isLoading 判断丢弃；
@@ -1173,21 +1191,29 @@ export default defineComponent({
             // 帧本身非法（如 msg 内含未转义换行导致 JSON 断裂）：结束思考态并提示，避免卡死
             console.error('[DifyRealDialog] 收到无法解析的消息', ev.data)
             if (isLoading.value) {
-              // 尽力从原始帧中还原 msg 字段，完整透出后端错误详情
-              const detail = extractErrorMsg(String(ev.data))
-              endThinkingState('消息处理失败，请稍后重试', detail ? `消息处理失败：${detail}` : '消息发送失败，请重试')
+              // 尽力从原始帧中还原 msg 字段，把后端错误详情直接写入 AI 助手回复内容
+              // （不再只依赖 toast 弹窗，避免用户错过关键错误原因）
+              const rawDetail = extractErrorMsg(String(ev.data))
+              const chatText = rawDetail
+                ? `消息处理失败：${prettifyErrorDetail(rawDetail)}`
+                : '消息处理失败，请稍后重试'
+              endThinkingState(chatText)
             }
             return
           }
-          // 服务端业务错误（如消息落库失败）：优先于其它分支判断，
+          // 服务端业务错误（如消息落库失败、意图识别失败等）：优先于其它分支判断，
           // 防止错误帧若同时携带 content 等字段被当作普通回复处理
           if (data.type === 'error' || data.error) {
             console.error('[DifyRealDialog][WS] 服务端错误:', data.msg || data.error)
             // 已停止/非等待回复状态下不弹提示，避免迟到错误帧打扰
             if (isLoading.value) {
-              // 对话框内保留友好提示；toast 完整透出后端返回的 msg 错误详情
-              const detail = String(data.msg || data.error || '')
-              endThinkingState('消息处理失败，请稍后重试', detail ? `消息处理失败：${detail}` : '消息发送失败，请重试')
+              // 把后端返回的 msg 错误详情直接写入 AI 助手回复内容，
+              // 若 msg 中嵌套了 {"detail":"..."} 结构则优先展示内层 detail，让用户看到具体原因
+              const rawDetail = String(data.msg || data.error || '')
+              const chatText = rawDetail
+                ? `消息处理失败：${prettifyErrorDetail(rawDetail)}`
+                : '消息处理失败，请稍后重试'
+              endThinkingState(chatText)
             }
             return
           }
