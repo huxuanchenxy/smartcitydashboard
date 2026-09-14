@@ -100,7 +100,7 @@
                       <div class="avatar" :class="message.role">
                         {{ message.role === "user" ? "👤" : "🤖" }}
                       </div>
-                      <div class="message-role">{{ message.role === "user" ? (currentRole === 'project_manager' ? '项目经理' : currentRole === 'developer' ? '开发人员' : currentRole === 'backend_ops' ? '后台维护人员' : '使用人员') : "AI 助手" }}</div>
+                      <div class="message-role">{{ message.role === "user" ? userDisplayName : "AI 助手" }}</div>
                     </div>
                     <div class="message-content">
                       <div v-if="message.isThinking" class="thinking-indicator">
@@ -753,6 +753,18 @@ export default defineComponent({
       const account = getLoginAccount()
       if (!account) return url
       return `${url}${url.includes('?') ? '&' : '?'}loginAccount=${encodeURIComponent(account)}`
+    }
+
+    // 发问者显示名：优先取 localStorage 的 loginAccount，未登录时兜底到角色中文名
+    // loginAccount 非响应式，故用 ref 缓存，并在挂载 / 对话框打开时刷新，确保读到最新账号
+    const userDisplayName = ref('')
+    const refreshUserDisplayName = () => {
+      const roleLabel =
+        currentRole.value === 'project_manager' ? '项目经理'
+        : currentRole.value === 'developer' ? '开发人员'
+        : currentRole.value === 'backend_ops' ? '后台维护人员'
+        : '使用人员'
+      userDisplayName.value = getLoginAccount() || roleLabel
     }
 
     // 真实接口：拉取对话历史列表（直连，不走代理）
@@ -1478,6 +1490,7 @@ export default defineComponent({
 
     onMounted(() => {
       dialogVisible.value = props.visible
+      refreshUserDisplayName()
       window.addEventListener('resize', handleWindowResize)
       fetchConversationList()
       if (dialogVisible.value) {
@@ -1490,6 +1503,8 @@ export default defineComponent({
       newVisible => {
         dialogVisible.value = newVisible
         if (newVisible) {
+          // 每次打开刷新发问者显示名，兼容登录账号变更后的场景
+          refreshUserDisplayName()
           showWelcomeMessage()
         }
       },
@@ -2702,6 +2717,7 @@ export default defineComponent({
       wrapperStyle,
       startResize,
       currentRole,
+      userDisplayName,
       setFlintChartRef,
       toggleSkill,
       confirmSkillSelection,
