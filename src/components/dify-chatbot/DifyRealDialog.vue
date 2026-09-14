@@ -2700,6 +2700,9 @@ export default defineComponent({
   border-radius: 16px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  /* 纵向弹性布局：表头按实际高度占位、正文区自适应填充，避免大字号时因写死的偏移被裁剪 */
+  display: flex;
+  flex-direction: column;
   /* 基准字号随缩放倍率变化，未单独声明字号的文字（如空消息提示）也跟随缩放 */
   font-size: calc(14px * var(--chat-font-scale, 1));
 }
@@ -2710,6 +2713,7 @@ export default defineComponent({
 
 .custom-dialog-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
@@ -2786,7 +2790,9 @@ export default defineComponent({
 .dify-api-container {
   display: flex;
   flex-direction: row;
-  height: calc(100% - 56px);
+  /* 填充表头以外的剩余空间（配合 .custom-dialog 纵向弹性布局），随字号缩放自适应，替代写死的 calc(100% - 56px) */
+  flex: 1;
+  min-height: 0;
   background-color: #f8fafc;
   overflow: hidden;
 }
@@ -2809,11 +2815,14 @@ export default defineComponent({
 
 .new-conversation-btn {
   width: 100%;
-  height: 40px;
+  /* 高度随字号缩放，避免放大后文字贴顶/底边甚至溢出；水平留白防止贴左右边 */
+  min-height: calc(40px * var(--chat-font-scale, 1));
+  box-sizing: border-box;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: calc(8px * var(--chat-font-scale, 1));
   border: 1px solid #d8e2f5;
   border-radius: 10px;
   background-color: #f0f5ff;
@@ -2830,8 +2839,10 @@ export default defineComponent({
 }
 
 .new-conversation-icon {
-  width: 20px;
-  height: 20px;
+  /* 图标底色框随字号缩放，避免放大后「＋」溢出小方块 */
+  width: calc(20px * var(--chat-font-scale, 1));
+  height: calc(20px * var(--chat-font-scale, 1));
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2882,8 +2893,9 @@ export default defineComponent({
 
 .conversation-item-icon {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  /* 随字号缩放，避免放大后 💬 溢出图标框 */
+  width: calc(24px * var(--chat-font-scale, 1));
+  height: calc(24px * var(--chat-font-scale, 1));
   border-radius: 6px;
   background-color: #eef2f7;
   display: flex;
@@ -2904,8 +2916,9 @@ export default defineComponent({
 /* 删除按钮：默认隐藏，悬停会话项时显示 */
 .conversation-delete-btn {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  /* 随字号缩放，避免放大后 🗑 溢出按钮框 */
+  width: calc(24px * var(--chat-font-scale, 1));
+  height: calc(24px * var(--chat-font-scale, 1));
   border: none;
   background: transparent;
   border-radius: 6px;

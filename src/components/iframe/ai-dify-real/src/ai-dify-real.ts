@@ -17,6 +17,8 @@ export class AiDifyReal extends DatavComponent {
     role: '',
     // 左侧历史会话栏宽度（px）
     sidebarWidth: 300,
+    // 字体整体缩放倍率（1 = 100%，范围 0.8–3）
+    fontScale: 1,
   }
 
   apis: Partial<ApiConfigMap>

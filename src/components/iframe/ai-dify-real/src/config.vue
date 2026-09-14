@@ -6,6 +6,9 @@
     <g-field label="历史栏宽度">
       <g-input-number v-model="config.sidebarWidth" :min="0" :max="500" :step="10" suffix="px" />
     </g-field>
+    <g-field label="字体大小">
+      <g-input-number v-model="config.fontScale" :min="0.8" :max="3" :step="0.1" suffix="倍" />
+    </g-field>
     <g-field label="按钮图片">
       <g-input v-model="config.buttonImage" />
     </g-field>

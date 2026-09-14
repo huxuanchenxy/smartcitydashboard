@@ -6,6 +6,7 @@
       :inline="true"
       :fixed="true"
       :sidebar-width="config.sidebarWidth"
+      :font-scale="config.fontScale"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"
