@@ -466,6 +466,7 @@ import { assembleECharts } from 'flint-chart'
 import type { ChartAssemblyInput } from 'flint-chart'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
+import { marked } from 'marked'
 
 // Flint 图表相关接口
 interface FlintSpec {
@@ -2248,21 +2249,36 @@ export default defineComponent({
     const MCP_IMAGE_BASE = `http://${MCP_IMAGE_HOST}:${MCP_IMAGE_PORT}`
     const MCP_PLACEHOLDER_RE = /http:\/\/YOUR_SERVER_IP:MCP_PORT/g
 
-    // 格式化内容（清理 Flint/HTML 块 + 标准格式化）
+    // 自定义 marked renderer：拦截 MCP 占位符图片转为「点击打开图片」超链接，
+    // 其余 markdown 元素（表格、围栏代码块、引用、列表等）由 marked 默认渲染
+    const mcpRenderer = new marked.Renderer()
+    mcpRenderer.image = (href: string, _title: string | null, text: string): string => {
+      if (href && href.includes('YOUR_SERVER_IP:MCP_PORT')) {
+        const url = href.replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="mcp-image-link">点击打开图片</a>`
+      }
+      return `<img src="${href || ''}" alt="${text || ''}" style="max-width:100%;" />`
+    }
+    // 链接统一新窗口打开，避免对话框内跳转丢失聊天状态
+    mcpRenderer.link = (href: string, title: string | null, text: string): string => {
+      const titleAttr = title ? ` title="${title}"` : ''
+      return `<a href="${href || ''}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`
+    }
+
+    marked.setOptions({
+      renderer: mcpRenderer,
+      gfm: true,    // GitHub Flavored Markdown：支持表格、删除线、任务列表
+      breaks: true, // 单个换行符转 <br>，匹配聊天场景的宽松排版习惯
+    })
+
+    // 格式化内容：清理 Flint/HTML 块后用 marked 解析 markdown
+    // 表格、SQL 围栏代码块、引用、列表、加粗、行内代码等均由 marked 标准渲染，
+    // MCP 占位符图片走自定义 renderer 转超链接，不再需要硬编码 regex 链
     const formatContent = (content: string): string => {
       const cleaned = stripHtmlBlocks(stripFlintBlocks(content))
-      return cleaned
-        // 1) markdown 图片 ![alt](http://YOUR_SERVER_IP:MCP_PORT/xxx) → 「点击打开图片」超链接
-        //    后端下发的柱状图/饼图等结果图片不内联渲染，避免加载失败时留下破图占位
-        .replace(/!\[[^\]]*\]\((http:\/\/YOUR_SERVER_IP:MCP_PORT[^)]+)\)/g, (_m, rawUrl: string) => {
-          const url = rawUrl.replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
-          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="mcp-image-link">点击打开图片</a>`
-        })
-        // 2) 兜底：纯文本中残留的占位符 URL 也替换为真实地址（不转超链接，保持原文本形态）
-        .replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
-        .replace(/\n/g, '<br />')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/`(.*?)`/g, '<code>$1</code>')
+      // 兜底：纯文本中残留的 MCP 占位符 URL（不在 markdown 图片语法内）也替换为真实地址
+      const withRealUrl = cleaned.replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
+      return marked.parse(withRealUrl) as string
     }
 
     const formatTime = (timestamp: number): string => {
@@ -3239,6 +3255,149 @@ export default defineComponent({
 .content-text .mcp-image-link::before {
   content: "\1F5BC\FE0F"; /* 🖼️ */
   font-size: calc(14px * var(--chat-font-scale, 1));
+}
+
+/* ========== marked 渲染的 markdown 元素样式（适配聊天气泡） ========== */
+
+/* 段落：去掉首尾多余边距，保留段间距 */
+.content-text p {
+  margin: 0 0 calc(8px * var(--chat-font-scale, 1));
+}
+.content-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* 标题：聊天场景下压缩尺寸，避免喧宾夺主 */
+.content-text h1,
+.content-text h2,
+.content-text h3,
+.content-text h4,
+.content-text h5,
+.content-text h6 {
+  margin: calc(12px * var(--chat-font-scale, 1)) 0 calc(6px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  line-height: 1.4;
+}
+.content-text h1:first-child,
+.content-text h2:first-child,
+.content-text h3:first-child {
+  margin-top: 0;
+}
+.content-text h1 { font-size: calc(20px * var(--chat-font-scale, 1)); }
+.content-text h2 { font-size: calc(18px * var(--chat-font-scale, 1)); }
+.content-text h3 { font-size: calc(16px * var(--chat-font-scale, 1)); }
+.content-text h4,
+.content-text h5,
+.content-text h6 { font-size: calc(15px * var(--chat-font-scale, 1)); }
+
+/* 围栏代码块：深色背景 + 横向滚动，内部 code 重置为块级样式 */
+.content-text pre {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: calc(12px * var(--chat-font-scale, 1));
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: calc(8px * var(--chat-font-scale, 1)) 0;
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  line-height: 1.6;
+}
+.content-text pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+  white-space: pre;
+}
+
+/* 引用块：左侧竖线 + 浅灰背景 */
+.content-text blockquote {
+  border-left: 3px solid #94a3b8;
+  background-color: #f8fafc;
+  margin: calc(8px * var(--chat-font-scale, 1)) 0;
+  padding: calc(6px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
+  color: #475569;
+  border-radius: 0 6px 6px 0;
+}
+.content-text blockquote p {
+  margin: 0;
+}
+
+/* 表格：全宽 + 斑马纹 + 边框，适配 SQL 查询结果展示 */
+.content-text table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: calc(8px * var(--chat-font-scale, 1)) 0;
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  display: block;
+  overflow-x: auto;
+}
+.content-text thead {
+  background-color: #f1f5f9;
+}
+.content-text th,
+.content-text td {
+  border: 1px solid #e2e8f0;
+  padding: calc(6px * var(--chat-font-scale, 1)) calc(10px * var(--chat-font-scale, 1));
+  text-align: left;
+  white-space: nowrap;
+}
+.content-text th {
+  font-weight: 600;
+  color: #334155;
+}
+.content-text tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+/* 列表：压缩缩进，适配气泡宽度 */
+.content-text ul,
+.content-text ol {
+  margin: calc(6px * var(--chat-font-scale, 1)) 0;
+  padding-left: calc(22px * var(--chat-font-scale, 1));
+}
+.content-text li {
+  margin: calc(3px * var(--chat-font-scale, 1)) 0;
+}
+.content-text li > p {
+  margin: 0;
+}
+
+/* 普通超链接（非 MCP 图片）：蓝色 + 下划线 */
+.content-text a:not(.mcp-image-link) {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.content-text a:not(.mcp-image-link):hover {
+  color: #1d4ed8;
+}
+
+/* 内联图片：限制最大宽度防止撑破气泡 */
+.content-text img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: calc(4px * var(--chat-font-scale, 1)) 0;
+}
+
+/* 分割线 */
+.content-text hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: calc(10px * var(--chat-font-scale, 1)) 0;
+}
+
+/* GFM 删除线 */
+.content-text del {
+  color: #94a3b8;
+}
+
+/* 加粗 / 斜体：继承字体颜色，仅调整字重/字形 */
+.content-text strong {
+  font-weight: 600;
+}
+.content-text em {
+  font-style: italic;
 }
 
 .message-files {
