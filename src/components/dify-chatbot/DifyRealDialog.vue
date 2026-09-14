@@ -3612,7 +3612,8 @@ export default defineComponent({
 .actions-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  /* 按钮间距随字号缩放，避免放大后按钮拥挤或缩小后间距过宽 */
+  gap: calc(12px * var(--chat-font-scale, 1));
 }
 
 .hint {
@@ -3620,11 +3621,13 @@ export default defineComponent({
   color: #94a3b8;
 }
 
+/* 发送 / 停止 / 上传 三个操作按钮：尺寸、圆角、内边距均随 --chat-font-scale 缩放，
+   与对话区其他元素（消息字号、new-conversation-btn 等）保持同步放大缩小 */
 .send-button {
-  min-width: 44px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 10px;
+  min-width: calc(44px * var(--chat-font-scale, 1));
+  height: calc(38px * var(--chat-font-scale, 1));
+  padding: 0 calc(16px * var(--chat-font-scale, 1));
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border: none;
   color: white;
@@ -3638,10 +3641,10 @@ export default defineComponent({
 }
 
 .stop-button {
-  min-width: 44px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 10px;
+  min-width: calc(44px * var(--chat-font-scale, 1));
+  height: calc(38px * var(--chat-font-scale, 1));
+  padding: 0 calc(16px * var(--chat-font-scale, 1));
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border: none;
   color: white;
@@ -3649,10 +3652,10 @@ export default defineComponent({
 }
 
 .upload-button {
-  min-width: 44px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 10px;
+  min-width: calc(44px * var(--chat-font-scale, 1));
+  height: calc(38px * var(--chat-font-scale, 1));
+  padding: 0 calc(16px * var(--chat-font-scale, 1));
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   background-color: #f1f5f9;
   border: 1px solid #e2e8f0;
   color: #64748b;
@@ -3661,6 +3664,15 @@ export default defineComponent({
 
 .upload-button:hover {
   background-color: #e2e8f0;
+}
+
+/* 三个操作按钮内部的 SVG 图标（ChatUpload / ChatSend / ChatStop 组件根元素）
+   原始硬编码 28×28，用 CSS 覆盖为跟随 --chat-font-scale 缩放，保持与按钮同比 */
+.send-button svg,
+.stop-button svg,
+.upload-button svg {
+  width: calc(28px * var(--chat-font-scale, 1));
+  height: calc(28px * var(--chat-font-scale, 1));
 }
 
 :deep(.el-button--warning) {
