@@ -151,43 +151,22 @@ export default defineComponent({
       } as CSSStyleDeclaration)
     }
 
-    const resizeWidth = (width: number) => {
-      const ratio = document.documentElement.clientWidth / width
-      setStyle(document.body, {
-        transform: `scale(${ratio})`,
-        transformOrigin: 'left top',
-        backgroundSize: '100%',
-      } as CSSStyleDeclaration)
-    }
-
-    const resizeHeight = (width: number, height: number) => {
+    // 等比缩放并完整放入视口（contain 策略）：ratio 取宽/高两个方向的较小值，
+    // 保证画布四个角落在非全屏时也全部可见；缩放后居中，四周按需留白（类似视频黑边）。
+    // 配合 html overflow:hidden，既不裁剪内容也不产生滚动条，彻底解决内嵌组件底部被切的问题。
+    const resizeContain = (width: number, height: number) => {
       const cw = document.documentElement.clientWidth
       const ch = document.documentElement.clientHeight
-      const ratio = ch / height
-      const gap = (cw - width * ratio) / 2
+      const ratio = Math.min(cw / width, ch / height)
+      const offsetX = (cw - width * ratio) / 2
+      const offsetY = (ch - height * ratio) / 2
       setStyle(document.body, {
-        transform: `scale(${ratio})`,
+        transform: `translate(${offsetX.toFixed(3)}px, ${offsetY.toFixed(3)}px) scale(${ratio})`,
         transformOrigin: 'left top',
-        backgroundSize: `${(width / cw) * ratio * 100}% 100%`,
-        backgroundPosition: `${gap.toFixed(3)}px top`,
-        marginLeft: `${gap.toFixed(3)}px`,
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'left top',
+        marginLeft: '0',
       } as CSSStyleDeclaration)
-    }
-
-    const resizeFull = (width: number, height: number) => {
-      const cw = document.documentElement.clientWidth
-      const ch = document.documentElement.clientHeight
-      const ratio = ch / height
-      const gap = (cw - width * ratio) / 2
-      setStyle(document.body, {
-        transform: `scale(${ratio})`,
-        transformOrigin: 'left top',
-        backgroundSize: `${(width / cw) * ratio * 100}% 100%`,
-        backgroundPosition: `${gap.toFixed(3)}px top`,
-        // marginLeft: `${gap.toFixed(3)}px`,
-      } as CSSStyleDeclaration)
-
-      document.documentElement.style.overflowX = 'scroll'
     }
 
     const resizeNone = () => {
@@ -200,16 +179,14 @@ export default defineComponent({
     const resize = (config: PageConfig) => {
       switch (config.zoomMode) {
         case ZoomMode.auto:
+          // 全屏铺满：非等比拉伸填满视口（画面可能变形，但内容完整无裁剪）
           resizeAuto(config.width, config.height)
           break
         case ZoomMode.width:
-          resizeWidth(config.width)
-          break
         case ZoomMode.height:
-          resizeHeight(config.width, config.height)
-          break
         case ZoomMode.full:
-          resizeFull(config.width, config.height)
+          // 等比模式统一走 contain 完整显示：既保持画布比例不变形，又保证四角可见、无滚动条
+          resizeContain(config.width, config.height)
           break
         default:
           resizeNone()
@@ -224,8 +201,13 @@ export default defineComponent({
         .setAttribute('content', `width=${config.width}`)
 
       setStyle(document.documentElement, {
+        // 预览页下 body 已被 transform: scale() 缩放到适配视口，视觉上无需滚动；
+        // 但 body 布局尺寸仍为画布原始尺寸（如 1920×1080），若 overflowY 为 visible
+        // 会因布局尺寸大于视口产生「隐形滚动」（滚动条被隐藏但滚轮/拖动仍生效），
+        // 导致内嵌组件（如 DifyRealDialog）的输入区/按钮被视口边缘遮住；F11 全屏后 ratio≥1 才恢复
+        // 统一锁死 x/y 两个方向的页面级滚动，组件内部自己的滚动区（如消息列表）不受影响
         overflowX: 'hidden',
-        overflowY: 'visible',
+        overflowY: 'hidden',
       } as CSSStyleDeclaration)
 
       setStyle(document.body, {
