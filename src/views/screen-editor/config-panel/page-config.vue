@@ -32,6 +32,7 @@
                       <IconAdaptWidth v-else-if="zm.value === ZoomMode.width" />
                       <IconAdaptHeight v-else-if="zm.value === ZoomMode.height" />
                       <IconFullscreen v-else-if="zm.value === ZoomMode.full" />
+                      <IconAdaptAuto v-else-if="zm.value === ZoomMode.responsive" />
                       <IconStop v-else />
                     </n-icon>
                   </template>
@@ -158,6 +159,7 @@ export default defineComponent({
       { value: ZoomMode.width, label: '等比缩放宽度铺满' },
       { value: ZoomMode.height, label: '等比缩放高度铺满' },
       { value: ZoomMode.full, label: '等比缩放高度铺满（可滚动）' },
+      { value: ZoomMode.responsive, label: '响应式铺满（内容自适应、不变形）' },
       { value: ZoomMode.disabled, label: '不缩放' },
     ]
 

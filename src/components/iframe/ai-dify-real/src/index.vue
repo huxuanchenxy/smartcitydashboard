@@ -36,7 +36,6 @@ export default defineComponent({
     useDataCenter(props.com)
 
     const config = toRef(props.com, 'config')
-    const attr = toRef(props.com, 'attr')
     const comid = toRef(props.com, 'id').value
 
     // 内嵌展示，默认即为显示状态
@@ -54,12 +53,14 @@ export default defineComponent({
       console.log('Dify API message sent')
     }
 
-    // 组件自身盒子：作为内嵌对话框的容器，铺满 attr 指定的宽高
+    // 组件自身盒子：填满父级容器（大屏 .-datav-com），尺寸交由父级决定。
+    // 用 100%×100% 而非固定 attr.w/h：这样「响应式铺满」模式下父级为视口尺寸时本组件随视口自适应，
+    // 避免固定 1080 高度超出视口(如 945) 被 overflow:hidden 裁掉底部输入框/上传/发送按钮。
     const wrapperStyle = computed(() => {
       return {
         position: 'relative',
-        width: `${attr.value.w}px`,
-        height: `${attr.value.h}px`,
+        width: '100%',
+        height: '100%',
         overflow: 'hidden',
       } as CSSProperties
     })

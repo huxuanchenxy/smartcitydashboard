@@ -12,19 +12,8 @@
       <img :src="LOGO">
     </a>
     <div class="scene">
-      <div v-for="com in coms" :key="com.id" :style="{
-        left: com.attr.x + 'px',
-        top: com.attr.y + 'px',
-        width: com.attr.w + 'px',
-        height: com.attr.h + 'px',
-        opacity: com.attr.opacity,
-        transform: `rotate(${com.attr.deg}deg) ${com.attr.filpH ? 'scaleX(-1)' : ''
-          } ${com.attr.filpV ? 'scaleY(-1)' : ''}`,
-        filter: styleFilter,
-        //animation: (com.special != '' ? com.special : getAnimation(com.config.animation)),
-        animation: (com.special != '' ? com.special:'none'),
-        display: com.hided ? 'none' : 'block',
-      }" class="-datav-com absolute" @click="checkEvents(com, 'click')" @mouseenter="checkEvents(com, 'mouseEnter')"
+      <div v-for="com in coms" :key="com.id" :style="getComStyle(com)" class="-datav-com absolute"
+        @click="checkEvents(com, 'click')" @mouseenter="checkEvents(com, 'mouseEnter')"
         @mouseleave="checkEvents(com, 'mouseLeave')">
         <component :is="com.name" :com="com" />
       </div>
@@ -139,6 +128,34 @@ export default defineComponent({
       }
     }
 
+    // 组件定位样式：响应式模式下按画布比例用百分比（随视口自适应、内容不缩放不变形），
+    // 其他模式保持固定 px（由画布整体 transform 缩放）。百分比基准是 .datav-layout（宽高 100% = body = 画布/视口）
+    const getComStyle = (com: DatavComponent) => {
+      const cfg = pageConfig.value
+      const box =
+        cfg.zoomMode === ZoomMode.responsive
+          ? {
+              left: `${(com.attr.x / cfg.width) * 100}%`,
+              top: `${(com.attr.y / cfg.height) * 100}%`,
+              width: `${(com.attr.w / cfg.width) * 100}%`,
+              height: `${(com.attr.h / cfg.height) * 100}%`,
+            }
+          : {
+              left: `${com.attr.x}px`,
+              top: `${com.attr.y}px`,
+              width: `${com.attr.w}px`,
+              height: `${com.attr.h}px`,
+            }
+      return {
+        ...box,
+        opacity: com.attr.opacity,
+        transform: `rotate(${com.attr.deg}deg) ${com.attr.filpH ? 'scaleX(-1)' : ''} ${com.attr.filpV ? 'scaleY(-1)' : ''}`,
+        filter: styleFilter.value,
+        animation: com.special != '' ? com.special : 'none',
+        display: com.hided ? 'none' : 'block',
+      }
+    }
+
     const resizeAuto = (width: number, height: number) => {
       const cw = document.documentElement.clientWidth
       const ch = document.documentElement.clientHeight
@@ -176,6 +193,23 @@ export default defineComponent({
       } as CSSStyleDeclaration)
     }
 
+    // 响应式铺满：画布尺寸直接等于视口尺寸，不做任何 transform 缩放；
+    // 配合组件百分比定位（getComStyle），内容随视口自适应——宽度铺满无留白、高度跟随视口，
+    // 内部 flex 区域（如 DifyRealDialog 的历史会话/消息列表）随高度增减显示更多或更少，且不变形
+    const resizeResponsive = () => {
+      const cw = document.documentElement.clientWidth
+      const ch = document.documentElement.clientHeight
+      setStyle(document.body, {
+        width: `${cw}px`,
+        height: `${ch}px`,
+        transform: 'none',
+        transformOrigin: 'left top',
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'left top',
+        marginLeft: '0',
+      } as CSSStyleDeclaration)
+    }
+
     const resize = (config: PageConfig) => {
       switch (config.zoomMode) {
         case ZoomMode.auto:
@@ -187,6 +221,10 @@ export default defineComponent({
         case ZoomMode.full:
           // 等比模式统一走 contain 完整显示：既保持画布比例不变形，又保证四角可见、无滚动条
           resizeContain(config.width, config.height)
+          break
+        case ZoomMode.responsive:
+          // 响应式铺满：画布=视口、不缩放，组件按百分比自适应（见 resizeResponsive / getComStyle）
+          resizeResponsive()
           break
         default:
           resizeNone()
@@ -287,7 +325,8 @@ export default defineComponent({
       styleFilter,
       comEvent,
       checkEvents,
-      getAnimation
+      getAnimation,
+      getComStyle
     }
   },
 })
