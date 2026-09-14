@@ -1600,7 +1600,7 @@ export default defineComponent({
     // 对话窗定位样式：内嵌模式下填满父容器；否则使用浮动定位（left/top/width/height）
     const wrapperStyle = computed(() => {
       if (props.inline) {
-        return { position: 'relative', left: 'auto', top: 'auto', width: '100%', height: '100%' }
+        return { position: 'relative' as const, left: 'auto', top: 'auto', width: '100%', height: '100%' }
       }
       return {
         left: dialogPosition.value.x + 'px',
