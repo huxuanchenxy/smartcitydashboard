@@ -408,6 +408,11 @@
                   @change="handleFileSelect"
                 >
               </div>
+              <!-- 切换历史会话时，消息拉取完成前显示「加载中」遮罩，避免页面空白、提升体验 -->
+              <div v-if="historyLoading" class="history-loading-overlay">
+                <div class="history-loading-spinner"></div>
+                <div class="history-loading-text">数据加载中，请稍后…</div>
+              </div>
             </div>
             </div>
           </div>
@@ -662,6 +667,8 @@ export default defineComponent({
   emits: ['close', 'update:visible', 'message-received', 'message-sent', 'md-editor-visible-change'],
   setup(props, { emit }) {
     const dialogVisible = ref(false)
+    // 切换历史会话时的「数据加载中」遮罩开关（与发送消息的 isLoading 解耦，避免互相影响）
+    const historyLoading = ref(false)
     const userQuery = ref('')
     const messages = ref<ChartMessage[]>([])
     const flintChartRefs = ref<Map<string, HTMLElement>>(new Map())
@@ -923,7 +930,12 @@ export default defineComponent({
       currentSessionId.value = conv.sessionId || ''
       convSource.value = 'history'
       if (conv.sessionId) {
-        await loadConversationMessages(conv.sessionId)
+        historyLoading.value = true
+        try {
+          await loadConversationMessages(conv.sessionId)
+        } finally {
+          historyLoading.value = false
+        }
         connectChat(conv.sessionId).catch(() => {}) // 预热连接，便于后续发送
       } else {
         resetMessages()
@@ -991,13 +1003,14 @@ export default defineComponent({
       if (cur) cur.sessionId = sessionId
     }
 
-    // 新会话首条消息后，把该会话插入/更新到历史列表顶部并高亮
+    // 新会话首条消息后，把该会话插入历史列表顶部并高亮（已在列表中的会话只更新选中态，不重排）
     // 列表数据来自后端 /api/session/list，后端尚未落库时先本地占位展示，避免用户看不到刚发起的对话
     const upsertNewConversation = (sessionId: string) => {
       const existing = conversationList.value.find(c => c.sessionId === sessionId)
       if (existing) {
-        // 已存在则置顶并高亮
-        conversationList.value = [existing, ...conversationList.value.filter(c => c !== existing)]
+        // 已在列表中：只更新选中态，不做置顶
+        // （点击历史会话时也会收到 session_ready，若在这里置顶，选中的 item 会被顶到列表最上方）
+        // 新建会话场景下该 item 本身就在顶部（下方插入即 unshift），无需再重排
         currentConversationId.value = existing.id
         convSource.value = 'history'
         return
@@ -2673,6 +2686,7 @@ export default defineComponent({
       userQuery,
       messages,
       isLoading,
+      historyLoading,
       messageContainer,
       mdEditorVisible,
       sendMessage,
@@ -3062,6 +3076,42 @@ export default defineComponent({
   flex: 1;
   position: relative;
   overflow: hidden;
+}
+
+/* 切换历史会话时的「加载中」遮罩：覆盖消息区，避免空白闪烁 */
+.history-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(1px);
+  user-select: none;
+}
+
+.history-loading-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #dbe7ff;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: dify-real-spin 0.8s linear infinite;
+}
+
+.history-loading-text {
+  font-size: calc(14px * var(--chat-font-scale, 1));
+  color: #475569;
+  font-weight: 500;
+}
+
+@keyframes dify-real-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .message-section {
