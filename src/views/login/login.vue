@@ -176,6 +176,18 @@ export default defineComponent({
     watch(route, ({ query }) => {
       if (query) {
         let redirectStr = query.redirect as string;
+        // 兜底处理嵌套 redirect：如 /login?redirect=/login?redirect=/screen/preview/346
+        // 递归解包，提取最终目标路径
+        while (redirectStr && redirectStr.startsWith('/login')) {
+          const qIndex = redirectStr.indexOf('?');
+          if (qIndex > -1) {
+            const params = paramsToObject(redirectStr.substring(qIndex + 1));
+            redirectStr = params['redirect'] || '';
+          } else {
+            redirectStr = '';
+            break;
+          }
+        }
         if (redirectStr && redirectStr.indexOf('?') > -1) {
           redirect.value = redirectStr.split('?')[0];
           otherQuery.value = getOtherQuery(paramsToObject(redirectStr.split('?')[1]))

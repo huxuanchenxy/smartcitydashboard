@@ -80,16 +80,18 @@ instance.interceptors.response.use(
     if(error.response.status == 403)
     {
       removeToken()
-      router.push({ path: '/login', query: {redirect:router.currentRoute.value.fullPath} })
-      //router.push({ name: 'Login' })
+      if (router.currentRoute.value.path !== '/login') {
+        router.push({ path: '/login', query: {redirect:router.currentRoute.value.fullPath} })
+      }
       return Promise.reject({ data : { code :403 ,message:'登录失效，请重新登录' } })
     }
     else if(error.response.status == 401)
     {
       //return Promise.reject(new Error(error.response.data.msg))
       removeToken()
-      router.push({ path: '/login', query: {redirect:router.currentRoute.value.fullPath} })
-      //router.push({ name: 'Login' })
+      if (router.currentRoute.value.path !== '/login') {
+        router.push({ path: '/login', query: {redirect:router.currentRoute.value.fullPath} })
+      }
       return Promise.reject({ data : { code :401 ,message:'登录失效，请重新登录' } })
     }
     else
