@@ -91,9 +91,6 @@
                   <span class="user-name" :title="userDisplayName">{{ userDisplayName }}</span>
                   <span v-if="showUserSub" class="user-sub">{{ roleLabel }}</span>
                 </span>
-                <svg class="user-switch-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8.2 9.6 12 5.8l3.8 3.8M8.2 14.4 12 18.2l3.8-3.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
               </div>
             </aside>
 
@@ -899,7 +896,7 @@ export default defineComponent({
         case 'backend_ops':
           return '后台维护人员'
         default:
-          return '使用人员'
+          return ''
       }
     })
 
