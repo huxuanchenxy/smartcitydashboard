@@ -29,6 +29,7 @@
       <div class="panel-header">
         <h3>技能库</h3>
         <!-- <span class="panel-subtitle">选择技能添加到 Agent</span> -->
+        <el-button type="primary" size="small" @click="openBackendConfig">后台配置</el-button>
       </div>
       <div class="skills-grid">
         <div
@@ -55,6 +56,7 @@
         </div>
       </div>
     </div>
+    <BackendConfigDialog v-model:visible="backendConfigVisible" />
   </div>
 </template>
 
@@ -63,6 +65,7 @@ import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
 import { ElTooltip } from 'element-plus'
 import request from '@/utils/request'
 import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
+import BackendConfigDialog from './BackendConfigDialog.vue'
 import {
   getFontScale,
   setFontScale,
@@ -95,6 +98,7 @@ export default defineComponent({
   name: 'AgentConfig',
   components: {
     DifyRealDialog,
+    BackendConfigDialog,
     ElTooltip,
   },
   setup() {
@@ -137,6 +141,12 @@ export default defineComponent({
 
     const addSkill = (skill: Skill) => {
       console.log('添加技能:', skill.name, 'skillId:', skill.skillId)
+    }
+
+    // 后台配置弹层：右上方“后台配置”按钮唤起
+    const backendConfigVisible = ref(false)
+    const openBackendConfig = () => {
+      backendConfigVisible.value = true
     }
 
     // 字体整体缩放配置：默认隐藏，Ctrl+空格 唤起；再次按 Ctrl+空格 保存到 localStorage 并收起
@@ -226,6 +236,8 @@ export default defineComponent({
       initialSize,
       skills,
       addSkill,
+      backendConfigVisible,
+      openBackendConfig,
       fontConfigVisible,
       fontScale,
       minFontScale: MIN_FONT_SCALE,
@@ -365,6 +377,9 @@ export default defineComponent({
 }
 
 .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
 }
 
