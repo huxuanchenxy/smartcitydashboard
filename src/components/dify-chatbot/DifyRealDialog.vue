@@ -21,323 +21,411 @@
         </div>
         <div
           class="custom-dialog"
-          :class="{ 'custom-dialog-fixed': fixed }"
+          :class="{ 'custom-dialog-fixed': fixed, 'sidebar-collapsed': sidebarCollapsed }"
           :style="chatFontStyle"
           @mousedown="handleMouseDown"
         >
-          <div class="custom-dialog-header">
-            <span class="custom-dialog-title">{{ title }}</span>
-            <div class="custom-dialog-header-actions">
-              <button
-                v-if="mdEditor"
-                class="md-editor-toggle"
-                :class="{ active: mdEditorVisible }"
-                :title="mdEditorVisible ? '收起 Markdown 编辑器' : '打开 Markdown 编辑器'"
-                @click="mdEditorVisible = !mdEditorVisible"
-              >
-                📝
-              </button>
-              <button v-if="!noMask && !inline" class="custom-dialog-close" @click="handleClose">
-                ×
-              </button>
-            </div>
-          </div>
           <div class="dify-api-container">
-            <!-- 左侧对话历史侧栏（接口预留，当前本地占位） -->
-            <aside
-              class="conversation-sidebar"
-              :style="{ width: sidebarWidth + 'px', flexBasis: sidebarWidth + 'px' }"
-            >
-              <div class="sidebar-header">
+            <!-- 左侧：品牌 / 新建对话 / 会话列表 / 当前用户 -->
+            <aside class="conversation-sidebar" :style="sidebarStyle">
+              <div class="sidebar-brand">
+                <span class="brand-logo" v-html="sparkleSvg"></span>
+                <span class="brand-text">
+                  <span class="brand-title" :title="title">{{ title }}</span>
+                  <span class="brand-subtitle">{{ subtitle }}</span>
+                </span>
+              </div>
+
+              <div class="sidebar-actions">
                 <button class="new-conversation-btn" @click="createNewConversation">
-                  <span class="new-conversation-icon">＋</span>
+                  <svg class="new-conversation-plus" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5.6v12.8M5.6 12h12.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+                  </svg>
                   <span class="new-conversation-text">新建对话</span>
+                  <svg class="new-conversation-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7.6 16.4 16.4 7.6M9 7.6h7.4V15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
                 </button>
               </div>
+
+              <div class="sidebar-tabs">
+                <button
+                  class="sidebar-tab"
+                  :class="{ active: sidebarTab === 'recent' }"
+                  @click="sidebarTab = 'recent'"
+                >最近对话</button>
+                <button
+                  class="sidebar-tab"
+                  :class="{ active: sidebarTab === 'history' }"
+                  @click="sidebarTab = 'history'"
+                >历史记录</button>
+              </div>
+
               <div class="conversation-list">
-                <div
-                  v-for="conv in conversationList"
-                  :key="conv.id"
-                  class="conversation-item"
-                  :class="{ active: conv.id === currentConversationId }"
-                  @click="selectConversation(conv)"
-                >
-                  <div class="conversation-item-icon">💬</div>
-                  <div class="conversation-item-body">
-                    <div class="conversation-item-title" :title="conv.title">{{ conv.title }}</div>
-                  </div>
-                  <button
-                    class="conversation-delete-btn"
-                    title="删除该对话"
-                    @click.stop="confirmDeleteConversation(conv)"
+                <template v-for="(conv, idx) in visibleConversations" :key="conv.id">
+                  <div v-if="showEarlierDivider(idx)" class="conversation-group-title">更早</div>
+                  <div
+                    class="conversation-item"
+                    :class="{ active: conv.id === currentConversationId }"
+                    @click="selectConversation(conv)"
                   >
-                    🗑
-                  </button>
+                    <svg class="conversation-item-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M20.2 12.3c0 3.9-3.7 7-8.2 7-1.1 0-2.2-.2-3.2-.6l-4.9 1.6 1.5-3.7c-1.1-1.2-1.8-2.7-1.8-4.3 0-3.9 3.7-7 8.4-7s8.2 3.1 8.2 7Z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span class="conversation-item-title" :title="conv.title">{{ conv.title }}</span>
+                    <span v-if="conversationTimeText(conv)" class="conversation-item-time">{{ conversationTimeText(conv) }}</span>
+                    <button
+                      class="conversation-delete-btn"
+                      title="删除该对话"
+                      @click.stop="confirmDeleteConversation(conv)"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 7.2h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                        <path d="M9.4 7.2V5.9c0-.8.6-1.4 1.4-1.4h2.4c.8 0 1.4.6 1.4 1.4v1.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                        <path d="M7.2 7.2l.7 11c.05.9.8 1.6 1.7 1.6h4.8c.9 0 1.65-.7 1.7-1.6l.7-11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </template>
+                <div v-if="visibleConversations.length === 0" class="conversation-empty">
+                  {{ sidebarTab === 'recent' ? '暂无对话记录' : '暂无更早的对话' }}
                 </div>
-                <div v-if="conversationList.length === 0" class="conversation-empty">
-                  暂无历史对话
-                </div>
+              </div>
+
+              <div class="sidebar-footer">
+                <span class="user-avatar">{{ userInitial }}</span>
+                <span class="user-info">
+                  <span class="user-name" :title="userDisplayName">{{ userDisplayName }}</span>
+                  <span v-if="showUserSub" class="user-sub">{{ roleLabel }}</span>
+                </span>
+                <svg class="user-switch-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8.2 9.6 12 5.8l3.8 3.8M8.2 14.4 12 18.2l3.8-3.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </div>
             </aside>
-            <!-- 右侧聊天主区域 -->
+
+            <!-- 右侧：顶栏 + 消息区 + 输入区 -->
             <div class="chat-main">
-              <div class="message-section-wrapper">
-              <div ref="messageContainer" class="message-section">
-                <div v-if="messages.length === 0" class="empty-message">
-                  <div class="empty-icon">💬</div>
-                  <div>暂无消息，开始您的对话吧！</div>
-                </div>
-                <div v-else class="message-list">
-                  <div
-                    v-for="(message, index) in messages"
-                    :key="index"
-                    :class="[
-                      'message-item',
-                      message.role === 'user' ? 'user-message' : 'assistant-message',
-                    ]"
+              <div class="chat-main-header">
+                <div class="chat-main-title-wrap">
+                  <button
+                    class="sidebar-toggle-btn"
+                    :title="sidebarCollapsed ? '展开会话列表' : '收起会话列表'"
+                    @click="toggleSidebar"
                   >
-                    <div class="message-header">
-                      <div class="avatar" :class="message.role">
-                        {{ message.role === "user" ? "👤" : "🤖" }}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3" fill="none" stroke="currentColor" stroke-width="1.7" />
+                      <path d="M9.6 4.6v14.8" fill="none" stroke="currentColor" stroke-width="1.7" />
+                    </svg>
+                  </button>
+                  <span class="chat-main-title">{{ headerTitle }}</span>
+                </div>
+                <div class="chat-main-actions">
+                  <button
+                    v-if="mdEditor"
+                    class="pill-btn"
+                    :class="{ active: mdEditorVisible }"
+                    :title="mdEditorVisible ? '收起 Markdown 编辑器' : '打开 Markdown 编辑器'"
+                    @click="mdEditorVisible = !mdEditorVisible"
+                  >{{ mdEditorVisible ? '收起文档' : '说明文档' }}</button>
+                  <button
+                    v-if="!noMask && !inline"
+                    class="round-icon-btn"
+                    title="关闭"
+                    @click="handleClose"
+                  >×</button>
+                </div>
+              </div>
+
+              <div class="message-section-wrapper">
+                <div
+                  ref="messageContainer"
+                  class="message-section"
+                  :class="{ 'is-empty': messages.length === 0 }"
+                >
+                  <!-- 空态：品牌欢迎页（品牌标识 / 标语 / 引导卡片） -->
+                  <div v-if="messages.length === 0" class="welcome-screen">
+                    <div class="welcome-inner">
+                      <div class="welcome-logo">
+                        <span class="welcome-logo-inner" v-html="sparkleSvg"></span>
                       </div>
-                      <div class="message-role">{{ message.role === "user" ? userDisplayName : "AI 助手" }}</div>
+                      <div class="welcome-slogan">让想法，更进一步</div>
+                      <div class="welcome-title">今天，有什么可以帮你？</div>
+                      <div class="welcome-subtitle">从一个问题开始，把复杂的工作变简单。</div>
+                      <div class="welcome-cards">
+                        <button
+                          v-for="(card, ci) in suggestionCards"
+                          :key="ci"
+                          class="suggestion-card"
+                          @click="applySuggestion(card)"
+                        >
+                          <span class="suggestion-card-icon" v-html="suggestionIcon(ci)"></span>
+                          <span class="suggestion-card-body">
+                            <span class="suggestion-card-title">{{ card.title }}</span>
+                            <span class="suggestion-card-desc">{{ card.desc }}</span>
+                          </span>
+                          <svg class="suggestion-card-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M7.6 16.4 16.4 7.6M9 7.6h7.4V15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <div class="message-content">
-                      <div v-if="message.isThinking" class="thinking-indicator">
-                        <span class="thinking-dots">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </span>
-                        <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
-                      </div>
-                  <div v-else-if="!message.isInterrupted && !message.isCompleted">
+                  </div>
+                  <div v-else class="message-list">
                     <div
-                      class="content-text"
-                          :class="{ 'error-text': message.isError }"
-                          v-html="formatContent(message.content)"
-                        ></div>
-                        <div v-if="message.flintSpecs && message.flintSpecs.length > 0" class="flint-charts-container">
+                      v-for="(message, index) in messages"
+                      :key="index"
+                      :class="[
+                        'message-item',
+                        message.role === 'user' ? 'user-message' : 'assistant-message',
+                      ]"
+                    >
+                      <div class="message-header">
+                        <span class="avatar" :class="message.role">
+                          <span v-if="message.role === 'user'" class="avatar-text">{{ userInitial }}</span>
+                          <span v-else class="avatar-brand" v-html="sparkleSvg"></span>
+                        </span>
+                        <span class="message-role">{{ message.role === "user" ? userDisplayName : "AI 助手" }}</span>
+                      </div>
+                      <div class="message-content">
+                        <div v-if="message.isThinking" class="thinking-indicator">
+                          <span class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </span>
+                          <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
+                        </div>
+                        <div v-else-if="!message.isInterrupted && !message.isCompleted">
                           <div
-                            v-for="(spec, chartIdx) in message.flintSpecs"
-                            :key="chartIdx"
-                            :ref="(el) => setFlintChartRef(el, index, chartIdx)"
-                            class="flint-chart-item"
+                            class="content-text"
+                            :class="{ 'error-text': message.isError }"
+                            v-html="formatContent(message.content)"
                           ></div>
-                        </div>
-                        <!-- HTML 交互面板 -->
-                        <div
-                          v-if="message.htmlInteractions && message.htmlInteractions.length > 0"
-                          class="html-interactions-container"
-                        >
+                          <div v-if="message.flintSpecs && message.flintSpecs.length > 0" class="flint-charts-container">
+                            <div
+                              v-for="(spec, chartIdx) in message.flintSpecs"
+                              :key="chartIdx"
+                              :ref="(el) => setFlintChartRef(el, index, chartIdx)"
+                              class="flint-chart-item"
+                            ></div>
+                          </div>
+                          <!-- HTML 交互面板 -->
                           <div
-                            v-for="(interaction, interIdx) in message.htmlInteractions"
-                            :key="interIdx"
-                            class="html-interaction-panel"
-                            :class="{ resolved: message.interactionResolved }"
+                            v-if="message.htmlInteractions && message.htmlInteractions.length > 0"
+                            class="html-interactions-container"
                           >
-                            <!-- 技能选择面板（可勾选） -->
-                            <div v-if="interaction.type === 'skill_select'" class="skill-select-panel">
-                              <div class="skill-select-message">{{ interaction.message }}</div>
-                              <div class="skill-select-list">
-                                <div
-                                  v-for="skill in interaction.skills"
-                                  :key="skill.name"
-                                  class="skill-select-item"
-                                  :class="{ selected: message.selectedSkills && message.selectedSkills.includes(skill.name) }"
-                                  @click="toggleSkill(index, skill.name)"
-                                >
-                                  <div class="skill-checkbox">
-                                    <span v-if="message.selectedSkills && message.selectedSkills.includes(skill.name)">✓</span>
-                                  </div>
-                                  <div class="skill-select-info">
-                                    <div class="skill-select-name">{{ skill.name }}</div>
-                                    <div class="skill-select-desc">{{ skill.desc }}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="skill-select-actions">
-                                <button
-                                  v-for="btn in getButtons(interaction)"
-                                  :key="btn.type"
-                                  class="skill-btn"
-                                  :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
-                                  :style="getButtonInlineStyle(btn)"
-                                  :disabled="message.interactionResolved"
-                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
-                                >
-                                  {{ btn.text }}
-                                </button>
-                              </div>
-                              <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
-                                {{ message.interactionText }}
-                              </div>
-                              <div v-if="message.interactionResolved && !message.interactionText && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
-                                已选择：{{ message.selectedSkills.join('、') }}
-                              </div>
-                            </div>
-                            <!-- 技能列表面板（只读列表，不可勾选） -->
-                            <div v-else-if="interaction.type === 'skill_list'" class="skill-list-panel">
-                              <div class="skill-select-message">{{ interaction.message }}</div>
-                              <div class="skill-select-list">
-                                <div
-                                  v-for="skill in interaction.skills"
-                                  :key="skill.name"
-                                  class="skill-list-item"
-                                >
-                                  <div class="skill-list-info">
-                                    <div class="skill-select-name">{{ skill.name }}</div>
-                                    <div class="skill-select-desc">{{ skill.desc }}</div>
+                            <div
+                              v-for="(interaction, interIdx) in message.htmlInteractions"
+                              :key="interIdx"
+                              class="html-interaction-panel"
+                              :class="{ resolved: message.interactionResolved }"
+                            >
+                              <!-- 技能选择面板（可勾选） -->
+                              <div v-if="interaction.type === 'skill_select'" class="skill-select-panel">
+                                <div class="skill-select-message">{{ interaction.message }}</div>
+                                <div class="skill-select-list">
+                                  <div
+                                    v-for="skill in interaction.skills"
+                                    :key="skill.name"
+                                    class="skill-select-item"
+                                    :class="{ selected: message.selectedSkills && message.selectedSkills.includes(skill.name) }"
+                                    @click="toggleSkill(index, skill.name)"
+                                  >
+                                    <div class="skill-checkbox">
+                                      <span v-if="message.selectedSkills && message.selectedSkills.includes(skill.name)">✓</span>
+                                    </div>
+                                    <div class="skill-select-info">
+                                      <div class="skill-select-name">{{ skill.name }}</div>
+                                      <div class="skill-select-desc">{{ skill.desc }}</div>
+                                    </div>
                                   </div>
                                 </div>
+                                <div class="skill-select-actions">
+                                  <button
+                                    v-for="btn in getButtons(interaction)"
+                                    :key="btn.type"
+                                    class="skill-btn"
+                                    :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                    :style="getButtonInlineStyle(btn)"
+                                    :disabled="message.interactionResolved"
+                                    @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
+                                  >
+                                    {{ btn.text }}
+                                  </button>
+                                </div>
+                                <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
+                                  {{ message.interactionText }}
+                                </div>
+                                <div v-if="message.interactionResolved && !message.interactionText && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
+                                  已选择：{{ message.selectedSkills.join('、') }}
+                                </div>
                               </div>
-                              <div v-if="interaction.buttons && interaction.buttons.length > 0" class="skill-select-actions">
-                                <button
-                                  v-for="btn in getButtons(interaction)"
-                                  :key="btn.type"
-                                  class="skill-btn"
-                                  :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
-                                  :style="getButtonInlineStyle(btn)"
-                                  :disabled="message.interactionResolved"
-                                  @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
-                                >
-                                  {{ btn.text }}
-                                </button>
-                              </div>
-                              <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
-                                {{ message.interactionText }}
+                              <!-- 技能列表面板（只读列表，不可勾选） -->
+                              <div v-else-if="interaction.type === 'skill_list'" class="skill-list-panel">
+                                <div class="skill-select-message">{{ interaction.message }}</div>
+                                <div class="skill-select-list">
+                                  <div
+                                    v-for="skill in interaction.skills"
+                                    :key="skill.name"
+                                    class="skill-list-item"
+                                  >
+                                    <div class="skill-list-info">
+                                      <div class="skill-select-name">{{ skill.name }}</div>
+                                      <div class="skill-select-desc">{{ skill.desc }}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div v-if="interaction.buttons && interaction.buttons.length > 0" class="skill-select-actions">
+                                  <button
+                                    v-for="btn in getButtons(interaction)"
+                                    :key="btn.type"
+                                    class="skill-btn"
+                                    :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                    :style="getButtonInlineStyle(btn)"
+                                    :disabled="message.interactionResolved"
+                                    @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
+                                  >
+                                    {{ btn.text }}
+                                  </button>
+                                </div>
+                                <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
+                                  {{ message.interactionText }}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div v-else-if="message.isInterrupted" class="interrupted-panel">
-                        <div class="interrupted-header">
-                          <span class="interrupted-badge">待确认</span>
+                        <div v-else-if="message.isInterrupted" class="interrupted-panel">
+                          <div class="interrupted-header">
+                            <span class="interrupted-badge">待确认</span>
+                          </div>
+                          <div
+                            v-if="message.pendingQuestion"
+                            class="interrupted-question"
+                            v-html="formatContent(message.pendingQuestion)"
+                          ></div>
+                          <div v-if="message.pendingContextEntries && message.pendingContextEntries.length" class="interrupted-context">
+                            <div class="interrupted-context-title">上下文信息</div>
+                            <div
+                              v-for="(entry, ci) in message.pendingContextEntries"
+                              :key="ci"
+                              class="pending-context-item"
+                            >
+                              <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
+                              <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
+                              <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
+                                <thead>
+                                  <tr>
+                                    <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr v-for="(row, ri) in entry.tableRows" :key="ri">
+                                    <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         </div>
+                        <div v-else-if="message.isCompleted" class="result-panel">
+                          <div class="result-header">
+                            <span class="result-badge">已完成</span>
+                          </div>
+                          <div v-if="message.resultEntries && message.resultEntries.length" class="interrupted-context">
+                            <div class="interrupted-context-title">结果</div>
+                            <div
+                              v-for="(entry, ci) in message.resultEntries"
+                              :key="ci"
+                              class="pending-context-item"
+                            >
+                              <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
+                              <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
+                              <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
+                                <thead>
+                                  <tr>
+                                    <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr v-for="(row, ri) in entry.tableRows" :key="ri">
+                                    <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 消息附件：与正文面板并列，历史会话与实时消息共用同一套渲染 -->
+                      <div v-if="message.files && message.files.length > 0" class="message-files">
                         <div
-                          v-if="message.pendingQuestion"
-                          class="interrupted-question"
-                          v-html="formatContent(message.pendingQuestion)"
-                        ></div>
-                        <div v-if="message.pendingContextEntries && message.pendingContextEntries.length" class="interrupted-context">
-                          <div class="interrupted-context-title">上下文信息</div>
-                          <div
-                            v-for="(entry, ci) in message.pendingContextEntries"
-                            :key="ci"
-                            class="pending-context-item"
-                          >
-                            <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
-                            <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
-                            <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
-                              <thead>
-                                <tr>
-                                  <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr v-for="(row, ri) in entry.tableRows" :key="ri">
-                                  <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                      <div v-else-if="message.isCompleted" class="result-panel">
-                        <div class="result-header">
-                          <span class="result-badge">已完成</span>
-                        </div>
-                        <div v-if="message.resultEntries && message.resultEntries.length" class="interrupted-context">
-                          <div class="interrupted-context-title">结果</div>
-                          <div
-                            v-for="(entry, ci) in message.resultEntries"
-                            :key="ci"
-                            class="pending-context-item"
-                          >
-                            <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
-                            <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
-                            <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
-                              <thead>
-                                <tr>
-                                  <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr v-for="(row, ri) in entry.tableRows" :key="ri">
-                                  <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- 消息附件：与正文面板并列，历史会话与实时消息共用同一套渲染 -->
-                    <div v-if="message.files && message.files.length > 0" class="message-files">
-                      <div
-                        v-for="file in message.files"
-                        :key="file.id"
-                        class="message-file-item"
-                      >
-                        <!-- 图片类附件显示缩略图，点击打开原图；加载失败回退为图标 -->
-                        <a
-                          v-if="file.accessUrl && isImageFile(file.name) && !isThumbBroken(file.accessUrl)"
-                          class="file-thumb"
-                          :href="file.accessUrl"
-                          target="_blank"
-                          rel="noopener"
-                          :title="'点击查看原图：' + file.name"
+                          v-for="file in message.files"
+                          :key="file.id"
+                          class="message-file-item"
                         >
-                          <img :src="file.accessUrl" :alt="file.name" @error="onThumbError(file.accessUrl)">
-                        </a>
-                        <span v-else class="file-icon">{{ fileIcon(file.name) }}</span>
-                        <!-- 有访问地址时名称可点击打开；无地址（极端异常）则纯文本 -->
-                        <a
-                          v-if="file.accessUrl"
-                          class="file-name file-name-link"
-                          :href="file.accessUrl"
-                          target="_blank"
-                          rel="noopener"
-                          :title="file.name"
-                        >{{ file.name }}</a>
-                        <span v-else class="file-name" :title="file.name">{{ file.name }}</span>
-                        <!-- 历史接口不下发体积，缺省时不展示 -->
-                        <span v-if="file.size != null" class="file-size">{{ formatFileSize(file.size) }}</span>
-                        <a
-                          v-if="file.accessUrl"
-                          class="file-download"
-                          :href="file.accessUrl"
-                          :download="file.name"
-                          title="下载附件"
-                        >⬇</a>
+                          <!-- 图片类附件显示缩略图，点击打开原图；加载失败回退为图标 -->
+                          <a
+                            v-if="file.accessUrl && isImageFile(file.name) && !isThumbBroken(file.accessUrl)"
+                            class="file-thumb"
+                            :href="file.accessUrl"
+                            target="_blank"
+                            rel="noopener"
+                            :title="'点击查看原图：' + file.name"
+                          >
+                            <img :src="file.accessUrl" :alt="file.name" @error="onThumbError(file.accessUrl)">
+                          </a>
+                          <span v-else class="file-icon">{{ fileIcon(file.name) }}</span>
+                          <!-- 有访问地址时名称可点击打开；无地址（极端异常）则纯文本 -->
+                          <a
+                            v-if="file.accessUrl"
+                            class="file-name file-name-link"
+                            :href="file.accessUrl"
+                            target="_blank"
+                            rel="noopener"
+                            :title="file.name"
+                          >{{ file.name }}</a>
+                          <span v-else class="file-name" :title="file.name">{{ file.name }}</span>
+                          <!-- 历史接口不下发体积，缺省时不展示 -->
+                          <span v-if="file.size != null" class="file-size">{{ formatFileSize(file.size) }}</span>
+                          <a
+                            v-if="file.accessUrl"
+                            class="file-download"
+                            :href="file.accessUrl"
+                            :download="file.name"
+                            title="下载附件"
+                          >⬇</a>
+                        </div>
                       </div>
-                    </div>
-                    <div class="message-actions">
-                      <button
-                        v-if="!message.isThinking"
-                        class="copy-btn"
-                        :title="'复制内容'"
-                        @click="copyMessageContent(message)"
-                      >
-                        <ChatCopy />
-                      </button>
-                    </div>
-                    <div v-if="!message.isThinking" class="message-time">
-                      {{ formatTime(message.timestamp) }}
+                      <div v-if="!message.isThinking" class="message-footer">
+                        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+                        <button
+                          class="copy-btn"
+                          title="复制内容"
+                          @click="copyMessageContent(message)"
+                        >
+                          <ChatCopy />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <!-- 切换历史会话时，消息拉取完成前显示「加载中」遮罩，避免页面空白、提升体验 -->
+                <div v-if="historyLoading" class="history-loading-overlay">
+                  <div class="history-loading-spinner"></div>
+                  <div class="history-loading-text">数据加载中，请稍后…</div>
+                </div>
               </div>
-              <!-- <div class="message-section-actions">
-                <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话">
-                  <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" fill="#ffffff"></path></svg>
-                </el-button>
-              </div> -->
-            </div>
-            <div class="input-section">
-              <div class="input-wrapper">
-                <div class="input-row">
+
+              <div class="input-section">
+                <div class="input-wrapper">
                   <div v-if="uploadedFiles.length > 0" class="uploaded-files-list">
                     <div
                       v-for="file in uploadedFiles"
@@ -353,67 +441,66 @@
                       </button>
                     </div>
                   </div>
-                  <el-input
-                    v-model="userQuery"
-                    type="textarea"
-                    :rows="3"
-                    placeholder="请输入您的问题..."
-                    resize="none"
-                    :disabled="isLoading"
-                    @keydown.enter.prevent="handleEnter"
-                  />
-                  <div class="input-actions">
-                    <div class="actions-row">
-                      <el-button
-                        v-show="!isLoading"
-                        type="default"
-                        size="small"
+                  <div class="composer">
+                    <el-input
+                      ref="queryInputRef"
+                      v-model="userQuery"
+                      type="textarea"
+                      :rows="3"
+                      placeholder="输入你的问题，让我们一起解决..."
+                      resize="none"
+                      :disabled="isLoading"
+                      @keydown.enter.prevent="handleEnter"
+                    />
+                    <div class="composer-footer">
+                      <button
+                        class="attach-btn"
                         :disabled="isLoading"
-                        class="upload-button"
                         title="上传文件"
                         @click="openFileDialog"
                       >
-                        <ChatUpload />
-                      </el-button>
-                      <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
-                      <el-button
-                        v-if="isLoading"
-                        type="danger"
-                        size="small"
-                        class="stop-button"
-                        title="停止"
-                        @click="stopGeneration"
-                      >
-                        <ChatStop />
-                      </el-button>
-                      <el-button
-                        v-show="!isLoading"
-                        type="success"
-                        size="small"
-                        :disabled="isLoading || isUploadingFiles || (!userQuery.trim() && uploadedFiles.length === 0)"
-                        class="send-button"
-                        title="发送"
-                        @click="sendMessage"
-                      >
-                        <ChatSend />
-                      </el-button>
+                        <ChatUpload class="attach-icon" />
+                        <span class="attach-text">添加附件</span>
+                      </button>
+                      <div class="composer-footer-right">
+                        <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
+                        <button
+                          v-if="isLoading"
+                          class="round-btn stop-btn"
+                          title="停止"
+                          @click="stopGeneration"
+                        >
+                          <ChatStop class="round-icon" />
+                        </button>
+                        <button
+                          v-else
+                          class="round-btn send-btn"
+                          :disabled="!canSend"
+                          title="发送"
+                          @click="sendMessage"
+                        >
+                          <ChatSend class="round-icon" />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  <div class="composer-hint">
+                    <button class="scroll-bottom-btn" title="回到最新消息" @click="scrollToBottom">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 5.4v12.6M6.8 12.9 12 18.1l5.2-5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                    <span class="composer-hint-text">生成内容仅供参考，请核实重要信息</span>
+                  </div>
+                  <input
+                    ref="fileInputRef"
+                    type="file"
+                    multiple
+                    class="hidden-file-input"
+                    @change="handleFileSelect"
+                  >
                 </div>
-                <input
-                  ref="fileInputRef"
-                  type="file"
-                  multiple
-                  class="hidden-file-input"
-                  @change="handleFileSelect"
-                >
               </div>
-              <!-- 切换历史会话时，消息拉取完成前显示「加载中」遮罩，避免页面空白、提升体验 -->
-              <div v-if="historyLoading" class="history-loading-overlay">
-                <div class="history-loading-spinner"></div>
-                <div class="history-loading-text">数据加载中，请稍后…</div>
-              </div>
-            </div>
             </div>
           </div>
         </div>
@@ -516,6 +603,23 @@ interface HtmlInteraction {
   }>
   buttons?: ButtonConfig[]
 }
+
+// 空态引导卡片（对话窗欢迎页）
+interface SuggestionCard {
+  title: string
+  desc: string
+  prompt: string
+}
+
+// 空态引导卡片图标（放大镜 / 文档 / 灯泡），按卡片序号取用
+const SUGGESTION_ICONS = [
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.7 15.7 20.5 20.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 3.2H7.4A2.2 2.2 0 0 0 5.2 5.4v13.2a2.2 2.2 0 0 0 2.2 2.2h9.2a2.2 2.2 0 0 0 2.2-2.2V8.4l-5.2-5.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13.4 3.4v5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.8 13.2h6.4M8.8 16.4h4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a6 6 0 0 0-3.7 10.7c.5.37.8.94.8 1.55v1.05h5.8v-1.05c0-.61.3-1.18.8-1.55A6 6 0 0 0 12 3.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.8 18.9h4.4M10.6 21.2h2.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+]
+
+// 品牌标识（四角星）：填色由 CSS currentColor 控制，深浅场景共用
+const SPARKLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c.62 4.3 2.9 6.58 7.2 7.2-4.3.62-6.58 2.9-7.2 7.2-.62-4.3-2.9-6.58-7.2-7.2 4.3-.62 6.58-2.9 7.2-7.2Z" fill="currentColor"/><path d="M18.9 14.5c.29 2 1.35 3.06 3.35 3.35-2 .29-3.06 1.35-3.35 3.35-.29-2-1.35-3.06-3.35-3.35 2-.29 3.06-1.35 3.35-3.35Z" fill="currentColor" opacity="0.9"/></svg>'
 
 // 附件上传接口返回项（/api/file/upload/batch）
 interface UploadedFileMeta {
@@ -640,10 +744,20 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
-    // 左侧对话历史侧栏宽度（px）；默认 180，即 240 缩减 1/4
+    // 左侧品牌区副标题
+    subtitle: {
+      type: String,
+      default: '你的智能工作伙伴',
+    },
+    // 空态引导卡片；不传则使用内置三条默认引导
+    suggestions: {
+      type: Array as () => SuggestionCard[] | null,
+      default: null,
+    },
+    // 左侧对话历史侧栏宽度（px）
     sidebarWidth: {
       type: Number,
-      default: 200,
+      default: 260,
     },
     com: {
       type: Object as () => {
@@ -670,6 +784,8 @@ export default defineComponent({
     // 切换历史会话时的「数据加载中」遮罩开关（与发送消息的 isLoading 解耦，避免互相影响）
     const historyLoading = ref(false)
     const userQuery = ref('')
+    // 输入框实例：点击引导卡片后自动聚焦，方便继续编辑后发送
+    const queryInputRef = ref<any>(null)
     const messages = ref<ChartMessage[]>([])
     const flintChartRefs = ref<Map<string, HTMLElement>>(new Map())
     const flintChartInstances = ref<Map<string, echarts.ECharts>>(new Map())
@@ -709,6 +825,10 @@ export default defineComponent({
     const fileInputRef = ref<HTMLInputElement | null>(null)
     // 是否存在仍在"上传中"的附件（发送前需等待其完成）
     const isUploadingFiles = computed(() => uploadedFiles.value.some(file => !!file.uploading))
+    // 是否存在可发送内容（输入非空，或已选择附件），用于控制发送按钮可用态
+    const canSend = computed(
+      () => !isLoading.value && !isUploadingFiles.value && (!!userQuery.value.trim() || uploadedFiles.value.length > 0),
+    )
 
     const scriptEngine = new DemoScriptEngine()
     // 不再请求 mockdata.json：真实对话走 WS，scriptEngine 仅作为技能按钮交互的内置兜底
@@ -762,16 +882,45 @@ export default defineComponent({
       return `${url}${url.includes('?') ? '&' : '?'}loginAccount=${encodeURIComponent(account)}`
     }
 
+    // 角色中文名：侧栏底部「用户名 / 角色」与发问者兜底显示名共用
+    const roleLabel = computed(() => {
+      switch (currentRole.value) {
+        case 'project_manager':
+          return '项目经理'
+        case 'developer':
+          return '开发人员'
+        case 'backend_ops':
+          return '后台维护人员'
+        default:
+          return '使用人员'
+      }
+    })
+
     // 发问者显示名：优先取 localStorage 的 loginAccount，未登录时兜底到角色中文名
     // loginAccount 非响应式，故用 ref 缓存，并在挂载 / 对话框打开时刷新，确保读到最新账号
     const userDisplayName = ref('')
+    // 头像文字：取显示名首字（英文取大写首字母）
+    const userInitial = computed(() => {
+      const name = userDisplayName.value || '我'
+      return /^[a-z]/i.test(name) ? name.charAt(0).toUpperCase() : name.charAt(0)
+    })
+    // 未登录（显示名即角色名）时不重复展示第二行，避免出现「使用人员 / 使用人员」
+    const showUserSub = computed(() => userDisplayName.value !== roleLabel.value)
     const refreshUserDisplayName = () => {
-      const roleLabel =
-        currentRole.value === 'project_manager' ? '项目经理'
-        : currentRole.value === 'developer' ? '开发人员'
-        : currentRole.value === 'backend_ops' ? '后台维护人员'
-        : '使用人员'
-      userDisplayName.value = getLoginAccount() || roleLabel
+      userDisplayName.value = getLoginAccount() || roleLabel.value
+    }
+
+    // 会话列表右侧时间文案：把后端 createdOn 归一化为「MM-DD HH:mm」（跨年补年份）
+    // 缺失 / 非法格式统一返回空串，模板判空后不渲染，避免出现 Invalid Date
+    const formatConversationTime = (raw?: string | number): string => {
+      if (raw == null || raw === '') return ''
+      const text = String(raw)
+      const ts = typeof raw === 'number' ? raw : Date.parse(text) || Date.parse(text.replace(/-/g, '/'))
+      if (!ts || Number.isNaN(ts)) return ''
+      const d = new Date(ts)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const prefix = d.getFullYear() === new Date().getFullYear() ? '' : `${d.getFullYear()}-`
+      return `${prefix}${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
     }
 
     // 真实接口：拉取对话历史列表（直连，不走代理）
@@ -789,11 +938,13 @@ export default defineComponent({
           name: string
           sessionId: string | null
           state?: number
+          // 后端下发的时间字段（不同版本可能是时间戳或日期字符串），用于列表右侧时间展示
+          createdOn?: string | number
         }>
         const fetched = rawList.map((item, index) => ({
           id: item.autoId != null ? String(item.autoId) : item.sessionId || `hist-${index}`,
           title: item.name || '',
-          updateTime: '',
+          updateTime: formatConversationTime(item.createdOn),
           sessionId: item.sessionId,
           state: item.state,
         }))
@@ -1609,6 +1760,68 @@ export default defineComponent({
     const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
     const dialogWidth = ref(props.initialSize?.width ?? 600)
     const dialogHeight = ref(props.initialSize?.height ?? 600)
+
+    // ===== 视图层状态（空态引导 / 侧栏分栏与收起 / 标题），不影响消息与会话逻辑 =====
+    // 空态引导卡片：宿主可通过 suggestions 覆盖，未传则使用内置三条通用引导
+    const DEFAULT_SUGGESTIONS: SuggestionCard[] = [
+      { title: '查询业务数据', desc: '快速定位你需要的信息', prompt: '帮我查询业务数据' },
+      { title: '解读文档内容', desc: '梳理重点，提炼关键信息', prompt: '帮我解读文档内容' },
+      { title: '一起理清思路', desc: '让每个想法都有下一步', prompt: '帮我一起理清思路' },
+    ]
+    const suggestionCards = computed<SuggestionCard[]>(() => {
+      const custom = props.suggestions
+      if (custom && custom.length > 0) {
+        const valid = custom.filter(item => !!item && !!item.title)
+        if (valid.length > 0) return valid
+      }
+      return DEFAULT_SUGGESTIONS
+    })
+    // 卡片图标按序号轮取（放大镜 / 文档 / 灯泡）
+    const suggestionIcon = (index: number): string => SUGGESTION_ICONS[index % SUGGESTION_ICONS.length]
+    // 点击引导卡片：仅回填输入框并聚焦，由用户确认后再发送，避免误触直接发起请求
+    const applySuggestion = async (card: SuggestionCard): Promise<void> => {
+      if (isLoading.value) return
+      userQuery.value = card.prompt || card.title
+      await nextTick()
+      queryInputRef.value?.focus()
+    }
+
+    // 侧栏「最近对话 / 历史记录」：「最近对话」展示全部（第 N 条起插入「更早」分组标题），
+    // 「历史记录」只筛选出更早的部分，便于从大量会话中快速定位老会话
+    const RECENT_LIMIT = 6
+    const SIDEBAR_MIN_WIDTH = 560
+    const sidebarTab = ref<'recent' | 'history'>('recent')
+    const visibleConversations = computed(() =>
+      sidebarTab.value === 'recent' ? conversationList.value : conversationList.value.slice(RECENT_LIMIT),
+    )
+    const showEarlierDivider = (index: number) => sidebarTab.value === 'recent' && index === RECENT_LIMIT
+    // 会话项右侧时间：当前会话显示「现在」，历史会话显示后端创建时间（缺失则不显示）
+    const conversationTimeText = (conv: ConversationItem): string =>
+      conv.id === currentConversationId.value ? '现在' : conv.updateTime || ''
+
+    // 侧栏收起：默认展开，窗口过窄（如 600px 浮窗）时自动收起；仅跨过阈值时干预，保留用户手动操作结果
+    const sidebarCollapsed = ref(dialogWidth.value < SIDEBAR_MIN_WIDTH)
+    const toggleSidebar = () => {
+      sidebarCollapsed.value = !sidebarCollapsed.value
+    }
+    const sidebarStyle = computed(() =>
+      sidebarCollapsed.value
+        ? { width: '0px', flexBasis: '0px' }
+        : { width: `${props.sidebarWidth}px`, flexBasis: `${props.sidebarWidth}px` },
+    )
+    watch(dialogWidth, (w, oldW) => {
+      if (oldW == null) return
+      const wasNarrow = oldW < SIDEBAR_MIN_WIDTH
+      const isNarrow = w < SIDEBAR_MIN_WIDTH
+      if (wasNarrow !== isNarrow) sidebarCollapsed.value = isNarrow
+    })
+
+    // 主区标题：已绑定后端会话时显示会话名，尚未绑定（新对话）时显示「新的对话」
+    const headerTitle = computed(() => {
+      if (!currentSessionId.value) return '新的对话'
+      const current = conversationList.value.find(item => item.id === currentConversationId.value)
+      return current?.title || '当前对话'
+    })
 
     // 对话窗定位样式：内嵌模式下填满父容器；否则使用浮动定位（left/top/width/height）
     const wrapperStyle = computed(() => {
@@ -2742,12 +2955,57 @@ export default defineComponent({
       getButtonInlineStyle,
       chatFontScale,
       chatFontStyle,
+      // 视图层新增：空态引导、侧栏分栏/收起、标题、用户信息、输入框实例
+      sparkleSvg: SPARKLE_SVG,
+      suggestionCards,
+      suggestionIcon,
+      applySuggestion,
+      sidebarTab,
+      visibleConversations,
+      showEarlierDivider,
+      conversationTimeText,
+      sidebarCollapsed,
+      toggleSidebar,
+      sidebarStyle,
+      headerTitle,
+      roleLabel,
+      userInitial,
+      showUserSub,
+      queryInputRef,
+      canSend,
+      scrollToBottom,
     }
   },
 })
 </script>
 
 <style lang="scss" scoped>
+/* =========================================================================
+   AI 智能助手对话窗｜视觉规范（浅色 · 蓝色主色）
+   品牌蓝 #2f6bff ｜ 主区底色 #f6f8fc ｜ 卡片白底 + 1px 细边框
+   所有尺寸均乘以 --chat-font-scale，保证「字体缩放」功能整体一致
+   ========================================================================= */
+.custom-dialog {
+  --chat-primary: #2f6bff;
+  --chat-primary-strong: #1c56e6;
+  --chat-primary-soft: #eef4ff;
+  --chat-bg: #f6f8fc;
+  --chat-card: #ffffff;
+  --chat-border: #e8eef8;
+  --chat-border-soft: #eff3fa;
+  --chat-title: #1b2434;
+  --chat-text: #2b3747;
+  --chat-text-sub: #6c7c93;
+  --chat-text-light: #9aa8bb;
+}
+
+/* 组件内统一使用 border-box：项目没有全局 reset，content-box 下「width:100% + padding」
+   会把容器撑得比父级更宽（消息区/气泡会溢出对话框），统一盒子模型后尺寸可预期 */
+.custom-dialog,
+.custom-dialog * {
+  box-sizing: border-box;
+}
+
 .custom-dialog-mask {
   position: fixed;
   top: 0;
@@ -2795,167 +3053,188 @@ export default defineComponent({
 .custom-dialog {
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.1);
+  background-color: var(--chat-card);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(19, 45, 92, 0.18), 0 6px 20px rgba(19, 45, 92, 0.08);
   overflow: hidden;
-  /* 纵向弹性布局：表头按实际高度占位、正文区自适应填充，避免大字号时因写死的偏移被裁剪 */
+  /* 横向布局：左侧会话栏 + 右侧主区 */
   display: flex;
-  flex-direction: column;
-  /* 基准字号随缩放倍率变化，未单独声明字号的文字（如空消息提示）也跟随缩放 */
+  flex-direction: row;
+  /* 基准字号随缩放倍率变化，未单独声明字号的文字也跟随缩放 */
   font-size: calc(14px * var(--chat-font-scale, 1));
+  color: var(--chat-text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
 }
 
-.custom-dialog-fixed .custom-dialog-header {
+.custom-dialog-fixed .sidebar-brand,
+.custom-dialog-fixed .chat-main-header {
   cursor: default;
-}
-
-.custom-dialog-header {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
-  color: white;
-  cursor: move;
-  user-select: none;
-}
-
-.custom-dialog-title {
-  font-size: calc(16px * var(--chat-font-scale, 1));
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.custom-dialog-title::before {
-  content: "🤖";
-  font-size: calc(18px * var(--chat-font-scale, 1));
-}
-
-.custom-dialog-close {
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  color: white;
-  font-size: calc(18px * var(--chat-font-scale, 1));
-  cursor: pointer;
-  padding: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.custom-dialog-close:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-}
-
-.custom-dialog-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.md-editor-toggle {
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  color: white;
-  font-size: calc(15px * var(--chat-font-scale, 1));
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.md-editor-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-}
-
-.md-editor-toggle.active {
-  background-color: rgba(255, 255, 255, 0.35);
 }
 
 .dify-api-container {
   display: flex;
   flex-direction: row;
-  /* 填充表头以外的剩余空间（配合 .custom-dialog 纵向弹性布局），随字号缩放自适应，替代写死的 calc(100% - 56px) */
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  background-color: #f8fafc;
+  background-color: var(--chat-bg);
   overflow: hidden;
 }
 
-/* ===== 左侧对话历史侧栏（参考 WorkBuddy / 豆包 风格） ===== */
+/* ===================== 左侧：会话栏 ===================== */
 .conversation-sidebar {
-  /* 宽度由 prop sidebarWidth 经 :style 动态控制（默认 180px） */
+  /* 宽度由 prop sidebarWidth 经 sidebarStyle 动态控制（收起时为 0） */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
-  border-right: 1px solid #edf0f5;
+  background-color: var(--chat-card);
+  border-right: 1px solid var(--chat-border-soft);
   height: 100%;
+  overflow: hidden;
 }
 
-.sidebar-header {
-  padding: 14px 12px;
-  border-bottom: 1px solid #f1f4f8;
+/* 收起态：整栏不参与布局（宽度由 sidebarStyle 同步置 0） */
+.custom-dialog.sidebar-collapsed .conversation-sidebar {
+  display: none;
+}
+
+.sidebar-brand {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(12px * var(--chat-font-scale, 1));
+  padding: calc(18px * var(--chat-font-scale, 1)) calc(16px * var(--chat-font-scale, 1));
+  cursor: move;
+  user-select: none;
+}
+
+.brand-logo {
+  flex-shrink: 0;
+  width: calc(44px * var(--chat-font-scale, 1));
+  height: calc(44px * var(--chat-font-scale, 1));
+  border-radius: calc(13px * var(--chat-font-scale, 1));
+  background: linear-gradient(135deg, #4f8bff 0%, #1f5fe8 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.3);
+
+  /* v-html 注入的 svg 不带 scoped 属性，需用 :deep 才能生效 */
+  :deep(svg) {
+    width: calc(23px * var(--chat-font-scale, 1));
+    height: calc(23px * var(--chat-font-scale, 1));
+  }
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(3px * var(--chat-font-scale, 1));
+  min-width: 0;
+}
+
+.brand-title {
+  font-size: calc(16px * var(--chat-font-scale, 1));
+  font-weight: 700;
+  color: var(--chat-title);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-subtitle {
+  font-size: calc(11.5px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-actions {
+  flex-shrink: 0;
+  padding: calc(2px * var(--chat-font-scale, 1)) calc(16px * var(--chat-font-scale, 1)) calc(14px * var(--chat-font-scale, 1));
 }
 
 .new-conversation-btn {
+  position: relative;
   width: 100%;
-  /* 高度随字号缩放，避免放大后文字贴顶/底边甚至溢出；水平留白防止贴左右边 */
-  min-height: calc(40px * var(--chat-font-scale, 1));
   box-sizing: border-box;
-  padding: 0 12px;
+  min-height: calc(46px * var(--chat-font-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
   gap: calc(8px * var(--chat-font-scale, 1));
-  border: 1px solid #d8e2f5;
-  border-radius: 10px;
-  background-color: #f0f5ff;
-  color: #2563eb;
-  font-size: calc(14px * var(--chat-font-scale, 1));
-  font-weight: 500;
+  border: none;
+  border-radius: calc(13px * var(--chat-font-scale, 1));
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  color: #ffffff;
+  font-size: calc(14.5px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.26);
+  transition: box-shadow 0.2s, transform 0.1s;
 }
 
 .new-conversation-btn:hover {
-  background-color: #e4edff;
-  border-color: #b9d0ff;
+  box-shadow: 0 8px 22px rgba(47, 107, 255, 0.36);
 }
 
-.new-conversation-icon {
-  /* 图标底色框随字号缩放，避免放大后「＋」溢出小方块 */
-  width: calc(20px * var(--chat-font-scale, 1));
-  height: calc(20px * var(--chat-font-scale, 1));
+.new-conversation-btn:active {
+  transform: translateY(1px);
+}
+
+.new-conversation-plus {
+  width: calc(17px * var(--chat-font-scale, 1));
+  height: calc(17px * var(--chat-font-scale, 1));
+}
+
+.new-conversation-arrow {
+  position: absolute;
+  right: calc(14px * var(--chat-font-scale, 1));
+  width: calc(17px * var(--chat-font-scale, 1));
+  height: calc(17px * var(--chat-font-scale, 1));
+  opacity: 0.9;
+}
+
+.sidebar-tabs {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: #ffffff;
-  font-size: calc(15px * var(--chat-font-scale, 1));
-  line-height: 1;
+  gap: calc(20px * var(--chat-font-scale, 1));
+  padding: 0 calc(16px * var(--chat-font-scale, 1));
+  border-bottom: 1px solid var(--chat-border-soft);
+}
+
+.sidebar-tab {
+  background: none;
+  border: none;
+  padding: calc(6px * var(--chat-font-scale, 1)) 0 calc(10px * var(--chat-font-scale, 1));
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  font-weight: 500;
+  font-family: inherit;
+  color: #93a1b5;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.sidebar-tab:hover {
+  color: #5f7a9e;
+}
+
+.sidebar-tab.active {
+  color: var(--chat-title);
+  font-weight: 600;
 }
 
 .conversation-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 10px 8px;
+  padding: calc(10px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1)) calc(14px * var(--chat-font-scale, 1));
 }
 
 .conversation-list::-webkit-scrollbar {
@@ -2971,65 +3250,87 @@ export default defineComponent({
   border-radius: 3px;
 }
 
+.conversation-group-title {
+  padding: calc(10px * var(--chat-font-scale, 1)) calc(8px * var(--chat-font-scale, 1)) calc(6px * var(--chat-font-scale, 1));
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: #a9b5c6;
+}
+
 .conversation-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
+  padding: calc(10px * var(--chat-font-scale, 1)) calc(11px * var(--chat-font-scale, 1));
+  margin-bottom: calc(2px * var(--chat-font-scale, 1));
+  border: 1px solid transparent;
+  border-radius: calc(11px * var(--chat-font-scale, 1));
   cursor: pointer;
-  transition: background-color 0.15s;
-  margin-bottom: 4px;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
 .conversation-item:hover {
-  background-color: #f1f5f9;
+  background-color: #f5f8fe;
 }
 
 .conversation-item.active {
-  background-color: #e8f1ff;
+  background-color: var(--chat-card);
+  border-color: var(--chat-border);
+  box-shadow: 0 3px 10px rgba(31, 71, 150, 0.07);
 }
 
 .conversation-item-icon {
   flex-shrink: 0;
-  /* 随字号缩放，避免放大后 💬 溢出图标框 */
-  width: calc(24px * var(--chat-font-scale, 1));
-  height: calc(24px * var(--chat-font-scale, 1));
-  border-radius: 6px;
-  background-color: #eef2f7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(13px * var(--chat-font-scale, 1));
+  width: calc(18px * var(--chat-font-scale, 1));
+  height: calc(18px * var(--chat-font-scale, 1));
+  color: #a4b1c4;
 }
 
 .conversation-item.active .conversation-item-icon {
-  background-color: #dbe7ff;
+  color: var(--chat-primary);
 }
 
-.conversation-item-body {
+.conversation-item-title {
   flex: 1;
   min-width: 0;
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  font-weight: 500;
+  color: #46556c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-item.active .conversation-item-title {
+  color: var(--chat-title);
+  font-weight: 600;
+}
+
+.conversation-item-time {
+  flex-shrink: 0;
+  font-size: calc(11.5px * var(--chat-font-scale, 1));
+  color: #a9b5c6;
 }
 
 /* 删除按钮：默认隐藏，悬停会话项时显示 */
 .conversation-delete-btn {
   flex-shrink: 0;
-  /* 随字号缩放，避免放大后 🗑 溢出按钮框 */
-  width: calc(24px * var(--chat-font-scale, 1));
-  height: calc(24px * var(--chat-font-scale, 1));
-  border: none;
-  background: transparent;
-  border-radius: 6px;
+  width: calc(22px * var(--chat-font-scale, 1));
+  height: calc(22px * var(--chat-font-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  line-height: 1;
-  color: #94a3b8;
+  border: none;
+  background: transparent;
+  border-radius: calc(6px * var(--chat-font-scale, 1));
+  color: #a4b1c4;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+
+  svg {
+    width: calc(15px * var(--chat-font-scale, 1));
+    height: calc(15px * var(--chat-font-scale, 1));
+  }
 }
 
 .conversation-item:hover .conversation-delete-btn {
@@ -3041,39 +3342,190 @@ export default defineComponent({
   color: #ef4444;
 }
 
-.conversation-item-title {
+.conversation-empty {
+  margin-top: calc(28px * var(--chat-font-scale, 1));
+  text-align: center;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+}
+
+/* 底部：当前登录用户 / 角色 */
+.sidebar-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+  padding: calc(12px * var(--chat-font-scale, 1)) calc(16px * var(--chat-font-scale, 1));
+  border-top: 1px solid var(--chat-border-soft);
+}
+
+.user-avatar {
+  flex-shrink: 0;
+  width: calc(34px * var(--chat-font-scale, 1));
+  height: calc(34px * var(--chat-font-scale, 1));
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  color: #ffffff;
+  font-size: calc(14px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(2px * var(--chat-font-scale, 1));
+}
+
+.user-name {
   font-size: calc(13px * var(--chat-font-scale, 1));
-  font-weight: 500;
-  color: #1e293b;
+  font-weight: 600;
+  color: var(--chat-title);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.conversation-item-time {
-  margin-top: 2px;
-  font-size: calc(11px * var(--chat-font-scale, 1));
-  color: #94a3b8;
+.user-sub {
+  font-size: calc(11.5px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.conversation-empty {
-  margin-top: 32px;
-  text-align: center;
-  font-size: calc(12px * var(--chat-font-scale, 1));
-  color: #94a3b8;
+.user-switch-icon {
+  flex-shrink: 0;
+  width: calc(16px * var(--chat-font-scale, 1));
+  height: calc(16px * var(--chat-font-scale, 1));
+  color: #b6c2d3;
 }
 
-/* 右侧聊天主区域 */
+/* ===================== 右侧：主区 ===================== */
 .chat-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
+  background-color: var(--chat-bg);
 }
 
+.chat-main-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(12px * var(--chat-font-scale, 1));
+  padding: calc(13px * var(--chat-font-scale, 1)) calc(20px * var(--chat-font-scale, 1));
+  background-color: var(--chat-card);
+  border-bottom: 1px solid var(--chat-border-soft);
+  cursor: move;
+  user-select: none;
+}
+
+.chat-main-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+  min-width: 0;
+}
+
+.sidebar-toggle-btn {
+  flex-shrink: 0;
+  width: calc(30px * var(--chat-font-scale, 1));
+  height: calc(30px * var(--chat-font-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: calc(9px * var(--chat-font-scale, 1));
+  background: transparent;
+  color: #7d8b9f;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+
+  svg {
+    width: calc(18px * var(--chat-font-scale, 1));
+    height: calc(18px * var(--chat-font-scale, 1));
+  }
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: var(--chat-primary-soft);
+  color: var(--chat-primary);
+}
+
+.chat-main-title {
+  font-size: calc(16px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  color: #2a3547;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-main-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--chat-font-scale, 1));
+}
+
+.pill-btn {
+  height: calc(30px * var(--chat-font-scale, 1));
+  padding: 0 calc(14px * var(--chat-font-scale, 1));
+  border: 1px solid #e2ecfd;
+  border-radius: calc(9px * var(--chat-font-scale, 1));
+  background-color: #f2f7ff;
+  color: var(--chat-primary);
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.pill-btn:hover {
+  background-color: #e8f1ff;
+  border-color: #cfe0ff;
+}
+
+.pill-btn.active {
+  background-color: #e2edff;
+  border-color: #b7d1ff;
+}
+
+.round-icon-btn {
+  width: calc(30px * var(--chat-font-scale, 1));
+  height: calc(30px * var(--chat-font-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--chat-border);
+  border-radius: 50%;
+  background-color: var(--chat-card);
+  color: #7d8b9f;
+  font-size: calc(18px * var(--chat-font-scale, 1));
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.round-icon-btn:hover {
+  background-color: #fff1f1;
+  border-color: #ffd6d6;
+  color: #ef4444;
+}
+
+/* ===================== 消息区 ===================== */
 .message-section-wrapper {
   flex: 1;
+  min-height: 0;
   position: relative;
   overflow: hidden;
 }
@@ -3088,7 +3540,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(246, 248, 252, 0.86);
   backdrop-filter: blur(1px);
   user-select: none;
 }
@@ -3097,7 +3549,7 @@ export default defineComponent({
   width: 34px;
   height: 34px;
   border: 3px solid #dbe7ff;
-  border-top-color: #2563eb;
+  border-top-color: var(--chat-primary);
   border-radius: 50%;
   animation: dify-real-spin 0.8s linear infinite;
 }
@@ -3118,7 +3570,12 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  padding: 20px;
+  padding: calc(24px * var(--chat-font-scale, 1)) calc(28px * var(--chat-font-scale, 1));
+}
+
+/* 空态（欢迎页）时去掉内边距，交给欢迎页自行控制，便于整体垂直居中 */
+.message-section.is-empty {
+  padding: 0;
 }
 
 .message-section::-webkit-scrollbar {
@@ -3138,25 +3595,157 @@ export default defineComponent({
   background: #cbd5e1;
 }
 
-.empty-message {
+/* ---------- 空态：品牌欢迎页 ---------- */
+.welcome-screen {
+  box-sizing: border-box;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(20px * var(--chat-font-scale, 1)) calc(28px * var(--chat-font-scale, 1)) calc(56px * var(--chat-font-scale, 1));
+}
+
+.welcome-inner {
+  width: 100%;
+  max-width: 780px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+}
+
+.welcome-logo {
+  width: calc(88px * var(--chat-font-scale, 1));
+  height: calc(88px * var(--chat-font-scale, 1));
+  border-radius: calc(26px * var(--chat-font-scale, 1));
+  background: linear-gradient(180deg, #f4f8ff 0%, #e7f0ff 100%);
+  border: 1px solid #dde8fb;
+  box-shadow: 0 12px 26px rgba(47, 107, 255, 0.14), inset 0 1px 0 #ffffff;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #94a3b8;
+  margin-bottom: calc(22px * var(--chat-font-scale, 1));
 }
 
-.empty-icon {
-  font-size: calc(56px * var(--chat-font-scale, 1));
-  margin-bottom: 16px;
-  opacity: 0.6;
+.welcome-logo-inner {
+  display: flex;
+  color: #3b7bff;
+
+  /* v-html 注入的 svg 不带 scoped 属性，需用 :deep 才能命中 */
+  :deep(svg) {
+    width: calc(40px * var(--chat-font-scale, 1));
+    height: calc(40px * var(--chat-font-scale, 1));
+  }
 }
 
+.welcome-slogan {
+  font-size: calc(14.5px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #5b8cff 0%, #8f7dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: calc(12px * var(--chat-font-scale, 1));
+}
+
+.welcome-title {
+  font-size: calc(27px * var(--chat-font-scale, 1));
+  font-weight: 700;
+  color: var(--chat-title);
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  margin-bottom: calc(12px * var(--chat-font-scale, 1));
+}
+
+.welcome-subtitle {
+  font-size: calc(14px * var(--chat-font-scale, 1));
+  color: #8494a8;
+  line-height: 1.6;
+  margin-bottom: calc(28px * var(--chat-font-scale, 1));
+}
+
+.welcome-cards {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(14px * var(--chat-font-scale, 1));
+}
+
+.suggestion-card {
+  display: flex;
+  align-items: center;
+  gap: calc(14px * var(--chat-font-scale, 1));
+  width: 100%;
+  box-sizing: border-box;
+  padding: calc(16px * var(--chat-font-scale, 1)) calc(20px * var(--chat-font-scale, 1));
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(14px * var(--chat-font-scale, 1));
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+
+.suggestion-card:hover {
+  border-color: #c7daff;
+  box-shadow: 0 8px 20px rgba(47, 107, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.suggestion-card-icon {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--chat-primary);
+
+  /* v-html 注入的 svg 不带 scoped 属性，需用 :deep 才能命中 */
+  :deep(svg) {
+    width: calc(23px * var(--chat-font-scale, 1));
+    height: calc(23px * var(--chat-font-scale, 1));
+  }
+}
+
+.suggestion-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(4px * var(--chat-font-scale, 1));
+}
+
+.suggestion-card-title {
+  font-size: calc(15px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  color: var(--chat-title);
+  line-height: 1.4;
+}
+
+.suggestion-card-desc {
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  color: #8494a8;
+  line-height: 1.4;
+}
+
+.suggestion-card-arrow {
+  flex-shrink: 0;
+  width: calc(18px * var(--chat-font-scale, 1));
+  height: calc(18px * var(--chat-font-scale, 1));
+  color: #b9c6d8;
+  transition: color 0.18s;
+}
+
+.suggestion-card:hover .suggestion-card-arrow {
+  color: var(--chat-primary);
+}
+
+/* ---------- 消息列表 ---------- */
 .message-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: calc(22px * var(--chat-font-scale, 1));
+  max-width: 780px;
+  margin: 0 auto;
 }
 
 .message-item {
@@ -3169,67 +3758,80 @@ export default defineComponent({
 }
 
 .message-item.assistant-message {
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .message-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: calc(8px * var(--chat-font-scale, 1));
+  margin-bottom: calc(8px * var(--chat-font-scale, 1));
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  flex-shrink: 0;
+  width: calc(30px * var(--chat-font-scale, 1));
+  height: calc(30px * var(--chat-font-scale, 1));
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(18px * var(--chat-font-scale, 1));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .avatar.user {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background-color: #eef2fa;
+  color: #5b6b83;
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  font-weight: 600;
 }
 
 .avatar.assistant {
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.24);
+}
+
+.avatar-brand {
+  display: flex;
+
+  /* v-html 注入的 svg 不带 scoped 属性，需用 :deep 才能命中 */
+  :deep(svg) {
+    width: calc(17px * var(--chat-font-scale, 1));
+    height: calc(17px * var(--chat-font-scale, 1));
+  }
 }
 
 .message-role {
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  color: #64748b;
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  color: #8494a8;
   font-weight: 500;
 }
 
 .message-content {
-  width: auto;
   max-width: 75%;
-  padding: 14px 18px;
-  border-radius: 16px;
+  padding: calc(14px * var(--chat-font-scale, 1)) calc(18px * var(--chat-font-scale, 1));
+  border-radius: calc(14px * var(--chat-font-scale, 1));
   word-break: break-word;
   transition: all 0.2s ease;
 }
 
+/* 助手回复：整幅白底卡片，便于承载表格 / 图表 / 交互面板 */
 .assistant-message .message-content {
-  width: 75%;
-  min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(16px * var(--chat-font-scale, 1));
+  box-shadow: 0 2px 10px rgba(28, 60, 120, 0.04);
+  color: var(--chat-text);
 }
 
+/* 用户提问：右侧蓝色气泡 */
 .user-message .message-content {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border-bottom-right-radius: 4px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.assistant-message .message-content {
-  background-color: white;
-  color: #1e293b;
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #3b7bff 0%, #1f5fe8 100%);
+  color: #ffffff;
+  border-bottom-right-radius: calc(5px * var(--chat-font-scale, 1));
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.24);
 }
 
 .thinking-indicator {
@@ -3246,7 +3848,7 @@ export default defineComponent({
 .thinking-dots span {
   width: 6px;
   height: 6px;
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
   border-radius: 50%;
   animation: thinking 1.4s infinite ease-in-out both;
 }
@@ -3273,8 +3875,8 @@ export default defineComponent({
 }
 
 .thinking-text {
-  font-size: calc(11px * var(--chat-font-scale, 1));
-  color: #94a3b8;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
 }
 
 .content-text {
@@ -3300,7 +3902,7 @@ export default defineComponent({
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #2563eb;
+  color: var(--chat-primary);
   text-decoration: none;
   padding: 2px 10px;
   margin: 2px 0;
@@ -3323,7 +3925,7 @@ export default defineComponent({
   font-size: calc(14px * var(--chat-font-scale, 1));
 }
 
-/* ========== marked 渲染的 markdown 元素样式（适配聊天气泡） ========== */
+/* ========== marked 渲染的 markdown 元素样式（适配聊天卡片） ========== */
 
 /* 段落：去掉首尾多余边距，保留段间距 */
 .content-text p {
@@ -3416,7 +4018,7 @@ export default defineComponent({
   background-color: #f8fafc;
 }
 
-/* 列表：压缩缩进，适配气泡宽度 */
+/* 列表：压缩缩进，适配卡片宽度 */
 .content-text ul,
 .content-text ol {
   margin: calc(6px * var(--chat-font-scale, 1)) 0;
@@ -3431,7 +4033,7 @@ export default defineComponent({
 
 /* 普通超链接（非 MCP 图片）：蓝色 + 下划线 */
 .content-text a:not(.mcp-image-link) {
-  color: #2563eb;
+  color: var(--chat-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -3439,7 +4041,7 @@ export default defineComponent({
   color: #1d4ed8;
 }
 
-/* 内联图片：限制最大宽度防止撑破气泡 */
+/* 内联图片：限制最大宽度防止撑破卡片 */
 .content-text img {
   max-width: 100%;
   border-radius: 6px;
@@ -3455,7 +4057,7 @@ export default defineComponent({
 
 /* GFM 删除线 */
 .content-text del {
-  color: #94a3b8;
+  color: var(--chat-text-light);
 }
 
 /* 加粗 / 斜体：继承字体颜色，仅调整字重/字形 */
@@ -3469,27 +4071,35 @@ export default defineComponent({
 .message-files {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
+  gap: calc(8px * var(--chat-font-scale, 1));
+  margin-top: calc(10px * var(--chat-font-scale, 1));
+  max-width: 78%;
 }
 
 .message-file-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
   font-size: calc(13px * var(--chat-font-scale, 1));
-  padding: 8px 12px;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  padding: calc(8px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
+  background-color: #f8fafd;
+  border: 1px solid var(--chat-border);
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   min-width: 0;
 }
 
+/* 用户气泡内的附件：半透明白底，保证在蓝底上可读 */
+.user-message .message-file-item {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .file-icon {
-  font-size: calc(16px * var(--chat-font-scale, 1));
+  font-size: calc(15px * var(--chat-font-scale, 1));
   flex-shrink: 0;
 }
 
-/* 图片缩略图：固定尺寸 + 裁切填充，避免不同比例图片撑破气泡 */
+/* 图片缩略图：固定尺寸 + 裁切填充，避免不同比例图片撑破卡片 */
 .file-thumb {
   flex-shrink: 0;
   width: 44px;
@@ -3517,7 +4127,7 @@ export default defineComponent({
 
 /* 可点击的附件名（有 accessUrl 时） */
 .file-name-link {
-  color: #2563eb;
+  color: var(--chat-primary);
   text-decoration: none;
 }
 
@@ -3528,72 +4138,79 @@ export default defineComponent({
 /* 下载入口：默认弱化显示，悬停高亮 */
 .file-download {
   flex-shrink: 0;
-  color: #94a3b8;
+  color: var(--chat-text-light);
   text-decoration: none;
   padding: 0 4px;
   line-height: 1;
 }
 
 .file-download:hover {
-  color: #2563eb;
+  color: var(--chat-primary);
 }
 
 .file-size {
-  color: #94a3b8;
+  color: var(--chat-text-light);
   flex-shrink: 0;
 }
 
-.message-actions {
-  margin-top: 6px;
+.user-message .file-size,
+.user-message .file-download,
+.user-message .file-name-link {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* 时间 + 复制：同一行，避免空按钮把时间挤到很远的位置 */
+.message-footer {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--chat-font-scale, 1));
+  margin-top: calc(8px * var(--chat-font-scale, 1));
 }
 
 .copy-btn {
+  display: flex;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 6px;
-  color: #94a3b8;
+  padding: calc(5px * var(--chat-font-scale, 1));
+  color: #a4b1c4;
   opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 6px;
+  border-radius: calc(7px * var(--chat-font-scale, 1));
+  transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+
+  svg {
+    width: calc(15px * var(--chat-font-scale, 1));
+    height: calc(15px * var(--chat-font-scale, 1));
+  }
 }
 
-.message-item:hover .copy-btn {
+.message-footer:hover .copy-btn {
   opacity: 1;
 }
 
 .copy-btn:hover {
-  color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--chat-primary);
+  background-color: var(--chat-primary-soft);
 }
 
 .message-time {
   font-size: calc(11px * var(--chat-font-scale, 1));
-  color: #cbd5e1;
-  margin-top: 6px;
+  color: #b6c2d3;
 }
 
+/* ===================== 输入区 ===================== */
 .input-section {
-  padding: 22px 16px;
-  background-color: white;
-  border-top: 1px solid #e2e8f0;
-}
-
-/* 输入框内文字跟随整体缩放 */
-.input-section :deep(.el-textarea__inner) {
-  font-size: calc(14px * var(--chat-font-scale, 1));
+  flex-shrink: 0;
+  padding: 0 calc(28px * var(--chat-font-scale, 1)) calc(14px * var(--chat-font-scale, 1));
+  background-color: transparent;
 }
 
 .input-wrapper {
+  max-width: 780px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.input-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
 }
 
 .uploaded-files-list {
@@ -3605,12 +4222,12 @@ export default defineComponent({
 .uploaded-file-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background-color: #f8fafc;
-  border-radius: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
+  padding: calc(8px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   font-size: calc(13px * var(--chat-font-scale, 1));
-  border: 1px solid #e2e8f0;
 }
 
 /* 上传中的附件：半透明 + 虚线边框，视觉上与已上传区分 */
@@ -3650,114 +4267,195 @@ export default defineComponent({
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* 输入卡片：textarea + 底部操作行，整体为一张白底圆角卡 */
+.composer {
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(18px * var(--chat-font-scale, 1));
+  padding: calc(14px * var(--chat-font-scale, 1)) calc(16px * var(--chat-font-scale, 1)) calc(10px * var(--chat-font-scale, 1));
+  box-shadow: 0 4px 16px rgba(28, 60, 120, 0.05);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.composer:focus-within {
+  border-color: #bcd3ff;
+  box-shadow: 0 8px 22px rgba(47, 107, 255, 0.12);
+}
+
+.composer :deep(.el-textarea) {
+  width: 100%;
+}
+
+/* 去掉 Element Plus textarea 的默认边框/底色，融入卡片 */
+.composer :deep(.el-textarea__inner) {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  font-size: calc(15px * var(--chat-font-scale, 1)) !important;
+  line-height: 1.65 !important;
+  color: var(--chat-text) !important;
+  font-family: inherit !important;
+  resize: none !important;
+}
+
+.composer :deep(.el-textarea__inner::placeholder) {
+  color: #a8b5c8 !important;
+}
+
+.composer :deep(.el-textarea__inner:disabled) {
+  background-color: transparent !important;
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(12px * var(--chat-font-scale, 1));
+  margin-top: calc(10px * var(--chat-font-scale, 1));
+}
+
+/* 添加附件：纯文字按钮 + 回形针图标 */
+.attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(7px * var(--chat-font-scale, 1));
+  padding: calc(5px * var(--chat-font-scale, 1)) calc(8px * var(--chat-font-scale, 1));
+  border: none;
+  border-radius: calc(8px * var(--chat-font-scale, 1));
+  background: transparent;
+  color: #63748c;
+  font-size: calc(13.5px * var(--chat-font-scale, 1));
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.attach-btn:hover:not(:disabled) {
+  background-color: var(--chat-primary-soft);
+  color: var(--chat-primary);
+}
+
+.attach-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.attach-icon {
+  width: calc(17px * var(--chat-font-scale, 1));
+  height: calc(17px * var(--chat-font-scale, 1));
+}
+
+/* 图标组件内写死的 fill 由 CSS 接管，跟随按钮文字颜色 */
+.attach-btn :deep(.attach-icon path) {
+  fill: currentColor !important;
+}
+
+.composer-footer-right {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+}
+
+.hint {
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+}
+
+/* 发送 / 停止：圆形按钮 */
+.round-btn {
+  flex-shrink: 0;
+  width: calc(38px * var(--chat-font-scale, 1));
+  height: calc(38px * var(--chat-font-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(47, 107, 255, 0.3);
+  transition: box-shadow 0.2s, transform 0.12s, background 0.2s;
+}
+
+.round-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(47, 107, 255, 0.42);
+  transform: translateY(-1px);
+}
+
+.round-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.round-btn:disabled {
+  background: #c7d8f8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.send-btn:disabled {
+  background: #c7d8f8;
+}
+
+.stop-btn {
+  background: linear-gradient(135deg, #f2685f 0%, #dc2626 100%);
+  box-shadow: 0 6px 14px rgba(220, 38, 38, 0.28);
+}
+
+.stop-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+}
+
+.round-icon {
+  width: calc(20px * var(--chat-font-scale, 1));
+  height: calc(20px * var(--chat-font-scale, 1));
+}
+
+/* 输入区下方：回到最新消息 + 免责提示（整体居中） */
+.composer-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+}
+
+.scroll-bottom-btn {
+  flex-shrink: 0;
+  width: calc(30px * var(--chat-font-scale, 1));
+  height: calc(30px * var(--chat-font-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--chat-border);
+  border-radius: 50%;
+  background-color: var(--chat-card);
+  color: #6c7c93;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(28, 60, 120, 0.06);
+  transition: color 0.15s, border-color 0.15s;
+
+  svg {
+    width: calc(16px * var(--chat-font-scale, 1));
+    height: calc(16px * var(--chat-font-scale, 1));
+  }
+}
+
+.scroll-bottom-btn:hover {
+  color: var(--chat-primary);
+  border-color: #cfe0ff;
+}
+
+.composer-hint-text {
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+}
+
 .hidden-file-input {
   display: none;
 }
 
-.input-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.actions-row {
-  display: flex;
-  align-items: center;
-  /* 按钮间距随字号缩放，避免放大后按钮拥挤或缩小后间距过宽 */
-  gap: calc(12px * var(--chat-font-scale, 1));
-}
-
-.hint {
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  color: #94a3b8;
-}
-
-/* 发送 / 停止 / 上传 三个操作按钮：尺寸、圆角、内边距均随 --chat-font-scale 缩放，
-   与对话区其他元素（消息字号、new-conversation-btn 等）保持同步放大缩小 */
-.send-button {
-  min-width: calc(44px * var(--chat-font-scale, 1));
-  height: calc(38px * var(--chat-font-scale, 1));
-  padding: 0 calc(16px * var(--chat-font-scale, 1));
-  border-radius: calc(10px * var(--chat-font-scale, 1));
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border: none;
-  color: white;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.send-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.stop-button {
-  min-width: calc(44px * var(--chat-font-scale, 1));
-  height: calc(38px * var(--chat-font-scale, 1));
-  padding: 0 calc(16px * var(--chat-font-scale, 1));
-  border-radius: calc(10px * var(--chat-font-scale, 1));
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border: none;
-  color: white;
-  font-weight: 500;
-}
-
-.upload-button {
-  min-width: calc(44px * var(--chat-font-scale, 1));
-  height: calc(38px * var(--chat-font-scale, 1));
-  padding: 0 calc(16px * var(--chat-font-scale, 1));
-  border-radius: calc(10px * var(--chat-font-scale, 1));
-  background-color: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  transition: all 0.2s;
-}
-
-.upload-button:hover {
-  background-color: #e2e8f0;
-}
-
-/* 三个操作按钮内部的 SVG 图标（ChatUpload / ChatSend / ChatStop 组件根元素）
-   原始硬编码 28×28，用 CSS 覆盖为跟随 --chat-font-scale 缩放，保持与按钮同比 */
-.send-button svg,
-.stop-button svg,
-.upload-button svg {
-  width: calc(28px * var(--chat-font-scale, 1));
-  height: calc(28px * var(--chat-font-scale, 1));
-}
-
-:deep(.el-button--warning) {
-  color: #ffffff !important;
-  background-color: #f5f7fa !important;
-  border-color: #f5f7fa !important;
-}
-
-:deep(.el-input__inner) {
-  border-radius: 12px !important;
-  border: 1px solid #e2e8f0 !important;
-  background-color: #f8fafc !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  transition: all 0.2s !important;
-}
-
-:deep(.el-input__inner:hover) {
-  border-color: #cbd5e1 !important;
-  background-color: #ffffff !important;
-}
-
-:deep(.el-input__inner:focus) {
-  border-color: #3b82f6 !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-}
-
-.message-section-actions {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 10;
-}
-
+/* ===================== 缩放手柄 ===================== */
 .resize-handles {
   position: absolute;
   top: -4px;
@@ -3776,7 +4474,7 @@ export default defineComponent({
 }
 
 .resize-handle:hover {
-  background-color: rgba(102, 126, 234, 0.3);
+  background-color: rgba(47, 107, 255, 0.3);
 }
 
 .resize-n {
@@ -3843,7 +4541,7 @@ export default defineComponent({
   cursor: sw-resize;
 }
 
-/* Flint 图表样式 */
+/* ===================== Flint 图表 ===================== */
 .flint-charts-container {
   display: flex;
   flex-direction: column;
@@ -3857,22 +4555,18 @@ export default defineComponent({
   min-height: 300px;
   box-sizing: border-box;
   flex-shrink: 0;
-  background-color: #f8fafc;
+  background-color: #f8fafd;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--chat-border);
+  box-shadow: 0 2px 8px rgba(28, 60, 120, 0.04);
   transition: box-shadow 0.2s ease;
 }
 
 .flint-chart-item:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(28, 60, 120, 0.08);
 }
 
-.assistant-message .flint-chart-item {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-}
-
-/* HTML 交互面板样式 */
+/* ===================== HTML 交互面板 ===================== */
 .html-interactions-container {
   display: flex;
   flex-direction: column;
@@ -3883,8 +4577,8 @@ export default defineComponent({
 .html-interaction-panel {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  border: 1px solid var(--chat-border);
+  background-color: #f8fafd;
 }
 
 .html-interaction-panel.resolved {
@@ -3898,7 +4592,7 @@ export default defineComponent({
 .skill-select-message {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--chat-title);
   margin-bottom: 12px;
 }
 
@@ -3914,8 +4608,8 @@ export default defineComponent({
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3927,7 +4621,7 @@ export default defineComponent({
 }
 
 .skill-select-item.selected {
-  border-color: #3b82f6;
+  border-color: var(--chat-primary);
   background-color: #eff6ff;
 }
 
@@ -3947,8 +4641,8 @@ export default defineComponent({
 }
 
 .skill-select-item.selected .skill-checkbox {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  border-color: var(--chat-primary);
 }
 
 .skill-select-info {
@@ -3959,13 +4653,13 @@ export default defineComponent({
 .skill-select-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--chat-title);
   margin-bottom: 2px;
 }
 
 .skill-select-desc {
   font-size: 12px;
-  color: #64748b;
+  color: var(--chat-text-sub);
   line-height: 1.4;
 }
 
@@ -3981,6 +4675,7 @@ export default defineComponent({
   border: none;
   font-size: 13px;
   font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -3991,19 +4686,19 @@ export default defineComponent({
 }
 
 .skill-confirm-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
   color: white;
 }
 
 .skill-confirm-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.4);
 }
 
 .skill-cancel-btn {
   background-color: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--chat-text-sub);
+  border: 1px solid var(--chat-border);
 }
 
 .skill-cancel-btn:hover:not(:disabled) {
@@ -4030,8 +4725,8 @@ export default defineComponent({
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
   border-radius: 8px;
   margin-bottom: 8px;
 }
@@ -4045,7 +4740,7 @@ export default defineComponent({
   min-width: 0;
 }
 
-/* AI 等待确认（status=interrupted）面板 */
+/* ===================== AI 等待确认 / 任务完成面板 ===================== */
 .interrupted-panel {
   display: flex;
   flex-direction: column;
@@ -4072,14 +4767,14 @@ export default defineComponent({
 .interrupted-question {
   font-size: calc(15px * var(--chat-font-scale, 1));
   line-height: 1.7;
-  color: #1e293b;
+  color: var(--chat-title);
 }
 
 .interrupted-context {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-top: 1px dashed #e2e8f0;
+  border-top: 1px dashed var(--chat-border);
   padding-top: 12px;
 }
 
@@ -4093,7 +4788,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--chat-border);
   border-radius: 10px;
   overflow: hidden;
   background-color: #f8fafc;
@@ -4150,7 +4845,6 @@ export default defineComponent({
   }
 }
 
-/* AI 任务完成（status=completed）结果面板：复用上下文条目样式，仅头部徽标不同 */
 .result-panel {
   display: flex;
   flex-direction: column;

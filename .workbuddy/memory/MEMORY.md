@@ -37,6 +37,14 @@
 - WS ws://.../ws/chat，消息字段 type(0用户/1助手)/chatTime/content/sort/sessionId（sessionId 由后端分配）
 - 相关 env：VITE_APP_DIFY_SESSION_HOST / WS_HOST / UPLOAD_HOST；上传失败条目标 error 保留、发送时按 fileId 过滤
 
+### DifyRealDialog.vue UI 现状（2026-09-17 重构后）
+- 布局：左侧会话侧栏（品牌区 / 新建对话 / 最近对话·历史记录 tab / 会话列表+“更早”分组 / 底部用户信息）+ 右侧主区（header / 欢迎页或消息列表 / 底部输入卡片）
+- 新增 prop：`subtitle`（默认“你的智能工作助手”）、`suggestions`（引导卡，null 用内置三条）；`sidebarWidth` 默认 260
+- 窄窗自适应：`dialogWidth < 560` 时侧栏自动收起（header 有 toggle 按钮手动切换）
+- 样式注意：组件根内统一 `box-sizing: border-box`（项目无全局 reset）；`v-html` 注入的 SVG 必须用 `:deep(svg)` 才能命中尺寸
+- 会话时间：后端 `createdOn` 经 `formatConversationTime` 映射为 `updateTime` 展示
+- 重构前完整备份：C:\Users\Administrator\AppData\Local\Temp\dify-ui-refactor\DifyRealDialog.vue.bak（临时目录，可能被清理）
+
 ## 启动命令（本机）
 无 yarn 时：
 export PATH="/c/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2:$PATH"
