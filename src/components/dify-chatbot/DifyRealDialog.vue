@@ -3005,6 +3005,8 @@ export default defineComponent({
   --chat-text: #2b3747;
   --chat-text-sub: #6c7c93;
   --chat-text-light: #9aa8bb;
+  /* 内容列最大宽度：欢迎页 / 消息列表 / 输入区共用，改这一个值即可整体加宽 */
+  --chat-content-max: 940px;
 }
 
 /* 组件内统一使用 border-box：项目没有全局 reset，content-box 下「width:100% + padding」
@@ -3581,7 +3583,7 @@ export default defineComponent({
 
 .welcome-inner {
   width: 100%;
-  max-width: 780px;
+  max-width: var(--chat-content-max, 940px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3718,7 +3720,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: calc(22px * var(--chat-font-scale, 1));
-  max-width: 780px;
+  max-width: var(--chat-content-max, 940px);
   margin: 0 auto;
 }
 
@@ -4180,7 +4182,7 @@ export default defineComponent({
 }
 
 .input-wrapper {
-  max-width: 780px;
+  max-width: var(--chat-content-max, 940px);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
