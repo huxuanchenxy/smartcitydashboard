@@ -10,19 +10,255 @@
     :z-index="10200"
     custom-class="backend-config-dialog"
     @update:model-value="handleVisibleChange"
+    @open="handleOpen"
   >
-    <div class="backend-config-body">
-      <!-- 后台配置内容待定，先占位 -->
-      <p class="backend-config-placeholder">后台配置内容待完善</p>
+    <div class="bc-layout">
+      <!-- 左侧表选择 -->
+      <div class="bc-side">
+        <div class="bc-side-title">数据表</div>
+        <ul class="bc-side-list">
+          <li
+            v-for="t in tables"
+            :key="t.key"
+            :class="['bc-side-item', { active: t.key === activeKey }]"
+            @click="handleSwitchTable(t.key)"
+          >
+            <span class="bc-side-name">{{ t.title }}</span>
+            <span class="bc-side-code">{{ t.key }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 右侧内容 -->
+      <div class="bc-main">
+        <div class="bc-toolbar">
+          <div class="bc-toolbar-left">
+            <span class="bc-toolbar-title">{{ activeDef?.title }}</span>
+            <span class="bc-toolbar-sub">共 {{ total }} 条</span>
+          </div>
+          <div class="bc-toolbar-right">
+            <el-button
+              v-if="activeDef?.hasEnabledList"
+              size="small"
+              @click="loadEnabledList"
+              :loading="loading"
+            >仅启用</el-button>
+            <el-button size="small" @click="loadPage(1)" :loading="loading">刷新</el-button>
+            <el-button type="primary" size="small" @click="openForm()">新增</el-button>
+          </div>
+        </div>
+
+        <!-- 有 schema 的表：结构化表格 -->
+        <div class="bc-table-wrap">
+          <el-table
+            v-if="activeDef && !activeDef.jsonMode"
+            v-loading="loading"
+            :data="rows"
+            border
+            stripe
+            size="small"
+            height="100%"
+            class="bc-table"
+          >
+          <el-table-column
+            v-for="col in tableColumns"
+            :key="col.prop"
+            :prop="col.prop"
+            :label="col.label"
+            :width="col.width"
+            :show-overflow-tooltip="true"
+          >
+            <!-- 不解构，防止 el-table-column 在初始化阶段以 undefined scope 调用插槽导致渲染中断 -->
+            <template #default="scope">
+              <span v-if="scope && scope.row">{{ formatCell(scope.row[col.prop], col.kind) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right" align="center">
+            <template #default="scope">
+              <template v-if="scope && scope.row">
+                <el-button type="text" size="small" @click="openForm(scope.row)">编辑</el-button>
+                <el-button type="text" size="small" @click="openDetail(scope.row)">详情</el-button>
+                <el-button type="text" size="small" class="bc-danger" @click="handleDelete(scope.row)">删除</el-button>
+              </template>
+            </template>
+          </el-table-column>
+          <template #empty>
+            <div class="bc-empty">暂无数据</div>
+          </template>
+          </el-table>
+
+          <!-- 无 schema 的表：JSON 原文展示 -->
+          <el-table
+            v-else
+            v-loading="loading"
+            :data="rows"
+            border
+            stripe
+            size="small"
+            height="100%"
+            class="bc-table"
+          >
+            <el-table-column :prop="activeDef?.idField || 'id'" label="ID" width="90" />
+            <el-table-column label="原始 JSON">
+              <template #default="scope">
+                <span v-if="scope && scope.row" class="bc-json-cell">{{ shortJson(scope.row) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150" fixed="right" align="center">
+              <template #default="scope">
+                <template v-if="scope && scope.row">
+                  <el-button type="text" size="small" @click="openForm(scope.row)">编辑</el-button>
+                  <el-button type="text" size="small" class="bc-danger" @click="handleDelete(scope.row)">删除</el-button>
+                </template>
+              </template>
+            </el-table-column>
+            <template #empty>
+              <div class="bc-empty">暂无数据</div>
+            </template>
+          </el-table>
+        </div>
+
+        <div class="bc-pager">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :current-page="pageNum"
+            :page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            @current-change="loadPage"
+            @size-change="handleSizeChange"
+          />
+        </div>
+      </div>
     </div>
+
     <template #footer>
       <el-button @click="handleClose">关闭</el-button>
     </template>
+
+    <!-- 新增 / 编辑 / 详情 弹窗 -->
+    <el-dialog
+      v-model="formVisible"
+      :title="formTitle"
+      width="720px"
+      append-to-body
+      destroy-on-close
+      :z-index="10300"
+      custom-class="backend-config-form-dialog"
+    >
+      <!-- 结构化表单 -->
+      <el-form
+        v-if="activeDef && !activeDef.jsonMode"
+        :model="form"
+        label-width="130px"
+        size="small"
+        class="bc-form"
+      >
+        <el-form-item
+          v-for="f in formFields"
+          :key="f.prop"
+          :label="f.label"
+          :required="!!f.required && !isReadonlyField(f)"
+        >
+          <!-- 主键：新增时可空，编辑时只读 -->
+          <el-input-number
+            v-if="f.kind === 'number'"
+            v-model="form[f.prop]"
+            :controls="false"
+            :precision="f.numberType === 'float' ? 2 : 0"
+            :step="f.numberType === 'float' ? 0.01 : 1"
+            :disabled="isReadonlyField(f)"
+            style="width: 200px"
+          />
+          <el-switch
+            v-else-if="f.kind === 'boolean'"
+            v-model="form[f.prop]"
+            :disabled="isReadonlyField(f)"
+          />
+          <el-input
+            v-else-if="f.kind === 'datetime'"
+            v-model="form[f.prop]"
+            :disabled="isReadonlyField(f)"
+            :placeholder="f.readonly ? '后端自动生成' : 'YYYY-MM-DD HH:mm:ss'"
+          />
+          <!-- JSON：使用 textarea 编辑，提交前校验 -->
+          <el-input
+            v-else-if="f.kind === 'json'"
+            v-model="jsonDraft[f.prop]"
+            type="textarea"
+            :rows="4"
+            :disabled="isReadonlyField(f)"
+            placeholder="JSON 对象，如 {}"
+            @blur="commitJsonField(f.prop)"
+          />
+          <!-- 字符串数组：一行一个 -->
+          <el-input
+            v-else-if="f.kind === 'stringArray'"
+            v-model="arrayDraft[f.prop]"
+            type="textarea"
+            :rows="4"
+            :disabled="isReadonlyField(f)"
+            :placeholder="f.placeholder || '一行一个'"
+            @blur="commitArrayField(f.prop)"
+          />
+          <el-input
+            v-else-if="f.kind === 'textarea'"
+            v-model="form[f.prop]"
+            type="textarea"
+            :rows="3"
+            :disabled="isReadonlyField(f)"
+            :placeholder="f.placeholder || ''"
+          />
+          <el-input
+            v-else
+            v-model="form[f.prop]"
+            :disabled="isReadonlyField(f)"
+            :placeholder="f.placeholder || ''"
+          />
+        </el-form-item>
+      </el-form>
+
+      <!-- JSON 原文编辑 -->
+      <div v-else class="bc-json-editor">
+        <div class="bc-json-tip">
+          该表 Swagger 未定义字段结构，请直接编辑原始 JSON 对象（提交时校验合法性）。
+        </div>
+        <el-input
+          v-model="rawJsonText"
+          type="textarea"
+          :rows="18"
+          :readonly="formMode === 'view'"
+          placeholder='{ "id": 1, "...": "..." }'
+        />
+      </div>
+
+      <template #footer>
+        <el-button size="small" @click="formVisible = false">{{ formMode === 'view' ? '关闭' : '取消' }}</el-button>
+        <el-button
+          v-if="formMode !== 'view'"
+          size="small"
+          type="primary"
+          :loading="submitting"
+          @click="handleSubmit"
+        >保存</el-button>
+      </template>
+    </el-dialog>
   </el-dialog>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref, computed, reactive } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { backendConfigApi, BackendTableKey, BackendPage } from '@/api/backendConfig'
+import {
+  BACKEND_TABLES,
+  TableDef,
+  FieldDef,
+  buildEmptyForm,
+} from './backendConfigSchema'
+
+type FormMode = 'create' | 'edit' | 'view'
 
 export default defineComponent({
   name: 'BackendConfigDialog',
@@ -35,15 +271,347 @@ export default defineComponent({
   },
   emits: ['update:visible'],
   setup(props, { emit }) {
+    const tables = BACKEND_TABLES
+    const activeKey = ref<BackendTableKey>(tables[0].key)
+    const activeDef = computed<TableDef | undefined>(() =>
+      tables.find(t => t.key === activeKey.value),
+    )
+
+    // 列表状态
+    const rows = ref<any[]>([])
+    const total = ref(0)
+    const pageNum = ref(1)
+    const pageSize = ref(10)
+    const loading = ref(false)
+
+    // 弹窗表单状态
+    const formVisible = ref(false)
+    const formMode = ref<FormMode>('create')
+    const submitting = ref(false)
+    const form = reactive<Record<string, any>>({})
+    // JSON / 字符串数组字段使用独立的草稿文本，避免直接双向绑定引用类型
+    const jsonDraft = reactive<Record<string, string>>({})
+    const arrayDraft = reactive<Record<string, string>>({})
+    // 无 schema 表的原始 JSON 文本
+    const rawJsonText = ref('')
+    // 编辑时保留主键原值，PUT/DELETE 需要
+    const editingId = ref<number | string | null>(null)
+
+    const tableColumns = computed<FieldDef[]>(() =>
+      (activeDef.value?.fields || []).filter(f => f.inTable !== false),
+    )
+    const formFields = computed<FieldDef[]>(() =>
+      (activeDef.value?.fields || []).filter(f => f.inForm !== false),
+    )
+    const formTitle = computed(() => {
+      const t = activeDef.value?.title || ''
+      if (formMode.value === 'create') return `新增 - ${t}`
+      if (formMode.value === 'edit') return `编辑 - ${t}`
+      return `详情 - ${t}`
+    })
+
+    const isReadonlyField = (f: FieldDef): boolean => {
+      if (formMode.value === 'view') return true
+      if (f.readonly) return true
+      // 编辑态下主键只读，避免误改
+      if (f.isId && formMode.value === 'edit') return true
+      return false
+    }
+
+    const formatCell = (val: any, kind: FieldDef['kind']): string => {
+      if (val === null || val === undefined || val === '') return '-'
+      if (kind === 'boolean') return val ? '是' : '否'
+      if (kind === 'json' || kind === 'stringArray') return shortJson(val)
+      if (typeof val === 'object') return shortJson(val)
+      return String(val)
+    }
+
+    const shortJson = (val: any): string => {
+      try {
+        const s = typeof val === 'string' ? val : JSON.stringify(val)
+        return s && s.length > 120 ? s.slice(0, 120) + '…' : s
+      } catch {
+        return String(val ?? '')
+      }
+    }
+
+    /** 拉取分页数据 */
+    const loadPage = async (num?: number) => {
+      if (!activeDef.value) return
+      if (num) pageNum.value = num
+      loading.value = true
+      try {
+        const api = backendConfigApi[activeKey.value]
+        const resp = await api.page({ pageNum: pageNum.value, pageSize: pageSize.value })
+        const page = (resp?.data || {}) as BackendPage
+        rows.value = Array.isArray(page.records) ? page.records : []
+        total.value = Number(page.total || 0)
+      } catch (e: any) {
+        rows.value = []
+        total.value = 0
+        ElMessage.error(e?.message || '分页查询失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /** 加载启用列表（部分表提供） */
+    const loadEnabledList = async () => {
+      if (!activeDef.value?.hasEnabledList) return
+      loading.value = true
+      try {
+        const api = backendConfigApi[activeKey.value]
+        const resp = await api.listEnabled()
+        rows.value = Array.isArray(resp?.data) ? resp.data : []
+        total.value = rows.value.length
+        ElMessage.success(`已加载 ${rows.value.length} 条启用记录`)
+      } catch (e: any) {
+        ElMessage.error(e?.message || '加载启用列表失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const handleSizeChange = (size: number) => {
+      pageSize.value = size
+      loadPage(1)
+    }
+
+    const handleSwitchTable = (key: BackendTableKey) => {
+      if (key === activeKey.value) return
+      activeKey.value = key
+      rows.value = []
+      total.value = 0
+      pageNum.value = 1
+      loadPage(1)
+    }
+
+    /** 打开表单弹窗：row 为空表示新增 */
+    const openForm = (row?: any) => {
+      if (!activeDef.value) return
+      const def = activeDef.value
+      // 清空 draft
+      Object.keys(jsonDraft).forEach(k => delete jsonDraft[k])
+      Object.keys(arrayDraft).forEach(k => delete arrayDraft[k])
+      Object.keys(form).forEach(k => delete form[k])
+
+      if (def.jsonMode) {
+        formMode.value = row ? 'edit' : 'create'
+        editingId.value = row ? row[def.idField] ?? null : null
+        rawJsonText.value = row ? JSON.stringify(row, null, 2) : '{\n  \n}'
+        formVisible.value = true
+        return
+      }
+
+      const base = buildEmptyForm(def)
+      Object.assign(form, base)
+      if (row) {
+        formMode.value = 'edit'
+        editingId.value = row[def.idField] ?? null
+        def.fields.forEach(f => {
+          if (!(f.prop in row)) return
+          const v = row[f.prop]
+          if (f.kind === 'json') {
+            form[f.prop] = v ?? null
+            jsonDraft[f.prop] = v == null ? '' : safeStringify(v)
+          } else if (f.kind === 'stringArray') {
+            form[f.prop] = Array.isArray(v) ? v : []
+            arrayDraft[f.prop] = Array.isArray(v) ? v.join('\n') : ''
+          } else {
+            form[f.prop] = v ?? base[f.prop]
+          }
+        })
+      } else {
+        formMode.value = 'create'
+        editingId.value = null
+        // 新增时主键留空，由后端生成
+        def.fields.forEach(f => {
+          if (f.isId) form[f.prop] = null
+        })
+      }
+      formVisible.value = true
+    }
+
+    const openDetail = (row: any) => {
+      openForm(row)
+      formMode.value = 'view'
+    }
+
+    const safeStringify = (v: any): string => {
+      try { return JSON.stringify(v, null, 2) } catch { return String(v ?? '') }
+    }
+
+    /** JSON 输入框失焦：尝试解析并回填 form；解析失败保留文本，提交时统一校验 */
+    const commitJsonField = (prop: string) => {
+      const text = (jsonDraft[prop] || '').trim()
+      if (!text) { form[prop] = null; return }
+      try {
+        form[prop] = JSON.parse(text)
+      } catch {
+        // 保持原值，等待提交时报错
+      }
+    }
+    const commitArrayField = (prop: string) => {
+      const text = arrayDraft[prop] || ''
+      form[prop] = text
+        .split('\n')
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+    }
+
+    /** 提交（新增/更新） */
+    const handleSubmit = async () => {
+      if (!activeDef.value) return
+      const def = activeDef.value
+      const api = backendConfigApi[activeKey.value]
+      let payload: Record<string, any>
+
+      if (def.jsonMode) {
+        const text = (rawJsonText.value || '').trim()
+        if (!text) { ElMessage.warning('请填写 JSON 内容'); return }
+        try {
+          payload = JSON.parse(text)
+        } catch {
+          ElMessage.error('JSON 格式不合法')
+          return
+        }
+        if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+          ElMessage.error('JSON 顶层必须是对象')
+          return
+        }
+      } else {
+        // 提交前把 jsonDraft / arrayDraft 落到 form
+        def.fields.forEach(f => {
+          if (f.kind === 'json') commitJsonField(f.prop)
+          if (f.kind === 'stringArray') commitArrayField(f.prop)
+        })
+        // JSON 字段合法性校验
+        for (const f of def.fields) {
+          if (f.kind !== 'json') continue
+          const text = (jsonDraft[f.prop] || '').trim()
+          if (!text) continue
+          try { JSON.parse(text) } catch {
+            ElMessage.error(`「${f.label}」不是合法 JSON`)
+            return
+          }
+        }
+        // 必填校验
+        for (const f of def.fields) {
+          if (!f.required || f.readonly) continue
+          if (f.isId && formMode.value === 'create') continue
+          const v = form[f.prop]
+          if (v === null || v === undefined || v === '') {
+            ElMessage.warning(`请填写「${f.label}」`)
+            return
+          }
+        }
+        // 剔除只读的时间戳字段，避免覆盖后端值
+        payload = {}
+        def.fields.forEach(f => {
+          if (f.readonly) return
+          if (!(f.prop in form)) return
+          const v = form[f.prop]
+          if (v === '' && (f.kind === 'number' || f.kind === 'json')) return
+          payload[f.prop] = v
+        })
+        // 编辑态：主键必须回传
+        if (formMode.value === 'edit' && editingId.value !== null) {
+          payload[def.idField] = editingId.value
+        }
+      }
+
+      submitting.value = true
+      try {
+        if (formMode.value === 'create') {
+          await api.save(payload)
+          ElMessage.success('新增成功')
+        } else {
+          await api.update(payload)
+          ElMessage.success('更新成功')
+        }
+        formVisible.value = false
+        loadPage()
+      } catch (e: any) {
+        ElMessage.error(e?.message || '保存失败')
+      } finally {
+        submitting.value = false
+      }
+    }
+
+    /** 删除 */
+    const handleDelete = async (row: any) => {
+      if (!activeDef.value) return
+      const def = activeDef.value
+      const id = row?.[def.idField]
+      if (id === null || id === undefined || id === '') {
+        ElMessage.error(`记录缺少主键 ${def.idField}`)
+        return
+      }
+      try {
+        await ElMessageBox.confirm(`确认删除 ${def.title} 中 ID=${id} 的记录？`, '删除确认', {
+          type: 'warning',
+          confirmButtonText: '删除',
+          cancelButtonText: '取消',
+        })
+      } catch {
+        return // 取消
+      }
+      try {
+        await backendConfigApi[activeKey.value].remove(id)
+        ElMessage.success('删除成功')
+        // 若删的是当前页最后一条，回退一页
+        if (rows.value.length === 1 && pageNum.value > 1) pageNum.value -= 1
+        loadPage()
+      } catch (e: any) {
+        ElMessage.error(e?.message || '删除失败')
+      }
+    }
+
+    const handleOpen = () => {
+      // 弹窗打开时加载首个表数据
+      if (rows.value.length === 0 && total.value === 0) loadPage(1)
+    }
+
     const handleVisibleChange = (val: boolean) => {
       emit('update:visible', val)
     }
-
     const handleClose = () => {
       emit('update:visible', false)
     }
 
     return {
+      tables,
+      activeKey,
+      activeDef,
+      rows,
+      total,
+      pageNum,
+      pageSize,
+      loading,
+      tableColumns,
+      formFields,
+      formVisible,
+      formMode,
+      formTitle,
+      form,
+      jsonDraft,
+      arrayDraft,
+      rawJsonText,
+      submitting,
+      formatCell,
+      shortJson,
+      isReadonlyField,
+      loadPage,
+      loadEnabledList,
+      handleSizeChange,
+      handleSwitchTable,
+      openForm,
+      openDetail,
+      commitJsonField,
+      commitArrayField,
+      handleSubmit,
+      handleDelete,
+      handleOpen,
       handleVisibleChange,
       handleClose,
     }
@@ -52,17 +620,133 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.backend-config-body {
-  height: 100%;
+.bc-layout {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 100%;
+  gap: 12px;
 }
 
-.backend-config-placeholder {
+/* 左侧表选择 */
+.bc-side {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+  padding-right: 10px;
+  overflow-y: auto;
+}
+.bc-side-title {
+  font-size: 13px;
+  color: #64748b;
+  padding: 4px 8px 10px;
+  letter-spacing: 1px;
+}
+.bc-side-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  font-size: 14px;
+}
+.bc-side-item {
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 2px;
+  transition: background 0.15s;
+}
+.bc-side-item:hover {
+  background: #f1f5f9;
+}
+.bc-side-item.active {
+  background: #e0edff;
+}
+.bc-side-item.active .bc-side-name {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+.bc-side-name {
+  font-size: 13px;
+  color: #1f2937;
+}
+.bc-side-code {
+  font-size: 11px;
   color: #94a3b8;
+  font-family: Consolas, Monaco, monospace;
+}
+
+/* 右侧主区域 */
+.bc-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.bc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 8px;
+}
+.bc-toolbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.bc-toolbar-sub {
+  margin-left: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.bc-toolbar-right {
+  display: flex;
+  gap: 6px;
+}
+.bc-table-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.bc-table {
+  height: 100%;
+}
+.bc-pager {
+  padding-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+.bc-empty {
+  padding: 40px 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.bc-danger {
+  color: #ef4444 !important;
+}
+.bc-json-cell {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  color: #475569;
+}
+
+/* 表单弹窗 */
+.bc-form :deep(.el-form-item) {
+  margin-bottom: 14px;
+}
+.bc-json-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bc-json-tip {
+  font-size: 12px;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #94a3b8;
 }
 </style>
 
@@ -79,6 +763,13 @@ export default defineComponent({
 
 .backend-config-dialog .el-dialog__body {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* 内嵌表单弹窗保持默认高度，避免继承 90vh */
+.backend-config-form-dialog {
+  margin-bottom: 0;
 }
 </style>
