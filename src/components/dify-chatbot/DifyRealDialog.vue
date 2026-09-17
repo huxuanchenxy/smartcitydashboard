@@ -4064,10 +4064,12 @@ export default defineComponent({
   min-width: 0;
 }
 
-/* 用户气泡内的附件：半透明白底，保证在蓝底上可读 */
+/* 用户气泡内的附件：实心白底卡片 + 深色文字。
+   原先是「半透明白底 + 继承气泡白字」，白字压在浅色底上几乎不可读 */
 .user-message .message-file-item {
-  background-color: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.3);
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: var(--chat-title);
 }
 
 .file-icon {
@@ -4129,10 +4131,19 @@ export default defineComponent({
   flex-shrink: 0;
 }
 
+/* 附件名/大小/下载在用户气泡内同样改深色，避免透明白字 */
 .user-message .file-size,
-.user-message .file-download,
+.user-message .file-download {
+  color: var(--chat-text-sub);
+}
+
 .user-message .file-name-link {
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--chat-primary-strong);
+}
+
+.user-message .file-download:hover,
+.user-message .file-name-link:hover {
+  color: var(--chat-primary);
 }
 
 /* 时间 + 复制：同一行，避免空按钮把时间挤到很远的位置 */
