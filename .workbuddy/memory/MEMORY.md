@@ -38,7 +38,8 @@
 - 相关 env：VITE_APP_DIFY_SESSION_HOST / WS_HOST / UPLOAD_HOST；上传失败条目标 error 保留、发送时按 fileId 过滤
 
 ### DifyRealDialog.vue UI 现状（2026-09-17 重构后）
-- 布局：左侧会话侧栏（品牌区 / 新建对话 / 最近对话·历史记录 tab / 会话列表+“更早”分组 / 底部用户信息）+ 右侧主区（header / 欢迎页或消息列表 / 底部输入卡片）
+- 布局：左侧会话侧栏（品牌区 / 新建对话 /「历史记录」标题 + 全量会话列表 / 底部用户信息）+ 右侧主区（header / 欢迎页或消息列表 / 底部输入卡片）
+- 会话列表不分 tab、不分组（用户明确要求）：统一展示全部会话，无“最近对话/更早”
 - 新增 prop：`subtitle`（默认“你的智能工作助手”）、`suggestions`（引导卡，null 用内置三条）；`sidebarWidth` 默认 260
 - 窄窗自适应：`dialogWidth < 560` 时侧栏自动收起（header 有 toggle 按钮手动切换）
 - 样式注意：组件根内统一 `box-sizing: border-box`（项目无全局 reset）；`v-html` 注入的 SVG 必须用 `:deep(svg)` 才能命中尺寸

@@ -48,22 +48,10 @@
                 </button>
               </div>
 
-              <div class="sidebar-tabs">
-                <button
-                  class="sidebar-tab"
-                  :class="{ active: sidebarTab === 'recent' }"
-                  @click="sidebarTab = 'recent'"
-                >最近对话</button>
-                <button
-                  class="sidebar-tab"
-                  :class="{ active: sidebarTab === 'history' }"
-                  @click="sidebarTab = 'history'"
-                >历史记录</button>
-              </div>
+              <div class="sidebar-section-title">历史记录</div>
 
               <div class="conversation-list">
-                <template v-for="(conv, idx) in visibleConversations" :key="conv.id">
-                  <div v-if="showEarlierDivider(idx)" class="conversation-group-title">更早</div>
+                <template v-for="conv in conversationList" :key="conv.id">
                   <div
                     class="conversation-item"
                     :class="{ active: conv.id === currentConversationId }"
@@ -79,7 +67,6 @@
                       />
                     </svg>
                     <span class="conversation-item-title" :title="conv.title">{{ conv.title }}</span>
-                    <span v-if="conversationTimeText(conv)" class="conversation-item-time">{{ conversationTimeText(conv) }}</span>
                     <button
                       class="conversation-delete-btn"
                       title="删除该对话"
@@ -93,8 +80,8 @@
                     </button>
                   </div>
                 </template>
-                <div v-if="visibleConversations.length === 0" class="conversation-empty">
-                  {{ sidebarTab === 'recent' ? '暂无对话记录' : '暂无更早的对话' }}
+                <div v-if="conversationList.length === 0" class="conversation-empty">
+                  暂无对话记录
                 </div>
               </div>
 
@@ -158,7 +145,7 @@
                       <div class="welcome-slogan">让想法，更进一步</div>
                       <div class="welcome-title">今天，有什么可以帮你？</div>
                       <div class="welcome-subtitle">从一个问题开始，把复杂的工作变简单。</div>
-                      <div class="welcome-cards">
+                      <!-- <div class="welcome-cards">
                         <button
                           v-for="(card, ci) in suggestionCards"
                           :key="ci"
@@ -174,7 +161,7 @@
                             <path d="M7.6 16.4 16.4 7.6M9 7.6h7.4V15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
                           </svg>
                         </button>
-                      </div>
+                      </div> -->
                     </div>
                   </div>
                   <div v-else class="message-list">
@@ -1786,18 +1773,8 @@ export default defineComponent({
       queryInputRef.value?.focus()
     }
 
-    // 侧栏「最近对话 / 历史记录」：「最近对话」展示全部（第 N 条起插入「更早」分组标题），
-    // 「历史记录」只筛选出更早的部分，便于从大量会话中快速定位老会话
-    const RECENT_LIMIT = 6
+    // 侧栏统一为「历史记录」，展示全部会话，不做最近/更早分组
     const SIDEBAR_MIN_WIDTH = 560
-    const sidebarTab = ref<'recent' | 'history'>('recent')
-    const visibleConversations = computed(() =>
-      sidebarTab.value === 'recent' ? conversationList.value : conversationList.value.slice(RECENT_LIMIT),
-    )
-    const showEarlierDivider = (index: number) => sidebarTab.value === 'recent' && index === RECENT_LIMIT
-    // 会话项右侧时间：当前会话显示「现在」，历史会话显示后端创建时间（缺失则不显示）
-    const conversationTimeText = (conv: ConversationItem): string =>
-      conv.id === currentConversationId.value ? '现在' : conv.updateTime || ''
 
     // 侧栏收起：默认展开，窗口过窄（如 600px 浮窗）时自动收起；仅跨过阈值时干预，保留用户手动操作结果
     const sidebarCollapsed = ref(dialogWidth.value < SIDEBAR_MIN_WIDTH)
@@ -2960,10 +2937,6 @@ export default defineComponent({
       suggestionCards,
       suggestionIcon,
       applySuggestion,
-      sidebarTab,
-      visibleConversations,
-      showEarlierDivider,
-      conversationTimeText,
       sidebarCollapsed,
       toggleSidebar,
       sidebarStyle,
@@ -3200,34 +3173,12 @@ export default defineComponent({
   opacity: 0.9;
 }
 
-.sidebar-tabs {
+.sidebar-section-title {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: calc(20px * var(--chat-font-scale, 1));
-  padding: 0 calc(16px * var(--chat-font-scale, 1));
-  border-bottom: 1px solid var(--chat-border-soft);
-}
-
-.sidebar-tab {
-  background: none;
-  border: none;
-  padding: calc(6px * var(--chat-font-scale, 1)) 0 calc(10px * var(--chat-font-scale, 1));
-  font-size: calc(13px * var(--chat-font-scale, 1));
+  padding: calc(12px * var(--chat-font-scale, 1)) calc(14px * var(--chat-font-scale, 1)) calc(6px * var(--chat-font-scale, 1));
+  font-size: calc(12px * var(--chat-font-scale, 1));
   font-weight: 500;
-  font-family: inherit;
   color: #93a1b5;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.sidebar-tab:hover {
-  color: #5f7a9e;
-}
-
-.sidebar-tab.active {
-  color: var(--chat-title);
-  font-weight: 600;
 }
 
 .conversation-list {
@@ -3248,12 +3199,6 @@ export default defineComponent({
 .conversation-list::-webkit-scrollbar-thumb {
   background: #e2e8f0;
   border-radius: 3px;
-}
-
-.conversation-group-title {
-  padding: calc(10px * var(--chat-font-scale, 1)) calc(8px * var(--chat-font-scale, 1)) calc(6px * var(--chat-font-scale, 1));
-  font-size: calc(12px * var(--chat-font-scale, 1));
-  color: #a9b5c6;
 }
 
 .conversation-item {
@@ -3303,12 +3248,6 @@ export default defineComponent({
 .conversation-item.active .conversation-item-title {
   color: var(--chat-title);
   font-weight: 600;
-}
-
-.conversation-item-time {
-  flex-shrink: 0;
-  font-size: calc(11.5px * var(--chat-font-scale, 1));
-  color: #a9b5c6;
 }
 
 /* 删除按钮：默认隐藏，悬停会话项时显示 */
