@@ -879,6 +879,41 @@ export default defineComponent({
 
     // 从 localStorage 读取当前登录账号（与登录页 nav-header 等处共用同一个 key）
     const getLoginAccount = (): string => localStorage.getItem('loginAccount') || ''
+
+    // ===== 组态侧鉴权信息 =====
+    // 来源系统标识：随 X-Src-System 下发，值统一从环境变量取（三套 env 均已配置），缺省兜底 zutai01
+    const SRC_SYSTEM = import.meta.env.VITE_APP_DIFY_SRC_SYSTEM || 'zutai01'
+
+    // 取当前 hash 路由的 path（去掉 ? 之后的 query），如 #/publish/346?token=xxx -> /publish/346
+    const getCurrentPath = (): string => {
+      const raw = (window.location.hash || '').replace(/^#/, '')
+      const qIndex = raw.indexOf('?')
+      return (qIndex >= 0 ? raw.slice(0, qIndex) : raw) || '/'
+    }
+
+    // 取 URL query 上的 token（hash 路由下 query 挂在 hash 后面；URLSearchParams 会自动 decode）
+    const getUrlToken = (): string => {
+      const raw = (window.location.hash || '').replace(/^#/, '')
+      const qIndex = raw.indexOf('?')
+      const search = qIndex >= 0 ? raw.slice(qIndex + 1) : window.location.search.replace(/^\?/, '')
+      if (!search) return ''
+      try {
+        return new URLSearchParams(search).get('token') || ''
+      } catch (e) {
+        return ''
+      }
+    }
+
+    // 接口鉴权 token：
+    // 1) 发布页（#/publish/:screenId?token=xxx）是匿名访问，localStorage 里没有登录态，直接用 URL 上的 token
+    // 2) 其余场景（编辑器 / 后台等）取 localStorage 的 DataS-Token
+    const getAuthToken = (): string => {
+      if (getCurrentPath().startsWith('/publish')) {
+        const urlToken = getUrlToken()
+        if (urlToken) return urlToken
+      }
+      return localStorage.getItem('DataS-Token') || ''
+    }
     // 给接口地址追加 loginAccount 查询参数（自动判断用 ? 还是 &）；未登录时返回原地址
     const withLoginAccount = (url: string): string => {
       const account = getLoginAccount()
@@ -1363,9 +1398,12 @@ export default defineComponent({
 
       wsStatus.value = 'connecting'
       wsSessionId = sessionId
-      const url = withLoginAccount(sessionId
+      // 浏览器原生 WebSocket 不支持自定义请求头，X-Src-System / token 只能随握手 URL 的 query 下发
+      const rawUrl = sessionId
         ? `${WS_BASE}/ws/chat?sessionId=${encodeURIComponent(sessionId)}`
-        : `${WS_BASE}/ws/chat`)
+        : `${WS_BASE}/ws/chat`
+      const authQuery = `X-Src-System=${encodeURIComponent(SRC_SYSTEM)}&token=${encodeURIComponent(getAuthToken())}`
+      const url = withLoginAccount(`${rawUrl}${rawUrl.includes('?') ? '&' : '?'}${authQuery}`)
       console.log('[DifyRealDialog][WS] 连接中:', url)
       const socket = new WebSocket(url)
       connectPromise = new Promise<WebSocket>((resolve, reject) => {
@@ -2758,7 +2796,13 @@ export default defineComponent({
       form.append('files', file, file.name)
 
       // axios 检测到 FormData 会自动删除 Content-Type，由浏览器补上 multipart boundary
-      const resp = await request.post(`${UPLOAD_HOST}/api/file/upload/batch`, form)
+      // 组态侧鉴权：X-Src-System 固定标识来源系统，token 取发布页 URL 参数或 localStorage 的 DataS-Token
+      const resp = await request.post(`${UPLOAD_HOST}/api/file/upload/batch`, form, {
+        headers: {
+          'X-Src-System': SRC_SYSTEM,
+          token: getAuthToken(),
+        },
+      })
       const meta = ((resp.data?.data || []) as UploadedFileMeta[])[0]
       if (!meta || !meta.filesId) {
         throw new Error('上传返回数据为空')

@@ -46,6 +46,11 @@
 - 会话时间：后端 `createdOn` 经 `formatConversationTime` 映射为 `updateTime` 展示
 - 重构前完整备份：C:\Users\Administrator\AppData\Local\Temp\dify-ui-refactor\DifyRealDialog.vue.bak（临时目录，可能被清理）
 
+## 组态鉴权约定（Dify 相关接口）
+- 上传 `/api/file/upload/batch` 与 WS `/ws/chat` 必须带 `X-Src-System`(=`VITE_APP_DIFY_SRC_SYSTEM`，默认 zutai01) 与 `token`
+- token 取值：发布页 `#/publish/:id?token=xxx` 用 URL 上的 token；其余用 `localStorage['DataS-Token']`
+- 浏览器原生 WebSocket 无法设请求头 → WS 走握手 URL query（`X-Src-System` / `token`），再拼 loginAccount
+
 ## 启动命令（本机）
 无 yarn 时：
 export PATH="/c/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2:$PATH"
