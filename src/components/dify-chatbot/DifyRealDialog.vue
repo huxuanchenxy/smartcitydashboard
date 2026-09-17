@@ -713,6 +713,11 @@ export default defineComponent({
       type: Object as () => { width: number; height: number; },
       default: null,
     },
+    // 浮动模式下弹窗占视口的比例（宽高同比例），默认 80%
+    viewportRatio: {
+      type: Number,
+      default: 1,
+    },
     role: {
       type: String,
       default: '',
@@ -784,7 +789,22 @@ export default defineComponent({
     watch(mdEditorVisible, val => {
       emit('md-editor-visible-change', val)
     })
-    const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 })
+    // 浮动模式下的默认尺寸：按视口比例（默认 80%）计算并居中显示，宿主传了 initialSize / initialPosition 时以其为准
+    const MIN_DIALOG_WIDTH = 420
+    const MIN_DIALOG_HEIGHT = 420
+    const computeViewportSize = () => ({
+      width: Math.max(MIN_DIALOG_WIDTH, Math.round(window.innerWidth * props.viewportRatio)),
+      height: Math.max(MIN_DIALOG_HEIGHT, Math.round(window.innerHeight * props.viewportRatio)),
+    })
+    const computeViewportPosition = (size: { width: number; height: number }) => ({
+      x: Math.max(0, Math.round((window.innerWidth - size.width) / 2)),
+      y: Math.max(0, Math.round((window.innerHeight - size.height) / 2)),
+    })
+    const defaultDialogSize = props.initialSize ?? computeViewportSize()
+    // 用户手动拖拽/缩放过之后不再自动跟随视口重算，保留其自定义结果
+    const userAdjusted = ref(false)
+
+    const dialogPosition = ref(props.initialPosition ?? computeViewportPosition(defaultDialogSize))
     const dragOffset = ref({ x: 0, y: 0 })
     const isDragging = ref(false)
 
@@ -1632,8 +1652,9 @@ export default defineComponent({
       }
     }
 
-    // 窗口 resize 时同步调整图表大小
+    // 窗口 resize 时同步调整图表大小，并让未手动调整过的弹窗跟随视口
     const handleWindowResize = () => {
+      syncSizeToViewport()
       flintChartInstances.value.forEach(instance => {
         instance.resize()
       })
@@ -1654,6 +1675,8 @@ export default defineComponent({
       newVisible => {
         dialogVisible.value = newVisible
         if (newVisible) {
+          // 打开前按当前视口重算尺寸/位置，避免固定 600×600 显得过小
+          syncSizeToViewport()
           // 每次打开刷新发问者显示名，兼容登录账号变更后的场景
           refreshUserDisplayName()
           showWelcomeMessage()
@@ -1737,6 +1760,7 @@ export default defineComponent({
     }
 
     const handleMouseUp = () => {
+      if (isDragging.value) userAdjusted.value = true
       isDragging.value = false
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
@@ -1745,8 +1769,18 @@ export default defineComponent({
     const isResizing = ref(false)
     const resizeDirection = ref('')
     const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
-    const dialogWidth = ref(props.initialSize?.width ?? 600)
-    const dialogHeight = ref(props.initialSize?.height ?? 600)
+    const dialogWidth = ref(defaultDialogSize.width)
+    const dialogHeight = ref(defaultDialogSize.height)
+    // 每次打开（或窗口尺寸变化）时按视口重算尺寸与位置；用户手动调整过则不再干预
+    const syncSizeToViewport = () => {
+      if (props.inline || userAdjusted.value) return
+      const size = props.initialSize ?? computeViewportSize()
+      dialogWidth.value = size.width
+      dialogHeight.value = size.height
+      if (!props.initialPosition) {
+        dialogPosition.value = computeViewportPosition(size)
+      }
+    }
 
     // ===== 视图层状态（空态引导 / 侧栏分栏与收起 / 标题），不影响消息与会话逻辑 =====
     // 空态引导卡片：宿主可通过 suggestions 覆盖，未传则使用内置三条通用引导
@@ -1915,6 +1949,7 @@ export default defineComponent({
     }
 
     const stopResize = () => {
+      if (isResizing.value) userAdjusted.value = true
       isResizing.value = false
       resizeDirection.value = ''
       document.removeEventListener('mousemove', handleResize)
