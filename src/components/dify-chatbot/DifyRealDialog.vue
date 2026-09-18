@@ -290,34 +290,12 @@
                           <div class="interrupted-header">
                             <span class="interrupted-badge">待确认</span>
                           </div>
+                          <!-- 统一用 answer 作为展示内容，包含完整的结构化数据 + 末尾提示文字 -->
                           <div
-                            v-if="message.pendingQuestion"
+                            v-if="message.content"
                             class="interrupted-question"
-                            v-html="formatContent(message.pendingQuestion)"
+                            v-html="formatContent(message.content)"
                           ></div>
-                          <div v-if="message.pendingContextEntries && message.pendingContextEntries.length" class="interrupted-context">
-                            <div class="interrupted-context-title">上下文信息</div>
-                            <div
-                              v-for="(entry, ci) in message.pendingContextEntries"
-                              :key="ci"
-                              class="pending-context-item"
-                            >
-                              <div v-if="entry.key" class="pending-context-key">{{ entry.key }}</div>
-                              <pre v-if="entry.isCode && entry.text" class="pending-context-code">{{ entry.text }}</pre>
-                              <table v-else-if="entry.isTable && entry.tableColumns && entry.tableColumns.length" class="pending-context-table">
-                                <thead>
-                                  <tr>
-                                    <th v-for="col in entry.tableColumns" :key="col">{{ col }}</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr v-for="(row, ri) in entry.tableRows" :key="ri">
-                                    <td v-for="col in entry.tableColumns" :key="col">{{ pendingCellText(row[col]) }}</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
                         </div>
                         <div v-else-if="message.isCompleted" class="result-panel">
                           <div class="result-header">
@@ -1029,20 +1007,14 @@ export default defineComponent({
     // 实时 WS 分支与历史会话解析共用同一套逻辑，保证两条链路渲染一致
     const buildAssistantFrameFields = (data: any): Partial<ChartMessage> | null => {
       if (data.status === 'interrupted') {
-        // pending_question / pending_context 不一定每次都下发，判空后使用
-        // 空白字符串同样视为空，避免渲染出空白的提问区
-        const rawQuestion = typeof data.pending_question === 'string' ? data.pending_question.trim() : ''
-        const pendingQuestion = rawQuestion || undefined
-        const pendingContext = data.pending_context != null ? data.pending_context : undefined
+        // interrupted 帧统一只取 answer 作为显示内容：里面包含完整的结构化数据（如识别出的设备列表）
+        // 以及末尾的提示文字（如「回复确认继续绑定点位」），用户能看到完整结果而非仅一句提示
+        // 空白字符串同样视为空，避免渲染出空白区域
+        const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
         return {
-          // content 保留 pending_question，便于「复制」按钮直接复制提问文案
-          content: pendingQuestion ?? '',
+          content: answerText,
           isInterrupted: true,
           intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
-          pendingQuestion,
-          pendingContext,
-          // 归一化一次存好：空字段已被过滤，模板按 length 决定是否显示「上下文信息」面板
-          pendingContextEntries: normalizePendingContext(pendingContext),
         }
       }
       if (data.status === 'completed') {
@@ -2178,11 +2150,21 @@ export default defineComponent({
     }
 
     const normalizePendingContext = (ctx: any): PendingContextEntry[] => {
-      if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) return []
-      return Object.keys(ctx)
-        .filter(key => !isEmptyContextValue(ctx[key]))
+      // 兼容字符串形式的 JSON：后端有时会把 pending_context / result 序列化为字符串下发
+      // 先尝试 JSON.parse 还原为对象，失败则视为无上下文，避免渲染异常
+      let normalized = ctx
+      if (typeof ctx === 'string' && ctx.trim()) {
+        try {
+          normalized = JSON.parse(ctx)
+        } catch (e) {
+          return []
+        }
+      }
+      if (!normalized || typeof normalized !== 'object' || Array.isArray(normalized)) return []
+      return Object.keys(normalized)
+        .filter(key => !isEmptyContextValue(normalized[key]))
         .map(key => {
-        const val = ctx[key]
+        const val = normalized[key]
         if (Array.isArray(val)) {
           const rows = val as Array<Record<string, any>>
           const first = rows[0]
@@ -2192,6 +2174,17 @@ export default defineComponent({
           return { key, text: '', isCode: false, isTable: true, tableColumns: columns, tableRows: rows }
         }
         if (typeof val === 'string') {
+          // 字符串值可能是嵌套的 JSON 字符串：尝试解析后以格式化 JSON 展示，更易读
+          // 解析失败时按原字符串展示，避免破坏原有内容
+          const trimmed = val.trim()
+          if (trimmed && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
+            try {
+              const parsed = JSON.parse(trimmed)
+              return { key, text: JSON.stringify(parsed, null, 2), isCode: true, isTable: false }
+            } catch (e) {
+              // 非合法 JSON，按原字符串展示
+            }
+          }
           return { key, text: val, isCode: true, isTable: false }
         }
         if (val && typeof val === 'object') {
