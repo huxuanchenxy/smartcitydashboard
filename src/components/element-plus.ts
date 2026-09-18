@@ -18,7 +18,13 @@ import {
   ElPagination,
   ElTooltip,
   ElLoading,
+  // 该版本（1.0.2-beta）Element Plus 文案由全局单例 locale 提供。
+  // 必须从顶层 'element-plus' 引入 locale（即内部 use），与组件共享同一
+  // 预打包模块实例；若从 'element-plus/es/locale' 深层引入会是另一份实例，设置不生效。
+  locale as useLocale,
 } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import 'dayjs/locale/zh-cn'
 
 const components = [
   ElTabPane,
@@ -37,6 +43,9 @@ const components = [
 ]
 
 const install = (app: App): void => {
+  // 设置 Element Plus 内置文案为中文（需在组件渲染前执行一次）
+  useLocale(zhCn)
+
   app.config.globalProperties.$ELEMENT = { size: 'medium' }
 
   components.forEach(component => {
