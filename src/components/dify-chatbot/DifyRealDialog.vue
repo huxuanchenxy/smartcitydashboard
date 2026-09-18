@@ -541,7 +541,8 @@ import { getFontScale } from './font-scale'
 import { assembleECharts } from 'flint-chart'
 import type { ChartAssemblyInput } from 'flint-chart'
 import * as echarts from 'echarts'
-import request from '@/utils/request'
+// Dify / 组态 AI 后端专用实例（无拦截器、不跳登录），见 @/utils/dify-request
+import difyRequest from '@/utils/dify-request'
 import { marked } from 'marked'
 
 // Flint 图表相关接口
@@ -748,6 +749,22 @@ export default defineComponent({
       type: Number,
       default: 260,
     },
+    // 接口 loginAccount 参数覆盖值：由宿主（大屏 wrapper）在匿名发布页传入 URL token；
+    // 传空则回退 localStorage 的 loginAccount（编辑器 / 后台登录态）
+    loginAccount: {
+      type: String,
+      default: '',
+    },
+    // 接口鉴权 token 覆盖值：由宿主在匿名发布页传入 URL token；传空则回退 localStorage 的 DataS-Token
+    authToken: {
+      type: String,
+      default: '',
+    },
+    // 匿名访问：为 true 时发问者显示名不取 loginAccount（避免把 token 当用户名展示），直接回退角色中文名
+    anonymous: {
+      type: Boolean,
+      default: false,
+    },
     com: {
       type: Object as () => {
         buttonImage: string
@@ -877,49 +894,38 @@ export default defineComponent({
     const confirmDialogMessage = ref('')
     const pendingDeleteConv = ref<ConversationItem | null>(null)
 
-    // 从 localStorage 读取当前登录账号（与登录页 nav-header 等处共用同一个 key）
-    const getLoginAccount = (): string => localStorage.getItem('loginAccount') || ''
+    // 接口 loginAccount 参数取值（会话 / 上传 / 聊天等接口共用）：
+    // 优先用宿主传入的 loginAccount（如发布页匿名访问时 wrapper 传入的 URL token），否则回退 localStorage。
+    // 匿名访问（anonymous=true）时只用 URL token，绝不回退 localStorage —— 否则会把编辑器登录账号
+    // 当成发布页匿名用户的账号提交，导致会话归属错人（这正是匿名场景要修的问题）。
+    const getLoginAccount = (): string =>
+      props.anonymous
+        ? props.loginAccount
+        : props.loginAccount || localStorage.getItem('loginAccount') || ''
 
     // ===== 组态侧鉴权信息 =====
     // 来源系统标识：随 X-Src-System 下发，值统一从环境变量取（三套 env 均已配置），缺省兜底 zutai01
     const SRC_SYSTEM = import.meta.env.VITE_APP_DIFY_SRC_SYSTEM || 'zutai01'
 
-    // 取当前 hash 路由的 path（去掉 ? 之后的 query），如 #/publish/346?token=xxx -> /publish/346
-    const getCurrentPath = (): string => {
-      const raw = (window.location.hash || '').replace(/^#/, '')
-      const qIndex = raw.indexOf('?')
-      return (qIndex >= 0 ? raw.slice(0, qIndex) : raw) || '/'
-    }
-
-    // 取 URL query 上的 token（hash 路由下 query 挂在 hash 后面；URLSearchParams 会自动 decode）
-    const getUrlToken = (): string => {
-      const raw = (window.location.hash || '').replace(/^#/, '')
-      const qIndex = raw.indexOf('?')
-      const search = qIndex >= 0 ? raw.slice(qIndex + 1) : window.location.search.replace(/^\?/, '')
-      if (!search) return ''
-      try {
-        return new URLSearchParams(search).get('token') || ''
-      } catch (e) {
-        return ''
-      }
-    }
-
     // 接口鉴权 token：
-    // 1) 发布页（#/publish/:screenId?token=xxx）是匿名访问，localStorage 里没有登录态，直接用 URL 上的 token
-    // 2) 其余场景（编辑器 / 后台等）取 localStorage 的 DataS-Token
-    const getAuthToken = (): string => {
-      if (getCurrentPath().startsWith('/publish')) {
-        const urlToken = getUrlToken()
-        if (urlToken) return urlToken
-      }
-      return localStorage.getItem('DataS-Token') || ''
-    }
+    // 优先用宿主传入的 authToken（如发布页匿名访问时 wrapper 传入的 URL token），否则回退 localStorage 的 DataS-Token
+    // 说明：发布页 / URL token 的判定已上移到 wrapper（见 @/utils/dify-publish），本组件不再嗅探路由
+    const getAuthToken = (): string =>
+      props.authToken || localStorage.getItem('DataS-Token') || ''
     // 给接口地址追加 loginAccount 查询参数（自动判断用 ? 还是 &）；未登录时返回原地址
+    // 匿名发布页场景下这里的 account 就是 URL 上的 token（由 wrapper 经 loginAccount prop 下发）
     const withLoginAccount = (url: string): string => {
       const account = getLoginAccount()
       if (!account) return url
       return `${url}${url.includes('?') ? '&' : '?'}loginAccount=${encodeURIComponent(account)}`
     }
+
+    // 组态侧鉴权头：X-Src-System 标识来源系统，token 取匿名 URL token 或 localStorage 的 DataS-Token
+    // 所有直连 Dify 后端的 HTTP 接口（会话列表 / 历史消息 / 删除会话 / 附件上传）统一携带
+    const getAuthHeaders = (): Record<string, string> => ({
+      'X-Src-System': SRC_SYSTEM,
+      token: getAuthToken(),
+    })
 
     // 角色中文名：侧栏底部「用户名 / 角色」与发问者兜底显示名共用
     const roleLabel = computed(() => {
@@ -946,7 +952,10 @@ export default defineComponent({
     // 未登录（显示名即角色名）时不重复展示第二行，避免出现「使用人员 / 使用人员」
     const showUserSub = computed(() => userDisplayName.value !== roleLabel.value)
     const refreshUserDisplayName = () => {
-      userDisplayName.value = getLoginAccount() || roleLabel.value
+      // 匿名访问（如发布页）：loginAccount 参数是 URL token，不作为显示名；
+      // 依次回退角色中文名 → 「匿名用户」，避免侧栏底部 / 头像处出现空白
+      const account = props.anonymous ? '' : getLoginAccount()
+      userDisplayName.value = account || roleLabel.value || (props.anonymous ? '匿名用户' : '')
     }
 
     // 会话列表右侧时间文案：把后端 createdOn 归一化为「MM-DD HH:mm」（跨年补年份）
@@ -970,7 +979,9 @@ export default defineComponent({
     const fetchConversationList = async (): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        const resp = await request.get(withLoginAccount(`${base}/api/session/list`))
+        const resp = await difyRequest.get(withLoginAccount(`${base}/api/session/list`), {
+          headers: getAuthHeaders(),
+        })
         const rawList = (resp.data?.data || []) as Array<{
           autoId?: number
           cache?: string
@@ -1079,7 +1090,10 @@ export default defineComponent({
     const loadConversationMessages = async (sessionId: string): Promise<void> => {
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        const resp = await request.get(withLoginAccount(`${base}/api/chat/sessionId`), { params: { sessionId } })
+        const resp = await difyRequest.get(withLoginAccount(`${base}/api/chat/sessionId`), {
+          params: { sessionId },
+          headers: getAuthHeaders(),
+        })
         const raw = (resp.data?.data || []) as Array<{
           id?: number
           chatId?: string
@@ -1168,7 +1182,10 @@ export default defineComponent({
       }
       try {
         const base = import.meta.env.VITE_APP_DIFY_SESSION_HOST || 'http://10.89.34.77:8080'
-        await request.delete(withLoginAccount(`${base}/api/session/delete/${encodeURIComponent(conv.sessionId)}`))
+        await difyRequest.delete(
+          withLoginAccount(`${base}/api/session/delete/${encodeURIComponent(conv.sessionId)}`),
+          { headers: getAuthHeaders() },
+        )
         removeConversationLocally(conv.id)
         ElMessage({ message: '对话已删除', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
       } catch (e) {
@@ -2069,7 +2086,16 @@ export default defineComponent({
         // 用户主动发消息成功：重置重连计数，避免历史残留次数占掉后续断线时的重连机会
         resetReconnect()
         // 附件（若有）以数组形式与文本一起发送
-        socket.send(JSON.stringify({ content: text, files: sendFiles }))
+        // loginAccount 随消息体一并下发（匿名发布页为 URL token），与握手 URL 上的取值保持一致，
+        // 兼容后端按「每条消息」而非「连接」取账号的实现
+        socket.send(
+          JSON.stringify({
+            content: text,
+            files: sendFiles,
+            loginAccount: getLoginAccount(),
+            ...(currentSessionId.value ? { sessionId: currentSessionId.value } : {}),
+          }),
+        )
         // 看门狗：服务端异常时可能不回任何帧（或错误帧发到了已关闭的握手连接），
         // 超时未收到回复则结束思考态并提示，避免永远卡在「正在思考中」
         clearReplyWatchdog()
@@ -2797,11 +2823,8 @@ export default defineComponent({
 
       // axios 检测到 FormData 会自动删除 Content-Type，由浏览器补上 multipart boundary
       // 组态侧鉴权：X-Src-System 固定标识来源系统，token 取发布页 URL 参数或 localStorage 的 DataS-Token
-      const resp = await request.post(`${UPLOAD_HOST}/api/file/upload/batch`, form, {
-        headers: {
-          'X-Src-System': SRC_SYSTEM,
-          token: getAuthToken(),
-        },
+      const resp = await difyRequest.post(`${UPLOAD_HOST}/api/file/upload/batch`, form, {
+        headers: getAuthHeaders(),
       })
       const meta = ((resp.data?.data || []) as UploadedFileMeta[])[0]
       if (!meta || !meta.filesId) {

@@ -8,6 +8,9 @@
       :sidebar-width="config.sidebarWidth"
       :font-scale="config.fontScale"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
+      :login-account="anonymousToken"
+      :auth-token="anonymousToken"
+      :anonymous="!!anonymousToken"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"
       @message-sent="handleDifyApiMessageSent"
@@ -21,6 +24,7 @@ import type { CSSProperties } from 'vue'
 import { AiDifyReal } from './ai-dify-real'
 import { useDataCenter } from '@/mixins/data-center'
 import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
+import { getAnonymousToken } from '@/utils/dify-publish'
 
 export default defineComponent({
   name: 'VAiDifyReal',
@@ -37,6 +41,11 @@ export default defineComponent({
 
     const config = toRef(props.com, 'config')
     const comid = toRef(props.com, 'id').value
+
+    // 发布页匿名访问：用 URL 上的原始 token 作为 loginAccount / 鉴权 token，并标记为匿名（显示名回退角色名）；
+    // 非发布页（编辑器 / 预览）返回空串，DifyRealDialog 内部会回退到 localStorage 登录态。
+    // 用 computed 而非一次性取值：hash 路由变化（编辑器 → 发布页）时 token 能随之更新。
+    const anonymousToken = computed(() => getAnonymousToken())
 
     // 内嵌展示，默认即为显示状态
     const difyApiDialogVisible = ref(true)
@@ -69,6 +78,7 @@ export default defineComponent({
       wrapperStyle,
       comid,
       difyApiDialogVisible,
+      anonymousToken,
       handleDifyApiDialogClose,
       handleDifyApiMessageReceived,
       handleDifyApiMessageSent,

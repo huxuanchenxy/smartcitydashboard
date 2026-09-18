@@ -83,3 +83,8 @@ export function setProjectMenu(menu: string) {
 export function removeProjectMenu() {
   localStorage.removeItem(ProjectMenuKey);
 }
+
+// ===== 发布页（#/publish/:screenId?token=xxx）匿名访问判定 =====
+// 实现统一收敛在 @/utils/dify-publish（供 ai-dify-real / ai-dify-demo 等 datav wrapper 复用，
+// 避免把路由 / URL 嗅探逻辑塞进纯展示组件 DifyRealDialog）。这里只做转出，防止两份实现漂移。
+export { getCurrentHashPath, isPublishPage, getPublishToken, getAnonymousToken } from './dify-publish'

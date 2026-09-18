@@ -47,9 +47,16 @@
 - 重构前完整备份：C:\Users\Administrator\AppData\Local\Temp\dify-ui-refactor\DifyRealDialog.vue.bak（临时目录，可能被清理）
 
 ## 组态鉴权约定（Dify 相关接口）
-- 上传 `/api/file/upload/batch` 与 WS `/ws/chat` 必须带 `X-Src-System`(=`VITE_APP_DIFY_SRC_SYSTEM`，默认 zutai01) 与 `token`
+- **所有**直连 Dify 后端的 HTTP 接口（session/list、chat/sessionId、session/delete/{id}、file/upload/batch）统一带 `X-Src-System`(=`VITE_APP_DIFY_SRC_SYSTEM`，默认 zutai01) 与 `token` 头（DifyRealDialog 内 `getAuthHeaders()`）
 - token 取值：发布页 `#/publish/:id?token=xxx` 用 URL 上的 token；其余用 `localStorage['DataS-Token']`
-- 浏览器原生 WebSocket 无法设请求头 → WS 走握手 URL query（`X-Src-System` / `token`），再拼 loginAccount
+- 浏览器原生 WebSocket 无法设请求头 → WS 走握手 URL query（`X-Src-System` / `token` / `loginAccount`），消息体也带 loginAccount
+- **Dify 请求必须用 `src/utils/dify-request.ts` 的纯净实例**，不能用全局 `@/utils/request`：后者的 needLogin 拦截器会用 localStorage token 覆盖显式传入的 token 头，且 401/403 会 removeToken + 跳 /login（匿名用户被误踢）
+
+## 发布页匿名访问（#/publish/:id?token=xxx）
+- 判定与取值统一在 `src/utils/dify-publish.ts`（`isPublishPage` / `getPublishToken` / `getAnonymousToken`）；token-util.ts 仅 re-export，勿再复制实现
+- 链路：VAiDifyReal / VAiDifyDemo wrapper 取 `getAnonymousToken()` → 以 `login-account` / `auth-token` / `anonymous` 三个 prop 下发给 DifyRealDialog；DifyRealDialog 自身不嗅探路由
+- `anonymous=true` 时 `getLoginAccount()` 只返回 URL token，**绝不回退 localStorage**（否则会话归属到编辑器登录账号）；authToken 仍允许回退 localStorage
+- 显示名：匿名时不用 token 当用户名，依次回退角色中文名 → 「匿名用户」
 
 ## 启动命令（本机）
 无 yarn 时：

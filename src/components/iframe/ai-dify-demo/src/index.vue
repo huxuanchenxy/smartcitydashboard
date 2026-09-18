@@ -7,6 +7,9 @@
     <DifyRealDialog
       v-model:visible="difyApiDialogVisible"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
+      :login-account="anonymousToken"
+      :auth-token="anonymousToken"
+      :anonymous="!!anonymousToken"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"
       @message-sent="handleDifyApiMessageSent"
@@ -21,6 +24,7 @@ import { AiDifyDemo } from './ai-dify-demo'
 import { useDataCenter } from '@/mixins/data-center'
 import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
 import { IconAi } from '@/icons'
+import { getAnonymousToken } from '@/utils/dify-publish'
 
 export default defineComponent({
   name: 'VAiDifyDemo',
@@ -40,6 +44,11 @@ export default defineComponent({
     const comid = toRef(props.com, 'id').value
     
     const difyApiDialogVisible = ref(false)
+
+    // 发布页匿名访问：用 URL 上的原始 token 作为 loginAccount / 鉴权 token，并标记为匿名（显示名回退角色名）；
+    // 非发布页返回空串，DifyRealDialog 内部会回退到 localStorage 登录态。
+    // 用 computed 而非一次性取值：hash 路由变化时 token 能随之更新。
+    const anonymousToken = computed(() => getAnonymousToken())
 
     const buttonImage = computed(() => {
       return config.value.buttonImage
@@ -108,6 +117,7 @@ export default defineComponent({
       handleClick,
       comid,
       difyApiDialogVisible,
+      anonymousToken,
       handleDifyApiDialogClose,
       handleDifyApiMessageReceived,
       handleDifyApiMessageSent,
