@@ -38,7 +38,6 @@ export type BackendTableKey =
   | 'sessionSkillConversation'
   | 'sessionFileRecord'
   | 'sessionExecutionInstance'
-  | 'sessionDialogueLog'
   | 'intentSkillConfig'
   | 'intentDefinition'
   | 'difySkillRegistry'
@@ -50,7 +49,6 @@ export const TABLE_ID_FIELD: Record<BackendTableKey, string> = {
   sessionSkillConversation: 'id',
   sessionFileRecord: 'fileId',
   sessionExecutionInstance: 'instanceId',
-  sessionDialogueLog: 'id',
   intentSkillConfig: 'configId',
   intentDefinition: 'intentId',
   difySkillRegistry: 'skillId',
@@ -140,7 +138,6 @@ export const backendConfigApi = {
   sessionSkillConversation: createTableApi('sessionSkillConversation'),
   sessionFileRecord: createTableApi('sessionFileRecord'),
   sessionExecutionInstance: createTableApi('sessionExecutionInstance'),
-  sessionDialogueLog: createTableApi('sessionDialogueLog'),
   intentSkillConfig: createTableApi('intentSkillConfig'),
   intentDefinition: createTableApi('intentDefinition'),
   difySkillRegistry: createTableApi('difySkillRegistry'),

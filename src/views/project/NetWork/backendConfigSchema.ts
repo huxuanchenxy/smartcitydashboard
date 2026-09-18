@@ -228,13 +228,7 @@ export const BACKEND_TABLES: TableDef[] = [
     jsonMode: true,
     fields: [],
   },
-  {
-    key: 'sessionDialogueLog',
-    title: '对话原文日志',
-    idField: 'id',
-    jsonMode: true,
-    fields: [],
-  },
+
 ]
 
 /** 按 key 快速取表定义 */
