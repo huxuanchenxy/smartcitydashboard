@@ -1181,6 +1181,13 @@ export default defineComponent({
       return { text: rest, code: JSON.stringify(json, null, 2), lang: 'json' }
     }
 
+    // 业务要求：SQL_QUERY_GENERAL 意图的回复不展示 SQL 语句。
+    // 从 answer 中剔除 ```sql ... ``` 围栏代码块（保留其余正文，如「响应ID」引用与结果表格），
+    // 并把因删除产生的多余空行折叠，交给后续 markdown 正常渲染
+    const SQL_FENCE_RE = /```[ \t]*sql\b[^\n]*\n[\s\S]*?\n[ \t]*```[ \t]*\n?/gi
+    const stripSqlCodeBlocks = (text: string): string =>
+      text.replace(SQL_FENCE_RE, '').replace(/\n{3,}/g, '\n\n').trim()
+
     // 代码卡片高亮：整段交给 highlight.js（按语言着色），输出 HTML 直接 v-html 注入。
     // 未注册的语言回退自动检测；异常时退化为 HTML 转义原文，保证不报错、无 XSS
     const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1262,17 +1269,19 @@ export default defineComponent({
         // 这样无论是 OTHER 闲聊还是 SQL_QUERY_GENERAL 等业务意图，用户都能看到完整的回答内容
         const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
         if (answerText) {
+          // SQL_QUERY_GENERAL：按业务要求剔除 SQL 语句，只保留其余正文（响应ID 引用 / 结果表格）
+          const effectiveAnswer = intentCode === 'SQL_QUERY_GENERAL' ? stripSqlCodeBlocks(answerText) : answerText
           // answer 以围栏代码块或序列化 JSON 开头时（如确认动作后回发的 CAD 识别结果、纯 JSON 无尾随文字），
           // 拆出交给代码卡片展示，仍按常规助手消息渲染（不弹结果面板）；
           // 拆分失败（闲聊等普通文本 answer）照旧原样展示
-          const split = splitAnswerStructured(answerText)
+          const split = splitAnswerStructured(effectiveAnswer)
           return {
-            content: split ? split.text : answerText,
+            content: split ? split.text : effectiveAnswer,
             codeBlock: split ? split.code : undefined,
             codeLang: split ? split.lang : undefined,
             codeCollapsed: split ? true : undefined,
-            // 拆分过的消息：复制时回到 answer 原文，不带卡片加工
-            copyContent: split ? answerText : undefined,
+            // 拆分过的消息：复制时回到（已剔除 SQL 的）answer 正文，不带卡片加工
+            copyContent: split ? effectiveAnswer : undefined,
             intentCode,
           }
         }
