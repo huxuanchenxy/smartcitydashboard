@@ -189,11 +189,18 @@
                         <div v-else-if="!message.isInterrupted && !message.isCompleted">
                           <!-- answer 开头的代码（JSON / Python / SQL 等）：仿编辑器代码卡片（折叠头 + 语言标签 + 复制 + 行号 + hljs 高亮）；
                                位置与 answer 原文一致——代码在前、尾部提示文字在后 -->
-                          <div v-if="message.codeBlock" class="code-card">
+                          <div v-if="message.codeBlock" class="code-card" :class="'code-card--' + codeTheme">
                             <div class="code-card-header" @click="toggleCodeCard(index)">
                               <span class="code-card-caret">{{ message.codeCollapsed ? '▸' : '▾' }}</span>
                               <span class="code-card-title">{{ message.codeLang === 'json' ? '查看完整 JSON' : '查看完整代码' }}</span>
                               <span class="code-card-lang">{{ (message.codeLang || 'text').toUpperCase() }}</span>
+                              <button
+                                class="code-card-theme"
+                                :title="codeTheme === 'light' ? '切换为深色主题' : '切换为浅色主题'"
+                                @click.stop="toggleCodeTheme"
+                              >
+                                {{ codeTheme === 'light' ? '深色' : '浅色' }}
+                              </button>
                               <button
                                 class="code-card-copy"
                                 title="复制代码"
@@ -313,11 +320,18 @@
                             <span class="interrupted-badge">待确认</span>
                           </div>
                           <!-- answer 开头的代码（JSON / Python / SQL 等）：与常规消息同款代码卡片；位置与原文一致——代码在前、尾部提示文字在后 -->
-                          <div v-if="message.codeBlock" class="code-card">
+                          <div v-if="message.codeBlock" class="code-card" :class="'code-card--' + codeTheme">
                             <div class="code-card-header" @click="toggleCodeCard(index)">
                               <span class="code-card-caret">{{ message.codeCollapsed ? '▸' : '▾' }}</span>
                               <span class="code-card-title">{{ message.codeLang === 'json' ? '查看完整 JSON' : '查看完整代码' }}</span>
                               <span class="code-card-lang">{{ (message.codeLang || 'text').toUpperCase() }}</span>
+                              <button
+                                class="code-card-theme"
+                                :title="codeTheme === 'light' ? '切换为深色主题' : '切换为浅色主题'"
+                                @click.stop="toggleCodeTheme"
+                              >
+                                {{ codeTheme === 'light' ? '深色' : '浅色' }}
+                              </button>
                               <button
                                 class="code-card-copy"
                                 title="复制代码"
@@ -593,8 +607,8 @@ import bashLang from 'highlight.js/lib/languages/bash'
 import sqlLang from 'highlight.js/lib/languages/sql'
 import javascriptLang from 'highlight.js/lib/languages/javascript'
 import typescriptLang from 'highlight.js/lib/languages/typescript'
-// 深色主题（.hljs token 着色）；卡片体背景与之对齐
-import 'highlight.js/styles/atom-one-dark.css'
+// 不引入 hljs 官方主题（全局 .hljs 规则会互相覆盖、无法按卡片切换）；
+// 改由组件自带 .code-card--light / --dark 两套 CSS 变量配色，默认浅色，可一键切换
 
 hljs.registerLanguage('json', jsonLang)
 hljs.registerLanguage('python', pythonLang)
@@ -1172,6 +1186,12 @@ export default defineComponent({
 
     // 行号列：与代码逻辑行数一致（配合 white-space: pre 不折行，逐行对齐）
     const codeLineCount = (code: string): number => (code ? code.split('\n').length : 0)
+
+    // 代码卡片主题：默认浅色，点卡片头主题按钮全局切换（所有代码卡片共用一套）
+    const codeTheme = ref<'light' | 'dark'>('light')
+    const toggleCodeTheme = (): void => {
+      codeTheme.value = codeTheme.value === 'light' ? 'dark' : 'light'
+    }
 
     // 展开 / 收起代码卡片
     const toggleCodeCard = (messageIndex: number): void => {
@@ -3332,6 +3352,8 @@ export default defineComponent({
       cancelInterrupted,
       highlightCode,
       codeLineCount,
+      codeTheme,
+      toggleCodeTheme,
       toggleCodeCard,
       copyCodeBlock,
       scrollToBottom,
@@ -4307,16 +4329,68 @@ export default defineComponent({
   white-space: pre;
 }
 
-/* answer 拆出的代码卡片（JSON / Python / SQL 等）：仿编辑器的折叠头 + 深色代码体（行号 + hljs 高亮）。
-   卡片结构写在模板里（非 v-html），scoped 生效；高亮 HTML 经 v-html 注入，token 着色由
-   highlight.js 的 atom-one-dark 主题（全局 .hljs 规则）负责，这里仅让容器背景与之对齐 */
+/* answer 拆出的代码卡片（JSON / Python / SQL 等）：仿编辑器的折叠头 + 代码体（行号 + hljs 高亮）。
+   主题：默认浅色，卡片头「深色/浅色」按钮切换。颜色全部走 CSS 变量——.code-card 上给浅色默认值，
+   .code-card--dark 覆盖为深色；高亮 token span 经 v-html 注入但仍是 .code-card 后代，变量可继承，
+   故 token 规则用 :deep + var() 即可随主题切换，无需引入 hljs 官方主题 */
 .code-card {
+  --cc-bg: #f6f8fa;
+  --cc-chrome-bg: #eaeef2;
+  --cc-border: #d0d7de;
+  --cc-text: #1f2328;
+  --cc-gutter: #8c959f;
+  --cc-caret: #59636e;
+  --cc-title: #1f2328;
+  --cc-lang: #0550ae;
+  --cc-lang-bg: rgba(9, 105, 218, 0.1);
+  --cc-btn: #59636e;
+  --cc-btn-border: #d0d7de;
+  --cc-btn-hover: #0969da;
+  --cc-shadow: rgba(31, 35, 40, 0.08);
+  --cc-tok-keyword: #cf222e;
+  --cc-tok-string: #0a3069;
+  --cc-tok-number: #0550ae;
+  --cc-tok-title: #8250df;
+  --cc-tok-attr: #0550ae;
+  --cc-tok-literal: #0550ae;
+  --cc-tok-built: #953800;
+  --cc-tok-comment: #6e7781;
+  --cc-tok-params: #1f2328;
+  --cc-tok-meta: #1b7c83;
+  --cc-tok-name: #116329;
   margin: calc(10px * var(--chat-font-scale, 1)) 0;
-  border: 1px solid #181a1f;
+  border: 1px solid var(--cc-border);
   border-radius: 10px;
   overflow: hidden;
-  background: #282c34;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.28);
+  background: var(--cc-bg);
+  box-shadow: 0 2px 10px var(--cc-shadow);
+}
+
+.code-card--dark {
+  --cc-bg: #282c34;
+  --cc-chrome-bg: #21252b;
+  --cc-border: #181a1f;
+  --cc-text: #abb2bf;
+  --cc-gutter: #5c6370;
+  --cc-caret: #9da5b4;
+  --cc-title: #e6e6e6;
+  --cc-lang: #61afef;
+  --cc-lang-bg: rgba(97, 175, 239, 0.14);
+  --cc-btn: #abb2bf;
+  --cc-btn-border: #3b4048;
+  --cc-btn-hover: #61afef;
+  --cc-shadow: rgba(15, 23, 42, 0.28);
+  --cc-tok-keyword: #c678dd;
+  --cc-tok-string: #98c379;
+  --cc-tok-number: #d19a66;
+  --cc-tok-title: #61afef;
+  --cc-tok-attr: #d19a66;
+  --cc-tok-literal: #56b6c2;
+  --cc-tok-built: #e5c07b;
+  --cc-tok-comment: #5c6370;
+  --cc-tok-params: #e06c75;
+  --cc-tok-meta: #56b6c2;
+  --cc-tok-name: #e06c75;
 }
 
 .code-card-header {
@@ -4324,38 +4398,39 @@ export default defineComponent({
   align-items: center;
   gap: calc(8px * var(--chat-font-scale, 1));
   padding: calc(8px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
-  background: #21252b;
+  background: var(--cc-chrome-bg);
   cursor: pointer;
   user-select: none;
 }
 
 .code-card-caret {
-  color: #9da5b4;
+  color: var(--cc-caret);
   font-size: calc(12px * var(--chat-font-scale, 1));
   width: 1em;
 }
 
 .code-card-title {
-  color: #e6e6e6;
+  color: var(--cc-title);
   font-size: calc(13px * var(--chat-font-scale, 1));
   font-weight: 600;
   flex: 1;
 }
 
 .code-card-lang {
-  color: #61afef;
+  color: var(--cc-lang);
   font-size: calc(11px * var(--chat-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.5px;
   padding: 1px 7px;
   border-radius: 5px;
-  background: rgba(97, 175, 239, 0.14);
+  background: var(--cc-lang-bg);
 }
 
+.code-card-theme,
 .code-card-copy {
-  border: 1px solid #3b4048;
+  border: 1px solid var(--cc-btn-border);
   background: transparent;
-  color: #abb2bf;
+  color: var(--cc-btn);
   font-size: calc(12px * var(--chat-font-scale, 1));
   line-height: 1;
   padding: 4px 10px;
@@ -4364,9 +4439,10 @@ export default defineComponent({
   transition: all 0.15s ease;
 }
 
+.code-card-theme:hover,
 .code-card-copy:hover {
-  border-color: #61afef;
-  color: #61afef;
+  border-color: var(--cc-btn-hover);
+  color: var(--cc-btn-hover);
 }
 
 .code-card-body {
@@ -4388,8 +4464,8 @@ export default defineComponent({
   flex: 0 0 auto;
   padding: 0 calc(10px * var(--chat-font-scale, 1));
   text-align: right;
-  color: #5c6370;
-  background: #282c34;
+  color: var(--cc-gutter);
+  background: var(--cc-bg);
   user-select: none;
   white-space: pre;
 }
@@ -4404,13 +4480,81 @@ export default defineComponent({
   min-width: 0;
 }
 
-/* 覆盖 hljs 主题默认的块级内边距/背景，交由卡片统一着色；:deep 因高亮 HTML 经 v-html 注入 */
+/* hljs 根元素：不依赖官方主题，背景透明、文字色随主题；:deep 因高亮 HTML 经 v-html 注入 */
 .code-card-body :deep(code.hljs) {
   display: block;
   padding: 0 calc(14px * var(--chat-font-scale, 1)) 0 0;
   background: transparent;
+  color: var(--cc-text);
   white-space: pre;
   word-break: normal;
+}
+
+/* token 着色：类名由 highlight.js 输出，颜色取主题变量，随 .code-card--light/dark 自动切换 */
+.code-card-body :deep(.hljs-keyword),
+.code-card-body :deep(.hljs-selector-tag),
+.code-card-body :deep(.hljs-type) {
+  color: var(--cc-tok-keyword);
+}
+
+.code-card-body :deep(.hljs-string),
+.code-card-body :deep(.hljs-regexp),
+.code-card-body :deep(.hljs-addition) {
+  color: var(--cc-tok-string);
+}
+
+.code-card-body :deep(.hljs-number) {
+  color: var(--cc-tok-number);
+}
+
+.code-card-body :deep(.hljs-title),
+.code-card-body :deep(.hljs-title.class_),
+.code-card-body :deep(.hljs-title.function_) {
+  color: var(--cc-tok-title);
+}
+
+.code-card-body :deep(.hljs-attr),
+.code-card-body :deep(.hljs-attribute),
+.code-card-body :deep(.hljs-property),
+.code-card-body :deep(.hljs-variable),
+.code-card-body :deep(.hljs-template-variable) {
+  color: var(--cc-tok-attr);
+}
+
+.code-card-body :deep(.hljs-literal),
+.code-card-body :deep(.hljs-symbol),
+.code-card-body :deep(.hljs-bullet) {
+  color: var(--cc-tok-literal);
+}
+
+.code-card-body :deep(.hljs-built_in),
+.code-card-body :deep(.hljs-class) {
+  color: var(--cc-tok-built);
+}
+
+.code-card-body :deep(.hljs-comment),
+.code-card-body :deep(.hljs-quote),
+.code-card-body :deep(.hljs-deletion) {
+  color: var(--cc-tok-comment);
+  font-style: italic;
+}
+
+.code-card-body :deep(.hljs-params) {
+  color: var(--cc-tok-params);
+}
+
+.code-card-body :deep(.hljs-meta),
+.code-card-body :deep(.hljs-doctag) {
+  color: var(--cc-tok-meta);
+}
+
+.code-card-body :deep(.hljs-name),
+.code-card-body :deep(.hljs-tag) {
+  color: var(--cc-tok-name);
+}
+
+.code-card-body :deep(.hljs-punctuation) {
+  color: var(--cc-text);
 }
 
 /* 引用块：左侧竖线 + 浅灰背景 */
