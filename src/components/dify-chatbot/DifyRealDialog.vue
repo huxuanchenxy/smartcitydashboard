@@ -432,13 +432,13 @@
                       :rows="3"
                       placeholder="输入你的问题，让我们一起解决..."
                       resize="none"
-                      :disabled="isLoading || pendingInterrupted"
+                      :disabled="isLoading"
                       @keydown.enter.prevent="handleEnter"
                     />
                     <div class="composer-footer">
                       <button
                         class="attach-btn"
-                        :disabled="isLoading || pendingInterrupted"
+                        :disabled="isLoading"
                         title="上传文件"
                         @click="openFileDialog"
                       >
@@ -447,7 +447,6 @@
                       </button>
                       <div class="composer-footer-right">
                         <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
-                        <span v-else-if="pendingInterrupted" class="hint">请先确认或取消上方待确认结果</span>
                         <button
                           v-if="isLoading"
                           class="round-btn stop-btn"
@@ -658,8 +657,8 @@ interface ChartMessage {
   // AI 主动挂起、等待用户确认（status=interrupted）相关字段
   // pending_question / pending_context 两个字段不一定每次都下发
   isInterrupted?: boolean
-  // interrupted 帧携带的候选动作（actions_hint，如 ["confirm"]）：非空时面板渲染确认/取消按钮，
-  // 用户未选择前（interruptResolved 为假）阻塞正常文本发送与附件上传
+  // interrupted 帧携带的候选动作（actions_hint，如 ["confirm"]）：非空时面板渲染确认/取消按钮
+  // （仅最后一条未应答的待确认帧可点）；不阻塞常规输入，用户也可直接发文字指出错误
   actionsHint?: string[]
   interruptResolved?: boolean
   intentCode?: string
@@ -850,27 +849,9 @@ export default defineComponent({
     const fileInputRef = ref<HTMLInputElement | null>(null)
     // 是否存在仍在"上传中"的附件（发送前需等待其完成）
     const isUploadingFiles = computed(() => uploadedFiles.value.some(file => !!file.uploading))
-    // 最后一条消息是否为待确认的 interrupted 帧（带 actions_hint 且用户未点确认/取消）：
-    // 此时后端会话挂起等待显式动作，前端禁止常规发送与上传，只能通过面板按钮应答；
-    // 仅限最后一条消息，避免加载历史会话时中途的旧待确认帧把输入区永久锁死
-    const pendingInterrupted = computed(() => {
-      const last = messages.value[messages.value.length - 1]
-      return (
-        !!last &&
-        last.role === 'assistant' &&
-        !!last.isInterrupted &&
-        !!last.actionsHint &&
-        last.actionsHint.length > 0 &&
-        !last.interruptResolved
-      )
-    })
     // 是否存在可发送内容（输入非空，或已选择附件），用于控制发送按钮可用态
     const canSend = computed(
-      () =>
-        !isLoading.value &&
-        !pendingInterrupted.value &&
-        !isUploadingFiles.value &&
-        (!!userQuery.value.trim() || uploadedFiles.value.length > 0),
+      () => !isLoading.value && !isUploadingFiles.value && (!!userQuery.value.trim() || uploadedFiles.value.length > 0),
     )
 
     const scriptEngine = new DemoScriptEngine()
@@ -1108,8 +1089,8 @@ export default defineComponent({
         // 以及末尾的提示文字（如「回复确认继续绑定点位」），用户能看到完整结果而非仅一句提示
         // 空白字符串同样视为空，避免渲染出空白区域
         const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
-        // actions_hint 非空（如 ["confirm"]）表示后端在等用户显式动作：面板渲染确认/取消按钮，
-        // 并在用户应答前阻塞常规输入（见 pendingInterrupted）
+        // actions_hint 非空（如 ["confirm"]）表示后端在等用户显式动作：面板渲染确认/取消按钮
+        // 供一键应答；同时不阻塞常规输入，用户也可直接发文字指出错误
         const actionsHint = Array.isArray(data.actions_hint)
           ? data.actions_hint.map((v: any) => String(v).trim()).filter((v: string) => !!v)
           : []
@@ -2093,10 +2074,6 @@ export default defineComponent({
 
     const sendMessage = async () => {
       if (!userQuery.value.trim() && uploadedFiles.value.length === 0) {
-        return
-      }
-      // 存在待确认的 interrupted 帧时禁止常规发送（按钮/输入框已置灰，此处兼顾 Enter 等旁路入口）
-      if (pendingInterrupted.value) {
         return
       }
 
@@ -3213,7 +3190,6 @@ export default defineComponent({
       showUserSub,
       queryInputRef,
       canSend,
-      pendingInterrupted,
       confirmInterrupted,
       cancelInterrupted,
       scrollToBottom,
