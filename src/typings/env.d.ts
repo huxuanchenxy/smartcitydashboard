@@ -19,6 +19,12 @@ interface ImportMetaEnv {
   VITE_APP_APIMANAGE_GETTOKEN: string;
   VITE_APP_API_Host: string;
   VITE_APP_API_Port: string;
+
+  // 文件类型 → 查看器 base（AI 结果表格文件路径链接化；未配置则为空字符串）
+  VITE_APP_MARKDOWN_LINK_BASE: string;
+  VITE_APP_PDF_LINK_BASE: string;
+  VITE_APP_IMAGE_LINK_BASE: string;
+  VITE_APP_VIDEO_LINK_BASE: string;
   
   // Dify AI 对话配置
   VITE_APP_DIFY_API_KEY: string;

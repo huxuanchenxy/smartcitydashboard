@@ -2883,9 +2883,14 @@ export default defineComponent({
     const MCP_IMAGE_BASE = `http://${MCP_IMAGE_HOST}:${MCP_IMAGE_PORT}`
     const MCP_PLACEHOLDER_RE = /http:\/\/YOUR_SERVER_IP:MCP_PORT/g
 
-    // Markdown 文件查看器地址（配置项 VITE_APP_MARKDOWN_LINK_BASE）：结果表格里「文件类型=1（md）」的行，
-    // 把「文件全路径」拼成 base + 路径 的可点击链接，新窗口打开
-    const MARKDOWN_LINK_BASE = import.meta.env.VITE_APP_MARKDOWN_LINK_BASE || 'http://10.89.33.97:3344/#/markdown/'
+    // 文件类型 → 查看器 base 映射（配置项，后续扩展只需加键 / 配 env）：1=Markdown、2=PDF、3=图片(PNG 等)、4=视频…
+    // 某类型 base 为空（未配置）时，其文件路径保持纯文本不链接；配好 base 后自动变可点击链接。改 .env 需重启 dev 生效
+    const FILE_LINK_BASE_MAP: Record<string, string> = {
+      1: import.meta.env.VITE_APP_MARKDOWN_LINK_BASE || 'http://10.89.33.97:3344/#/markdown/',
+      2: import.meta.env.VITE_APP_PDF_LINK_BASE || '',
+      3: import.meta.env.VITE_APP_IMAGE_LINK_BASE || '',
+      4: import.meta.env.VITE_APP_VIDEO_LINK_BASE || '',
+    }
 
     // 自定义 marked renderer：拦截 MCP 占位符图片转为「点击打开图片」超链接，
     // 其余 markdown 元素（表格、围栏代码块、引用、列表等）由 marked 默认渲染
@@ -2910,7 +2915,7 @@ export default defineComponent({
     })
 
     // 结果表格简化：当表格同时含「文件类型」「文件全路径」两列时，去掉表头与「文件类型」列，
-    // 只保留文件路径：文件类型清洗后为 1（Markdown 文件）时拼成可点击链接 [路径](base+路径)，否则纯文本路径。
+    // 只保留文件路径：按「文件类型」查 FILE_LINK_BASE_MAP 取对应查看器 base 拼成可点击链接 [路径](base+路径)（类型未配置 base 则保持纯文本）。
     // 整张表用 markdown 列表（- 路径）替换；数据中可能混有零宽空格（如 "​1"），先清洗再判断
     const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g
     const cleanTableCell = (s: string): string => s.replace(ZERO_WIDTH_RE, '').trim()
@@ -2940,8 +2945,9 @@ export default defineComponent({
               if (cells.length <= Math.max(typeIdx, locIdx)) continue
               const path = cleanTableCell(cells[locIdx])
               if (!path) continue
-              const isMd = cleanTableCell(cells[typeIdx]) === '1'
-              const linked = isMd && !path.startsWith('[') ? `[${path}](<${MARKDOWN_LINK_BASE}${path}>)` : path
+              const typeCode = cleanTableCell(cells[typeIdx])
+              const base = FILE_LINK_BASE_MAP[typeCode]
+              const linked = base && !path.startsWith('[') ? `[${path}](<${base}${path}>)` : path
               out.push(`- ${linked}`)
             }
             i = j
