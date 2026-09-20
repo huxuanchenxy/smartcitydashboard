@@ -587,7 +587,8 @@ import {
   onUnmounted,
   nextTick,
 } from 'vue'
-import { ElButton, ElInput, ElMessage } from 'element-plus'
+import { ElButton, ElInput } from 'element-plus'
+import { useMessage } from 'naive-ui'
 import { DemoScriptEngine } from './demo-script'
 import ChatCopy from '@/icons/chat-copy.vue'
 import ChatUpload from '@/icons/chat-upload.vue'
@@ -883,6 +884,8 @@ export default defineComponent({
   },
   emits: ['close', 'update:visible', 'message-received', 'message-sent', 'md-editor-visible-change'],
   setup(props, { emit }) {
+    // 消息提示统一用 naive-ui 的 message（App.vue 已用 n-message-provider 全局包裹，主/分享应用均适用）
+    const nMessage = useMessage()
     const dialogVisible = ref(false)
     // 切换历史会话时的「数据加载中」遮罩开关（与发送消息的 isLoading 解耦，避免互相影响）
     const historyLoading = ref(false)
@@ -1111,7 +1114,7 @@ export default defineComponent({
     // 新建时既不往历史列表插入 item，也不预先建立 WS：只有真正发出第一条消息后才由 session_ready 入列表
     const createNewConversation = async (): Promise<void> => {
       if (convSource.value !== 'history') {
-        ElMessage({ message: '已是最新对话', type: 'info', duration: 1500, customClass: 'dify-real-toast' })
+        nMessage.info('已是最新对话', { duration: 1500 })
         return
       }
       // 从历史会话切换到「新建」：断开旧连接、清空消息、取消历史项高亮
@@ -1212,7 +1215,7 @@ export default defineComponent({
     const copyCodeBlock = (message: ChartMessage): void => {
       if (!message.codeBlock) return
       const onCopied = () => {
-        ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
+        nMessage.success('已复制到剪贴板', { duration: 1500 })
       }
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(message.codeBlock).then(onCopied).catch(() => {
@@ -1409,10 +1412,10 @@ export default defineComponent({
           { headers: getAuthHeaders() },
         )
         removeConversationLocally(conv.id)
-        ElMessage({ message: '对话已删除', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
+        nMessage.success('对话已删除', { duration: 1500 })
       } catch (e) {
         console.error('[DifyRealDialog] 删除会话失败', e)
-        ElMessage({ message: '删除失败，请稍后重试', type: 'error', customClass: 'dify-real-toast' })
+        nMessage.error('删除失败，请稍后重试')
       }
     }
 
@@ -1524,15 +1527,9 @@ export default defineComponent({
         const duration = isLong
           ? Math.min(5000 + Math.ceil(toast.length / 40) * 1000, 15000)
           : 3000
-        ElMessage({
-          message: toast,
-          type: 'error',
-          duration,
-          showClose: isLong,
-          // 自绘对话框 z-index 高达 9999/10000，ElMessage 默认层级会被压在下面，
-          // 统一挂自定义 class 抬高 z-index 到对话框之上
-          customClass: 'dify-real-toast',
-        })
+        // 用 naive-ui message：provider 已设 closable，长错误可手动关闭；
+        // 全局把 .n-message-container 的 z-index 抬到自绘对话框（9999/10000）之上
+        nMessage.error(toast, { duration })
       }
       scrollToBottom()
     }
@@ -1798,7 +1795,7 @@ export default defineComponent({
           connectPromise = null
           // 连接错误的用户提示统一在这里弹出；sendMessage 的 catch 只记日志，避免双重报警
           console.error('[DifyRealDialog][WS] 连接出错:', url)
-          ElMessage({ message: '对话连接出错，请稍后重试', type: 'error', customClass: 'dify-real-toast' })
+          nMessage.error('对话连接出错，请稍后重试')
           reject(new Error('websocket error'))
         }
         socket.onclose = () => {
@@ -1851,7 +1848,7 @@ export default defineComponent({
     const attemptReconnect = () => {
       if (reconnectCount >= MAX_RECONNECT) {
         console.error(`[DifyRealDialog][WS] 重连次数已达上限（${MAX_RECONNECT}），放弃重连`)
-        ElMessage({ message: '连接已断开，重连失败', type: 'error', customClass: 'dify-real-toast' })
+        nMessage.error('连接已断开，重连失败')
         return
       }
       const sid = currentSessionId.value
@@ -2920,7 +2917,7 @@ export default defineComponent({
 
     const copyMessageContent = (message: ChartMessage) => {
       const onCopied = () => {
-        ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
+        nMessage.success('已复制到剪贴板', { duration: 1500 })
       }
       // 附件名一并复制；「已完成」面板正文通常为空，此时回退复制原始 result；
       // 经拆分美化过的消息（content 含折叠/围栏加工）优先复制 copyContent 原文
@@ -2962,10 +2959,10 @@ export default defineComponent({
         if (ok) {
           onCopied && onCopied()
         } else {
-          ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500, customClass: 'dify-real-toast' })
+          nMessage.error('复制失败，请手动复制', { duration: 1500 })
         }
       } catch (err) {
-        ElMessage({ message: '复制失败，请手动复制', type: 'error', duration: 1500 })
+        nMessage.error('复制失败，请手动复制', { duration: 1500 })
       }
       document.body.removeChild(textArea)
     }
@@ -3183,7 +3180,7 @@ export default defineComponent({
             entry.uploading = false
             entry.error = true
           }
-          ElMessage({ message: `附件「${file.name}」上传失败`, type: 'error', customClass: 'dify-real-toast' })
+          nMessage.error(`附件「${file.name}」上传失败`)
         }
       }
     }
@@ -5486,16 +5483,18 @@ export default defineComponent({
 </style>
 
 <style lang="scss">
-/* 本组件所有 ElMessage 的公共样式（ElMessage 挂载在 body 下，需非 scoped 全局样式）
-   与自定义二次确认弹窗（直接渲染在 custom-dialog 内，fixed 居中覆盖） */
+/* 消息提示已改用 naive-ui 的 message（App.vue 用 n-message-provider 全局包裹）。
+   消息容器挂在 body 下，需非 scoped 全局样式：
+   1. 把容器 z-index 抬到自绘对话框（9999/10000）之上，否则会被对话框遮住；
+   2. 长错误详情保留换行、限制宽度，完整展示后端透出的错误堆栈 */
+.n-message-container {
+  z-index: 10050 !important; /* 覆盖 naive-ui 内联的默认层级 */
 
-/* 1. toast 抬高 z-index 到自绘对话框（9999/10000）之上，否则会被对话框遮住；
-   2. 错误详情 toast 保留换行、限制宽度，完整展示后端透出的错误堆栈 */
-.dify-real-toast {
-  z-index: 10050 !important; /* 覆盖 ElMessage 内联的默认层级（约 2000+） */
-  max-width: 560px;
+  .n-message {
+    max-width: 560px;
+  }
 
-  .el-message__content {
+  .n-message__content {
     white-space: pre-line;
     word-break: break-all;
     max-height: 40vh;
