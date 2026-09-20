@@ -2883,6 +2883,10 @@ export default defineComponent({
     const MCP_IMAGE_BASE = `http://${MCP_IMAGE_HOST}:${MCP_IMAGE_PORT}`
     const MCP_PLACEHOLDER_RE = /http:\/\/YOUR_SERVER_IP:MCP_PORT/g
 
+    // Markdown 文件查看器地址（配置项 VITE_APP_MARKDOWN_LINK_BASE）：结果表格里「文件类型=1（md）」的行，
+    // 把「文件全路径」拼成 base + 路径 的可点击链接，新窗口打开
+    const MARKDOWN_LINK_BASE = import.meta.env.VITE_APP_MARKDOWN_LINK_BASE || 'http://10.89.33.97:3344/#/markdown/'
+
     // 自定义 marked renderer：拦截 MCP 占位符图片转为「点击打开图片」超链接，
     // 其余 markdown 元素（表格、围栏代码块、引用、列表等）由 marked 默认渲染
     const mcpRenderer = new marked.Renderer()
@@ -2905,6 +2909,53 @@ export default defineComponent({
       breaks: true, // 单个换行符转 <br>，匹配聊天场景的宽松排版习惯
     })
 
+    // 结果表格简化：当表格同时含「文件类型」「文件全路径」两列时，去掉表头与「文件类型」列，
+    // 只保留文件路径：文件类型清洗后为 1（Markdown 文件）时拼成可点击链接 [路径](base+路径)，否则纯文本路径。
+    // 整张表用 markdown 列表（- 路径）替换；数据中可能混有零宽空格（如 "​1"），先清洗再判断
+    const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g
+    const cleanTableCell = (s: string): string => s.replace(ZERO_WIDTH_RE, '').trim()
+    const splitTableRow = (row: string): string[] => {
+      let s = row.trim()
+      if (s.startsWith('|')) s = s.slice(1)
+      if (s.endsWith('|')) s = s.slice(0, -1)
+      return s.split('|')
+    }
+    const linkifyMarkdownFileTable = (text: string): string => {
+      if (!text || text.indexOf('|') === -1) return text
+      const lines = text.split('\n')
+      const out: string[] = []
+      let i = 0
+      while (i < lines.length) {
+        const isHeader = /^\s*\|/.test(lines[i]) && i + 1 < lines.length &&
+          /^[\s|:-]+$/.test(lines[i + 1]) && lines[i + 1].includes('-')
+        let handled = false
+        if (isHeader) {
+          const headers = splitTableRow(lines[i]).map(cleanTableCell)
+          const typeIdx = headers.findIndex(h => h.includes('文件类型'))
+          const locIdx = headers.findIndex(h => h.includes('文件全路径'))
+          if (typeIdx !== -1 && locIdx !== -1) {
+            let j = i + 2
+            for (; j < lines.length && /^\s*\|/.test(lines[j]); j++) {
+              const cells = splitTableRow(lines[j])
+              if (cells.length <= Math.max(typeIdx, locIdx)) continue
+              const path = cleanTableCell(cells[locIdx])
+              if (!path) continue
+              const isMd = cleanTableCell(cells[typeIdx]) === '1'
+              const linked = isMd && !path.startsWith('[') ? `[${path}](<${MARKDOWN_LINK_BASE}${path}>)` : path
+              out.push(`- ${linked}`)
+            }
+            i = j
+            handled = true
+          }
+        }
+        if (!handled) {
+          out.push(lines[i])
+          i++
+        }
+      }
+      return out.join('\n')
+    }
+
     // 格式化内容：清理 Flint/HTML 块后用 marked 解析 markdown
     // 表格、SQL 围栏代码块、引用、列表、加粗、行内代码等均由 marked 标准渲染，
     // MCP 占位符图片走自定义 renderer 转超链接，不再需要硬编码 regex 链
@@ -2912,7 +2963,7 @@ export default defineComponent({
       const cleaned = stripHtmlBlocks(stripFlintBlocks(content))
       // 兜底：纯文本中残留的 MCP 占位符 URL（不在 markdown 图片语法内）也替换为真实地址
       const withRealUrl = cleaned.replace(MCP_PLACEHOLDER_RE, MCP_IMAGE_BASE)
-      return marked.parse(withRealUrl) as string
+      return marked.parse(linkifyMarkdownFileTable(withRealUrl)) as string
     }
 
     const formatTime = (timestamp: number): string => {
