@@ -199,14 +199,15 @@
                                 :title="codeTheme === 'light' ? '切换为深色主题' : '切换为浅色主题'"
                                 @click.stop="toggleCodeTheme"
                               >
-                                {{ codeTheme === 'light' ? '深色' : '浅色' }}
+                                <ChatThemeDark v-if="codeTheme === 'light'" />
+                                <ChatThemeLight v-else />
                               </button>
                               <button
                                 class="code-card-copy"
                                 title="复制代码"
                                 @click.stop="copyCodeBlock(message)"
                               >
-                                复制
+                                <ChatCodeCopy />
                               </button>
                             </div>
                             <div v-show="!message.codeCollapsed" class="code-card-body">
@@ -330,14 +331,15 @@
                                 :title="codeTheme === 'light' ? '切换为深色主题' : '切换为浅色主题'"
                                 @click.stop="toggleCodeTheme"
                               >
-                                {{ codeTheme === 'light' ? '深色' : '浅色' }}
+                                <ChatThemeDark v-if="codeTheme === 'light'" />
+                                <ChatThemeLight v-else />
                               </button>
                               <button
                                 class="code-card-copy"
                                 title="复制代码"
                                 @click.stop="copyCodeBlock(message)"
                               >
-                                复制
+                                <ChatCodeCopy />
                               </button>
                             </div>
                             <div v-show="!message.codeCollapsed" class="code-card-body">
@@ -591,6 +593,9 @@ import ChatCopy from '@/icons/chat-copy.vue'
 import ChatUpload from '@/icons/chat-upload.vue'
 import ChatStop from '@/icons/chat-stop.vue'
 import ChatSend from '@/icons/chat-send.vue'
+import ChatThemeDark from '@/icons/chat-theme-dark.vue'
+import ChatThemeLight from '@/icons/chat-theme-light.vue'
+import ChatCodeCopy from '@/icons/chat-code-copy.vue'
 import MdEditorDialog from './MdEditorDialog.vue'
 import { getFontScale } from './font-scale'
 import { assembleECharts } from 'flint-chart'
@@ -768,6 +773,9 @@ export default defineComponent({
     ChatUpload,
     ChatStop,
     ChatSend,
+    ChatThemeDark,
+    ChatThemeLight,
+    ChatCodeCopy,
     MdEditorDialog,
   },
   props: {
@@ -4428,12 +4436,14 @@ export default defineComponent({
 
 .code-card-theme,
 .code-card-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--cc-btn-border);
   background: transparent;
   color: var(--cc-btn);
-  font-size: calc(12px * var(--chat-font-scale, 1));
   line-height: 1;
-  padding: 4px 10px;
+  padding: 4px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -4443,6 +4453,14 @@ export default defineComponent({
 .code-card-copy:hover {
   border-color: var(--cc-btn-hover);
   color: var(--cc-btn-hover);
+}
+
+/* 卡片头图标（子组件根 svg 会继承父 scoped 属性，无需 :deep）；尺寸随字体缩放 */
+.code-card-theme .icon,
+.code-card-copy .icon {
+  display: block;
+  width: calc(15px * var(--chat-font-scale, 1));
+  height: calc(15px * var(--chat-font-scale, 1));
 }
 
 .code-card-body {
