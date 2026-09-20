@@ -1177,6 +1177,12 @@ export default defineComponent({
         messages.value = raw
           .slice()
           .sort((a, b) => (a.sort ?? a.id ?? 0) - (b.sort ?? b.id ?? 0))
+          // 确认动作帧（content 为空、无附件）也会被后端落库为一次用户回合，
+          // 历史加载时过滤掉这类无任何可展示内容的消息，避免渲染出空气泡
+          .filter(item =>
+            (typeof item.content === 'string' && item.content.trim() !== '') ||
+            (Array.isArray(item.fileItemList) && item.fileItemList.length > 0),
+          )
           .map(item => {
             const base2: ChartMessage = {
               role: item.type === 0 ? 'user' : 'assistant',
@@ -1452,6 +1458,12 @@ export default defineComponent({
         if (msg.flintSpecs && msg.flintSpecs.length > 0) {
           renderFlintCharts(typingMessageIndex)
         }
+      }
+      // 确认动作已发出、等待回复期间被停止：占位移除后末条消息即待确认帧本身，
+      // 回退其「已应答」标记，允许重新点击确认/取消（已发出的动作若迟到回帧，仍被 isLoading 判断丢弃）
+      const lastMsg = messages.value[messages.value.length - 1]
+      if (lastMsg && lastMsg.isInterrupted && lastMsg.actionsHint && lastMsg.actionsHint.length > 0 && lastMsg.interruptResolved) {
+        lastMsg.interruptResolved = false
       }
       typingMessageIndex = -1
       isLoading.value = false
