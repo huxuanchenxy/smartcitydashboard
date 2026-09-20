@@ -661,6 +661,9 @@ interface ChartMessage {
   // （仅最后一条未应答的待确认帧可点）；不阻塞常规输入，用户也可直接发文字指出错误
   actionsHint?: string[]
   interruptResolved?: boolean
+  // 复制专用原文：answer 经拆分美化/折叠后 content 已含展示加工（<details>、``` 围栏），
+  // 存在时复制走此字段（后端原始 answer），避免把这些加工内容带进剪贴板
+  copyContent?: string
   intentCode?: string
   pendingQuestion?: string
   pendingContext?: Record<string, any> | null
@@ -1100,6 +1103,8 @@ export default defineComponent({
         const split = splitAnswerStructured(answerText)
         return {
           content: split ? split.content : answerText,
+          // 拆分过的消息：复制时回到 answer 原文，不带展示加工的折叠/围栏标记
+          copyContent: split ? answerText : undefined,
           isInterrupted: true,
           actionsHint: actionsHint.length > 0 ? actionsHint : undefined,
           intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
@@ -1118,6 +1123,8 @@ export default defineComponent({
           const split = splitAnswerStructured(answerText)
           return {
             content: split ? split.content : answerText,
+            // 拆分过的消息：复制时回到 answer 原文，不带展示加工的折叠/围栏标记
+            copyContent: split ? answerText : undefined,
             intentCode,
           }
         }
@@ -2758,10 +2765,12 @@ export default defineComponent({
       const onCopied = () => {
         ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
       }
-      // 附件名一并复制；「已完成」面板正文通常为空，此时回退复制原始 result
+      // 附件名一并复制；「已完成」面板正文通常为空，此时回退复制原始 result；
+      // 经拆分美化过的消息（content 含折叠/围栏加工）优先复制 copyContent 原文
       const parts: string[] = []
-      if (message.content) {
-        parts.push(message.content)
+      const bodyText = message.copyContent || message.content
+      if (bodyText) {
+        parts.push(bodyText)
       } else if (message.resultPayload) {
         try {
           parts.push(JSON.stringify(message.resultPayload, null, 2))
