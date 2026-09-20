@@ -290,10 +290,11 @@
                           <div class="interrupted-header">
                             <span class="interrupted-badge">待确认</span>
                           </div>
-                          <!-- 统一用 answer 作为展示内容，包含完整的结构化数据 + 末尾提示文字 -->
+                          <!-- 统一用 answer 作为展示内容：尾部提示文字 + 拆出的美化 JSON 围栏代码块
+                               （content-text 类使代码块获得现成的深色滚动样式） -->
                           <div
                             v-if="message.content"
-                            class="interrupted-question"
+                            class="interrupted-question content-text"
                             v-html="formatContent(message.content)"
                           ></div>
                           <!-- actions_hint 非空：后端在等显式动作，提供确认/取消按钮；
@@ -1046,6 +1047,56 @@ export default defineComponent({
       resetMessages() // 清空当前消息（不插入欢迎语）
     }
 
+    // 从文本开头剥离一层平衡的 JSON 对象（括号配对扫描，跳过字符串内的括号与转义符）
+    // 用于 interrupted 帧：后端有时把结构化结果（如识别出的设备列表）序列化后直接拼在
+    // answer 开头，尾部才是给人看的提示文字；一大段 JSON 原样铺开可读性极差，需拆分处理
+    // 不以 { 开头 / 括号不平衡 / 前缀非法 JSON 均返回 json=null，由调用方保持原样渲染
+    const extractLeadingJsonObject = (text: string): { json: Record<string, any> | null; rest: string; } => {
+      const trimmed = text.trimStart()
+      if (!trimmed.startsWith('{')) return { json: null, rest: '' }
+      let depth = 0
+      let inString = false
+      let escaped = false
+      for (let i = 0; i < trimmed.length; i++) {
+        const ch = trimmed[i]
+        if (inString) {
+          if (escaped) escaped = false
+          else if (ch === '\\') escaped = true
+          else if (ch === '"') inString = false
+          continue
+        }
+        if (ch === '"') inString = true
+        else if (ch === '{') depth++
+        else if (ch === '}') {
+          depth--
+          if (depth === 0) {
+            try {
+              const parsed = JSON.parse(trimmed.slice(0, i + 1))
+              if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return { json: parsed as Record<string, any>, rest: trimmed.slice(i + 1).trim() }
+              }
+            } catch (e) {
+              // 前缀不是合法 JSON，放弃拆分
+            }
+            return { json: null, rest: '' }
+          }
+        }
+      }
+      // JSON 未闭合（截断帧等异常）：不拆分，保持原有整段展示
+      return { json: null, rest: '' }
+    }
+
+    // 拆分美化 answer 开头的序列化 JSON：拆出后以格式化围栏代码块就地展示（不转表格），
+    // 尾部提示文字作为正文保留在前；非 JSON 开头 / 解析失败返回 null，由调用方维持常规展示
+    // interrupted / completed 两种帧共用：如 CAD 识别结果的 answer 整坨铺开可读性极差，至少美化缩进
+    const splitAnswerStructured = (answerText: string): { content: string; } | null => {
+      const { json, rest } = extractLeadingJsonObject(answerText)
+      if (!json) return null
+      const block = `\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``
+      // 尾部文字在前、JSON 代码块在后；纯 JSON（无尾随文字）时只渲染代码块
+      return { content: rest ? `${rest}\n\n${block}` : block }
+    }
+
     // 结构化帧（status=interrupted 待确认 / completed 已完成）→ 消息字段映射
     // 实时 WS 分支与历史会话解析共用同一套逻辑，保证两条链路渲染一致
     const buildAssistantFrameFields = (data: any): Partial<ChartMessage> | null => {
@@ -1059,8 +1110,12 @@ export default defineComponent({
         const actionsHint = Array.isArray(data.actions_hint)
           ? data.actions_hint.map((v: any) => String(v).trim()).filter((v: string) => !!v)
           : []
+        // answer 若以序列化 JSON 开头（如 CAD 识别结果），拆出后美化成围栏代码块展示，
+        // 尾部提示文字作为正文（pending_question / pending_context 已弃用，不再回退）；
+        // 拆分失败则维持整段 markdown 展示
+        const split = splitAnswerStructured(answerText)
         return {
-          content: answerText,
+          content: split ? split.content : answerText,
           isInterrupted: true,
           actionsHint: actionsHint.length > 0 ? actionsHint : undefined,
           intentCode: data.intent_code != null ? String(data.intent_code) : undefined,
@@ -1073,8 +1128,12 @@ export default defineComponent({
         // 这样无论是 OTHER 闲聊还是 SQL_QUERY_GENERAL 等业务意图，用户都能看到完整的回答内容
         const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
         if (answerText) {
+          // answer 以序列化 JSON 开头时（如确认动作后回发的 CAD 识别结果，纯 JSON 无尾随文字），
+          // 同样拆成美化代码块展示，仍按常规助手回复渲染（不弹结果面板）；
+          // 拆分失败（闲聊等普通文本 answer）照旧原样展示
+          const split = splitAnswerStructured(answerText)
           return {
-            content: answerText,
+            content: split ? split.content : answerText,
             intentCode,
           }
         }
