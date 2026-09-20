@@ -187,6 +187,28 @@
                           <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
                         </div>
                         <div v-else-if="!message.isInterrupted && !message.isCompleted">
+                          <!-- answer 开头的代码（JSON / Python / SQL 等）：仿编辑器代码卡片（折叠头 + 语言标签 + 复制 + 行号 + hljs 高亮）；
+                               位置与 answer 原文一致——代码在前、尾部提示文字在后 -->
+                          <div v-if="message.codeBlock" class="code-card">
+                            <div class="code-card-header" @click="toggleCodeCard(index)">
+                              <span class="code-card-caret">{{ message.codeCollapsed ? '▸' : '▾' }}</span>
+                              <span class="code-card-title">{{ message.codeLang === 'json' ? '查看完整 JSON' : '查看完整代码' }}</span>
+                              <span class="code-card-lang">{{ (message.codeLang || 'text').toUpperCase() }}</span>
+                              <button
+                                class="code-card-copy"
+                                title="复制代码"
+                                @click.stop="copyCodeBlock(message)"
+                              >
+                                复制
+                              </button>
+                            </div>
+                            <div v-show="!message.codeCollapsed" class="code-card-body">
+                              <div class="code-gutter" aria-hidden="true">
+                                <span v-for="n in codeLineCount(message.codeBlock)" :key="n">{{ n }}</span>
+                              </div>
+                              <pre class="code-pre"><code class="hljs" v-html="highlightCode(message.codeBlock, message.codeLang || 'text')"></code></pre>
+                            </div>
+                          </div>
                           <div
                             class="content-text"
                             :class="{ 'error-text': message.isError }"
@@ -290,8 +312,28 @@
                           <div class="interrupted-header">
                             <span class="interrupted-badge">待确认</span>
                           </div>
-                          <!-- 统一用 answer 作为展示内容：尾部提示文字 + 拆出的美化 JSON 围栏代码块
-                               （content-text 类使代码块获得现成的深色滚动样式） -->
+                          <!-- answer 开头的代码（JSON / Python / SQL 等）：与常规消息同款代码卡片；位置与原文一致——代码在前、尾部提示文字在后 -->
+                          <div v-if="message.codeBlock" class="code-card">
+                            <div class="code-card-header" @click="toggleCodeCard(index)">
+                              <span class="code-card-caret">{{ message.codeCollapsed ? '▸' : '▾' }}</span>
+                              <span class="code-card-title">{{ message.codeLang === 'json' ? '查看完整 JSON' : '查看完整代码' }}</span>
+                              <span class="code-card-lang">{{ (message.codeLang || 'text').toUpperCase() }}</span>
+                              <button
+                                class="code-card-copy"
+                                title="复制代码"
+                                @click.stop="copyCodeBlock(message)"
+                              >
+                                复制
+                              </button>
+                            </div>
+                            <div v-show="!message.codeCollapsed" class="code-card-body">
+                              <div class="code-gutter" aria-hidden="true">
+                                <span v-for="n in codeLineCount(message.codeBlock)" :key="n">{{ n }}</span>
+                              </div>
+                              <pre class="code-pre"><code class="hljs" v-html="highlightCode(message.codeBlock, message.codeLang || 'text')"></code></pre>
+                            </div>
+                          </div>
+                          <!-- 尾部提示文字（answer 去掉开头代码后的剩余），保持在代码卡片之后 -->
                           <div
                             v-if="message.content"
                             class="interrupted-question content-text"
@@ -543,6 +585,27 @@ import * as echarts from 'echarts'
 // Dify / 组态 AI 后端专用实例（无拦截器、不跳登录），见 @/utils/dify-request
 import difyRequest from '@/utils/dify-request'
 import { marked } from 'marked'
+// highlight.js：代码卡片语法高亮（按需注册语言，避免全量引入）；仅 core + 少量语言
+import hljs from 'highlight.js/lib/core'
+import jsonLang from 'highlight.js/lib/languages/json'
+import pythonLang from 'highlight.js/lib/languages/python'
+import bashLang from 'highlight.js/lib/languages/bash'
+import sqlLang from 'highlight.js/lib/languages/sql'
+import javascriptLang from 'highlight.js/lib/languages/javascript'
+import typescriptLang from 'highlight.js/lib/languages/typescript'
+// 深色主题（.hljs token 着色）；卡片体背景与之对齐
+import 'highlight.js/styles/atom-one-dark.css'
+
+hljs.registerLanguage('json', jsonLang)
+hljs.registerLanguage('python', pythonLang)
+hljs.registerLanguage('bash', bashLang)
+hljs.registerLanguage('shell', bashLang)
+hljs.registerLanguage('sh', bashLang)
+hljs.registerLanguage('sql', sqlLang)
+hljs.registerLanguage('javascript', javascriptLang)
+hljs.registerLanguage('js', javascriptLang)
+hljs.registerLanguage('typescript', typescriptLang)
+hljs.registerLanguage('ts', typescriptLang)
 
 // Flint 图表相关接口
 interface FlintSpec {
@@ -661,9 +724,15 @@ interface ChartMessage {
   // （仅最后一条未应答的待确认帧可点）；不阻塞常规输入，用户也可直接发文字指出错误
   actionsHint?: string[]
   interruptResolved?: boolean
-  // 复制专用原文：answer 经拆分美化/折叠后 content 已含展示加工（<details>、``` 围栏），
-  // 存在时复制走此字段（后端原始 answer），避免把这些加工内容带进剪贴板
+  // 复制专用原文：answer 经拆分后 content 只含尾部文字、JSON 改走卡片渲染，
+  // 存在时复制走此字段（后端原始 answer），保证复制结果与下发内容一致
   copyContent?: string
+  // answer 拆出的代码（JSON / Python / SQL 等）：由模板渲染为可折叠代码卡片（语言标签 / 复制 / 行号 / hljs 高亮）
+  codeBlock?: string
+  // 代码语言（json / python / bash / sql ...），决定高亮方式与卡片头标签
+  codeLang?: string
+  // 卡片折叠态（默认收起，避免长代码占满聊天区）
+  codeCollapsed?: boolean
   intentCode?: string
   pendingQuestion?: string
   pendingContext?: Record<string, any> | null
@@ -1070,18 +1139,60 @@ export default defineComponent({
       return { json: null, rest: '' }
     }
 
-    // 拆分美化 answer 开头的序列化 JSON：拆出后格式化缩进，并用 <details> 折叠起来（默认收起，
-    // 点击摘要展开），避免长 JSON 占满聊天区；展示顺序与 answer 原文一致：JSON 在前、
-    // 尾部提示文字在后，不对调位置；非 JSON 开头 / 解析失败返回 null，由调用方维持常规展示
-    // interrupted / completed 两种帧共用：如 CAD 识别结果的 answer 整坨铺开可读性极差
-    // 注：details/summary 与围栏代码块之间必须留空行——marked 按 CommonMark 规则遇空行结束
-    // HTML 块，后续 ``` 才能被解析成真正的代码块
-    const splitAnswerStructured = (answerText: string): { content: string; } | null => {
+    // 拆分 answer 开头的结构化内容 → 代码卡片：
+    // 1) 以 ```lang ... ``` 围栏代码块开头（如后端返回的 Python / SQL 代码）→ 取围栏内代码，语言取围栏声明（缺省自动检测）；
+    // 2) 否则以序列化 JSON 对象开头 → 剥离并格式化（缩进 2 格），语言固定 json；
+    // 命中则返回 { text: 尾部提示文字, code: 代码文本, lang: 语言 }，代码不再混进 markdown 正文，
+    // 交给模板渲染成仿编辑器代码卡片（hljs 高亮 / 行号 / 折叠）；两者都不命中返回 null，维持常规展示
+    const FENCED_CODE_RE = /^\s*```([a-zA-Z0-9_+-]*)\r?\n([\s\S]*?)\r?\n```\s*/
+    const splitAnswerStructured = (answerText: string): { text: string; code: string; lang: string; } | null => {
+      const fence = answerText.match(FENCED_CODE_RE)
+      if (fence) {
+        const lang = (fence[1] || '').trim().toLowerCase() || 'text'
+        return { text: answerText.slice(fence[0].length).trim(), code: fence[2], lang }
+      }
       const { json, rest } = extractLeadingJsonObject(answerText)
       if (!json) return null
-      const block = `<details class="json-collapse">\n<summary>查看完整 JSON</summary>\n\n\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\`\n\n</details>`
-      // 与 answer 原文顺序一致：折叠 JSON 在前、尾随文字在后（不做对调）
-      return { content: rest ? `${block}\n\n${rest}` : block }
+      return { text: rest, code: JSON.stringify(json, null, 2), lang: 'json' }
+    }
+
+    // 代码卡片高亮：整段交给 highlight.js（按语言着色），输出 HTML 直接 v-html 注入。
+    // 未注册的语言回退自动检测；异常时退化为 HTML 转义原文，保证不报错、无 XSS
+    const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const highlightCode = (code: string, lang: string): string => {
+      try {
+        if (lang && lang !== 'text' && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang, ignoreIllegals: true }).value
+        }
+        return hljs.highlightAuto(code).value
+      } catch (e) {
+        return escapeHtml(code)
+      }
+    }
+
+    // 行号列：与代码逻辑行数一致（配合 white-space: pre 不折行，逐行对齐）
+    const codeLineCount = (code: string): number => (code ? code.split('\n').length : 0)
+
+    // 展开 / 收起代码卡片
+    const toggleCodeCard = (messageIndex: number): void => {
+      const msg = messages.value[messageIndex]
+      if (!msg || !msg.codeBlock) return
+      msg.codeCollapsed = !msg.codeCollapsed
+    }
+
+    // 卡片头复制按钮：只复制卡片内代码文本（消息页脚的复制仍走 answer 原文）
+    const copyCodeBlock = (message: ChartMessage): void => {
+      if (!message.codeBlock) return
+      const onCopied = () => {
+        ElMessage({ message: '已复制到剪贴板', type: 'success', duration: 1500, customClass: 'dify-real-toast' })
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(message.codeBlock).then(onCopied).catch(() => {
+          fallbackCopy(message.codeBlock as string, onCopied)
+        })
+      } else {
+        fallbackCopy(message.codeBlock as string, onCopied)
+      }
     }
 
     // 结构化帧（status=interrupted 待确认 / completed 已完成）→ 消息字段映射
@@ -1097,13 +1208,16 @@ export default defineComponent({
         const actionsHint = Array.isArray(data.actions_hint)
           ? data.actions_hint.map((v: any) => String(v).trim()).filter((v: string) => !!v)
           : []
-        // answer 若以序列化 JSON 开头（如 CAD 识别结果），拆出后美化成围栏代码块展示，
-        // 尾部提示文字保持在 JSON 之后（顺序与原文一致；pending_question / pending_context 已弃用，不再回退）；
+        // answer 若以围栏代码块或序列化 JSON 开头（如 CAD 识别结果 / Python 代码），拆出交给代码卡片展示，
+        // 尾部提示文字作为正文（pending_question / pending_context 已弃用，不再回退）；
         // 拆分失败则维持整段 markdown 展示
         const split = splitAnswerStructured(answerText)
         return {
-          content: split ? split.content : answerText,
-          // 拆分过的消息：复制时回到 answer 原文，不带展示加工的折叠/围栏标记
+          content: split ? split.text : answerText,
+          codeBlock: split ? split.code : undefined,
+          codeLang: split ? split.lang : undefined,
+          codeCollapsed: split ? true : undefined,
+          // 拆分过的消息：复制时回到 answer 原文，不带卡片加工
           copyContent: split ? answerText : undefined,
           isInterrupted: true,
           actionsHint: actionsHint.length > 0 ? actionsHint : undefined,
@@ -1117,13 +1231,16 @@ export default defineComponent({
         // 这样无论是 OTHER 闲聊还是 SQL_QUERY_GENERAL 等业务意图，用户都能看到完整的回答内容
         const answerText = typeof data.answer === 'string' ? data.answer.trim() : ''
         if (answerText) {
-          // answer 以序列化 JSON 开头时（如确认动作后回发的 CAD 识别结果，纯 JSON 无尾随文字），
-          // 同样拆成美化代码块展示，仍按常规助手回复渲染（不弹结果面板）；
+          // answer 以围栏代码块或序列化 JSON 开头时（如确认动作后回发的 CAD 识别结果、纯 JSON 无尾随文字），
+          // 拆出交给代码卡片展示，仍按常规助手消息渲染（不弹结果面板）；
           // 拆分失败（闲聊等普通文本 answer）照旧原样展示
           const split = splitAnswerStructured(answerText)
           return {
-            content: split ? split.content : answerText,
-            // 拆分过的消息：复制时回到 answer 原文，不带展示加工的折叠/围栏标记
+            content: split ? split.text : answerText,
+            codeBlock: split ? split.code : undefined,
+            codeLang: split ? split.lang : undefined,
+            codeCollapsed: split ? true : undefined,
+            // 拆分过的消息：复制时回到 answer 原文，不带卡片加工
             copyContent: split ? answerText : undefined,
             intentCode,
           }
@@ -3213,6 +3330,10 @@ export default defineComponent({
       canSend,
       confirmInterrupted,
       cancelInterrupted,
+      highlightCode,
+      codeLineCount,
+      toggleCodeCard,
+      copyCodeBlock,
       scrollToBottom,
     }
   },
@@ -4186,26 +4307,110 @@ export default defineComponent({
   white-space: pre;
 }
 
-/* 折叠 JSON 块（splitAnswerStructured 生成的 <details>）：默认收起，点击摘要展开；
-   内容由 v-html 注入拿不到 scoped 属性，必须 :deep 穿透否则样式不生效 */
-.content-text :deep(.json-collapse) {
-  margin: calc(8px * var(--chat-font-scale, 1)) 0;
+/* answer 拆出的代码卡片（JSON / Python / SQL 等）：仿编辑器的折叠头 + 深色代码体（行号 + hljs 高亮）。
+   卡片结构写在模板里（非 v-html），scoped 生效；高亮 HTML 经 v-html 注入，token 着色由
+   highlight.js 的 atom-one-dark 主题（全局 .hljs 规则）负责，这里仅让容器背景与之对齐 */
+.code-card {
+  margin: calc(10px * var(--chat-font-scale, 1)) 0;
+  border: 1px solid #181a1f;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #282c34;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.28);
 }
 
-.content-text :deep(.json-collapse summary) {
+.code-card-header {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--chat-font-scale, 1));
+  padding: calc(8px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
+  background: #21252b;
   cursor: pointer;
   user-select: none;
+}
+
+.code-card-caret {
+  color: #9da5b4;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  width: 1em;
+}
+
+.code-card-title {
+  color: #e6e6e6;
   font-size: calc(13px * var(--chat-font-scale, 1));
-  color: #475569;
-  padding: 4px 0;
+  font-weight: 600;
+  flex: 1;
 }
 
-.content-text :deep(.json-collapse summary:hover) {
-  color: #2564e0;
+.code-card-lang {
+  color: #61afef;
+  font-size: calc(11px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: rgba(97, 175, 239, 0.14);
 }
 
-.content-text :deep(.json-collapse[open] summary) {
-  color: #2564e0;
+.code-card-copy {
+  border: 1px solid #3b4048;
+  background: transparent;
+  color: #abb2bf;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  line-height: 1;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.code-card-copy:hover {
+  border-color: #61afef;
+  color: #61afef;
+}
+
+.code-card-body {
+  display: flex;
+  align-items: stretch;
+  max-height: 360px;
+  overflow: auto;
+  padding: calc(10px * var(--chat-font-scale, 1)) 0;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  line-height: 1.6;
+}
+
+/* 行号栏：sticky 左侧，长代码横向滚动时仍固定可见；每号一块与代码行等高对齐 */
+.code-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: 0 0 auto;
+  padding: 0 calc(10px * var(--chat-font-scale, 1));
+  text-align: right;
+  color: #5c6370;
+  background: #282c34;
+  user-select: none;
+  white-space: pre;
+}
+
+.code-gutter span {
+  display: block;
+}
+
+.code-pre {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+}
+
+/* 覆盖 hljs 主题默认的块级内边距/背景，交由卡片统一着色；:deep 因高亮 HTML 经 v-html 注入 */
+.code-card-body :deep(code.hljs) {
+  display: block;
+  padding: 0 calc(14px * var(--chat-font-scale, 1)) 0 0;
+  background: transparent;
+  white-space: pre;
+  word-break: normal;
 }
 
 /* 引用块：左侧竖线 + 浅灰背景 */
