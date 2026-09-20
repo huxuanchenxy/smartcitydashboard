@@ -1086,15 +1086,18 @@ export default defineComponent({
       return { json: null, rest: '' }
     }
 
-    // 拆分美化 answer 开头的序列化 JSON：拆出后以格式化围栏代码块就地展示（不转表格），
-    // 尾部提示文字作为正文保留在前；非 JSON 开头 / 解析失败返回 null，由调用方维持常规展示
-    // interrupted / completed 两种帧共用：如 CAD 识别结果的 answer 整坨铺开可读性极差，至少美化缩进
+    // 拆分美化 answer 开头的序列化 JSON：拆出后格式化缩进，并用 <details> 折叠起来（默认收起，
+    // 点击摘要展开），避免长 JSON 占满聊天区；展示顺序与 answer 原文一致：JSON 在前、
+    // 尾部提示文字在后，不对调位置；非 JSON 开头 / 解析失败返回 null，由调用方维持常规展示
+    // interrupted / completed 两种帧共用：如 CAD 识别结果的 answer 整坨铺开可读性极差
+    // 注：details/summary 与围栏代码块之间必须留空行——marked 按 CommonMark 规则遇空行结束
+    // HTML 块，后续 ``` 才能被解析成真正的代码块
     const splitAnswerStructured = (answerText: string): { content: string; } | null => {
       const { json, rest } = extractLeadingJsonObject(answerText)
       if (!json) return null
-      const block = `\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``
-      // 尾部文字在前、JSON 代码块在后；纯 JSON（无尾随文字）时只渲染代码块
-      return { content: rest ? `${rest}\n\n${block}` : block }
+      const block = `<details class="json-collapse">\n<summary>查看完整 JSON</summary>\n\n\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\`\n\n</details>`
+      // 与 answer 原文顺序一致：折叠 JSON 在前、尾随文字在后（不做对调）
+      return { content: rest ? `${block}\n\n${rest}` : block }
     }
 
     // 结构化帧（status=interrupted 待确认 / completed 已完成）→ 消息字段映射
@@ -1111,7 +1114,7 @@ export default defineComponent({
           ? data.actions_hint.map((v: any) => String(v).trim()).filter((v: string) => !!v)
           : []
         // answer 若以序列化 JSON 开头（如 CAD 识别结果），拆出后美化成围栏代码块展示，
-        // 尾部提示文字作为正文（pending_question / pending_context 已弃用，不再回退）；
+        // 尾部提示文字保持在 JSON 之后（顺序与原文一致；pending_question / pending_context 已弃用，不再回退）；
         // 拆分失败则维持整段 markdown 展示
         const split = splitAnswerStructured(answerText)
         return {
@@ -4184,6 +4187,28 @@ export default defineComponent({
   color: inherit;
   font-size: inherit;
   white-space: pre;
+}
+
+/* 折叠 JSON 块（splitAnswerStructured 生成的 <details>）：默认收起，点击摘要展开；
+   内容由 v-html 注入拿不到 scoped 属性，必须 :deep 穿透否则样式不生效 */
+.content-text :deep(.json-collapse) {
+  margin: calc(8px * var(--chat-font-scale, 1)) 0;
+}
+
+.content-text :deep(.json-collapse summary) {
+  cursor: pointer;
+  user-select: none;
+  font-size: calc(13px * var(--chat-font-scale, 1));
+  color: #475569;
+  padding: 4px 0;
+}
+
+.content-text :deep(.json-collapse summary:hover) {
+  color: #2564e0;
+}
+
+.content-text :deep(.json-collapse[open] summary) {
+  color: #2564e0;
 }
 
 /* 引用块：左侧竖线 + 浅灰背景 */
