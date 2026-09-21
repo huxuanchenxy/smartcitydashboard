@@ -774,6 +774,21 @@ export default defineComponent({
   margin-bottom: 0;
 }
 
+/* 表格横向滚动条加粗：
+   该版本 el-table 的 body-wrapper 用原生滚动条（overflow-x:auto），而全局
+   styles/themes/index.scss 把 ::-webkit-scrollbar 统一设为了 4px，导致横向条极细、很难拖到。
+   这里仅针对本弹窗表格的 body-wrapper 把横向滚动条加高，不影响其它区域。 */
+.backend-config-dialog .el-table__body-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+.backend-config-dialog .el-table__body-wrapper::-webkit-scrollbar-thumb {
+  background: rgb(100, 116, 139, 0.6);
+  border-radius: 7px;
+}
+.backend-config-dialog .el-table__body-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgb(71, 85, 105, 0.9);
+}
+
 /* 删除确认框（ElMessageBox）层级修复：
    本弹层为盖过左侧自绘对话窗把 dialog 手工抬到了 10200/10300，而 MessageBox 的层级由
    PopupManager 递增计数器分配（约 2000 出头），会被压在 dialog 后面看不到。
