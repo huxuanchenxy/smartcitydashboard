@@ -192,7 +192,6 @@
                           <div v-if="message.codeBlock" class="code-card" :class="'code-card--' + codeTheme">
                             <div class="code-card-header" @click="toggleCodeCard(index)">
                               <span class="code-card-caret">{{ message.codeCollapsed ? '▸' : '▾' }}</span>
-                              <span class="code-card-title">{{ message.codeLang === 'json' ? '查看完整 JSON' : '查看完整代码' }}</span>
                               <span class="code-card-lang">{{ (message.codeLang || 'text').toUpperCase() }}</span>
                               <button
                                 class="code-card-theme"
@@ -324,7 +323,6 @@
                           <div v-if="message.codeBlock" class="code-card" :class="'code-card--' + codeTheme">
                             <div class="code-card-header" @click="toggleCodeCard(index)">
                               <span class="code-card-caret">{{ message.codeCollapsed ? '▸' : '▾' }}</span>
-                              <span class="code-card-title">{{ message.codeLang === 'json' ? '查看完整 JSON' : '查看完整代码' }}</span>
                               <span class="code-card-lang">{{ (message.codeLang || 'text').toUpperCase() }}</span>
                               <button
                                 class="code-card-theme"
@@ -4485,13 +4483,6 @@ export default defineComponent({
   width: 1em;
 }
 
-.code-card-title {
-  color: var(--cc-title);
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  font-weight: 600;
-  flex: 1;
-}
-
 .code-card-lang {
   color: var(--cc-lang);
   font-size: calc(11px * var(--chat-font-scale, 1));
@@ -4500,6 +4491,7 @@ export default defineComponent({
   padding: 1px 7px;
   border-radius: 5px;
   background: var(--cc-lang-bg);
+  margin-right: auto;
 }
 
 .code-card-theme,
