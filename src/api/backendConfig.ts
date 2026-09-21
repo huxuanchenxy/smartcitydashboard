@@ -118,9 +118,9 @@ export function createTableApi<T = any>(table: BackendTableKey, idField: string 
     update: (payload: Partial<T>) =>
       instance.put<BackendResult<void>>(`/api/${table}`, payload).then(r => r.data),
 
-    /** 删除 */
+    /** 删除：后端为 /api/{table}/{id}（路径不带主键字段名） */
     remove: (id: number | string) =>
-      instance.delete<BackendResult<void>>(`/api/${table}/${idField}/${id}`).then(r => r.data),
+      instance.delete<BackendResult<void>>(`/api/${table}/${id}`).then(r => r.data),
 
     /** 查询启用列表（仅部分表提供） */
     listEnabled: () => {

@@ -37,12 +37,12 @@
             <span class="bc-toolbar-sub">共 {{ total }} 条</span>
           </div>
           <div class="bc-toolbar-right">
-            <el-button
+            <!-- <el-button
               v-if="activeDef?.hasEnabledList"
               size="small"
               @click="loadEnabledList"
               :loading="loading"
-            >仅启用</el-button>
+            >仅启用</el-button> -->
             <el-button size="small" @click="loadPage(1)" :loading="loading">刷新</el-button>
             <el-button type="primary" size="small" @click="openForm()">新增</el-button>
           </div>
@@ -771,5 +771,14 @@ export default defineComponent({
 /* 内嵌表单弹窗保持默认高度，避免继承 90vh */
 .backend-config-form-dialog {
   margin-bottom: 0;
+}
+
+/* 删除确认框（ElMessageBox）层级修复：
+   本弹层为盖过左侧自绘对话窗把 dialog 手工抬到了 10200/10300，而 MessageBox 的层级由
+   PopupManager 递增计数器分配（约 2000 出头），会被压在 dialog 后面看不到。
+   MessageBox 的遮罩与箱体在同一个 .el-overlay.is-message-box 上（内联 z-index），
+   这里用 !important 覆盖内联值，确保确认框始终在最上层可见可点。 */
+.el-overlay.is-message-box {
+  z-index: 10400 !important;
 }
 </style>

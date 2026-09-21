@@ -29,7 +29,7 @@
       <div class="panel-header">
         <h3>技能库</h3>
         <!-- <span class="panel-subtitle">选择技能添加到 Agent</span> -->
-        <!-- <el-button type="primary" size="small" @click="openBackendConfig">后台配置</el-button> -->
+        <el-button type="primary" size="small" @click="openBackendConfig">后台配置</el-button>
       </div>
       <div class="skills-grid">
         <div
