@@ -845,9 +845,20 @@ export default defineComponent({
   padding-bottom: 10px;
 }
 
-/* 内嵌表单弹窗保持默认高度，避免继承 90vh */
+/* 内嵌表单弹窗：限高 + 三段式 flex 布局（与外层弹窗同构）。
+   字段多时弹窗不再撑破视口：抬头（标题+×）与底栏（保存）固定，
+   只.el-dialog__body 内部滚动，min-height:0 保证 flex 子项可收缩出滚动条。 */
 .backend-config-form-dialog {
   margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 84vh;
+}
+
+.backend-config-form-dialog .el-dialog__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* 表格横向滚动条加粗：
