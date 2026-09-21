@@ -152,13 +152,27 @@
     <!-- 新增 / 编辑 / 详情 弹窗 -->
     <el-dialog
       v-model="formVisible"
-      :title="formTitle"
       width="720px"
       append-to-body
       destroy-on-close
+      :show-close="false"
       :z-index="10300"
       custom-class="backend-config-form-dialog"
     >
+      <!-- 自绘标题行：与外层一致，用 IconClose 作为右上角关闭 -->
+      <template #title>
+        <div class="bc-dialog-header">
+          <span class="bc-dialog-title">{{ formTitle }}</span>
+          <button
+            type="button"
+            class="bc-dialog-close"
+            aria-label="关闭"
+            @click="formVisible = false"
+          >
+            <IconClose />
+          </button>
+        </div>
+      </template>
       <!-- 结构化表单 -->
       <el-form
         v-if="activeDef && !activeDef.jsonMode"
@@ -245,10 +259,8 @@
         />
       </div>
 
-      <template #footer>
-        <el-button size="small" @click="formVisible = false">{{ formMode === 'view' ? '关闭' : '取消' }}</el-button>
+      <template v-if="formMode !== 'view'" #footer>
         <el-button
-          v-if="formMode !== 'view'"
           size="small"
           type="primary"
           :loading="submitting"
