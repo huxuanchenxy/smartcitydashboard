@@ -177,7 +177,9 @@
       <!-- 结构化表单 -->
       <el-form
         v-if="activeDef && !activeDef.jsonMode"
+        ref="formRef"
         :model="form"
+        :rules="rules"
         label-width="130px"
         size="small"
         class="bc-form"
@@ -185,6 +187,7 @@
         <el-form-item
           v-for="f in formFields"
           :key="f.prop"
+          :prop="f.prop"
           :label="f.label"
           :required="!!f.required && !isReadonlyField(f)"
         >
@@ -340,6 +343,8 @@ export default defineComponent({
 
     // 弹窗表单状态
     const formVisible = ref(false)
+    // element-plus 1.0.2-beta 未导出 FormInstance 类型，此处仅用到 validate()，用宽松类型接引
+    const formRef = ref<{ validate: () => Promise<boolean> } | null>(null)
     const formMode = ref<FormMode>('create')
     const submitting = ref(false)
     const form = reactive<Record<string, any>>({})
@@ -378,6 +383,48 @@ export default defineComponent({
     const formFields = computed<FieldDef[]>(() =>
       (activeDef.value?.fields || []).filter(f => f.inForm !== false),
     )
+
+    /**
+     * 由表元数据驱动 el-form 校验规则（readonly 字段不参与）：
+     *   - required：普通字段直接用 required 规则（读 form[prop]）；
+     *     json/stringArray 输入绑定的是草稿，改用自定义校验器读 jsonDraft/arrayDraft。
+     *   - json 字段额外校验 JSON 合法性。
+     */
+    const rules = computed<Record<string, any[]>>(() => {
+      const def = activeDef.value
+      const result: Record<string, any[]> = {}
+      if (!def || def.jsonMode) return result
+      const trigger = ['blur', 'change']
+      def.fields.forEach(f => {
+        if (f.readonly) return
+        const list: any[] = []
+        if (f.required) {
+          if (f.kind === 'json' || f.kind === 'stringArray') {
+            list.push({
+              validator: (_r: any, _v: any, cb: (e?: Error) => void) => {
+                const src = f.kind === 'json' ? jsonDraft[f.prop] : arrayDraft[f.prop]
+                cb(src && src.trim() ? undefined : new Error(`请填写「${f.label}」`))
+              },
+              trigger,
+            })
+          } else {
+            list.push({ required: true, message: `请填写「${f.label}」`, trigger })
+          }
+        }
+        if (f.kind === 'json') {
+          list.push({
+            validator: (_r: any, _v: any, cb: (e?: Error) => void) => {
+              const text = (jsonDraft[f.prop] || '').trim()
+              if (!text) return cb()
+              try { JSON.parse(text); cb() } catch { cb(new Error(`「${f.label}」不是合法 JSON`)) }
+            },
+            trigger,
+          })
+        }
+        if (list.length) result[f.prop] = list
+      })
+      return result
+    })
     const formTitle = computed(() => {
       const t = activeDef.value?.title || ''
       if (formMode.value === 'create') return `新增 - ${t}`
@@ -584,14 +631,20 @@ export default defineComponent({
           return
         }
       } else {
-        // 提交前把 jsonDraft / arrayDraft 落到 form
-        def.fields.forEach(f => {
-          if (f.kind === 'json') commitJsonField(f.prop)
-          if (f.kind === 'stringArray') commitArrayField(f.prop)
-        })
-        // JSON 字段合法性校验
+        // 结构化表单：走 el-form 规则校验（必填 / JSON 合法性，字段下方内联红字提示）
+        if (formRef.value) {
+          try {
+            await formRef.value.validate()
+          } catch {
+            ElMessage.warning('请检查表单填写')
+            return
+          }
+        }
+        // 硬兜底：逐个校验 json 字段草稿合法性。旧版 el-form + async-validator 对
+        // “无 required/type 的自定义 validator + 值为空”存在不拦截的可能，这里同步再校一道，
+        // 确保填了非法 JSON 时一定无法提交。
         for (const f of def.fields) {
-          if (f.kind !== 'json') continue
+          if (f.readonly || f.kind !== 'json') continue
           const text = (jsonDraft[f.prop] || '').trim()
           if (!text) continue
           try { JSON.parse(text) } catch {
@@ -599,16 +652,11 @@ export default defineComponent({
             return
           }
         }
-        // 必填校验
-        for (const f of def.fields) {
-          if (!f.required || f.readonly) continue
-          if (f.isId && formMode.value === 'create') continue
-          const v = form[f.prop]
-          if (v === null || v === undefined || v === '') {
-            ElMessage.warning(`请填写「${f.label}」`)
-            return
-          }
-        }
+        // 校验通过后把 jsonDraft / arrayDraft 落到 form
+        def.fields.forEach(f => {
+          if (f.kind === 'json') commitJsonField(f.prop)
+          if (f.kind === 'stringArray') commitArrayField(f.prop)
+        })
         // 剔除只读的时间戳字段，避免覆盖后端值
         payload = {}
         def.fields.forEach(f => {
@@ -695,6 +743,8 @@ export default defineComponent({
       tableColumns,
       formFields,
       formVisible,
+      formRef,
+      rules,
       formMode,
       formTitle,
       form,
