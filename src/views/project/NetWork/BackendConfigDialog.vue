@@ -2,16 +2,31 @@
   <!-- z-index 需高于左侧自绘对话窗（DifyRealDialog 为 9999/10000），否则弹层会被遮挡 -->
   <el-dialog
     :model-value="visible"
-    title="后台配置"
     width="90%"
     top="5vh"
     append-to-body
     destroy-on-close
+    :show-close="false"
     :z-index="10200"
     custom-class="backend-config-dialog"
     @update:model-value="handleVisibleChange"
     @open="handleOpen"
   >
+    <!-- 自绘标题行：内置 × 依赖 el-icon-close 字体（本项目未引入 icon.scss，会是空白），
+         改用项目现成的 IconClose SVG 作为右上角关闭按钮 -->
+    <template #title>
+      <div class="bc-dialog-header">
+        <span class="bc-dialog-title">后台配置</span>
+        <button
+          type="button"
+          class="bc-dialog-close"
+          aria-label="关闭"
+          @click="handleClose"
+        >
+          <IconClose />
+        </button>
+      </div>
+    </template>
     <div class="bc-layout">
       <!-- 左侧表选择 -->
       <div class="bc-side">
@@ -134,10 +149,6 @@
       </div>
     </div>
 
-    <template #footer>
-      <el-button @click="handleClose">关闭</el-button>
-    </template>
-
     <!-- 新增 / 编辑 / 详情 弹窗 -->
     <el-dialog
       v-model="formVisible"
@@ -251,6 +262,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { IconClose } from '@/icons'
 import { backendConfigApi, BackendTableKey, BackendPage } from '@/api/backendConfig'
 import {
   BACKEND_TABLES,
@@ -263,6 +275,7 @@ type FormMode = 'create' | 'edit' | 'view'
 
 export default defineComponent({
   name: 'BackendConfigDialog',
+  components: { IconClose },
   props: {
     // 通过 v-model:visible 控制弹层显隐
     visible: {
@@ -642,6 +655,36 @@ export default defineComponent({
 </script>
 
 <style scoped>
+/* 自绘标题行与右上角关闭按钮（内置 × 已禁用） */
+.bc-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bc-dialog-title {
+  font-size: 16px;
+  color: #303133;
+  font-weight: 600;
+}
+.bc-dialog-close {
+  border: none;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
+  line-height: 1;
+  color: #909399;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.bc-dialog-close:hover {
+  color: #409eff;
+}
+.bc-dialog-close :deep(svg) {
+  width: 16px;
+  height: 16px;
+}
+
 .bc-layout {
   display: flex;
   height: 100%;
