@@ -58,7 +58,7 @@
               @click="loadEnabledList"
               :loading="loading"
             >仅启用</el-button> -->
-            <el-button size="small" @click="loadPage(1)" :loading="loading">刷新</el-button>
+            <el-button size="small" @click="loadPage(1, true)" :loading="loading">刷新</el-button>
             <el-button type="primary" size="small" @click="openForm()">新增</el-button>
           </div>
         </div>
@@ -410,8 +410,9 @@ export default defineComponent({
       }
     }
 
-    /** 拉取分页数据 */
-    const loadPage = async (num?: number) => {
+    /** 拉取分页数据；notify=true 时展示查询成功提示（仅用于用户主动刷新/切表，
+        提交后的静默重加载与分页翻页不提示，避免刷屏） */
+    const loadPage = async (num?: number, notify = false) => {
       if (!activeDef.value) return
       if (num) pageNum.value = num
       loading.value = true
@@ -421,6 +422,7 @@ export default defineComponent({
         const page = (resp?.data || {}) as BackendPage
         rows.value = Array.isArray(page.records) ? page.records : []
         total.value = Number(page.total || 0)
+        if (notify) ElMessage.success(`查询成功，共 ${total.value} 条`)
       } catch (e: any) {
         rows.value = []
         total.value = 0
@@ -458,7 +460,7 @@ export default defineComponent({
       rows.value = []
       total.value = 0
       pageNum.value = 1
-      loadPage(1)
+      loadPage(1, true)
     }
 
     /** 用记录回填表单：record 为 null 表示新增（给空值）。会先清空草稿/form */
@@ -475,6 +477,12 @@ export default defineComponent({
 
       const base = buildEmptyForm(def)
       Object.assign(form, base)
+      // 先给 json/stringArray 草稿一个字符串初值，避免新增态或记录缺字段时
+      // el-input 绑定 undefined 触发 ElementPlus「binding value must be a string or number」。
+      def.fields.forEach(f => {
+        if (f.kind === 'json') jsonDraft[f.prop] = ''
+        else if (f.kind === 'stringArray') arrayDraft[f.prop] = ''
+      })
       if (record) {
         def.fields.forEach(f => {
           if (!(f.prop in record)) return
@@ -946,6 +954,14 @@ export default defineComponent({
    这里用 !important 覆盖内联值，确保确认框始终在最上层可见可点。 */
 .el-overlay.is-message-box {
   z-index: 10400 !important;
+}
+
+/* ElMessage 轻提示（新增/更新/删除/查询 的成功与失败 toast）：
+   .el-message 箱体直挂 body、z-index 由 PopupManager 分配（约 2000 出头），
+   会被本弹层（dialog 10200/10300、message box 10400）盖住，导致“弹了但看不见”。
+   这里抬到 message box 之上，保证 toast 始终可见。 */
+.el-message {
+  z-index: 10500 !important;
 }
 
 /* 分页“条/页”下拉层级修复：

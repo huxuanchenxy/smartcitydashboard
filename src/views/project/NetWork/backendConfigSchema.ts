@@ -299,7 +299,9 @@ export function buildEmptyForm(def: TableDef): Record<string, any> {
   if (def.jsonMode) return {}
   const form: Record<string, any> = {}
   def.fields.forEach(f => {
-    if (f.readonly) return
+    // 注意：不能跳过 readonly 字段——它们的 el-input(v-model) 仍需一个字符串初值，
+    // 否则绑定 undefined 会触发 ElementPlus「binding value must be a string or number」。
+    // 提交时 handleSubmit 已按 readonly 剔除，不会把默认值发给后端。
     switch (f.kind) {
       case 'number':
         form[f.prop] = null
