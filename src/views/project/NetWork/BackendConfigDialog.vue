@@ -153,6 +153,7 @@
     <el-dialog
       v-model="formVisible"
       width="720px"
+      top="5vh"
       append-to-body
       destroy-on-close
       :show-close="false"
@@ -852,7 +853,7 @@ export default defineComponent({
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  max-height: 84vh;
+  max-height: 90vh;
 }
 
 .backend-config-form-dialog .el-dialog__body {
