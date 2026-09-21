@@ -6,7 +6,7 @@
  *   1. 驱动表格列渲染（label + prop + 格式化）
  *   2. 驱动新增/编辑弹窗的动态表单
  *
- * 对于 Swagger 中 schema 为空的表（SessionSkillConversation、SessionDialogueLog），
+ * 对于 Swagger 中 schema 为空的表（如 SessionDialogueLog），
  * 后端未暴露字段结构，此处采用「JSON 原文编辑」模式，避免臆造字段。
  */
 import type { BackendTableKey } from '@/api/backendConfig'
@@ -220,13 +220,18 @@ export const BACKEND_TABLES: TableDef[] = [
       { prop: 'uploadedAt', label: '上传时间', kind: 'datetime', width: 165, readonly: true },
     ],
   },
-  // 以下两张表 Swagger schema 为空，使用 JSON 原文编辑
   {
     key: 'sessionSkillConversation',
     title: '业务会话-Dify会话映射',
     idField: 'id',
-    jsonMode: true,
-    fields: [],
+    fields: [
+      { prop: 'id', label: 'ID', kind: 'number', isId: true, numberType: 'int', width: 90 },
+      { prop: 'bizKey', label: '业务会话ID', kind: 'text', required: true, width: 220, placeholder: '网关 conversation_id' },
+      { prop: 'skillCode', label: '技能编码', kind: 'text', required: true, width: 140 },
+      { prop: 'difyConversationId', label: 'Dify会话ID', kind: 'text', required: true, width: 220 },
+      createdAtField,
+      updatedAtField,
+    ],
   },
 
 ]
