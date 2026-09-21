@@ -237,6 +237,23 @@
             :disabled="isReadonlyField(f)"
             :placeholder="f.placeholder || ''"
           />
+          <!-- Markdown 长文本：可直接编辑，也可点「Markdown 编辑」弹出左右双栏编辑器，编辑完回填当前字段 -->
+          <div v-else-if="f.kind === 'md'" class="bc-md-field">
+            <el-input
+              v-model="form[f.prop]"
+              type="textarea"
+              :rows="3"
+              :disabled="isReadonlyField(f)"
+              :placeholder="f.placeholder || '可直接输入，或点下方「Markdown 编辑」使用双栏编辑器'"
+            />
+            <!-- <el-button
+              size="small"
+              type="primary"
+              plain
+              :disabled="isReadonlyField(f)"
+              @click="openMdEditor(f)"
+            >Markdown 编辑</el-button> -->
+          </div>
           <el-input
             v-else
             v-model="form[f.prop]"
@@ -268,6 +285,15 @@
           @click="handleSubmit"
         >保存</el-button>
       </template>
+
+      <!-- Markdown 双栏编辑器（左原文/右预览），编辑完保存回填到当前 md 字段 -->
+      <MdEditorDialog
+        v-model:visible="mdEditor.visible"
+        :model-value="mdEditor.value"
+        :title="mdEditor.title"
+        :z-index="10450"
+        @save="handleMdSave"
+      />
     </el-dialog>
   </el-dialog>
 </template>
@@ -276,6 +302,7 @@
 import { defineComponent, ref, computed, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { IconClose } from '@/icons'
+import MdEditorDialog from '@/components/dify-chatbot/MdEditorDialog.vue'
 import { backendConfigApi, BackendTableKey, BackendPage } from '@/api/backendConfig'
 import {
   BACKEND_TABLES,
@@ -288,7 +315,7 @@ type FormMode = 'create' | 'edit' | 'view'
 
 export default defineComponent({
   name: 'BackendConfigDialog',
-  components: { IconClose },
+  components: { IconClose, MdEditorDialog },
   props: {
     // 通过 v-model:visible 控制弹层显隐
     visible: {
@@ -323,6 +350,27 @@ export default defineComponent({
     const rawJsonText = ref('')
     // 编辑时保留主键原值，PUT/DELETE 需要
     const editingId = ref<number | string | null>(null)
+
+    // Markdown 弹层编辑器状态（仅对 kind==='md' 字段生效）
+    const mdEditor = reactive<{ visible: boolean; value: string; title: string; prop: string }>({
+      visible: false,
+      value: '',
+      title: 'Markdown 编辑',
+      prop: '',
+    })
+
+    /** 打开 Markdown 编辑器：带入当前字段值（详情态不允许打开） */
+    const openMdEditor = (f: FieldDef) => {
+      mdEditor.prop = f.prop
+      mdEditor.value = form[f.prop] ?? ''
+      mdEditor.title = `${f.label}（Markdown）`
+      mdEditor.visible = true
+    }
+
+    /** 编辑器保存：回填到当前 md 字段 */
+    const handleMdSave = (val: string) => {
+      if (mdEditor.prop) form[mdEditor.prop] = val
+    }
 
     const tableColumns = computed<FieldDef[]>(() =>
       (activeDef.value?.fields || []).filter(f => f.inTable !== false),
@@ -646,6 +694,9 @@ export default defineComponent({
       arrayDraft,
       rawJsonText,
       submitting,
+      mdEditor,
+      openMdEditor,
+      handleMdSave,
       formatCell,
       shortJson,
       isReadonlyField,
@@ -812,6 +863,17 @@ export default defineComponent({
 /* 表单弹窗 */
 .bc-form :deep(.el-form-item) {
   margin-bottom: 14px;
+}
+/* Markdown 字段：只读预览 + 编辑按钮上下排列，按钮靠右 */
+.bc-md-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  width: 100%;
+}
+.bc-md-field :deep(.el-textarea) {
+  width: 100%;
 }
 .bc-json-editor {
   display: flex;

@@ -5,6 +5,7 @@
         v-if="visible"
         class="md-editor-dialog-mask"
         :class="{ 'md-mask-docked': isDocked }"
+        :style="maskStyle"
         @mousedown.self="handleClose"
       >
         <div class="md-editor-dialog" :class="{ 'md-editor-dialog-docked': isDocked }" :style="dialogStyle">
@@ -99,9 +100,19 @@ export default defineComponent({
       type: String,
       default: '',
     },
+    // 遮罩层级：默认 10001（高于普通弹层）。当宿主本身是高层级 dialog（如后台配置 10300）时，
+    // 需传入更大的值，否则编辑器会被宿主弹窗遮挡。
+    zIndex: {
+      type: Number,
+      default: null,
+    },
   },
   emits: ['update:visible', 'update:modelValue', 'save'],
   setup(props, { emit }) {
+    const maskStyle = computed(() =>
+      props.zIndex !== null ? { zIndex: props.zIndex } : {},
+    )
+
     const isDocked = computed(
       () => props.dockLeft !== null && props.dockTop !== null && props.dockHeight !== null,
     )
@@ -236,6 +247,7 @@ export default defineComponent({
       draft,
       dirty,
       isDocked,
+      maskStyle,
       dialogStyle,
       fileInputRef,
       // 工具栏白名单：只保留常用核心功能，去掉下划线/删除线/上下标/图片/mermaid/公式/目录等低频按钮

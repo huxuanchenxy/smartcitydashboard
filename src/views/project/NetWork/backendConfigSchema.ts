@@ -15,6 +15,7 @@ import type { BackendTableKey } from '@/api/backendConfig'
 export type FieldKind =
   | 'text'        // 单行字符串
   | 'textarea'    // 多行字符串（长文本）
+  | 'md'          // Markdown 长文本（值仍是字符串，接口按普通文本处理；表单弹出左右双栏编辑器编辑）
   | 'number'      // 数字（int32/int64/float）
   | 'boolean'     // 布尔
   | 'datetime'    // 时间字符串
@@ -117,7 +118,7 @@ export const BACKEND_TABLES: TableDef[] = [
       { prop: 'difyApiEndpoint', label: 'Dify Endpoint', kind: 'text', width: 220 },
       { prop: 'apiPath', label: 'API 路径', kind: 'text', width: 180 },
       { prop: 'skillDesc', label: '技能描述', kind: 'textarea', inTable: false },
-      { prop: 'generationPrompt', label: '生成提示词', kind: 'textarea', inTable: false },
+      { prop: 'generationPrompt', label: '生成提示词', kind: 'md', inTable: false },
       { prop: 'timeoutSeconds', label: '超时秒', kind: 'number', numberType: 'int', width: 90 },
       { prop: 'maxRetryTimes', label: '最大重试', kind: 'number', numberType: 'int', width: 100 },
       { prop: 'defaultOutputConfidence', label: '默认置信度', kind: 'number', numberType: 'float', width: 120 },
