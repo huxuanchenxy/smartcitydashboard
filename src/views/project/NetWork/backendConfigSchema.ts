@@ -1,6 +1,6 @@
 /**
- * 后台配置 9 张表的字段元数据
- * 来源：Swagger http://10.89.33.97:8082/v3/api-docs components.schemas
+ * 后台配置各表的字段元数据
+ * 来源：Swagger http://10.89.33.97:8082/v3/api-docs components.schemas（部分表由建表 DDL 补充）
  *
  * 用途：
  *   1. 驱动表格列渲染（label + prop + 格式化）
@@ -229,6 +229,57 @@ export const BACKEND_TABLES: TableDef[] = [
       { prop: 'bizKey', label: '业务会话ID', kind: 'text', required: true, width: 220, placeholder: '网关 conversation_id' },
       { prop: 'skillCode', label: '技能编码', kind: 'text', required: true, width: 140 },
       { prop: 'difyConversationId', label: 'Dify会话ID', kind: 'text', required: true, width: 220 },
+      createdAtField,
+      updatedAtField,
+    ],
+  },
+  {
+    key: 'skillPermission',
+    title: '角色技能权限',
+    idField: 'id',
+    fields: [
+      { prop: 'id', label: 'ID', kind: 'number', isId: true, numberType: 'int', width: 90 },
+      { prop: 'srcSysId', label: '来源系统', kind: 'number', numberType: 'int', required: true, width: 110, placeholder: 'src_system.id' },
+      { prop: 'role', label: '角色', kind: 'text', required: true, width: 140, placeholder: '单个角色一行，如 管理员' },
+      { prop: 'skillCode', label: '技能编码', kind: 'text', required: true, width: 160, placeholder: 'dify_skill_registry.skill_code' },
+      { prop: 'allowed', label: '是否可用', kind: 'boolean', required: true, width: 100 },
+      createdAtField,
+      updatedAtField,
+    ],
+  },
+  {
+    key: 'srcSystem',
+    title: '外部来源系统',
+    idField: 'id',
+    fields: [
+      { prop: 'id', label: 'ID', kind: 'number', isId: true, numberType: 'int', width: 90 },
+      { prop: 'sysCode', label: '系统标识', kind: 'text', required: true, width: 140, placeholder: '调用方经 X-Src-System 传入' },
+      { prop: 'sysName', label: '系统名称', kind: 'text', width: 140 },
+      { prop: 'authVerifyUrl', label: '验权端点', kind: 'text', width: 240, placeholder: 'token 换用户信息端点（网关代验）' },
+      { prop: 'verifyConfig', label: '验权约定', kind: 'json', inTable: false, placeholder: '{"method","token_header","token_prefix","body"}；NULL=GET+Authorization+Bearer' },
+      { prop: 'permMode', label: '兜底策略', kind: 'text', required: true, width: 120, placeholder: 'BLACKLIST=默认允许 / WHITELIST=默认拒绝' },
+      { prop: 'defaultRole', label: '默认角色', kind: 'text', required: true, width: 130, placeholder: '新用户默认角色（保留名）' },
+      { prop: 'apiKeyHash', label: 'API Key 哈希', kind: 'text', inTable: false, placeholder: 'sha256(X-Api-Key)' },
+      { prop: 'machineTokenHash', label: '机器Token哈希', kind: 'text', inTable: false, placeholder: 'sha256 机器账号 token' },
+      { prop: 'isEnabled', label: '是否启用', kind: 'boolean', width: 100 },
+      createdAtField,
+      updatedAtField,
+    ],
+  },
+  {
+    key: 'sysUser',
+    title: '外部用户映射',
+    idField: 'id',
+    fields: [
+      { prop: 'id', label: 'ID', kind: 'number', isId: true, numberType: 'int', width: 90 },
+      { prop: 'srcSysId', label: '来源系统', kind: 'number', numberType: 'int', required: true, width: 110, placeholder: 'src_system.id' },
+      { prop: 'externalUserId', label: '外部用户ID', kind: 'text', required: true, width: 160, placeholder: 'zutai01=data.userId' },
+      { prop: 'username', label: '用户名', kind: 'text', width: 140 },
+      { prop: 'displayName', label: '显示名', kind: 'text', width: 140 },
+      { prop: 'email', label: '邮箱', kind: 'text', width: 180 },
+      { prop: 'sourceRole', label: '角色', kind: 'stringArray', inTable: false, placeholder: '一行一个角色' },
+      { prop: 'extra', label: '其余字段', kind: 'json', inTable: false, placeholder: '验权响应剩余字段（已脱敏）' },
+      { prop: 'lastSeenAt', label: '最近活跃', kind: 'datetime', readonly: true, width: 165 },
       createdAtField,
       updatedAtField,
     ],

@@ -42,6 +42,9 @@ export type BackendTableKey =
   | 'intentDefinition'
   | 'difySkillRegistry'
   | 'difyFileUpload'
+  | 'skillPermission'
+  | 'srcSystem'
+  | 'sysUser'
 
 /** 各表主键字段（URL 中的 path 参数名） */
 export const TABLE_ID_FIELD: Record<BackendTableKey, string> = {
@@ -53,6 +56,9 @@ export const TABLE_ID_FIELD: Record<BackendTableKey, string> = {
   intentDefinition: 'intentId',
   difySkillRegistry: 'skillId',
   difyFileUpload: 'id',
+  skillPermission: 'id',
+  srcSystem: 'id',
+  sysUser: 'id',
 }
 
 /** 提供 /list/enabled 接口的表 */
@@ -142,4 +148,7 @@ export const backendConfigApi = {
   intentDefinition: createTableApi('intentDefinition'),
   difySkillRegistry: createTableApi('difySkillRegistry'),
   difyFileUpload: createTableApi('difyFileUpload'),
+  skillPermission: createTableApi('skillPermission'),
+  srcSystem: createTableApi('srcSystem'),
+  sysUser: createTableApi('sysUser'),
 } as const
