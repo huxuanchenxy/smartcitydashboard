@@ -126,6 +126,7 @@
             :current-page="pageNum"
             :page-size="pageSize"
             :page-sizes="[10, 20, 50, 100]"
+            popper-class="backend-config-popper"
             @current-change="loadPage"
             @size-change="handleSizeChange"
           />
@@ -780,5 +781,14 @@ export default defineComponent({
    这里用 !important 覆盖内联值，确保确认框始终在最上层可见可点。 */
 .el-overlay.is-message-box {
   z-index: 10400 !important;
+}
+
+/* 分页“条/页”下拉层级修复：
+   el-pagination 的 sizes 下拉本质是 el-select，其弹层被 teleport 到 body，
+   z-index 由 PopupManager 分配（约 2000 出头），同样会被抬到 10200 的 dialog 遮罩盖住，
+   导致点开只看到当前“10条/页”、其余选项被遮挡不可选。
+   通过 popper-class 精确命中本弹层的下拉，用 !important 覆盖内联值抬到 dialog 之上。 */
+.backend-config-popper.el-popper {
+  z-index: 10350 !important;
 }
 </style>
