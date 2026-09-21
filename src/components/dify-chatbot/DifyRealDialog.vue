@@ -29,7 +29,7 @@
             <!-- 左侧：品牌 / 新建对话 / 会话列表 / 当前用户 -->
             <aside class="conversation-sidebar" :style="sidebarStyle">
               <div class="sidebar-brand">
-                <span class="brand-logo" v-html="sparkleSvg"></span>
+                <span class="brand-logo"><ChatSparkle /></span>
                 <span class="brand-text">
                   <span class="brand-title" :title="title">{{ title }}</span>
                   <span class="brand-subtitle">{{ subtitle }}</span>
@@ -38,13 +38,9 @@
 
               <div class="sidebar-actions">
                 <button class="new-conversation-btn" @click="createNewConversation">
-                  <svg class="new-conversation-plus" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 5.6v12.8M5.6 12h12.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
-                  </svg>
+                  <ChatPlus class="new-conversation-plus" />
                   <span class="new-conversation-text">新建对话</span>
-                  <svg class="new-conversation-arrow" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7.6 16.4 16.4 7.6M9 7.6h7.4V15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
+                  <ChatArrowUpRight class="new-conversation-arrow" />
                 </button>
               </div>
 
@@ -57,26 +53,14 @@
                     :class="{ active: conv.id === currentConversationId }"
                     @click="selectConversation(conv)"
                   >
-                    <svg class="conversation-item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M20.2 12.3c0 3.9-3.7 7-8.2 7-1.1 0-2.2-.2-3.2-.6l-4.9 1.6 1.5-3.7c-1.1-1.2-1.8-2.7-1.8-4.3 0-3.9 3.7-7 8.4-7s8.2 3.1 8.2 7Z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.7"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+                    <ChatBubble class="conversation-item-icon" />
                     <span class="conversation-item-title" :title="conv.title">{{ conv.title }}</span>
                     <button
                       class="conversation-delete-btn"
                       title="删除该对话"
                       @click.stop="confirmDeleteConversation(conv)"
                     >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 7.2h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-                        <path d="M9.4 7.2V5.9c0-.8.6-1.4 1.4-1.4h2.4c.8 0 1.4.6 1.4 1.4v1.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-                        <path d="M7.2 7.2l.7 11c.05.9.8 1.6 1.7 1.6h4.8c.9 0 1.65-.7 1.7-1.6l.7-11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
+                      <ChatBottle />
                     </button>
                   </div>
                 </template>
@@ -103,10 +87,7 @@
                     :title="sidebarCollapsed ? '展开会话列表' : '收起会话列表'"
                     @click="toggleSidebar"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3" fill="none" stroke="currentColor" stroke-width="1.7" />
-                      <path d="M9.6 4.6v14.8" fill="none" stroke="currentColor" stroke-width="1.7" />
-                    </svg>
+                    <ChatSidebar />
                   </button>
                   <span class="chat-main-title">{{ headerTitle }}</span>
                 </div>
@@ -137,7 +118,7 @@
                   <div v-if="messages.length === 0" class="welcome-screen">
                     <div class="welcome-inner">
                       <div class="welcome-logo">
-                        <span class="welcome-logo-inner" v-html="sparkleSvg"></span>
+                        <span class="welcome-logo-inner"><ChatSparkle /></span>
                       </div>
                       <div class="welcome-slogan">让想法，更进一步</div>
                       <div class="welcome-title">今天，有什么可以帮你？</div>
@@ -173,7 +154,7 @@
                       <div class="message-header">
                         <span class="avatar" :class="message.role">
                           <span v-if="message.role === 'user'" class="avatar-text">{{ userInitial }}</span>
-                          <span v-else class="avatar-brand" v-html="sparkleSvg"></span>
+                          <span v-else class="avatar-brand"><ChatSparkle /></span>
                         </span>
                         <span class="message-role">{{ message.role === "user" ? userDisplayName : "AI 助手" }}</span>
                       </div>
@@ -525,9 +506,7 @@
                   </div>
                   <div class="composer-hint">
                     <button class="scroll-bottom-btn" title="回到最新消息" @click="scrollToBottom">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 5.4v12.6M6.8 12.9 12 18.1l5.2-5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
+                      <ChatArrowDown />
                     </button>
                     <span class="composer-hint-text">生成内容仅供参考，请核实重要信息</span>
                   </div>
@@ -595,6 +574,13 @@ import ChatSend from '@/icons/chat-send.vue'
 import ChatThemeDark from '@/icons/chat-theme-dark.vue'
 import ChatThemeLight from '@/icons/chat-theme-light.vue'
 import ChatCodeCopy from '@/icons/chat-code-copy.vue'
+import ChatSparkle from '@/icons/chat-sparkle.vue'
+import ChatPlus from '@/icons/chat-plus.vue'
+import ChatArrowUpRight from '@/icons/chat-arrow-up-right.vue'
+import ChatBubble from '@/icons/chat-bubble.vue'
+import ChatBottle from '@/icons/chat-bottle.vue'
+import ChatSidebar from '@/icons/chat-sidebar.vue'
+import ChatArrowDown from '@/icons/chat-arrow-down.vue'
 import MdEditorDialog from './MdEditorDialog.vue'
 import { getFontScale } from './font-scale'
 import { assembleECharts } from 'flint-chart'
@@ -675,16 +661,6 @@ interface SuggestionCard {
   desc: string
   prompt: string
 }
-
-// 空态引导卡片图标（放大镜 / 文档 / 灯泡），按卡片序号取用
-const SUGGESTION_ICONS = [
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.7 15.7 20.5 20.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 3.2H7.4A2.2 2.2 0 0 0 5.2 5.4v13.2a2.2 2.2 0 0 0 2.2 2.2h9.2a2.2 2.2 0 0 0 2.2-2.2V8.4l-5.2-5.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13.4 3.4v5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.8 13.2h6.4M8.8 16.4h4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a6 6 0 0 0-3.7 10.7c.5.37.8.94.8 1.55v1.05h5.8v-1.05c0-.61.3-1.18.8-1.55A6 6 0 0 0 12 3.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.8 18.9h4.4M10.6 21.2h2.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
-]
-
-// 品牌标识（四角星）：填色由 CSS currentColor 控制，深浅场景共用
-const SPARKLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c.62 4.3 2.9 6.58 7.2 7.2-4.3.62-6.58 2.9-7.2 7.2-.62-4.3-2.9-6.58-7.2-7.2 4.3-.62 6.58-2.9 7.2-7.2Z" fill="currentColor"/><path d="M18.9 14.5c.29 2 1.35 3.06 3.35 3.35-2 .29-3.06 1.35-3.35 3.35-.29-2-1.35-3.06-3.35-3.35 2-.29 3.06-1.35 3.35-3.35Z" fill="currentColor" opacity="0.9"/></svg>'
 
 // 附件上传接口返回项（/api/file/upload/batch）
 interface UploadedFileMeta {
@@ -775,6 +751,13 @@ export default defineComponent({
     ChatThemeDark,
     ChatThemeLight,
     ChatCodeCopy,
+    ChatSparkle,
+    ChatPlus,
+    ChatArrowUpRight,
+    ChatBubble,
+    ChatBottle,
+    ChatSidebar,
+    ChatArrowDown,
     MdEditorDialog,
   },
   props: {
@@ -2086,8 +2069,6 @@ export default defineComponent({
       }
       return DEFAULT_SUGGESTIONS
     })
-    // 卡片图标按序号轮取（放大镜 / 文档 / 灯泡）
-    const suggestionIcon = (index: number): string => SUGGESTION_ICONS[index % SUGGESTION_ICONS.length]
     // 点击引导卡片：仅回填输入框并聚焦，由用户确认后再发送，避免误触直接发起请求
     const applySuggestion = async (card: SuggestionCard): Promise<void> => {
       if (isLoading.value) return
@@ -3409,9 +3390,7 @@ export default defineComponent({
       chatFontScale,
       chatFontStyle,
       // 视图层新增：空态引导、侧栏分栏/收起、标题、用户信息、输入框实例
-      sparkleSvg: SPARKLE_SVG,
       suggestionCards,
-      suggestionIcon,
       applySuggestion,
       sidebarCollapsed,
       toggleSidebar,
