@@ -127,6 +127,7 @@ export const BACKEND_TABLES: TableDef[] = [
       { prop: 'requestTemplate', label: '请求模板', kind: 'json', inTable: false },
       { prop: 'responseExtractRule', label: '响应抽取规则', kind: 'json', inTable: false },
       { prop: 'slotTransforms', label: '槽位转换', kind: 'json', inTable: false },
+      { prop: 'engineConfig', label: '引擎参数', kind: 'json', inTable: false, placeholder: 'OPENCODE 类型参数: provider_id/model_id' },
       createdAtField,
       updatedAtField,
     ],

@@ -387,31 +387,24 @@ export default defineComponent({
       loadPage(1)
     }
 
-    /** 打开表单弹窗：row 为空表示新增 */
-    const openForm = (row?: any) => {
-      if (!activeDef.value) return
-      const def = activeDef.value
-      // 清空 draft
+    /** 用记录回填表单：record 为 null 表示新增（给空值）。会先清空草稿/form */
+    const fillRecord = (def: TableDef, record: any) => {
       Object.keys(jsonDraft).forEach(k => delete jsonDraft[k])
       Object.keys(arrayDraft).forEach(k => delete arrayDraft[k])
       Object.keys(form).forEach(k => delete form[k])
+      editingId.value = record ? record[def.idField] ?? null : null
 
       if (def.jsonMode) {
-        formMode.value = row ? 'edit' : 'create'
-        editingId.value = row ? row[def.idField] ?? null : null
-        rawJsonText.value = row ? JSON.stringify(row, null, 2) : '{\n  \n}'
-        formVisible.value = true
+        rawJsonText.value = record ? JSON.stringify(record, null, 2) : '{\n  \n}'
         return
       }
 
       const base = buildEmptyForm(def)
       Object.assign(form, base)
-      if (row) {
-        formMode.value = 'edit'
-        editingId.value = row[def.idField] ?? null
+      if (record) {
         def.fields.forEach(f => {
-          if (!(f.prop in row)) return
-          const v = row[f.prop]
+          if (!(f.prop in record)) return
+          const v = record[f.prop]
           if (f.kind === 'json') {
             form[f.prop] = v ?? null
             jsonDraft[f.prop] = v == null ? '' : safeStringify(v)
@@ -423,20 +416,48 @@ export default defineComponent({
           }
         })
       } else {
-        formMode.value = 'create'
-        editingId.value = null
         // 新增时主键留空，由后端生成
         def.fields.forEach(f => {
           if (f.isId) form[f.prop] = null
         })
       }
-      formVisible.value = true
     }
 
-    const openDetail = (row: any) => {
-      openForm(row)
-      formMode.value = 'view'
+    /**
+     * 打开表单弹窗：row 为空表示新增。
+     * 编辑/详情采用「接口优先 + 行数据兜底」：先用列表行占位立即弹窗，
+     * 再调 getById 拉取最新完整记录覆盖（避免列表裁剪字段导致全量 PUT 覆盖丢数据）。
+     */
+    const openForm = async (row?: any, mode: FormMode = 'edit') => {
+      if (!activeDef.value) return
+      const def = activeDef.value
+
+      if (!row) {
+        formMode.value = 'create'
+        fillRecord(def, null)
+        formVisible.value = true
+        return
+      }
+
+      formMode.value = mode
+      fillRecord(def, row) // 先用列表行占位，避免接口往返时弹窗空白
+      formVisible.value = true
+
+      const id = row[def.idField]
+      if (id === null || id === undefined || id === '') return
+      try {
+        const resp = await backendConfigApi[activeKey.value].getById(id)
+        const fresh = resp?.data
+        // 接口成功且返回对象：用权威记录覆盖；失败/空则保留列表行数据
+        if (fresh && typeof fresh === 'object') {
+          fillRecord(def, fresh)
+        }
+      } catch (e: any) {
+        ElMessage.warning(e?.message || '获取单条详情失败，已使用列表数据')
+      }
     }
+
+    const openDetail = (row: any) => openForm(row, 'view')
 
     const safeStringify = (v: any): string => {
       try { return JSON.stringify(v, null, 2) } catch { return String(v ?? '') }

@@ -5,8 +5,8 @@
  * 每张表提供的通用接口：
  *   POST   /api/{table}               新增
  *   PUT    /api/{table}               更新
- *   GET    /api/{table}/{idField}     按 id 查询
- *   DELETE /api/{table}/{idField}     删除
+ *   GET    /api/{table}/{id}          按主键查询单条
+ *   DELETE /api/{table}/{id}          删除
  *   GET    /api/{table}/page          分页查询（pageNum、pageSize）
  * 部分表额外提供：
  *   GET    /api/{table}/list/enabled  查询启用列表
@@ -101,10 +101,9 @@ export interface PageQuery {
 
 /**
  * 创建某张表的 CRUD 方法集合。
- * @param table  表 URL 段
- * @param idField 主键字段名（path 参数）
+ * @param table  表 URL 段（单条查询/删除均直接用主键值拼 /api/{table}/{id}）
  */
-export function createTableApi<T = any>(table: BackendTableKey, idField: string = TABLE_ID_FIELD[table]) {
+export function createTableApi<T = any>(table: BackendTableKey) {
   return {
     /** 分页查询 */
     page: (params: PageQuery = {}) =>
@@ -112,9 +111,9 @@ export function createTableApi<T = any>(table: BackendTableKey, idField: string 
         params: { pageNum: 1, pageSize: 10, ...params },
       }).then(r => r.data),
 
-    /** 按 id 查询单条 */
+    /** 按 id 查询单条（与删除一致，路径不带主键字段名） */
     getById: (id: number | string) =>
-      instance.get<BackendResult<T>>(`/api/${table}/${idField}/${id}`).then(r => r.data),
+      instance.get<BackendResult<T>>(`/api/${table}/${id}`).then(r => r.data),
 
     /** 新增 */
     save: (payload: Partial<T>) =>
