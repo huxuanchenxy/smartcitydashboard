@@ -249,13 +249,13 @@
               :disabled="isReadonlyField(f)"
               :placeholder="f.placeholder || '可直接输入，或点下方「Markdown 编辑」使用双栏编辑器'"
             />
-            <el-button
+            <!-- <el-button
               size="small"
               type="primary"
               plain
               :disabled="isReadonlyField(f)"
               @click="openMdEditor(f)"
-            >Markdown 编辑</el-button>
+            >Markdown 编辑</el-button> -->
           </div>
           <el-input
             v-else
@@ -426,9 +426,8 @@ export default defineComponent({
         if (f.kind === 'json') {
           list.push({
             validator: (_r: any, _v: any, cb: (e?: Error) => void) => {
-              const text = (jsonDraft[f.prop] || '').trim()
-              if (!text) return cb()
-              try { JSON.parse(text); cb() } catch { cb(new Error(`「${f.label}」不是合法 JSON`)) }
+              const r = parseJsonObject(jsonDraft[f.prop])
+              cb(r.ok ? undefined : new Error(`「${f.label}」${r.msg}`))
             },
             trigger,
           })
@@ -436,10 +435,9 @@ export default defineComponent({
         if (f.kind === 'mdJson') {
           list.push({
             validator: (_r: any, _v: any, cb: (e?: Error) => void) => {
-              // form[prop] 存的是 ```json 包裹文本，去围栏后校验合法性
-              const text = (form[f.prop] || '').trim()
-              if (!text) return cb()
-              cb(parseJsonFence(text).ok ? undefined : new Error(`「${f.label}」不是合法 JSON`))
+              // form[prop] 存的是原始 JSON 文本（可能带 ```json 围栏），去围栏后校验
+              const r = parseJsonObject(form[f.prop], true)
+              cb(r.ok ? undefined : new Error(`「${f.label}」${r.msg}`))
             },
             trigger,
           })
@@ -623,17 +621,26 @@ export default defineComponent({
       if (/^```[\s\S]*```$/.test(body.trim())) return body
       return `\`\`\`json\n${body}\n\`\`\``
     }
-    /** mdJson 字段：去掉 ```json 包裹（若未包裹则按原文） */
+    /** mdJson 字段：去 ```json 包裹（若未包裹则按原文） */
     const stripJsonFence = (text: string): string => {
       const t = (text || '').trim()
       const m = t.match(/^```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```$/)
       return m ? (m[1] || '').trim() : t
     }
-    /** mdJson 字段：去围栏后解析回对象；ok=false 表示非法 JSON */
-    const parseJsonFence = (text: string): { ok: boolean; value: any } => {
-      const t = stripJsonFence(text)
-      if (!t) return { ok: true, value: null }
-      try { return { ok: true, value: JSON.parse(t) } } catch { return { ok: false, value: null } }
+    /**
+     * 统一解析并校验 json / mdJson 字段的文本（与 jsonMode 一致，顶层必须是对象）：
+     *   空→{ok:true,value:null}；语法非法→msg；顶层非对象(数组/标量/null)→msg。
+     * @param fenced 文本是否带 ```json 围栏（mdJson 为 true）
+     */
+    const parseJsonObject = (rawText: string, fenced = false): { ok: boolean; value?: any; msg?: string } => {
+      const text = fenced ? stripJsonFence(rawText) : (rawText || '').trim()
+      if (!text) return { ok: true, value: null }
+      let parsed: any
+      try { parsed = JSON.parse(text) } catch { return { ok: false, msg: '不是合法 JSON' } }
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { ok: false, msg: '顶层必须是 JSON 对象 {...}' }
+      }
+      return { ok: true, value: parsed }
     }
 
     /** JSON 输入框失焦：尝试解析并回填 form；解析失败保留文本，提交时统一校验 */
@@ -684,24 +691,22 @@ export default defineComponent({
             return
           }
         }
-        // 硬兜底：逐个校验 json 字段草稿合法性。旧版 el-form + async-validator 对
-        // “无 required/type 的自定义 validator + 值为空”存在不拦截的可能，这里同步再校一道，
-        // 确保填了非法 JSON 时一定无法提交。
+        // 硬兜底：逐个校验 json 字段草稿合法性（旧版 el-form + async-validator 对无
+        // required/type 的自定义 validator 在值为空时可能不拦截），确保非法/非对象一定拦下。
         for (const f of def.fields) {
           if (f.readonly || f.kind !== 'json') continue
-          const text = (jsonDraft[f.prop] || '').trim()
-          if (!text) continue
-          try { JSON.parse(text) } catch {
-            ElMessage.error(`「${f.label}」不是合法 JSON`)
+          const r = parseJsonObject(jsonDraft[f.prop])
+          if (!r.ok) {
+            ElMessage.error(`「${f.label}」${r.msg}`)
             return
           }
         }
-        // mdJson 字段：去 ```json 围栏并解析回对象（接口仍按对象提交）；非法则拦截
+        // mdJson 字段：去 ```json 围栏并解析回对象（接口仍按对象提交）；非法/非对象则拦截
         for (const f of def.fields) {
           if (f.readonly || f.kind !== 'mdJson') continue
-          const r = parseJsonFence(form[f.prop])
+          const r = parseJsonObject(form[f.prop], true)
           if (!r.ok) {
-            ElMessage.error(`「${f.label}」不是合法 JSON`)
+            ElMessage.error(`「${f.label}」${r.msg}`)
             return
           }
           form[f.prop] = r.value
