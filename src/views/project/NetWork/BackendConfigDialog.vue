@@ -240,8 +240,8 @@
             :disabled="isReadonlyField(f)"
             :placeholder="f.placeholder || ''"
           />
-          <!-- Markdown 长文本：可直接编辑，也可点「Markdown 编辑」弹出左右双栏编辑器，编辑完回填当前字段 -->
-          <div v-else-if="f.kind === 'md'" class="bc-md-field">
+          <!-- Markdown 长文本 / JSON(mdJson)：可直接编辑，也可点「Markdown 编辑」弹出左右双栏编辑器 -->
+          <div v-else-if="f.kind === 'md' || f.kind === 'mdJson'" class="bc-md-field">
             <el-input
               v-model="form[f.prop]"
               type="textarea"
@@ -249,13 +249,13 @@
               :disabled="isReadonlyField(f)"
               :placeholder="f.placeholder || '可直接输入，或点下方「Markdown 编辑」使用双栏编辑器'"
             />
-            <!-- <el-button
+            <el-button
               size="small"
               type="primary"
               plain
               :disabled="isReadonlyField(f)"
               @click="openMdEditor(f)"
-            >Markdown 编辑</el-button> -->
+            >Markdown 编辑</el-button>
           </div>
           <el-input
             v-else
@@ -311,6 +311,7 @@ import {
   BACKEND_TABLES,
   TableDef,
   FieldDef,
+  FieldKind,
   buildEmptyForm,
 } from './backendConfigSchema'
 
@@ -356,25 +357,29 @@ export default defineComponent({
     // 编辑时保留主键原值，PUT/DELETE 需要
     const editingId = ref<number | string | null>(null)
 
-    // Markdown 弹层编辑器状态（仅对 kind==='md' 字段生效）
-    const mdEditor = reactive<{ visible: boolean; value: string; title: string; prop: string }>({
+    // Markdown 弹层编辑器状态（仅对 kind==='md' / 'mdJson' 字段生效）
+    const mdEditor = reactive<{ visible: boolean; value: string; title: string; prop: string; kind: FieldKind }>({
       visible: false,
       value: '',
       title: 'Markdown 编辑',
       prop: '',
+      kind: 'md',
     })
 
-    /** 打开 Markdown 编辑器：带入当前字段值（详情态不允许打开） */
+    /** 打开 Markdown 编辑器：带入当前字段值（mdJson 自动包 ```json 供预览） */
     const openMdEditor = (f: FieldDef) => {
       mdEditor.prop = f.prop
-      mdEditor.value = form[f.prop] ?? ''
-      mdEditor.title = `${f.label}（Markdown）`
+      mdEditor.kind = f.kind
+      const raw = form[f.prop] ?? ''
+      mdEditor.value = f.kind === 'mdJson' ? toJsonFence(raw) : raw
+      mdEditor.title = f.kind === 'mdJson' ? `${f.label}（JSON）` : `${f.label}（Markdown）`
       mdEditor.visible = true
     }
 
-    /** 编辑器保存：回填到当前 md 字段 */
+    /** 编辑器保存：回填到当前字段（mdJson 先去围栏再存回原始 JSON 文本） */
     const handleMdSave = (val: string) => {
-      if (mdEditor.prop) form[mdEditor.prop] = val
+      if (!mdEditor.prop) return
+      form[mdEditor.prop] = mdEditor.kind === 'mdJson' ? stripJsonFence(val) : val
     }
 
     const tableColumns = computed<FieldDef[]>(() =>
@@ -417,6 +422,17 @@ export default defineComponent({
               const text = (jsonDraft[f.prop] || '').trim()
               if (!text) return cb()
               try { JSON.parse(text); cb() } catch { cb(new Error(`「${f.label}」不是合法 JSON`)) }
+            },
+            trigger,
+          })
+        }
+        if (f.kind === 'mdJson') {
+          list.push({
+            validator: (_r: any, _v: any, cb: (e?: Error) => void) => {
+              // form[prop] 存的是 ```json 包裹文本，去围栏后校验合法性
+              const text = (form[f.prop] || '').trim()
+              if (!text) return cb()
+              cb(parseJsonFence(text).ok ? undefined : new Error(`「${f.label}」不是合法 JSON`))
             },
             trigger,
           })
@@ -538,6 +554,10 @@ export default defineComponent({
           } else if (f.kind === 'stringArray') {
             form[f.prop] = Array.isArray(v) ? v : []
             arrayDraft[f.prop] = Array.isArray(v) ? v.join('\n') : ''
+          } else if (f.kind === 'mdJson') {
+            // 存原始美化 JSON 文本（不包 ```），让用户在文本框里直接编辑无需写反引号；
+            // ```json 包裹仅在点开 md 双栏弹层时动态加上。
+            form[f.prop] = v == null ? '' : (typeof v === 'string' ? v : safeStringify(v))
           } else {
             form[f.prop] = v ?? base[f.prop]
           }
@@ -588,6 +608,25 @@ export default defineComponent({
 
     const safeStringify = (v: any): string => {
       try { return JSON.stringify(v, null, 2) } catch { return String(v ?? '') }
+    }
+
+    /** mdJson 字段：把对象/原始 JSON 文本包成 ```json 代码块（已包裹则原样返回），仅供弹层预览 */
+    const toJsonFence = (v: any): string => {
+      const body = typeof v === 'string' ? v : safeStringify(v)
+      if (/^```[\s\S]*```$/.test(body.trim())) return body
+      return `\`\`\`json\n${body}\n\`\`\``
+    }
+    /** mdJson 字段：去掉 ```json 包裹（若未包裹则按原文） */
+    const stripJsonFence = (text: string): string => {
+      const t = (text || '').trim()
+      const m = t.match(/^```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```$/)
+      return m ? (m[1] || '').trim() : t
+    }
+    /** mdJson 字段：去围栏后解析回对象；ok=false 表示非法 JSON */
+    const parseJsonFence = (text: string): { ok: boolean; value: any } => {
+      const t = stripJsonFence(text)
+      if (!t) return { ok: true, value: null }
+      try { return { ok: true, value: JSON.parse(t) } } catch { return { ok: false, value: null } }
     }
 
     /** JSON 输入框失焦：尝试解析并回填 form；解析失败保留文本，提交时统一校验 */
@@ -649,6 +688,16 @@ export default defineComponent({
             ElMessage.error(`「${f.label}」不是合法 JSON`)
             return
           }
+        }
+        // mdJson 字段：去 ```json 围栏并解析回对象（接口仍按对象提交）；非法则拦截
+        for (const f of def.fields) {
+          if (f.readonly || f.kind !== 'mdJson') continue
+          const r = parseJsonFence(form[f.prop])
+          if (!r.ok) {
+            ElMessage.error(`「${f.label}」不是合法 JSON`)
+            return
+          }
+          form[f.prop] = r.value
         }
         // 校验通过后把 jsonDraft / arrayDraft 落到 form
         def.fields.forEach(f => {

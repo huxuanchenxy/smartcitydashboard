@@ -16,6 +16,7 @@ export type FieldKind =
   | 'text'        // 单行字符串
   | 'textarea'    // 多行字符串（长文本）
   | 'md'          // Markdown 长文本（值仍是字符串，接口按普通文本处理；表单弹出左右双栏编辑器编辑）
+  | 'mdJson'      // 值本质是 JSON 对象：用 md 双栏编辑器编辑（```json 包裹），提交前再解析回对象，接口与 json 一致
   | 'number'      // 数字（int32/int64/float）
   | 'boolean'     // 布尔
   | 'datetime'    // 时间字符串
@@ -125,7 +126,7 @@ export const BACKEND_TABLES: TableDef[] = [
       { prop: 'isAllowSkipEvaluation', label: '允许跳过评估', kind: 'number', numberType: 'int', width: 130 },
       { prop: 'supportsFileInput', label: '支持文件输入', kind: 'boolean', width: 130 },
       { prop: 'isEnabled', label: '是否启用', kind: 'boolean', width: 100 },
-      { prop: 'requestTemplate', label: '请求模板', kind: 'json', inTable: false },
+      { prop: 'requestTemplate', label: '请求模板', kind: 'mdJson', inTable: false },
       { prop: 'responseExtractRule', label: '响应抽取规则', kind: 'json', inTable: false },
       { prop: 'slotTransforms', label: '槽位转换', kind: 'json', inTable: false },
       { prop: 'engineConfig', label: '引擎参数', kind: 'json', inTable: false, placeholder: 'OPENCODE 类型参数: provider_id/model_id' },
