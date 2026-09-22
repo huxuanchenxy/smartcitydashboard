@@ -88,11 +88,12 @@
               <span v-if="scope && scope.row">{{ formatCell(scope.row[col.prop], col.kind) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150" fixed="right" align="center">
+          <el-table-column label="操作" width="200" fixed="right" align="center">
             <template #default="scope">
               <template v-if="scope && scope.row">
                 <el-button type="text" size="small" @click="openForm(scope.row)">编辑</el-button>
                 <el-button type="text" size="small" @click="openDetail(scope.row)">详情</el-button>
+                <el-button type="text" size="small" @click="handleCopy(scope.row)">复制</el-button>
                 <el-button type="text" size="small" class="bc-danger" @click="handleDelete(scope.row)">删除</el-button>
               </template>
             </template>
@@ -249,13 +250,13 @@
               :disabled="isReadonlyField(f)"
               :placeholder="f.placeholder || '可直接输入，或点下方「Markdown 编辑」使用双栏编辑器'"
             />
-            <!-- <el-button
+            <el-button
               size="small"
               type="primary"
               plain
               :disabled="isReadonlyField(f)"
               @click="openMdEditor(f)"
-            >Markdown 编辑</el-button> -->
+            >Markdown 编辑</el-button>
           </div>
           <el-input
             v-else
@@ -611,6 +612,31 @@ export default defineComponent({
 
     const openDetail = (row: any) => openForm(row, 'view')
 
+    /**
+     * 复制：以该行数据为模板开「新增」表单（预填字段、清空主键），提交走 save。
+     * 与编辑一致先拉 getById 取完整记录，避免列表裁剪字段。
+     */
+    const handleCopy = async (row: any) => {
+      if (!activeDef.value || !row) return
+      const def = activeDef.value
+      let record = row
+      const id = row[def.idField]
+      if (id !== null && id !== undefined && id !== '') {
+        try {
+          const resp = await backendConfigApi[activeKey.value].getById(id)
+          if (resp?.data && typeof resp.data === 'object') record = resp.data
+        } catch (e: any) {
+          ElMessage.warning(e?.message || '获取详情失败，已用列表数据复制')
+        }
+      }
+      // 复制即新增：先按记录回填，再清空主键与 editingId，避免沿用原 ID 提交
+      formMode.value = 'create'
+      fillRecord(def, record)
+      def.fields.forEach(f => { if (f.isId) form[f.prop] = null })
+      editingId.value = null
+      formVisible.value = true
+    }
+
     const safeStringify = (v: any): string => {
       try { return JSON.stringify(v, null, 2) } catch { return String(v ?? '') }
     }
@@ -823,6 +849,7 @@ export default defineComponent({
       handleSwitchTable,
       openForm,
       openDetail,
+      handleCopy,
       commitJsonField,
       commitArrayField,
       handleSubmit,
