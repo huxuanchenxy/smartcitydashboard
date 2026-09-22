@@ -288,21 +288,24 @@
           @click="handleSubmit"
         >保存</el-button>
       </template>
-
-      <!-- Markdown 双栏编辑器（左原文/右预览），编辑完保存回填到当前 md 字段 -->
-      <MdEditorDialog
-        v-model:visible="mdEditor.visible"
-        :model-value="mdEditor.value"
-        :title="mdEditor.title"
-        :z-index="10450"
-        @save="handleMdSave"
-      />
     </el-dialog>
   </el-dialog>
+
+  <!-- Markdown 双栏编辑器（左原文/右预览），编辑完保存回填到当前 md/mdJson 字段。
+       必须放在 el-dialog 之外作为根级兄弟：MdEditorDialog 自身用 Teleport+transition，
+       若嵌在 destroy-on-close 的 el-dialog 内，弹窗销毁时会与其 teleport/transition 相互撕开，
+       触发 Vue “Cannot read properties of null (reading '_vnode')” 崩溃。 -->
+  <MdEditorDialog
+    v-model:visible="mdEditor.visible"
+    :model-value="mdEditor.value"
+    :title="mdEditor.title"
+    :z-index="10450"
+    @save="handleMdSave"
+  />
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, reactive } from 'vue'
+import { defineComponent, ref, computed, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { IconClose } from '@/icons'
 import MdEditorDialog from '@/components/dify-chatbot/MdEditorDialog.vue'
@@ -381,6 +384,10 @@ export default defineComponent({
       if (!mdEditor.prop) return
       form[mdEditor.prop] = mdEditor.kind === 'mdJson' ? stripJsonFence(val) : val
     }
+
+    // MdEditorDialog 已提到根级，需在其宿主弹窗/表单关闭时主动收起，避免悬空编辑器
+    watch(formVisible, val => { if (!val) mdEditor.visible = false })
+    watch(() => props.visible, val => { if (!val) { mdEditor.visible = false; formVisible.value = false } })
 
     const tableColumns = computed<FieldDef[]>(() =>
       (activeDef.value?.fields || []).filter(f => f.inTable !== false),
