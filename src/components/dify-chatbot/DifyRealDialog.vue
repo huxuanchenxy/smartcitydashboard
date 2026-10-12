@@ -588,6 +588,9 @@ import type { ChartAssemblyInput } from 'flint-chart'
 import * as echarts from 'echarts'
 // Dify / 组态 AI 后端专用实例（无拦截器、不跳登录），见 @/utils/dify-request
 import difyRequest from '@/utils/dify-request'
+// token 失效（WS 返回 401）时清除本地 token 并跳转登录页，与 @/utils/request 拦截器行为保持一致
+import router from '@/routes/index'
+import { removeToken } from '@/utils/token-util'
 import { marked } from 'marked'
 // highlight.js：代码卡片语法高亮（按需注册语言，避免全量引入）；仅 core + 少量语言
 import hljs from 'highlight.js/lib/core'
@@ -1007,6 +1010,24 @@ export default defineComponent({
       'X-Src-System': SRC_SYSTEM,
       token: getAuthToken(),
     })
+
+    // ===== token 失效处理 =====
+    // 判断 WS 服务端错误帧是否为 token 无效/已过期（如 {"code":401,"type":"error","msg":"...token 无效或已过期..."}）：
+    // 主判 code===401，兜底再嗅探 msg 文案，避免后端仅改文案不带 code 时漏判
+    const isTokenExpiredFrame = (data: any): boolean => {
+      if (Number(data?.code) === 401) return true
+      const msg = String(data?.msg || data?.error || '')
+      return /token\s*(无效|过期|失效)/.test(msg) || msg.includes('登录已过期')
+    }
+    // 命中 token 失效：结束思考态避免界面卡死 → 清除本地 token → 跳转登录页（登录后回到当前页）
+    const handleTokenExpired = (): void => {
+      if (isLoading.value) endThinkingState('登录已失效，正在跳转登录页…')
+      removeToken()
+      const cur = router.currentRoute.value
+      if (cur.path !== '/login') {
+        router.push({ path: '/login', query: { redirect: cur.fullPath } })
+      }
+    }
 
     // 角色中文名：侧栏底部「用户名 / 角色」与发问者兜底显示名共用
     const roleLabel = computed(() => {
@@ -1673,6 +1694,11 @@ export default defineComponent({
           // 防止错误帧若同时携带 content 等字段被当作普通回复处理
           if (data.type === 'error' || data.error) {
             console.error('[DifyRealDialog][WS] 服务端错误:', data.msg || data.error)
+            // token 无效或已过期（401）：清除本地 token 并跳转登录页，不再走普通错误提示
+            if (isTokenExpiredFrame(data)) {
+              handleTokenExpired()
+              return
+            }
             // 已停止/非等待回复状态下不弹提示，避免迟到错误帧打扰
             if (isLoading.value) {
               // 把后端返回的 msg 错误详情直接写入 AI 助手回复内容，
