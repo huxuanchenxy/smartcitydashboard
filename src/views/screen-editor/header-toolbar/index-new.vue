@@ -264,7 +264,7 @@
   <!-- AI 助手聊天弹框（DifyApiDemoDialog） -->
   <DifyApiDemoDialog
     v-model:visible="difyApiDialogVisible"
-    :role="'project_manager'"
+    :role="'developer'"
   />
 </template>
 
