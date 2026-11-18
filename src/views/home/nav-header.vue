@@ -5,7 +5,7 @@
         <!-- <div>当前项目：XXXX项目</div> -->
       </div>
       <div class="user">
-        <n-tooltip :delay="500">
+        <n-tooltip v-if="!hideAiIcon" :delay="500">
           <template #trigger>
             <div class="head-btn ai-btn" @click="showAiDialog = true">
               <n-icon class="head-btn-icon">
@@ -41,10 +41,10 @@
 </template>
 
 <script lang='ts'>
-import { h, defineComponent, ref, onMounted } from 'vue'
+import { h, defineComponent, ref, computed, onMounted } from 'vue'
 import { NIcon } from 'naive-ui'
 import { UserStore } from '@/domains/user'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { IconLogout, IconArrowDown, IconPassword, IconAi } from '@/icons'
 import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
 
@@ -59,9 +59,12 @@ export default defineComponent({
   setup(props, context) {
     const { name, avatar, doLogout } = UserStore()
     const router = useRouter()
+    const route = useRoute()
     const nameuser = ref('')
     const activeNav = ref(0)
     const showAiDialog = ref(false)
+    // agentConfig 页面左侧已内嵌对话窗，头部不再显示重复的 AI icon
+    const hideAiIcon = computed(() => route.name === 'AgentConfig')
     const profileOpts = [
       {
         label: '编辑密码',
@@ -105,6 +108,7 @@ export default defineComponent({
       handleProfileSelect,
       activeNav,
       showAiDialog,
+      hideAiIcon,
     }
   },
 })
