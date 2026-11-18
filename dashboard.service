@@ -1,0 +1,12 @@
+[Unit]
+Description=dashboard http-server
+After=network.target
+
+[Service]
+User=user
+WorkingDirectory=/home/user/hyx/website
+ExecStart=/usr/local/bin/http-server -p 9090 --cors
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -200,6 +200,20 @@
     }
 }
 
+// 呼吸灯
+@keyframes Breathing {
+    0%,
+    100% {
+        opacity: 0.8;
+        transform: scale(0.92);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.01);
+    }
+}
+
 // 弹跳进入
 @keyframes BounceIn {
     0% {

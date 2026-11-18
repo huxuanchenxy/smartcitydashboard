@@ -59,6 +59,12 @@ const navRoutes: Array<RouteRecordRaw> = [
         meta: { title: '集群配置' },
       },
       {
+        path: 'agentConfig',
+        name: 'AgentConfig',
+        component: () => import('@/views/project/NetWork/AgentConfig.vue'),
+        meta: { title: 'Agent配置' },
+      },
+      {
         path: 'updatePassword',
         name: 'UpdatePassword',
         component: () => import('@/views/home/updatePassword.vue'),
@@ -146,7 +152,6 @@ const navRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/views/cavans-user/user-location/index.vue'),
         meta: { title: '点位设置' },
       },
-
       //   path: 'data',
       //   name: 'MyData',
       //   component: () => import('@/views/my-data/index.vue'),
@@ -184,6 +189,13 @@ const routes: Array<RouteRecordRaw> = [
   },
   ...navRoutes,
   {
+    // AI 页面为纯 iframe 嵌入页，不套左侧菜单布局，独立顶层路由全屏展示
+    path: '/aipage',
+    name: 'AiPage',
+    component: () => import('@/views/aipage/index.vue'),
+    meta: { title: 'AI页面' },
+  },
+  {
     path: '/create-screen',
     name: 'CreateScreen',
     component: () => import('@/views/my-project/create-screen.vue'),
@@ -214,6 +226,24 @@ const routes: Array<RouteRecordRaw> = [
     name: 'publish',
     props: true,
     component: () => import('@/views/screen/publish.vue'),
+  },
+  {
+    path: '/admin/screen/cache',
+    name: 'ScreenCache',
+    component: () => import('@/views/screen/cache.vue'),
+    meta: { title: '缓存管理' },
+  },
+  {
+    path: '/admin/screen/searichat',
+    name: 'SeariChat',
+    component: () => import('@/views/screen/searichat.vue'),
+    meta: { title: '开发人员' },
+  },
+  {
+    path: '/admin/screen/searichatpm',
+    name: 'SeariChatPM',
+    component: () => import('@/views/screen/searichatpm.vue'),
+    meta: { title: '项目经理' },
   },
   {
     path: '/:catchAll(.*)*',

@@ -17,6 +17,27 @@ export const difyConfig = {
   // 新程序专用 API Key
   apiKeyFlow3: '',
   
+  // difyapidialog 专用 API Key
+  apiKeyFlow4: '',
+  
+  // difyapidialog 专用 API Key (FLOWa1)
+  apiKeyFlowA1: '',
+  
+  // difyapidialog 专用 API Key (FLOWb1)
+  apiKeyFlowB1: '',
+  
+  // difyapidialog 专用 API Key (FLOWb2)
+  apiKeyFlowB2: '',
+  
+  // difyapidialog 专用 API Key (FLOWb3)
+  apiKeyFlowB3: '',
+  
+  // difyapidialog 专用 API Key (FLOW_getway)
+  apiKeyFlowGetway: '',
+  
+  // 水务专用 API Key
+  apiKeyFlowWater: '',
+  
   // API 基础地址
   baseUrl: '',
 }

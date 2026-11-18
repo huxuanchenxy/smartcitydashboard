@@ -1,0 +1,65 @@
+# 项目长期记忆：datav-vue（DataS 可视化编辑器）
+
+包名 datav-vue，一个 DataV 风格的数据可视化拖拽编辑器（类阿里 DataV）。标题 DataS。
+
+## 技术栈
+- Vue 3.2 + TypeScript 4.4 + Vite 2.6（dev 端口 9090，构建输出 website/）
+- Vue Router 4（hash 模式）+ Vuex 4（vuex-module-decorators 装饰器写法）
+- UI：Element Plus + Naive UI + 自建 GUI 三套并存
+- 图表：ECharts5 / vue-echarts / @kjgl77/datav-vue3 / flint-chart / wordcloud / three.js
+- 地图：高德、百度、腾讯、OpenLayers、Bing、UE 底座（City3d 等）
+- 其它：monaco-editor、x-data-spreadsheet、gsap、mockjs
+
+## 关键架构（改东西必看）
+- 可视化组件系统：新增组件必须同步改 3 文件：
+  - src/components/index.ts（全局注册，V 前缀名如 VMainTitle）
+  - src/components/datav.ts（createComponent 工厂，name.substr(1) 经 kebabCase 映到目录）
+  - src/data/system-components.ts（组件面板清单：分类/名称/缩略图/used/visible）
+  - 单组件目录约定 components/<category>/<kebab-name>/：index.ts + src/index.vue + src/<name>.ts（继承 DatavComponent/DatavEChartsComponent）+ config.vue + config.json（开发模式访问 #/dev/props-config 生成）
+- 编辑器：入口 src/views/screen-editor/index-new.vue，核心由 EditorModule（Vuex）驱动；含图层面板、组件面板、配置面板、画布、滤镜管理
+- 接口层：src/api/ + src/utils/request.ts（axios，地址从 viteEnv/ 取），mock 用 axios-mock-adapter（按模板 tplId===1 开关），api/data.ts 的 getStaticData 读 ./data/<path>.json
+- 环境：viteEnv/ 下 .env* 统一 VITE_APP_ 前缀（development 默认服务 http://10.89.33.97:29021）
+- 脚手架：plop（yarn new datav / yarn gc <name> / yarn new component|store|icons）
+
+## 约定
+- 路径别名 @ -> src；flint-chart 别名到 src/types/flint-chart
+- tsconfig：experimentalDecorators:true，strict 关闭、noImplicitAny:false
+- 跨组件通讯：mitter 事件总线 + window.ue.interface（对接 UE 底座）
+- i18n：vue-i18n，目前仅登录页国际化
+- 包管理器：项目用 yarn；本机无 yarn，启动用托管 node v22.22.2 直接跑 ./node_modules/.bin/vite
+- Element Plus 在 main.ts 全局注册（import from '@/components/element-plus'），组件里直接用 el-* 标签，无需单独 import；el-tooltip 不生成额外 wrapper，包裹 flex 子项不会破坏布局
+- AgentConfig（src/views/project/NetWork/AgentConfig.vue）技能库：必须保持单列布局，不要再改成两列/多列；卡片文字被截断时用 el-tooltip 悬停展示全文而非放开行数
+
+## AI 对话后端（10.89.34.77:8080，DifyRealDialog.vue / AgentConfig.vue 直连）
+- GET /api/session/list（列表字段 name 而非 content，主键 autoId）、GET /api/session/{sessionId}、DELETE /api/session/delete/{id}
+- GET /api/skill/list（技能列表）、POST /api/file/upload/batch（FormData: loginAccount + files，返回 data:[{accessUrl, filesId, originalFileName}]）
+- GET /api/chat/sessionId?loginAccount=&sessionId=：历史消息，字段 chatId/chatTime/content/type(0用户1助手)/sort/fileItemList[{accessUrl,fileId,originalFileName}]（无 id 字段、无文件大小）
+- WS ws://.../ws/chat，消息字段 type(0用户/1助手)/chatTime/content/sort/sessionId（sessionId 由后端分配）
+- 相关 env：VITE_APP_DIFY_SESSION_HOST / WS_HOST / UPLOAD_HOST；上传失败条目标 error 保留、发送时按 fileId 过滤
+
+### DifyRealDialog.vue UI 现状（2026-09-17 重构后）
+- 布局：左侧会话侧栏（品牌区 / 新建对话 /「历史记录」标题 + 全量会话列表 / 底部用户信息）+ 右侧主区（header / 欢迎页或消息列表 / 底部输入卡片）
+- 会话列表不分 tab、不分组（用户明确要求）：统一展示全部会话，无“最近对话/更早”
+- 新增 prop：`subtitle`（默认“你的智能工作助手”）、`suggestions`（引导卡，null 用内置三条）；`sidebarWidth` 默认 260
+- 窄窗自适应：`dialogWidth < 560` 时侧栏自动收起（header 有 toggle 按钮手动切换）
+- 样式注意：组件根内统一 `box-sizing: border-box`（项目无全局 reset）；`v-html` 注入的 SVG 必须用 `:deep(svg)` 才能命中尺寸
+- 会话时间：后端 `createdOn` 经 `formatConversationTime` 映射为 `updateTime` 展示
+- 重构前完整备份：C:\Users\Administrator\AppData\Local\Temp\dify-ui-refactor\DifyRealDialog.vue.bak（临时目录，可能被清理）
+
+## 组态鉴权约定（Dify 相关接口）
+- **所有**直连 Dify 后端的 HTTP 接口（session/list、chat/sessionId、session/delete/{id}、file/upload/batch）统一带 `X-Src-System`(=`VITE_APP_DIFY_SRC_SYSTEM`，默认 zutai01) 与 `token` 头（DifyRealDialog 内 `getAuthHeaders()`）
+- token 取值：发布页 `#/publish/:id?token=xxx` 用 URL 上的 token；其余用 `localStorage['DataS-Token']`
+- 浏览器原生 WebSocket 无法设请求头 → WS 走握手 URL query（`X-Src-System` / `token` / `loginAccount`），消息体也带 loginAccount
+- **Dify 请求必须用 `src/utils/dify-request.ts` 的纯净实例**，不能用全局 `@/utils/request`：后者的 needLogin 拦截器会用 localStorage token 覆盖显式传入的 token 头，且 401/403 会 removeToken + 跳 /login（匿名用户被误踢）
+
+## 发布页匿名访问（#/publish/:id?token=xxx）
+- 判定与取值统一在 `src/utils/dify-publish.ts`（`isPublishPage` / `getPublishToken` / `getAnonymousToken`）；token-util.ts 仅 re-export，勿再复制实现
+- 链路：VAiDifyReal / VAiDifyDemo wrapper 取 `getAnonymousToken()` → 以 `login-account` / `auth-token` / `anonymous` 三个 prop 下发给 DifyRealDialog；DifyRealDialog 自身不嗅探路由
+- `anonymous=true` 时 `getLoginAccount()` 只返回 URL token，**绝不回退 localStorage**（否则会话归属到编辑器登录账号）；authToken 仍允许回退 localStorage
+- 显示名：匿名时不用 token 当用户名，依次回退角色中文名 → 「匿名用户」
+
+## 启动命令（本机）
+无 yarn 时：
+export PATH="/c/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2:$PATH"
+cd G:/project/dashboard && NODE_ENV=development ./node_modules/.bin/vite
+等价 yarn dev，监听 9090。

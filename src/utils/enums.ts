@@ -26,6 +26,11 @@ export enum ZoomMode {
    * 不缩放
    */
   disabled,
+  /**
+   * 响应式铺满：画布尺寸跟随视口，组件按画布比例用百分比定位，内容自适应、不缩放、不变形
+   * （适用于 DifyRealDialog 等内部已是 flex 响应式的全屏组件，效果类似豆包网页版）
+   */
+  responsive,
 }
 
 export enum ToolboxType {

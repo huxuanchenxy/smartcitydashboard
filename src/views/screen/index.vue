@@ -56,7 +56,9 @@ export default defineComponent({
     }
 
     watch(() => route.params.screenId, (newId, oldId) => {
-      initData(+newId);
+      if (newId) {
+        initData(+newId);
+      }
     })
 
     return {

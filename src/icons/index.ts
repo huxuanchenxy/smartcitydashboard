@@ -1,5 +1,6 @@
 import IconAccount from "./account.vue";
 import IconAdaptAuto from "./adapt-auto.vue";
+import IconAdaptAutoResponsive from "./adapt-auto-responsive.vue";
 import IconAdaptHeight from "./adapt-height.vue";
 import IconAdaptWidth from "./adapt-width.vue";
 import IconAppend from "./append.vue";
@@ -233,6 +234,7 @@ export {
   IconAdaptWidth,
   IconAdaptHeight,
   IconAdaptAuto,
+  IconAdaptAutoResponsive,
   IconStop,
   IconFullscreenExit,
   IconLink,

@@ -1,13 +1,29 @@
-import type { ConfigEnv } from 'vite'
+import type { ConfigEnv, Plugin } from 'vite'
 import { loadEnv, defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 import plainText from 'vite-plugin-plain-text'
 
 import { resolve } from 'path'
-import legacy from '@vitejs/plugin-legacy'
+import { copyFileSync } from 'fs'
 
 import monacoEditorPlugin from 'vite-plugin-monaco-editor'
+
+// 构建时将额外文件复制到输出目录
+function copyExtraFilesPlugin(files: string[]): Plugin {
+  return {
+    name: 'copy-extra-files',
+    closeBundle() {
+      const outDir = resolve(__dirname, 'website')
+      files.forEach(file => {
+        const src = resolve(__dirname, file)
+        const dest = resolve(outDir, file)
+        copyFileSync(src, dest)
+        console.log(`[copy-extra-files] copied ${file} -> website/${file}`)
+      })
+    },
+  }
+}
 
 function pathResolve(dir: string) {
   return resolve(process.cwd(), '.', dir)
@@ -25,11 +41,8 @@ export default ({ mode }: ConfigEnv) => {
     plugins: [
       vue(),
       plainText(/\.hbs$/),
-      legacy({
-        targets: ['ie >= 11'],
-        additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
-      }),
       monacoEditorPlugin({}),
+      copyExtraFilesPlugin(['dashboard.service', 'dashboard.service.md']),
     ],
     css: {
       preprocessorOptions: {
@@ -41,7 +54,7 @@ export default ({ mode }: ConfigEnv) => {
     server: {
       host: '0.0.0.0',
       port: 9090,
-      //https: true,
+      // https: true,
     },
     resolve: {
       alias: {
@@ -84,10 +97,20 @@ export default ({ mode }: ConfigEnv) => {
     build: {
       sourcemap: false,
       outDir: 'website',
+      chunkSizeWarningLimit: 1500,
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'index.html'),
           share: resolve(__dirname, 'share/index.html'),
+        },
+        output: {
+          manualChunks: {
+            'vendor-vue': ['vue', 'vue-router', 'vuex'],
+            'vendor-echarts': ['echarts'],
+            'vendor-monaco': ['monaco-editor'],
+            'vendor-three': ['three'],
+            'vendor-ui': ['element-plus', 'naive-ui'],
+          },
         },
       },
     },
