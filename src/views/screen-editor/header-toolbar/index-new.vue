@@ -261,13 +261,10 @@
   <formula />
   <device/>
   
-  <!-- AI 助手聊天弹框（DifyRealDialog） -->
-  <DifyRealDialog
+  <!-- AI 助手聊天弹框（DifyApiDemoDialog） -->
+  <DifyApiDemoDialog
     v-model:visible="difyApiDialogVisible"
-    title="AI 智能助手"
-    @close="handleDifyApiDialogClose"
-    @message-received="handleDifyApiMessageReceived"
-    @message-sent="handleDifyApiMessageSent"
+    :role="'project_manager'"
   />
 </template>
 
@@ -289,7 +286,7 @@ import Snapshot from '../../my-project/Snapshot.vue'
 import PublishScreen from '../../my-project/publish.vue'
 import Formula from '../../screen-editor/formula-panel/index.vue'
 import Device from '../../screen-editor/device-panel/index.vue'
-import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
+import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
 import * as configImagePropJson from '@/../public/templates/configImageProp.json'
 import {
   configImagePropModel,
@@ -312,7 +309,7 @@ export default defineComponent({
     Snapshot,
     Formula,
     Device,
-    DifyRealDialog,
+    DifyApiDemoDialog,
     IconEditorCanvas, IconBox, IconRpanel, IconToolbox, IconFilter, IconWorkspace, IconSnapshot, IconLayer, IconRelease, IconPreview,
     IconSave, IconExport, IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt, IconAi,
     ToolboxPanel: loadAsyncComponent(() => import('../toolbox-panel/index-new.vue')),
@@ -567,28 +564,9 @@ export default defineComponent({
       }
     }
 
-    // 打开 Dify API 聊天机器人弹框
+    // 打开 Dify 聊天机器人弹框
     const openDifyApiDialog = () => {
-      console.log('Opening Dify API dialog...');
-      difyApiDialogVisible.value = true;
-      console.log('Dify API dialog visible set to true');
-    };
-    
-    // 处理 Dify API 聊天机器人关闭事件
-    const handleDifyApiDialogClose = () => {
-      console.log('Dify API dialog closed');
-    };
-    
-    // 处理从 Dify API 聊天机器人接收消息
-    const handleDifyApiMessageReceived = (data) => {
-      // console.log('Message received from Dify API:', data);
-      // nMessage.success('收到来自 Dify API 的消息');
-    };
-    
-    // 处理向 Dify API 聊天机器人发送消息
-    const handleDifyApiMessageSent = (data) => {
-      // console.log('Message sent to Dify API:', data);
-      // nMessage.success('消息已发送到 Dify API');
+      difyApiDialogVisible.value = true
     };
 
     return {
@@ -609,12 +587,9 @@ export default defineComponent({
       middleJustifying,
       bottomJustifying,
       nMessage,
-      // AI 助手（DifyRealDialog）相关
+      // AI 助手（DifyApiDemoDialog）相关
       difyApiDialogVisible,
       openDifyApiDialog,
-      handleDifyApiDialogClose,
-      handleDifyApiMessageReceived,
-      handleDifyApiMessageSent,
       // hideModal,
     }
   },

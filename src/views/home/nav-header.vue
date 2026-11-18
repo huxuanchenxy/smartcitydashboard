@@ -5,6 +5,16 @@
         <!-- <div>当前项目：XXXX项目</div> -->
       </div>
       <div class="user">
+        <n-tooltip :delay="500">
+          <template #trigger>
+            <div class="head-btn ai-btn" @click="showAiDialog = true">
+              <n-icon class="head-btn-icon">
+                <IconAi />
+              </n-icon>
+            </div>
+          </template>
+          AI助手
+        </n-tooltip>
         <div class="header-item">
           <n-dropdown :options="profileOpts" placement="bottom-end" :show-arrow="true" @select="handleProfileSelect">
             <span class="user-link-wrap">
@@ -22,6 +32,11 @@
         </div>
       </div>
     </div>
+
+    <DifyApiDemoDialog
+      v-model:visible="showAiDialog"
+      :role="'project_manager'"
+    />
   </div>
 </template>
 
@@ -30,19 +45,23 @@ import { h, defineComponent, ref, onMounted } from 'vue'
 import { NIcon } from 'naive-ui'
 import { UserStore } from '@/domains/user'
 import { useRouter } from 'vue-router'
-import { IconLogout, IconArrowDown, IconPassword } from '@/icons'
+import { IconLogout, IconArrowDown, IconPassword, IconAi } from '@/icons'
+import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
 
 export default defineComponent({
   name: 'NavHeader',
   components: {
     IconArrowDown,
     IconPassword,
+    IconAi,
+    DifyApiDemoDialog,
   },
   setup(props, context) {
     const { name, avatar, doLogout } = UserStore()
     const router = useRouter()
     const nameuser = ref('')
     const activeNav = ref(0)
+    const showAiDialog = ref(false)
     const profileOpts = [
       {
         label: '编辑密码',
@@ -85,6 +104,7 @@ export default defineComponent({
       profileOpts,
       handleProfileSelect,
       activeNav,
+      showAiDialog,
     }
   },
 })
@@ -119,6 +139,31 @@ export default defineComponent({
     z-index: 9;
     min-width: 200px;
     border-bottom: 1px solid #E5EAF4;
+
+    .head-btn {
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      padding: 4px;
+      margin-right: 10px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: 0.2s;
+
+      .head-btn-icon {
+        color: #7E7E7E;
+        font-size: 20px;
+      }
+
+      &:hover {
+        background: #BEE2FF;
+
+        .head-btn-icon {
+          color: #FFFFFF;
+        }
+      }
+    }
 
     .header-item {
       margin: 0 5px;
