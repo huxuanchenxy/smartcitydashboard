@@ -123,9 +123,13 @@ export function setStyle(
     Object.keys(styleName).forEach(prop => {
       setStyle(element, prop, styleName[prop])
     })
+  } else if (styleName.startsWith('--')) {
+    // CSS 自定义属性（--xxx）不能 camelize，也不能用 element.style[prop] = value 赋值
+    // （这种方式对自定义属性不生效），必须通过 setProperty 设置，否则大屏预览页下发的
+    // --screen-fill-* 变量全部失效，弹窗遮罩按 100vw/100vh 被 body 的 transform 缩放后无法铺满全屏
+    element.style.setProperty(styleName, value ?? null)
   } else {
-    styleName = camelize(styleName)
-    element.style[styleName] = value
+    element.style[camelize(styleName)] = value
   }
 }
 

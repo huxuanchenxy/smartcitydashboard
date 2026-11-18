@@ -18,6 +18,8 @@
         <component :is="com.name" :com="com" />
       </div>
     </div>
+    <!-- 弹框遮罩层容器：由组件按需注册，挂在此处可避免被画布/组件自身的 transform 限制 -->
+    <div ref="maskLayer" class="datav-mask-layer"></div>
   </div>
 </template>
 
@@ -30,6 +32,7 @@ import {
   getCurrentInstance,
   PropType,
   watch,
+  provide,
 } from 'vue'
 import { globalConfig } from '@/config'
 import { EditorModule } from '@/store/modules/editor'
@@ -59,6 +62,9 @@ export default defineComponent({
     const route = useRoute();
     //const loading = ref(true)
     const loading = ref(false)
+    // 弹框遮罩层容器：供组件内弹框（如 DifyApiDemoDialog）就近挂载，避免受组件自身 transform 影响
+    const maskLayer = ref<HTMLElement | null>(null)
+    provide('screen-mask-layer', maskLayer)
     const pageConfig = computed(() => EditorModule.pageConfig)
     const coms = computed(() => {
       let list = EditorModule.coms.filter(r => !r.parentId)
@@ -156,6 +162,20 @@ export default defineComponent({
       }
     }
 
+    // 供组件内弹框满屏使用（如 DifyApiDemoDialog 的遮罩层）：
+    // 遮罩以组件盒子为基准定位并会被画布一起缩放，需按反向尺寸/偏移/缩放比例还原成正好覆盖视口；
+    // 旋转变换不在此抵消（仅大屏旋转时遮罩会有偏差）
+    const setScreenFillVars = (cw: number, ch: number, ratioX: number, ratioY: number, offsetX: number, offsetY: number) => {
+      setStyle(document.documentElement, {
+        '--screen-fill-w': `${cw / ratioX}px`,
+        '--screen-fill-h': `${ch / ratioY}px`,
+        '--screen-fill-left': `${-offsetX / ratioX}px`,
+        '--screen-fill-top': `${-offsetY / ratioY}px`,
+        '--screen-fill-scale-x': `${1 / ratioX}`,
+        '--screen-fill-scale-y': `${1 / ratioY}`,
+      } as unknown as CSSStyleDeclaration)
+    }
+
     const resizeAuto = (width: number, height: number) => {
       const cw = document.documentElement.clientWidth
       const ch = document.documentElement.clientHeight
@@ -166,6 +186,7 @@ export default defineComponent({
         transformOrigin: 'left top',
         backgroundSize: '100% 100%',
       } as CSSStyleDeclaration)
+      setScreenFillVars(cw, ch, ratioX, ratioY, 0, 0)
     }
 
     // 等比缩放并完整放入视口（contain 策略）：ratio 取宽/高两个方向的较小值，
@@ -184,6 +205,7 @@ export default defineComponent({
         backgroundPosition: 'left top',
         marginLeft: '0',
       } as CSSStyleDeclaration)
+      setScreenFillVars(cw, ch, ratio, ratio, offsetX, offsetY)
     }
 
     const resizeNone = () => {
@@ -191,6 +213,9 @@ export default defineComponent({
         overflow: 'hidden',
         position: 'relative',
       } as CSSStyleDeclaration)
+      const cw = document.documentElement.clientWidth
+      const ch = document.documentElement.clientHeight
+      setScreenFillVars(cw, ch, 1, 1, 0, 0)
     }
 
     // 响应式铺满：画布尺寸直接等于视口尺寸，不做任何 transform 缩放；
@@ -208,6 +233,7 @@ export default defineComponent({
         backgroundPosition: 'left top',
         marginLeft: '0',
       } as CSSStyleDeclaration)
+      setScreenFillVars(cw, ch, 1, 1, 0, 0)
     }
 
     const resize = (config: PageConfig) => {
@@ -326,7 +352,8 @@ export default defineComponent({
       comEvent,
       checkEvents,
       getAnimation,
-      getComStyle
+      getComStyle,
+      maskLayer,
     }
   },
 })
@@ -377,6 +404,11 @@ body {
     position: absolute !important;
     margin: 0 !important;
   }
+}
+
+/* 弹框遮罩容器：只作为挂载点，不参与布局，避免影响画布内其它元素 */
+.datav-mask-layer {
+  display: contents;
 }
 
 .datav-watermark {

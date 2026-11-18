@@ -1,9 +1,11 @@
 <template>
-  <Teleport to="body">
+  <!-- 大屏预览页会把遮罩容器通过 provide 下发（挂在组件盒子之外，不受画布/组件 transform 影响）；
+       其他场景仍挂到 body -->
+  <Teleport :to="teleportTarget">
     <div
       v-if="dialogVisible"
       class="custom-dialog-mask"
-      :class="{ 'no-mask': noMask }"
+      :class="{ 'no-mask': noMask, 'in-screen-layer': !!screenMaskLayer }"
     >
       <div
         class="custom-dialog-wrapper"
@@ -305,10 +307,12 @@ import {
   ref,
   watch,
   computed,
+  inject,
   onMounted,
   onUnmounted,
   nextTick,
 } from 'vue'
+import type { Ref } from 'vue'
 import { ElButton, ElInput } from 'element-plus'
 import { DemoScriptEngine } from './demo-script'
 import type { DemoScript } from './demo-script'
@@ -450,6 +454,12 @@ export default defineComponent({
   },
   emits: ['close', 'update:visible', 'message-received', 'message-sent', 'md-editor-visible-change'],
   setup(props, { emit }) {
+    // 宿主（大屏预览页）提供的遮罩容器；拿不到则挂到 body
+    const screenMaskLayer = inject<Ref<HTMLElement | null> | null>('screen-mask-layer', null)
+    const teleportTarget = computed<HTMLElement | string>(
+      () => screenMaskLayer?.value || 'body',
+    )
+
     const dialogVisible = ref(false)
     const userQuery = ref('')
     const messages = ref<ChartMessage[]>([])
@@ -469,9 +479,44 @@ export default defineComponent({
     watch(mdEditorVisible, val => {
       emit('md-editor-visible-change', val)
     })
-    const dialogPosition = ref(props.initialPosition ?? { x: window.innerWidth / 2 + 50, y: 100 })
+
+    /**
+     * 大屏预览页会下发 --screen-fill-w（遮罩铺满所需的画布尺寸）：
+     * 遮罩容器挂在画布内，坐标系是「未缩放的画布坐标」，canvasW/canvasH 即该坐标下的可见区域；
+     * 非预览页（未下发变量）回退到窗口尺寸。
+     */
+    const getFillMetrics = () => {
+      const rootStyle = getComputedStyle(document.documentElement)
+      const fillW = parseFloat(rootStyle.getPropertyValue('--screen-fill-w')) || 0
+      const fillH = parseFloat(rootStyle.getPropertyValue('--screen-fill-h')) || 0
+      const onScreen = !!screenMaskLayer?.value
+      const canvasW = onScreen ? fillW : window.innerWidth
+      const canvasH = onScreen ? fillH : window.innerHeight
+      return { fillW, fillH, onScreen, canvasW, canvasH }
+    }
+
+    // 弹窗位置：优先用宿主给的；否则在可见区域居中偏右（x 中心 + 50px）
+    const getDefaultPosition = () => {
+      if (props.initialPosition) return props.initialPosition
+      const { canvasW } = getFillMetrics()
+      return { x: canvasW / 2 + 50, y: 100 }
+    }
+
+    const dialogPosition = ref(getDefaultPosition())
     const dragOffset = ref({ x: 0, y: 0 })
     const isDragging = ref(false)
+
+    // 弹窗尺寸：未指定时固定 600×600，并按可见区域收窄，保证缩放前后都不溢出屏幕
+    const getDefaultSize = () => {
+      const { onScreen, canvasW, canvasH } = getFillMetrics()
+      if (!onScreen || !canvasW || !canvasH) {
+        return { width: 600, height: 600 }
+      }
+      return {
+        width: Math.min(600, canvasW * 0.8),
+        height: Math.min(600, canvasH * 0.8),
+      }
+    }
 
     // 字体整体缩放：优先使用外部传入的 fontScale（实时联动），否则读取 localStorage
     const chatFontScale = computed(() => (props.fontScale > 0 ? props.fontScale : getFontScale()))
@@ -704,8 +749,32 @@ export default defineComponent({
     const isResizing = ref(false)
     const resizeDirection = ref('')
     const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
-    const dialogWidth = ref(props.initialSize?.width ?? 600)
-    const dialogHeight = ref(props.initialSize?.height ?? 600)
+    const defaultSize = getDefaultSize()
+    const dialogWidth = ref(props.initialSize?.width ?? defaultSize.width)
+    const dialogHeight = ref(props.initialSize?.height ?? defaultSize.height)
+
+    // 大屏预览页窗口缩放会重建画布缩放比例，重新按下发变量校正默认位置/尺寸，
+    // 避免弹窗跑偏或超出可见区域（拖动/手动调整过尺寸的情况不覆盖）
+    const syncToViewport = () => {
+      if (!getFillMetrics().onScreen) return
+      if (!props.initialPosition) {
+        dialogPosition.value = getDefaultPosition()
+      }
+      if (!props.initialSize) {
+        const size = getDefaultSize()
+        dialogWidth.value = size.width
+        dialogHeight.value = size.height
+      }
+    }
+    watch(dialogVisible, visible => {
+      if (visible) syncToViewport()
+    })
+    onMounted(() => {
+      window.addEventListener('resize', syncToViewport)
+    })
+    onUnmounted(() => {
+      window.removeEventListener('resize', syncToViewport)
+    })
 
     // 宿主重新测量（如窗口缩放）时同步对话窗位置/尺寸，避免只在初始化时读一次
     watch(
@@ -1584,6 +1653,8 @@ export default defineComponent({
 
     return {
       dialogVisible,
+      teleportTarget,
+      screenMaskLayer,
       userQuery,
       messages,
       isLoading,
@@ -1629,10 +1700,21 @@ export default defineComponent({
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background-color: rgba(0, 0, 0, 0.3);
   z-index: 9999;
+}
+
+/* 大屏预览页：遮罩挂在画布内的 .datav-mask-layer（不受组件自身 transform 限制），
+   但仍会被画布（body）整体缩放，需按预览页下发的比例铺开后再反向还原成满屏 */
+.custom-dialog-mask.in-screen-layer {
+  width: var(--screen-fill-w, 100vw);
+  height: var(--screen-fill-h, 100vh);
+  margin-left: var(--screen-fill-left, 0);
+  margin-top: var(--screen-fill-top, 0);
+  transform: scale(var(--screen-fill-scale-x, 1), var(--screen-fill-scale-y, 1));
+  transform-origin: left top;
 }
 
 .custom-dialog-mask.no-mask {
@@ -1648,6 +1730,15 @@ export default defineComponent({
   position: absolute;
   background-color: transparent;
   z-index: 10000;
+}
+
+/* 弹窗本身再抵消一次遮罩的反向缩放，保持视觉大小正常 */
+.custom-dialog-mask.in-screen-layer .custom-dialog-wrapper {
+  transform: scale(
+    calc(1 / var(--screen-fill-scale-x, 1)),
+    calc(1 / var(--screen-fill-scale-y, 1))
+  );
+  transform-origin: left top;
 }
 
 .custom-dialog {
