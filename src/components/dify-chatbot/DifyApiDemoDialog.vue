@@ -32,247 +32,262 @@
           :style="chatFontStyle"
           @mousedown="handleMouseDown"
         >
-          <div class="custom-dialog-header">
-            <span class="custom-dialog-title">{{ title }}</span>
-            <div class="custom-dialog-header-actions">
-              <button
-                v-if="mdEditor"
-                class="md-editor-toggle"
-                :class="{ active: mdEditorVisible }"
-                :title="mdEditorVisible ? '收起 Markdown 编辑器' : '打开 Markdown 编辑器'"
-                @click="mdEditorVisible = !mdEditorVisible"
-              >
-                📝
-              </button>
-              <button v-if="!noMask" class="custom-dialog-close" @click="handleClose">
-                ×
-              </button>
-            </div>
-          </div>
           <div class="dify-api-container">
-            <div class="message-section-wrapper">
-              <div ref="messageContainer" class="message-section">
-                <div v-if="messages.length === 0" class="empty-message">
-                  <div class="empty-icon">💬</div>
-                  <div>暂无消息，开始您的对话吧！</div>
+            <div class="chat-main">
+              <div class="chat-main-header">
+                <div class="chat-main-title-wrap">
+                  <span class="chat-main-title">{{ title }}</span>
                 </div>
-                <div v-else class="message-list">
-                  <div
-                    v-for="(message, index) in messages"
-                    :key="index"
-                    :class="[
-                      'message-item',
-                      message.role === 'user' ? 'user-message' : 'assistant-message',
-                    ]"
+                <div class="chat-main-actions">
+                  <button
+                    v-if="mdEditor"
+                    class="pill-btn"
+                    :class="{ active: mdEditorVisible }"
+                    :title="mdEditorVisible ? '收起 Markdown 编辑器' : '打开 Markdown 编辑器'"
+                    @click="mdEditorVisible = !mdEditorVisible"
                   >
-                    <div class="message-header">
-                      <div class="avatar" :class="message.role">
-                        {{ message.role === "user" ? "👤" : "🤖" }}
+                    {{ mdEditorVisible ? '收起文档' : '说明文档' }}
+                  </button>
+                  <button
+                    v-if="!noMask"
+                    class="round-icon-btn"
+                    title="关闭"
+                    @click="handleClose"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div class="message-section-wrapper">
+                <div
+                  ref="messageContainer"
+                  class="message-section"
+                  :class="{ 'is-empty': messages.length === 0 }"
+                >
+                  <div v-if="messages.length === 0" class="welcome-screen">
+                    <div class="welcome-inner">
+                      <div class="welcome-logo">
+                        <span class="welcome-logo-inner">🤖</span>
                       </div>
-                      <div class="message-role">{{ message.role === "user" ? (currentRole === 'project_manager' ? '项目经理' : currentRole === 'developer' ? '开发人员' : currentRole === 'backend_ops' ? '后台维护人员' : '使用人员') : "AI 助手" }}</div>
+                      <div class="welcome-slogan">智能演示助手</div>
+                      <div class="welcome-title">今天，有什么可以帮你？</div>
+                      <div class="welcome-subtitle">暂无消息，开始您的对话吧！</div>
                     </div>
-                    <div class="message-content">
-                      <div v-if="message.isThinking" class="thinking-indicator">
-                        <span class="thinking-dots">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </span>
-                        <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
-                      </div>
-                      <div v-else>
-                        <div class="content-text" v-html="formatContent(message.content)"></div>
-                        <div v-if="message.flintSpecs && message.flintSpecs.length > 0" class="flint-charts-container">
-                          <div
-                            v-for="(spec, chartIdx) in message.flintSpecs"
-                            :key="chartIdx"
-                            :ref="(el) => setFlintChartRef(el, index, chartIdx)"
-                            class="flint-chart-item"
-                          ></div>
+                  </div>
+                  <div v-else class="message-list">
+                    <div
+                      v-for="(message, index) in messages"
+                      :key="index"
+                      :class="[
+                        'message-item',
+                        message.role === 'user' ? 'user-message' : 'assistant-message',
+                      ]"
+                    >
+                      <div class="message-header">
+                        <div class="avatar" :class="message.role">
+                          {{ message.role === "user" ? "👤" : "🤖" }}
                         </div>
-                        <!-- HTML 交互面板 -->
-                        <div
-                          v-if="message.htmlInteractions && message.htmlInteractions.length > 0"
-                          class="html-interactions-container"
+                        <div class="message-role">{{ message.role === "user" ? (currentRole === 'project_manager' ? '项目经理' : currentRole === 'developer' ? '开发人员' : currentRole === 'backend_ops' ? '后台维护人员' : '使用人员') : "AI 助手" }}</div>
+                      </div>
+                      <div class="message-content">
+                        <div v-if="message.isThinking" class="thinking-indicator">
+                          <span class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </span>
+                          <span class="thinking-text">{{ message.thinkingContent || '思考中' }}</span>
+                        </div>
+                        <div v-else>
+                          <div class="content-text" v-html="formatContent(message.content)"></div>
+                          <div v-if="message.flintSpecs && message.flintSpecs.length > 0" class="flint-charts-container">
+                            <div
+                              v-for="(spec, chartIdx) in message.flintSpecs"
+                              :key="chartIdx"
+                              :ref="(el) => setFlintChartRef(el, index, chartIdx)"
+                              class="flint-chart-item"
+                            ></div>
+                          </div>
+                          <!-- HTML 交互面板 -->
+                          <div
+                            v-if="message.htmlInteractions && message.htmlInteractions.length > 0"
+                            class="html-interactions-container"
+                          >
+                            <div
+                              v-for="(interaction, interIdx) in message.htmlInteractions"
+                              :key="interIdx"
+                              class="html-interaction-panel"
+                              :class="{ resolved: message.interactionResolved }"
+                            >
+                              <!-- 技能选择面板（可勾选） -->
+                              <div v-if="interaction.type === 'skill_select'" class="skill-select-panel">
+                                <div class="skill-select-message">{{ interaction.message }}</div>
+                                <div class="skill-select-list">
+                                  <div
+                                    v-for="skill in interaction.skills"
+                                    :key="skill.name"
+                                    class="skill-select-item"
+                                    :class="{ selected: message.selectedSkills && message.selectedSkills.includes(skill.name) }"
+                                    @click="toggleSkill(index, skill.name)"
+                                  >
+                                    <div class="skill-checkbox">
+                                      <span v-if="message.selectedSkills && message.selectedSkills.includes(skill.name)">✓</span>
+                                    </div>
+                                    <div class="skill-select-info">
+                                      <div class="skill-select-name">{{ skill.name }}</div>
+                                      <div class="skill-select-desc">{{ skill.desc }}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="skill-select-actions">
+                                  <button
+                                    v-for="btn in getButtons(interaction)"
+                                    :key="btn.type"
+                                    class="skill-btn"
+                                    :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                    :style="getButtonInlineStyle(btn)"
+                                    :disabled="message.interactionResolved"
+                                    @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
+                                  >
+                                    {{ btn.text }}
+                                  </button>
+                                </div>
+                                <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
+                                  {{ message.interactionText }}
+                                </div>
+                                <div v-if="message.interactionResolved && !message.interactionText && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
+                                  已选择：{{ message.selectedSkills.join('、') }}
+                                </div>
+                              </div>
+                              <!-- 技能列表面板（只读列表，不可勾选） -->
+                              <div v-else-if="interaction.type === 'skill_list'" class="skill-list-panel">
+                                <div class="skill-select-message">{{ interaction.message }}</div>
+                                <div class="skill-select-list">
+                                  <div
+                                    v-for="skill in interaction.skills"
+                                    :key="skill.name"
+                                    class="skill-list-item"
+                                  >
+                                    <div class="skill-list-info">
+                                      <div class="skill-select-name">{{ skill.name }}</div>
+                                      <div class="skill-select-desc">{{ skill.desc }}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div v-if="interaction.buttons && interaction.buttons.length > 0" class="skill-select-actions">
+                                  <button
+                                    v-for="btn in getButtons(interaction)"
+                                    :key="btn.type"
+                                    class="skill-btn"
+                                    :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
+                                    :style="getButtonInlineStyle(btn)"
+                                    :disabled="message.interactionResolved"
+                                    @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
+                                  >
+                                    {{ btn.text }}
+                                  </button>
+                                </div>
+                                <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
+                                  {{ message.interactionText }}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div v-if="message.files && message.files.length > 0" class="message-files">
+                            <div
+                              v-for="file in message.files"
+                              :key="file.id"
+                              class="message-file-item"
+                            >
+                              <span class="file-icon">📄</span>
+                              <span class="file-name">{{ file.name }}</span>
+                              <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="!message.isThinking" class="message-footer">
+                        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+                        <button
+                          class="copy-btn"
+                          title="复制内容"
+                          @click="copyMessageContent(message)"
                         >
-                          <div
-                            v-for="(interaction, interIdx) in message.htmlInteractions"
-                            :key="interIdx"
-                            class="html-interaction-panel"
-                            :class="{ resolved: message.interactionResolved }"
-                          >
-                            <!-- 技能选择面板（可勾选） -->
-                            <div v-if="interaction.type === 'skill_select'" class="skill-select-panel">
-                              <div class="skill-select-message">{{ interaction.message }}</div>
-                              <div class="skill-select-list">
-                                <div
-                                  v-for="skill in interaction.skills"
-                                  :key="skill.name"
-                                  class="skill-select-item"
-                                  :class="{ selected: message.selectedSkills && message.selectedSkills.includes(skill.name) }"
-                                  @click="toggleSkill(index, skill.name)"
-                                >
-                                  <div class="skill-checkbox">
-                                    <span v-if="message.selectedSkills && message.selectedSkills.includes(skill.name)">✓</span>
-                                  </div>
-                                  <div class="skill-select-info">
-                                    <div class="skill-select-name">{{ skill.name }}</div>
-                                    <div class="skill-select-desc">{{ skill.desc }}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="skill-select-actions">
-                                <button
-                                  v-for="btn in getButtons(interaction)"
-                                  :key="btn.type"
-                                  class="skill-btn"
-                                  :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
-                                  :style="getButtonInlineStyle(btn)"
-                                  :disabled="message.interactionResolved"
-                                  @click="btn.type === 'confirm' ? confirmSkillSelection(index, btn) : cancelSkillSelection(index, btn)"
-                                >
-                                  {{ btn.text }}
-                                </button>
-                              </div>
-                              <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
-                                {{ message.interactionText }}
-                              </div>
-                              <div v-if="message.interactionResolved && !message.interactionText && message.selectedSkills && message.selectedSkills.length > 0" class="skill-selected-summary">
-                                已选择：{{ message.selectedSkills.join('、') }}
-                              </div>
-                            </div>
-                            <!-- 技能列表面板（只读列表，不可勾选） -->
-                            <div v-else-if="interaction.type === 'skill_list'" class="skill-list-panel">
-                              <div class="skill-select-message">{{ interaction.message }}</div>
-                              <div class="skill-select-list">
-                                <div
-                                  v-for="skill in interaction.skills"
-                                  :key="skill.name"
-                                  class="skill-list-item"
-                                >
-                                  <div class="skill-list-info">
-                                    <div class="skill-select-name">{{ skill.name }}</div>
-                                    <div class="skill-select-desc">{{ skill.desc }}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div v-if="interaction.buttons && interaction.buttons.length > 0" class="skill-select-actions">
-                                <button
-                                  v-for="btn in getButtons(interaction)"
-                                  :key="btn.type"
-                                  class="skill-btn"
-                                  :class="btn.type === 'confirm' ? 'skill-confirm-btn' : 'skill-cancel-btn'"
-                                  :style="getButtonInlineStyle(btn)"
-                                  :disabled="message.interactionResolved"
-                                  @click="btn.type === 'confirm' ? confirmSkillList(index, btn) : cancelSkillList(index, btn)"
-                                >
-                                  {{ btn.text }}
-                                </button>
-                              </div>
-                              <div v-if="message.interactionResolved && message.interactionText" class="skill-selected-summary">
-                                {{ message.interactionText }}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div v-if="message.files && message.files.length > 0" class="message-files">
-                          <div
-                            v-for="file in message.files"
-                            :key="file.id"
-                            class="message-file-item"
-                          >
-                            <span class="file-icon">📄</span>
-                            <span class="file-name">{{ file.name }}</span>
-                            <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                          </div>
-                        </div>
+                          <ChatCopy />
+                        </button>
                       </div>
-                    </div>
-                    <div class="message-actions">
-                      <button
-                        v-if="!message.isThinking"
-                        class="copy-btn"
-                        :title="'复制内容'"
-                        @click="copyMessageContent(message)"
-                      >
-                        <ChatCopy />
-                      </button>
-                    </div>
-                    <div v-if="!message.isThinking" class="message-time">
-                      {{ formatTime(message.timestamp) }}
                     </div>
                   </div>
                 </div>
-              </div>
               <!-- <div class="message-section-actions">
                 <el-button type="warning" size="small" @click="clearMessages" :disabled="isLoading" title="清空对话">
                   <svg t="1783560291301" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M593.92 126.68928a69.632 69.632 0 0 1 69.632 69.632l-0.04096 94.208H798.72a110.592 110.592 0 0 1 110.592 110.592v122.88a28.672 28.672 0 0 1-28.672 28.672h-49.93024l37.4784 336.81408a28.672 28.672 0 0 1-28.50816 31.82592H184.32a28.672 28.672 0 0 1-28.50816-31.82592l37.43744-336.85504L143.36 552.67328a28.672 28.672 0 0 1-28.672-28.672v-122.88a110.592 110.592 0 0 1 110.592-110.592h135.12704l0.04096-94.208a69.632 69.632 0 0 1 69.632-69.632h163.84z m179.11808 425.984H250.96192l-34.6112 311.296h147.0464l19.456-179.8144a28.672 28.672 0 1 1 57.01632 6.144l-18.8416 173.6704h182.14912l-17.408-173.91616a28.672 28.672 0 1 1 57.05728-5.7344l17.98144 179.6096 146.8416 0.04096-34.6112-311.296z m25.68192-204.8H225.28a53.248 53.248 0 0 0-53.248 53.248v94.208h679.936v-94.208a53.248 53.248 0 0 0-53.248-53.248z m-204.8-163.84h-163.84a12.288 12.288 0 0 0-12.288 12.288v94.208h188.416v-94.208a12.288 12.288 0 0 0-12.288-12.288z" fill="#ffffff"></path></svg>
                 </el-button>
               </div> -->
+              </div>
             </div>
+
             <div class="input-section">
               <div class="input-wrapper">
-                <div class="input-row">
-                  <div v-if="uploadedFiles.length > 0" class="uploaded-files-list">
-                    <div
-                      v-for="file in uploadedFiles"
-                      :key="file.id"
-                      class="uploaded-file-item"
-                    >
-                      <span class="file-icon">📄</span>
-                      <span class="file-name">{{ file.name }}</span>
-                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                      <button class="remove-file-btn" @click="removeFile(file.id)">
-                        ×
-                      </button>
-                    </div>
+                <div v-if="uploadedFiles.length > 0" class="uploaded-files-list">
+                  <div
+                    v-for="file in uploadedFiles"
+                    :key="file.id"
+                    class="uploaded-file-item"
+                  >
+                    <span class="file-icon">📄</span>
+                    <span class="file-name">{{ file.name }}</span>
+                    <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                    <button class="remove-file-btn" @click="removeFile(file.id)">
+                      ×
+                    </button>
                   </div>
+                </div>
+                <div class="composer">
                   <el-input
                     v-model="userQuery"
                     type="textarea"
                     :rows="3"
-                    placeholder="请输入您的问题..."
+                    placeholder="输入你的问题，让我们一起解决..."
                     resize="none"
                     :disabled="isLoading"
                     @keydown.enter.prevent="handleEnter"
                   />
-                  <div class="input-actions">
-                    <div class="actions-row">
-                      <el-button
-                        v-show="!isLoading"
-                        type="default"
-                        size="small"
-                        :disabled="isLoading"
-                        class="upload-button"
-                        title="上传文件"
-                        @click="openFileDialog"
-                      >
-                        <ChatUpload />
-                      </el-button>
+                  <div class="composer-footer">
+                    <button
+                      class="attach-btn"
+                      :disabled="isLoading"
+                      title="上传文件"
+                      @click="openFileDialog"
+                    >
+                      <ChatUpload class="attach-icon" />
+                      <span class="attach-text">添加附件</span>
+                    </button>
+                    <div class="composer-footer-right">
                       <span v-if="isLoading" class="hint">AI 正在思考中，请稍候...</span>
-                      <el-button
+                      <button
                         v-if="isLoading"
-                        type="danger"
-                        size="small"
-                        class="stop-button"
+                        class="round-btn stop-btn"
                         title="停止"
                         @click="stopGeneration"
                       >
-                        <ChatStop />
-                      </el-button>
-                      <el-button
-                        v-show="!isLoading"
-                        type="success"
-                        size="small"
-                        :disabled="isLoading || (!userQuery.trim() && uploadedFiles.length === 0)"
-                        class="send-button"
+                        <ChatStop class="round-icon" />
+                      </button>
+                      <button
+                        v-else
+                        class="round-btn send-btn"
+                        :disabled="!userQuery.trim() && uploadedFiles.length === 0"
                         title="发送"
                         @click="sendMessage"
                       >
-                        <ChatSend />
-                      </el-button>
+                        <ChatSend class="round-icon" />
+                      </button>
                     </div>
                   </div>
+                </div>
+                <div class="composer-hint">
+                  <span class="composer-hint-text">生成内容仅供参考，请核实重要信息</span>
                 </div>
                 <input
                   ref="fileInputRef"
@@ -313,7 +328,7 @@ import {
   nextTick,
 } from 'vue'
 import type { Ref } from 'vue'
-import { ElButton, ElInput } from 'element-plus'
+import { ElInput } from 'element-plus'
 import { DemoScriptEngine } from './demo-script'
 import type { DemoScript } from './demo-script'
 import ChatCopy from '@/icons/chat-copy.vue'
@@ -382,7 +397,6 @@ interface ChartMessage {
 export default defineComponent({
   name: 'DifyApiDemoDialog',
   components: {
-    ElButton,
     ElInput,
     ChatCopy,
     ChatUpload,
@@ -1696,6 +1710,34 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+/* =========================================================================
+   AI 智能助手对话窗｜视觉规范（浅色 · 蓝色主色），与 DifyRealDialog 保持一致
+   品牌蓝 #2f6bff ｜ 主区底色 #f6f8fc ｜ 卡片白底 + 1px 细边框
+   所有尺寸均乘以 --chat-font-scale，保证「字体缩放」功能整体一致
+   ========================================================================= */
+.custom-dialog {
+  --chat-primary: #2f6bff;
+  --chat-primary-strong: #1c56e6;
+  --chat-primary-soft: #eef4ff;
+  --chat-bg: #f6f8fc;
+  --chat-card: #fff;
+  --chat-border: #e8eef8;
+  --chat-border-soft: #eff3fa;
+  --chat-title: #1b2434;
+  --chat-text: #2b3747;
+  --chat-text-sub: #6c7c93;
+  --chat-text-light: #9aa8bb;
+
+  /* 内容列最大宽度：欢迎页 / 消息列表 / 输入区共用 */
+  --chat-content-max: 1040px;
+}
+
+/* 组件内统一使用 border-box，避免 width:100% + padding 溢出 */
+.custom-dialog,
+.custom-dialog * {
+  box-sizing: border-box;
+}
+
 .custom-dialog-mask {
   position: fixed;
   top: 0;
@@ -1741,105 +1783,140 @@ export default defineComponent({
   transform-origin: left top;
 }
 
-.custom-dialog {
+.custom-dialog-wrapper .custom-dialog {
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.1);
+  background-color: var(--chat-card);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(19, 45, 92, 0.18), 0 6px 20px rgba(19, 45, 92, 0.08);
   overflow: hidden;
-  /* 基准字号随缩放倍率变化，未单独声明字号的文字（如空消息提示）也跟随缩放 */
+  display: flex;
+  flex-direction: column;
+
+  /* 基准字号随缩放倍率变化，未单独声明字号的文字也跟随缩放 */
   font-size: calc(14px * var(--chat-font-scale, 1));
+  color: var(--chat-text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
 }
 
-.custom-dialog-fixed .custom-dialog-header {
+.custom-dialog-fixed .chat-main-header {
   cursor: default;
-}
-
-.custom-dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
-  color: white;
-  cursor: move;
-  user-select: none;
-}
-
-.custom-dialog-title {
-  font-size: calc(16px * var(--chat-font-scale, 1));
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.custom-dialog-title::before {
-  content: "🤖";
-  font-size: calc(18px * var(--chat-font-scale, 1));
-}
-
-.custom-dialog-close {
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  color: white;
-  font-size: calc(18px * var(--chat-font-scale, 1));
-  cursor: pointer;
-  padding: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.custom-dialog-close:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-}
-
-.custom-dialog-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.md-editor-toggle {
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  color: white;
-  font-size: calc(15px * var(--chat-font-scale, 1));
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.md-editor-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-}
-
-.md-editor-toggle.active {
-  background-color: rgba(255, 255, 255, 0.35);
 }
 
 .dify-api-container {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 56px);
-  background-color: #f8fafc;
+  flex: 1;
+  min-height: 0;
+  background-color: var(--chat-bg);
+  overflow: hidden;
 }
 
+/* ===================== 顶栏 ===================== */
+.chat-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--chat-bg);
+}
+
+.chat-main-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(12px * var(--chat-font-scale, 1));
+  padding: calc(13px * var(--chat-font-scale, 1)) calc(20px * var(--chat-font-scale, 1));
+  background-color: var(--chat-card);
+  border-bottom: 1px solid var(--chat-border-soft);
+  cursor: move;
+  user-select: none;
+}
+
+.chat-main-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+  min-width: 0;
+}
+
+.chat-main-title {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--chat-font-scale, 1));
+  font-size: calc(16px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  color: #2a3547;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-main-title::before {
+  content: "🤖";
+  font-size: calc(17px * var(--chat-font-scale, 1));
+  line-height: 1;
+}
+
+.chat-main-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--chat-font-scale, 1));
+}
+
+.pill-btn {
+  height: calc(30px * var(--chat-font-scale, 1));
+  padding: 0 calc(14px * var(--chat-font-scale, 1));
+  border: 1px solid #e2ecfd;
+  border-radius: calc(9px * var(--chat-font-scale, 1));
+  background-color: #f2f7ff;
+  color: var(--chat-primary);
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.pill-btn:hover {
+  background-color: #e8f1ff;
+  border-color: #cfe0ff;
+}
+
+.pill-btn.active {
+  background-color: #e2edff;
+  border-color: #b7d1ff;
+}
+
+.round-icon-btn {
+  width: calc(30px * var(--chat-font-scale, 1));
+  height: calc(30px * var(--chat-font-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--chat-border);
+  border-radius: 50%;
+  background-color: var(--chat-card);
+  color: #7d8b9f;
+  font-size: calc(18px * var(--chat-font-scale, 1));
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.round-icon-btn:hover {
+  background-color: #fff1f1;
+  border-color: #ffd6d6;
+  color: #ef4444;
+}
+
+/* ===================== 消息区 ===================== */
 .message-section-wrapper {
   flex: 1;
+  min-height: 0;
   position: relative;
   overflow: hidden;
 }
@@ -1848,7 +1925,12 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  padding: 20px;
+  padding: calc(24px * var(--chat-font-scale, 1)) calc(28px * var(--chat-font-scale, 1));
+}
+
+/* 空态（欢迎页）时去掉内边距，交给欢迎页自行控制 */
+.message-section.is-empty {
+  padding: 0;
 }
 
 .message-section::-webkit-scrollbar {
@@ -1868,25 +1950,77 @@ export default defineComponent({
   background: #cbd5e1;
 }
 
-.empty-message {
+/* ---------- 空态：品牌欢迎页 ---------- */
+.welcome-screen {
+  box-sizing: border-box;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(20px * var(--chat-font-scale, 1)) calc(28px * var(--chat-font-scale, 1)) calc(56px * var(--chat-font-scale, 1));
+}
+
+.welcome-inner {
+  width: 100%;
+  max-width: var(--chat-content-max, 1040px);
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+}
+
+.welcome-logo {
+  width: calc(88px * var(--chat-font-scale, 1));
+  height: calc(88px * var(--chat-font-scale, 1));
+  border-radius: calc(26px * var(--chat-font-scale, 1));
+  background: linear-gradient(180deg, #f4f8ff 0%, #e7f0ff 100%);
+  border: 1px solid #dde8fb;
+  box-shadow: 0 12px 26px rgba(47, 107, 255, 0.14), inset 0 1px 0 #fff;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #94a3b8;
+  margin-bottom: calc(22px * var(--chat-font-scale, 1));
 }
 
-.empty-icon {
-  font-size: calc(56px * var(--chat-font-scale, 1));
-  margin-bottom: 16px;
-  opacity: 0.6;
+.welcome-logo-inner {
+  display: flex;
+  font-size: calc(40px * var(--chat-font-scale, 1));
+  line-height: 1;
 }
 
+.welcome-slogan {
+  font-size: calc(14.5px * var(--chat-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #5b8cff 0%, #8f7dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: calc(12px * var(--chat-font-scale, 1));
+}
+
+.welcome-title {
+  font-size: calc(27px * var(--chat-font-scale, 1));
+  font-weight: 700;
+  color: var(--chat-title);
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  margin-bottom: calc(12px * var(--chat-font-scale, 1));
+}
+
+.welcome-subtitle {
+  font-size: calc(14px * var(--chat-font-scale, 1));
+  color: #8494a8;
+  line-height: 1.6;
+}
+
+/* ---------- 消息列表 ---------- */
 .message-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: calc(22px * var(--chat-font-scale, 1));
+  max-width: var(--chat-content-max, 1040px);
+  margin: 0 auto;
 }
 
 .message-item {
@@ -1899,84 +2033,86 @@ export default defineComponent({
 }
 
 .message-item.assistant-message {
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .message-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: calc(8px * var(--chat-font-scale, 1));
+  margin-bottom: calc(8px * var(--chat-font-scale, 1));
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  flex-shrink: 0;
+  width: calc(30px * var(--chat-font-scale, 1));
+  height: calc(30px * var(--chat-font-scale, 1));
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(18px * var(--chat-font-scale, 1));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-size: calc(15px * var(--chat-font-scale, 1));
 }
 
 .avatar.user {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background-color: #eef2fa;
+  color: #5b6b83;
 }
 
 .avatar.assistant {
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.24);
 }
 
 .message-role {
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  color: #64748b;
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  color: #8494a8;
   font-weight: 500;
 }
 
 .message-content {
-  width: auto;
   max-width: 75%;
-  padding: 14px 18px;
-  border-radius: 16px;
+  padding: calc(14px * var(--chat-font-scale, 1)) calc(18px * var(--chat-font-scale, 1));
+  border-radius: calc(14px * var(--chat-font-scale, 1));
   word-break: break-word;
   transition: all 0.2s ease;
 }
 
+/* 助手回复：整幅白底卡片，便于承载表格 / 图表 / 交互面板 */
 .assistant-message .message-content {
-  width: 75%;
-  min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(16px * var(--chat-font-scale, 1));
+  box-shadow: 0 2px 10px rgba(28, 60, 120, 0.04);
+  color: var(--chat-text);
 }
 
+/* 用户提问：右侧蓝色气泡 */
 .user-message .message-content {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border-bottom-right-radius: 4px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.assistant-message .message-content {
-  background-color: white;
-  color: #1e293b;
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #3b7bff 0%, #1f5fe8 100%);
+  color: #fff;
+  border-bottom-right-radius: calc(5px * var(--chat-font-scale, 1));
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.24);
 }
 
 .thinking-indicator {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .thinking-dots {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .thinking-dots span {
-  width: 8px;
-  height: 8px;
-  background: linear-gradient(135deg, #3478F3 0%, #0D2A42 100%);
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
   border-radius: 50%;
   animation: thinking 1.4s infinite ease-in-out both;
 }
@@ -1996,6 +2132,7 @@ export default defineComponent({
     transform: scale(0);
     opacity: 0.5;
   }
+
   40% {
     transform: scale(1);
     opacity: 1;
@@ -2003,8 +2140,8 @@ export default defineComponent({
 }
 
 .thinking-text {
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  color: #94a3b8;
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
 }
 
 .content-text {
@@ -2023,86 +2160,104 @@ export default defineComponent({
 .message-files {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
+  gap: calc(8px * var(--chat-font-scale, 1));
+  margin-top: calc(10px * var(--chat-font-scale, 1));
+  max-width: 78%;
 }
 
 .message-file-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
   font-size: calc(13px * var(--chat-font-scale, 1));
-  padding: 8px 12px;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  padding: calc(8px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
+  background-color: #f8fafd;
+  border: 1px solid var(--chat-border);
+  border-radius: calc(10px * var(--chat-font-scale, 1));
+  min-width: 0;
+}
+
+/* 用户气泡内的附件：实心白底卡片 + 深色文字 */
+.user-message .message-file-item {
+  background-color: #fff;
+  border-color: #fff;
+  color: var(--chat-title);
 }
 
 .file-icon {
-  font-size: calc(16px * var(--chat-font-scale, 1));
+  font-size: calc(15px * var(--chat-font-scale, 1));
+  flex-shrink: 0;
 }
 
 .file-name {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .file-size {
-  color: #94a3b8;
+  color: var(--chat-text-light);
+  flex-shrink: 0;
 }
 
-.message-actions {
-  margin-top: 6px;
+.user-message .file-size {
+  color: var(--chat-text-sub);
+}
+
+/* 时间 + 复制：同一行 */
+.message-footer {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--chat-font-scale, 1));
+  margin-top: calc(8px * var(--chat-font-scale, 1));
 }
 
 .copy-btn {
+  display: flex;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 6px;
-  color: #94a3b8;
+  padding: calc(5px * var(--chat-font-scale, 1));
+  color: #a4b1c4;
   opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 6px;
+  border-radius: calc(7px * var(--chat-font-scale, 1));
+  transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+
+  svg {
+    width: calc(15px * var(--chat-font-scale, 1));
+    height: calc(15px * var(--chat-font-scale, 1));
+  }
 }
 
-.message-item:hover .copy-btn {
+.message-footer:hover .copy-btn {
   opacity: 1;
 }
 
 .copy-btn:hover {
-  color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--chat-primary);
+  background-color: var(--chat-primary-soft);
 }
 
 .message-time {
   font-size: calc(11px * var(--chat-font-scale, 1));
-  color: #cbd5e1;
-  margin-top: 6px;
+  color: #b6c2d3;
 }
 
+/* ===================== 输入区 ===================== */
 .input-section {
-  padding: 22px 16px;
-  background-color: white;
-  border-top: 1px solid #e2e8f0;
-}
-
-/* 输入框内文字跟随整体缩放 */
-.input-section :deep(.el-textarea__inner) {
-  font-size: calc(14px * var(--chat-font-scale, 1));
+  flex-shrink: 0;
+  padding: 0 calc(28px * var(--chat-font-scale, 1)) calc(14px * var(--chat-font-scale, 1));
+  background-color: transparent;
 }
 
 .input-wrapper {
+  max-width: var(--chat-content-max, 1040px);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.input-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
 }
 
 .uploaded-files-list {
@@ -2114,12 +2269,12 @@ export default defineComponent({
 .uploaded-file-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background-color: #f8fafc;
-  border-radius: 10px;
+  gap: calc(10px * var(--chat-font-scale, 1));
+  padding: calc(8px * var(--chat-font-scale, 1)) calc(12px * var(--chat-font-scale, 1));
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(10px * var(--chat-font-scale, 1));
   font-size: calc(13px * var(--chat-font-scale, 1));
-  border: 1px solid #e2e8f0;
 }
 
 .remove-file-btn {
@@ -2143,102 +2298,165 @@ export default defineComponent({
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* 输入卡片：textarea + 底部操作行，整体为一张白底圆角卡 */
+.composer {
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
+  border-radius: calc(18px * var(--chat-font-scale, 1));
+  padding: calc(14px * var(--chat-font-scale, 1)) calc(16px * var(--chat-font-scale, 1)) calc(10px * var(--chat-font-scale, 1));
+  box-shadow: 0 4px 16px rgba(28, 60, 120, 0.05);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.composer:focus-within {
+  border-color: #bcd3ff;
+  box-shadow: 0 8px 22px rgba(47, 107, 255, 0.12);
+}
+
+.composer :deep(.el-textarea) {
+  width: 100%;
+}
+
+/* 去掉 Element Plus textarea 的默认边框/底色，融入卡片 */
+.composer :deep(.el-textarea__inner) {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  font-size: calc(15px * var(--chat-font-scale, 1)) !important;
+  line-height: 1.65 !important;
+  color: var(--chat-text) !important;
+  font-family: inherit !important;
+  resize: none !important;
+}
+
+.composer :deep(.el-textarea__inner::placeholder) {
+  color: #a8b5c8 !important;
+}
+
+.composer :deep(.el-textarea__inner:disabled) {
+  background-color: transparent !important;
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(12px * var(--chat-font-scale, 1));
+  margin-top: calc(10px * var(--chat-font-scale, 1));
+}
+
+/* 添加附件：纯文字按钮 + 图标 */
+.attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(7px * var(--chat-font-scale, 1));
+  padding: calc(5px * var(--chat-font-scale, 1)) calc(8px * var(--chat-font-scale, 1));
+  border: none;
+  border-radius: calc(8px * var(--chat-font-scale, 1));
+  background: transparent;
+  color: #63748c;
+  font-size: calc(13.5px * var(--chat-font-scale, 1));
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.attach-btn:hover:not(:disabled) {
+  background-color: var(--chat-primary-soft);
+  color: var(--chat-primary);
+}
+
+.attach-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.attach-icon {
+  width: calc(17px * var(--chat-font-scale, 1));
+  height: calc(17px * var(--chat-font-scale, 1));
+}
+
+/* 图标组件内写死的 fill 由 CSS 接管，跟随按钮文字颜色 */
+.attach-btn :deep(.attach-icon path) {
+  fill: currentColor !important;
+}
+
+.composer-footer-right {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+}
+
+.hint {
+  font-size: calc(12.5px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+}
+
+/* 发送 / 停止：圆形按钮 */
+.round-btn {
+  flex-shrink: 0;
+  width: calc(38px * var(--chat-font-scale, 1));
+  height: calc(38px * var(--chat-font-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(47, 107, 255, 0.3);
+  transition: box-shadow 0.2s, transform 0.12s, background 0.2s;
+}
+
+.round-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(47, 107, 255, 0.42);
+  transform: translateY(-1px);
+}
+
+.round-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.round-btn:disabled {
+  background: #c7d8f8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.stop-btn {
+  background: linear-gradient(135deg, #f2685f 0%, #dc2626 100%);
+  box-shadow: 0 6px 14px rgba(220, 38, 38, 0.28);
+}
+
+.stop-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+}
+
+.round-icon {
+  width: calc(20px * var(--chat-font-scale, 1));
+  height: calc(20px * var(--chat-font-scale, 1));
+}
+
+/* 输入区下方：免责提示（居中） */
+.composer-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10px * var(--chat-font-scale, 1));
+}
+
+.composer-hint-text {
+  font-size: calc(12px * var(--chat-font-scale, 1));
+  color: var(--chat-text-light);
+}
+
 .hidden-file-input {
   display: none;
 }
 
-.input-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.actions-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.hint {
-  font-size: calc(13px * var(--chat-font-scale, 1));
-  color: #94a3b8;
-}
-
-.send-button {
-  min-width: 44px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border: none;
-  color: white;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.send-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.stop-button {
-  min-width: 44px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border: none;
-  color: white;
-  font-weight: 500;
-}
-
-.upload-button {
-  min-width: 44px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 10px;
-  background-color: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  transition: all 0.2s;
-}
-
-.upload-button:hover {
-  background-color: #e2e8f0;
-}
-
-:deep(.el-button--warning) {
-  color: #ffffff !important;
-  background-color: #f5f7fa !important;
-  border-color: #f5f7fa !important;
-}
-
-:deep(.el-input__inner) {
-  border-radius: 12px !important;
-  border: 1px solid #e2e8f0 !important;
-  background-color: #f8fafc !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  transition: all 0.2s !important;
-}
-
-:deep(.el-input__inner:hover) {
-  border-color: #cbd5e1 !important;
-  background-color: #ffffff !important;
-}
-
-:deep(.el-input__inner:focus) {
-  border-color: #3b82f6 !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-}
-
-.message-section-actions {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 10;
-}
-
+/* ===================== 缩放手柄 ===================== */
 .resize-handles {
   position: absolute;
   top: -4px;
@@ -2257,7 +2475,7 @@ export default defineComponent({
 }
 
 .resize-handle:hover {
-  background-color: rgba(102, 126, 234, 0.3);
+  background-color: rgba(47, 107, 255, 0.3);
 }
 
 .resize-n {
@@ -2324,7 +2542,7 @@ export default defineComponent({
   cursor: sw-resize;
 }
 
-/* Flint 图表样式 */
+/* ===================== Flint 图表 ===================== */
 .flint-charts-container {
   display: flex;
   flex-direction: column;
@@ -2338,22 +2556,18 @@ export default defineComponent({
   min-height: 300px;
   box-sizing: border-box;
   flex-shrink: 0;
-  background-color: #f8fafc;
+  background-color: #f8fafd;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--chat-border);
+  box-shadow: 0 2px 8px rgba(28, 60, 120, 0.04);
   transition: box-shadow 0.2s ease;
 }
 
 .flint-chart-item:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(28, 60, 120, 0.08);
 }
 
-.assistant-message .flint-chart-item {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-}
-
-/* HTML 交互面板样式 */
+/* ===================== HTML 交互面板 ===================== */
 .html-interactions-container {
   display: flex;
   flex-direction: column;
@@ -2364,8 +2578,8 @@ export default defineComponent({
 .html-interaction-panel {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  border: 1px solid var(--chat-border);
+  background-color: #f8fafd;
 }
 
 .html-interaction-panel.resolved {
@@ -2379,7 +2593,7 @@ export default defineComponent({
 .skill-select-message {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--chat-title);
   margin-bottom: 12px;
 }
 
@@ -2395,8 +2609,8 @@ export default defineComponent({
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2408,7 +2622,7 @@ export default defineComponent({
 }
 
 .skill-select-item.selected {
-  border-color: #3b82f6;
+  border-color: var(--chat-primary);
   background-color: #eff6ff;
 }
 
@@ -2428,8 +2642,8 @@ export default defineComponent({
 }
 
 .skill-select-item.selected .skill-checkbox {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
+  border-color: var(--chat-primary);
 }
 
 .skill-select-info {
@@ -2440,13 +2654,13 @@ export default defineComponent({
 .skill-select-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--chat-title);
   margin-bottom: 2px;
 }
 
 .skill-select-desc {
   font-size: 12px;
-  color: #64748b;
+  color: var(--chat-text-sub);
   line-height: 1.4;
 }
 
@@ -2462,6 +2676,7 @@ export default defineComponent({
   border: none;
   font-size: 13px;
   font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -2472,19 +2687,19 @@ export default defineComponent({
 }
 
 .skill-confirm-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #4a83ff 0%, #2564e0 100%);
   color: white;
 }
 
 .skill-confirm-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.4);
 }
 
 .skill-cancel-btn {
   background-color: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--chat-text-sub);
+  border: 1px solid var(--chat-border);
 }
 
 .skill-cancel-btn:hover:not(:disabled) {
@@ -2511,8 +2726,8 @@ export default defineComponent({
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--chat-card);
+  border: 1px solid var(--chat-border);
   border-radius: 8px;
   margin-bottom: 8px;
 }
@@ -2525,4 +2740,5 @@ export default defineComponent({
   flex: 1;
   min-width: 0;
 }
+
 </style>
