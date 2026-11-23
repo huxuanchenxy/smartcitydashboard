@@ -1,6 +1,6 @@
 /**
  * 后台配置服务（AI-Assistant）API 封装
- * Swagger: http://10.89.33.97:8082/swagger-ui/index.html
+ * Swagger: http://127.0.0.1:8082/swagger-ui/index.html
  *
  * 每张表提供的通用接口：
  *   POST   /api/{table}               新增
@@ -12,7 +12,7 @@
  *   GET    /api/{table}/list/enabled  查询启用列表
  *
  * 该服务与 dashboard 主服务不同域，直接使用独立 axios 实例；
- * 地址通过 VITE_APP_BACKEND_CONFIG_HOST 覆盖，默认 http://10.89.33.97:8082。
+ * 地址通过 VITE_APP_BACKEND_CONFIG_HOST 覆盖，默认 http://127.0.0.1:8082。
  */
 import axios, { AxiosInstance } from 'axios'
 
@@ -71,7 +71,7 @@ const ENABLED_LIST_TABLES: BackendTableKey[] = [
 
 function resolveBaseURL(): string {
   const envHost = (import.meta as any)?.env?.VITE_APP_BACKEND_CONFIG_HOST
-  return envHost || 'http://10.89.33.97:8082'
+  return envHost || 'http://127.0.0.1:8082'
 }
 
 /** 独立 axios 实例：不走主 request 拦截器，避免 token/baseURL 冲突 */

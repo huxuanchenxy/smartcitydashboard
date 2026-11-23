@@ -583,7 +583,7 @@ export default defineComponent({
         if (e?.name === 'AbortError') {
           scriptLoadError.value = '加载 mock 脚本超时，使用内置脚本'
         } else if (e?.message?.includes('CORS') || e?.message?.includes('Failed to fetch')) {
-          scriptLoadError.value = '跨域或网络错误（CORS/无法连接 10.89.33.97:5000），使用内置脚本'
+          scriptLoadError.value = '跨域或网络错误（CORS/无法连接 127.0.0.1:5000），使用内置脚本'
         } else {
           scriptLoadError.value = `${e?.message || '加载 mock 脚本失败'  }，使用内置脚本`
         }

@@ -2891,7 +2891,7 @@ export default defineComponent({
     // 文件类型 → 查看器 base 映射（配置项，后续扩展只需加键 / 配 env）：1=Markdown、2=PDF、3=图片(PNG 等)、4=视频…
     // 某类型 base 为空（未配置）时，其文件路径保持纯文本不链接；配好 base 后自动变可点击链接。改 .env 需重启 dev 生效
     const FILE_LINK_BASE_MAP: Record<string, string> = {
-      1: import.meta.env.VITE_APP_MARKDOWN_LINK_BASE || 'http://10.89.33.97:3344/#/markdown/',
+      1: import.meta.env.VITE_APP_MARKDOWN_LINK_BASE || 'http://127.0.0.1:3344/#/markdown/',
       2: import.meta.env.VITE_APP_PDF_LINK_BASE || '',
       3: import.meta.env.VITE_APP_IMAGE_LINK_BASE || '',
       4: import.meta.env.VITE_APP_VIDEO_LINK_BASE || '',

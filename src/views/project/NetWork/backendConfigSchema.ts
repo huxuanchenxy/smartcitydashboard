@@ -1,6 +1,6 @@
 /**
  * 后台配置各表的字段元数据
- * 来源：Swagger http://10.89.33.97:8082/v3/api-docs components.schemas（部分表由建表 DDL 补充）
+ * 来源：Swagger http://127.0.0.1:8082/v3/api-docs components.schemas（部分表由建表 DDL 补充）
  *
  * 用途：
  *   1. 驱动表格列渲染（label + prop + 格式化）

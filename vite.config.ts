@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 import plainText from 'vite-plugin-plain-text'
 
 import { resolve } from 'path'
-import { copyFileSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync } from 'fs'
 
 import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 
@@ -15,9 +15,16 @@ function copyExtraFilesPlugin(files: string[]): Plugin {
     name: 'copy-extra-files',
     closeBundle() {
       const outDir = resolve(__dirname, 'website')
+      // vite 在某些情况下（如构建失败或未产出）不会创建 outDir，先确保目录存在
+      if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
       files.forEach(file => {
         const src = resolve(__dirname, file)
         const dest = resolve(outDir, file)
+        // 源文件不存在时跳过，避免阻断整个构建
+        if (!existsSync(src)) {
+          console.warn(`[copy-extra-files] 源文件不存在，已跳过: ${file}`)
+          return
+        }
         copyFileSync(src, dest)
         console.log(`[copy-extra-files] copied ${file} -> website/${file}`)
       })
