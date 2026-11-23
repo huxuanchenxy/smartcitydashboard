@@ -9,12 +9,17 @@ import { getStaticData } from '@/api/data'
 
 export class AiDifyDemo extends DatavComponent {
   config = {
+    // 对话实现：'' = 跟随环境变量 VITE_APP_DIFY_DIALOG_TYPE；demo/real 为组件面板显式指定
+    dialogType: 'env' as 'env' | 'demo' | 'real',
     buttonImage: 'images/dify.png',
     buttonStyle: {
       backgroundColor: '#4CAF50',
       hoverBackgroundColor: '#45a049',
     },
     role: '',
+    // 切换到 Real 对话框时使用的侧栏宽度与字体缩放
+    sidebarWidth: 300,
+    fontScale: 1,
   }
 
   apis: Partial<ApiConfigMap>

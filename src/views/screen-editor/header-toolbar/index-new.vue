@@ -261,8 +261,8 @@
   <formula />
   <device/>
   
-  <!-- AI 助手聊天弹框（DifyApiDemoDialog） -->
-  <DifyApiDemoDialog
+  <!-- AI 助手聊天弹框（按环境变量切换 Demo / Real） -->
+  <DifyDialogSwitch
     v-model:visible="difyApiDialogVisible"
     :role="'developer'"
   />
@@ -286,7 +286,7 @@ import Snapshot from '../../my-project/Snapshot.vue'
 import PublishScreen from '../../my-project/publish.vue'
 import Formula from '../../screen-editor/formula-panel/index.vue'
 import Device from '../../screen-editor/device-panel/index.vue'
-import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import DifyDialogSwitch from '@/components/dify-chatbot/DifyDialogSwitch.vue'
 import * as configImagePropJson from '@/../public/templates/configImageProp.json'
 import {
   configImagePropModel,
@@ -309,7 +309,7 @@ export default defineComponent({
     Snapshot,
     Formula,
     Device,
-    DifyApiDemoDialog,
+    DifyDialogSwitch,
     IconEditorCanvas, IconBox, IconRpanel, IconToolbox, IconFilter, IconWorkspace, IconSnapshot, IconLayer, IconRelease, IconPreview,
     IconSave, IconExport, IconImport, IconAppend, IconFormula, IconLeft, IconCenter, IconRight, IconTop, IconMiddle, IconBottom, IconBl, IconPf2, IconBj,IconSbzt, IconAi,
     ToolboxPanel: loadAsyncComponent(() => import('../toolbox-panel/index-new.vue')),
@@ -587,7 +587,7 @@ export default defineComponent({
       middleJustifying,
       bottomJustifying,
       nMessage,
-      // AI 助手（DifyApiDemoDialog）相关
+      // AI 助手（DifyDialogSwitch）相关
       difyApiDialogVisible,
       openDifyApiDialog,
       // hideModal,

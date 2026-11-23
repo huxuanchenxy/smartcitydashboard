@@ -2,15 +2,29 @@
   <div :id="'div_' + comid" :style="wrapperStyle">
     <!-- 内嵌模式：默认直接显示对话框，填满组件自身区域，不再通过按钮触发 -->
     <DifyRealDialog
+      v-if="useRealDialog"
       v-model:visible="difyApiDialogVisible"
       :inline="true"
       :fixed="true"
-      :sidebar-width="config.sidebarWidth"
-      :font-scale="config.fontScale"
+      :sidebar-width="sidebarWidth"
+      :font-scale="fontScale"
       :role="config.role as '' | 'project_manager' | 'developer' | 'user'"
       :login-account="anonymousToken"
       :auth-token="anonymousToken"
       :anonymous="!!anonymousToken"
+      :com="dialogCom"
+      @close="handleDifyApiDialogClose"
+      @message-received="handleDifyApiMessageReceived"
+      @message-sent="handleDifyApiMessageSent"
+    />
+    <DifyApiDemoDialog
+      v-else
+      v-model:visible="difyApiDialogVisible"
+      :inline="true"
+      :fixed="true"
+      :font-scale="fontScale"
+      :role="config.role"
+      :com="dialogCom"
       @close="handleDifyApiDialogClose"
       @message-received="handleDifyApiMessageReceived"
       @message-sent="handleDifyApiMessageSent"
@@ -23,12 +37,14 @@ import { defineComponent, PropType, computed, toRef, ref } from 'vue'
 import type { CSSProperties } from 'vue'
 import { AiDifyReal } from './ai-dify-real'
 import { useDataCenter } from '@/mixins/data-center'
+import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
 import DifyRealDialog from '@/components/dify-chatbot/DifyRealDialog.vue'
 import { getAnonymousToken } from '@/utils/dify-publish'
+import { resolveDifyDialogType } from '@/utils/dify-dialog'
 
 export default defineComponent({
   name: 'VAiDifyReal',
-  components: { DifyRealDialog },
+  components: { DifyApiDemoDialog, DifyRealDialog },
   props: {
     com: {
       type: Object as PropType<AiDifyReal>,
@@ -46,6 +62,21 @@ export default defineComponent({
     // 非发布页（编辑器 / 预览）返回空串，DifyRealDialog 内部会回退到 localStorage 登录态。
     // 用 computed 而非一次性取值：hash 路由变化（编辑器 → 发布页）时 token 能随之更新。
     const anonymousToken = computed(() => getAnonymousToken())
+
+    // 对话实现切换：组件面板显式选择优先，否则跟随 VITE_APP_DIFY_DIALOG_TYPE（env 无效时兜底 real）
+    const useRealDialog = computed(() => resolveDifyDialogType(config.value.dialogType, 'real') === 'real')
+    // 老项目配置里可能没有这两个字段，给默认值避免 undefined 传进对话框
+    const sidebarWidth = computed(() => config.value.sidebarWidth ?? 300)
+    const fontScale = computed(() => config.value.fontScale ?? 1)
+    // 对话框内部期望的 com 是普通配置对象，而不是 DatavComponent 实例
+    const dialogCom = computed(() => ({
+      buttonImage: config.value.buttonImage || '',
+      buttonStyle: config.value.buttonStyle || {
+        backgroundColor: '#409eff',
+        hoverBackgroundColor: '#66b1ff',
+      },
+      role: config.value.role || '',
+    }))
 
     // 内嵌展示，默认即为显示状态
     const difyApiDialogVisible = ref(true)
@@ -83,6 +114,10 @@ export default defineComponent({
       handleDifyApiMessageReceived,
       handleDifyApiMessageSent,
       config,
+      useRealDialog,
+      sidebarWidth,
+      fontScale,
+      dialogCom,
     }
   },
 })

@@ -28,8 +28,8 @@
   </div>
   <addScreen :visible="addProject" />
   
-  <!-- AI 助手聊天弹框（DifyApiDemoDialog） -->
-  <DifyApiDemoDialog
+  <!-- AI 助手聊天弹框（按环境变量切换 Demo / Real） -->
+  <DifyDialogSwitch
     v-model:visible="difyApiDialogVisible"
     :role="'project_manager'"
   />
@@ -47,7 +47,7 @@ import MyScreen from './my-screen.vue'
 // import PublishScreen from './publish-screen.vue'
 import PublishScreen from './publish.vue'
 import addScreen from './add-screen.vue'
-import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import DifyDialogSwitch from '@/components/dify-chatbot/DifyDialogSwitch.vue'
 import { useMessage } from 'naive-ui'
 
 const cdn = import.meta.env.VITE_APP_CDN
@@ -60,7 +60,7 @@ export default defineComponent({
     IconSearch,
     IconAi,
     addScreen,
-    DifyApiDemoDialog,
+    DifyDialogSwitch,
     //IconArrowDown,
   },
   props: {

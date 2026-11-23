@@ -45,6 +45,7 @@ interface ImportMetaEnv {
   VITE_APP_DIFY_WS_HOST: string; // 对话 WebSocket 服务地址
   VITE_APP_DIFY_UPLOAD_HOST: string; // 附件上传服务地址（/api/file/upload/batch）
   VITE_APP_DIFY_SRC_SYSTEM: string; // 组态侧鉴权来源系统标识（X-Src-System）
+  VITE_APP_DIFY_DIALOG_TYPE: string; // AI 对话组件全局默认：demo / real
 
   // MCP 图片服务地址（后端 answer 中 http://YOUR_SERVER_IP:MCP_PORT/images/xxx.png 占位符的真实值）
   VITE_APP_MCP_HOST: string;

@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <DifyApiDemoDialog
+    <DifyDialogSwitch
       v-model:visible="showAiDialog"
       :role="'project_manager'"
     />
@@ -46,7 +46,7 @@ import { NIcon } from 'naive-ui'
 import { UserStore } from '@/domains/user'
 import { useRouter, useRoute } from 'vue-router'
 import { IconLogout, IconArrowDown, IconPassword, IconAi } from '@/icons'
-import DifyApiDemoDialog from '@/components/dify-chatbot/DifyApiDemoDialog.vue'
+import DifyDialogSwitch from '@/components/dify-chatbot/DifyDialogSwitch.vue'
 
 export default defineComponent({
   name: 'NavHeader',
@@ -54,7 +54,7 @@ export default defineComponent({
     IconArrowDown,
     IconPassword,
     IconAi,
-    DifyApiDemoDialog,
+    DifyDialogSwitch,
   },
   setup(props, context) {
     const { name, avatar, doLogout } = UserStore()

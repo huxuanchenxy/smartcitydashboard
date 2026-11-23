@@ -3,7 +3,7 @@
     <div class="searichat-header">
     </div>
     <button class="ai-chat-trigger" @click="showAiDialog = true"></button>
-    <DifyApiDemoDialog
+    <DifyDialogSwitch
       v-model:visible="showAiDialog"
       :role="'developer'"
     />
@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import DifyApiDemoDialog from "@/components/dify-chatbot/DifyApiDemoDialog.vue";
+import DifyDialogSwitch from "@/components/dify-chatbot/DifyDialogSwitch.vue";
 
 const showAiDialog = ref(false);
 </script>

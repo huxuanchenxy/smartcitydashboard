@@ -1,22 +1,17 @@
 <template>
   <!-- 大屏预览页会把遮罩容器通过 provide 下发（挂在组件盒子之外，不受画布/组件 transform 影响）；
        其他场景仍挂到 body -->
-  <Teleport :to="teleportTarget">
+  <Teleport :to="teleportTarget" :disabled="inline">
     <div
       v-if="dialogVisible"
       class="custom-dialog-mask"
-      :class="{ 'no-mask': noMask, 'in-screen-layer': !!screenMaskLayer }"
+      :class="{ 'no-mask': noMask, 'in-screen-layer': !!screenMaskLayer && !inline, 'inline-mode': inline }"
     >
       <div
         class="custom-dialog-wrapper"
-        :style="{
-          left: dialogPosition.x + 'px',
-          top: dialogPosition.y + 'px',
-          width: dialogWidth + 'px',
-          height: dialogHeight + 'px',
-        }"
+        :style="wrapperStyle"
       >
-        <div v-if="!fixed" class="resize-handles">
+        <div v-if="!fixed && !inline" class="resize-handles">
           <div class="resize-handle resize-n" @mousedown.stop="startResize('n', $event)"></div>
           <div class="resize-handle resize-s" @mousedown.stop="startResize('s', $event)"></div>
           <div class="resize-handle resize-e" @mousedown.stop="startResize('e', $event)"></div>
@@ -49,7 +44,7 @@
                     {{ mdEditorVisible ? '收起文档' : '说明文档' }}
                   </button>
                   <button
-                    v-if="!noMask"
+                    v-if="!noMask && !inline"
                     class="round-icon-btn"
                     title="关闭"
                     @click="handleClose"
@@ -421,6 +416,11 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    // 内嵌模式：不传送到 body，就地渲染并填满父容器（供仪表盘组件内嵌使用）
+    inline: {
+      type: Boolean,
+      default: false,
+    },
     initialPosition: {
       type: Object as () => { x: number; y: number; },
       default: null,
@@ -735,7 +735,7 @@ export default defineComponent({
     }
 
     const handleMouseDown = (e: MouseEvent) => {
-      if (props.fixed) return
+      if (props.fixed || props.inline) return
       if (isResizing.value) return
       isDragging.value = true
       dragOffset.value = {
@@ -766,6 +766,19 @@ export default defineComponent({
     const defaultSize = getDefaultSize()
     const dialogWidth = ref(props.initialSize?.width ?? defaultSize.width)
     const dialogHeight = ref(props.initialSize?.height ?? defaultSize.height)
+
+    // 对话窗定位样式：内嵌模式下填满父容器；否则使用浮动定位（left/top/width/height）
+    const wrapperStyle = computed(() => {
+      if (props.inline) {
+        return { position: 'relative' as const, left: 'auto', top: 'auto', width: '100%', height: '100%' }
+      }
+      return {
+        left: dialogPosition.value.x + 'px',
+        top: dialogPosition.value.y + 'px',
+        width: dialogWidth.value + 'px',
+        height: dialogHeight.value + 'px',
+      }
+    })
 
     // 大屏预览页窗口缩放会重建画布缩放比例，重新按下发变量校正默认位置/尺寸，
     // 避免弹窗跑偏或超出可见区域（拖动/手动调整过尺寸的情况不覆盖）
@@ -1692,6 +1705,7 @@ export default defineComponent({
       formatFileSize,
       dialogWidth,
       dialogHeight,
+      wrapperStyle,
       startResize,
       currentRole,
       setFlintChartRef,
@@ -1766,6 +1780,25 @@ export default defineComponent({
 
 .custom-dialog-mask.no-mask .custom-dialog-wrapper {
   pointer-events: auto;
+}
+
+/* 内嵌模式：遮罩层不再固定全屏，改为填满宿主容器；窗体相对定位铺满 */
+.custom-dialog-mask.inline-mode {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  z-index: auto;
+  pointer-events: auto;
+}
+
+.custom-dialog-mask.inline-mode .custom-dialog-wrapper {
+  position: relative;
+  z-index: auto;
 }
 
 .custom-dialog-wrapper {

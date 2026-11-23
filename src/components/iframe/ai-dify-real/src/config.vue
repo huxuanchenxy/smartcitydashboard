@@ -1,5 +1,8 @@
 <template>
   <div class="setting-panel-gui">
+    <g-field label="对话组件">
+      <g-select v-model="config.dialogType" :data="dialogTypeOptions" />
+    </g-field>
     <g-field label="预设角色">
       <g-select v-model="config.role" :data="roleOptions" />
     </g-field>
@@ -41,6 +44,12 @@ export default defineComponent({
   setup(props) {
     const config = toRef(props.com, 'config')
 
+    const dialogTypeOptions = ref([
+      { id: 'env', value: '跟随环境（默认）' },
+      { id: 'demo', value: '演示对话（Demo）' },
+      { id: 'real', value: '真实对话（Real）' },
+    ])
+
     const roleOptions = ref([
       { id: '', value: '无（默认）' },
       { id: 'project_manager', value: '项目经理' },
@@ -50,6 +59,7 @@ export default defineComponent({
 
     return {
       config,
+      dialogTypeOptions,
       roleOptions,
     }
   },

@@ -1,5 +1,38 @@
 [
   {
+    "key": "dialogType",
+    "config": {
+      "type": "string",
+      "component": "select",
+      "alias": "对话组件",
+      "tip": "跟随环境 = 使用 VITE_APP_DIFY_DIALOG_TYPE；也可显式选择演示对话（Demo）或真实对话（Real）",
+      "displayMode": "single",
+      "features": [],
+      "layout": "horizontal",
+      "toggleCol": "",
+      "isHide": false,
+      "defaultValue": "env",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "InfiniteMin": false,
+      "InfiniteMax": false,
+      "suffix": "",
+      "enums": [
+        { "label": "跟随环境（默认）", "value": "env" },
+        { "label": "演示对话（Demo）", "value": "demo" },
+        { "label": "真实对话（Real）", "value": "real" }
+      ],
+      "whichEnum": {
+        "field": "",
+        "value": ""
+      },
+      "flatValue": false
+    },
+    "path": "dialogType",
+    "virtualPath": ""
+  },
+  {
     "key": "role",
     "config": {
       "type": "string",

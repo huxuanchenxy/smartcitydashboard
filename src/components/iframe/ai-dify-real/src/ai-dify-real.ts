@@ -9,6 +9,8 @@ import { getStaticData } from '@/api/data'
 
 export class AiDifyReal extends DatavComponent {
   config = {
+    // 对话实现：'' = 跟随环境变量 VITE_APP_DIFY_DIALOG_TYPE；demo/real 为组件面板显式指定
+    dialogType: 'env' as 'env' | 'demo' | 'real',
     buttonImage: 'images/dify.png',
     buttonStyle: {
       backgroundColor: '#4CAF50',

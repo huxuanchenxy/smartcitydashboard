@@ -1,7 +1,16 @@
 <template>
   <div class="setting-panel-gui">
+    <g-field label="对话组件">
+      <g-select v-model="config.dialogType" :data="dialogTypeOptions" />
+    </g-field>
     <g-field label="预设角色">
       <g-select v-model="config.role" :data="roleOptions" />
+    </g-field>
+    <g-field label="历史栏宽度">
+      <g-input-number v-model="config.sidebarWidth" :min="0" :max="500" :step="10" suffix="px" />
+    </g-field>
+    <g-field label="字体大小">
+      <g-input-number v-model="config.fontScale" :min="0.8" :max="3" :step="0.1" suffix="倍" />
     </g-field>
     <g-field label="按钮图片">
       <g-input v-model="config.buttonImage" />
@@ -35,6 +44,12 @@ export default defineComponent({
   setup(props) {
     const config = toRef(props.com, 'config')
 
+    const dialogTypeOptions = ref([
+      { id: 'env', value: '跟随环境（默认）' },
+      { id: 'demo', value: '演示对话（Demo）' },
+      { id: 'real', value: '真实对话（Real）' },
+    ])
+
     const roleOptions = ref([
       { id: '', value: '无（默认）' },
       { id: 'project_manager', value: '项目经理' },
@@ -44,6 +59,7 @@ export default defineComponent({
 
     return {
       config,
+      dialogTypeOptions,
       roleOptions,
     }
   },
